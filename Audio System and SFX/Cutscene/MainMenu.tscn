@@ -922,8 +922,13 @@ blend_shape_mode = 0
 resource_name = "head male.001"
 cull_mode = 2
 diffuse_mode = 3
-specular_mode = 1
 albedo_texture = ExtResource("17_2t88h")
+metallic_specular = 0.0
+roughness = 0.0
+normal_scale = -16.0
+rim_enabled = true
+rim = 0.5
+anisotropy = 1.0
 texture_filter = 1
 metadata/extras = {
 "yp": {
