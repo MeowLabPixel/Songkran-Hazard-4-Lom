@@ -3,4 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://dhdko6m4jh7t0" path="res://Water Gun Rifle/openPBR_shader1_Base_color.png" id="1_gqnv7"]
 
 [resource]
+shading_mode = 0
 albedo_texture = ExtResource("1_gqnv7")
+refraction_enabled = true
+stencil_flags = 2

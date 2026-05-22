@@ -3,4 +3,6 @@
 [ext_resource type="Texture2D" uid="uid://t50h4u1pmy1b" path="res://Water Gun Shotty/openPBR_shader1_Base_color.png" id="1_3heyg"]
 
 [resource]
+shading_mode = 0
 albedo_texture = ExtResource("1_3heyg")
+stencil_flags = 2

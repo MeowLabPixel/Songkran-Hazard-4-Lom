@@ -38,11 +38,28 @@ metadata/_custom_type_script = "uid://q2kvjm2waqt0"
 radius = 0.059456058
 height = 0.118912116
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ivuno"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
+grow = true
+grow_amount = 0.01
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_65pr8"]
 resource_name = "bra.001"
+next_pass = SubResource("StandardMaterial3D_ivuno")
 cull_mode = 2
+shading_mode = 0
 albedo_texture = ExtResource("13_ivuno")
-roughness = 0.5
+refraction_enabled = true
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_tjea7"]
 resource_name = "Female Zombie all anim2_Bra_002"
@@ -173,12 +190,29 @@ bind/34/name = &"DEF-breast.R"
 bind/34/bone = -1
 bind/34/pose = Transform3D(-1, -1.5099583e-07, 6.43832e-17, 3.6651244e-14, -2.68221e-07, 1.0000002, -1.5099589e-07, 1.0000001, 9.721598e-24, -0.061122254, -0.008193906, -1.2325271)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_etmx1"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
+grow = true
+grow_amount = 0.01
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vvjly"]
 resource_name = "Base Songkran Jacket Gradiant.003"
+next_pass = SubResource("StandardMaterial3D_etmx1")
 transparency = 4
 cull_mode = 2
+shading_mode = 0
 albedo_texture = ExtResource("14_etmx1")
-roughness = 0.5
+refraction_enabled = true
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_hxcu6"]
 resource_name = "Female Zombie all anim2_Female Songkran Left_002"
@@ -244,11 +278,30 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6ty7o"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
+grow = true
+grow_amount = 0.01
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sl2in"]
 resource_name = "Female zombie hair.002"
+next_pass = SubResource("StandardMaterial3D_6ty7o")
 cull_mode = 2
+shading_mode = 0
+diffuse_mode = 3
+specular_mode = 1
 albedo_texture = ExtResource("15_6ty7o")
-roughness = 0.5
+refraction_enabled = true
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_cgi7q"]
 resource_name = "Female Zombie all anim2_hair_001"
@@ -269,12 +322,29 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_uio31"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
+grow = true
+grow_amount = 0.01
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0qik0"]
 resource_name = "hat.002"
-transparency = 4
+next_pass = SubResource("StandardMaterial3D_uio31")
+transparency = 1
 cull_mode = 2
+shading_mode = 0
 albedo_texture = ExtResource("16_uio31")
-roughness = 0.4
+refraction_enabled = true
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_e7nse"]
 resource_name = "Female Zombie all anim2_hat_001"
@@ -296,11 +366,28 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qqjd7"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
+grow = true
+grow_amount = 0.01
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vovgk"]
 resource_name = "Zombie female face"
+next_pass = SubResource("StandardMaterial3D_qqjd7")
 cull_mode = 2
+shading_mode = 0
 albedo_texture = ExtResource("17_qqjd7")
-roughness = 0.5
+refraction_enabled = true
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_rvhwh"]
 resource_name = "Female Zombie all anim2_Right_Ear_001"
@@ -321,11 +408,29 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5o6hx"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
+grow = true
+grow_amount = 0.01
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jfcii"]
 resource_name = "Shoes.003"
+next_pass = SubResource("StandardMaterial3D_5o6hx")
 transparency = 4
 cull_mode = 2
+shading_mode = 0
 albedo_texture = ExtResource("18_5o6hx")
+refraction_enabled = true
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_dney5"]
 resource_name = "Female Zombie all anim2_Left__Flipflop_005"
@@ -347,11 +452,28 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cbv5g"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
+grow = true
+grow_amount = 0.01
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0hnkq"]
 resource_name = "Base Female Head"
+next_pass = SubResource("StandardMaterial3D_cbv5g")
 cull_mode = 2
 shading_mode = 0
 albedo_texture = ExtResource("19_cbv5g")
+refraction_enabled = true
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_v8uvc"]
 resource_name = "Female Zombie all anim2_Left_Ear"
@@ -372,11 +494,28 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4ig5s"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
+grow = true
+grow_amount = 0.01
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1cat1"]
 resource_name = "Zombie female body"
+next_pass = SubResource("StandardMaterial3D_4ig5s")
 cull_mode = 2
+shading_mode = 0
 albedo_texture = ExtResource("20_4ig5s")
-roughness = 0.5
+refraction_enabled = true
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_o4smr"]
 resource_name = "Female Zombie all anim2_Left_Foot"
@@ -458,8 +597,9 @@ blend_shape_mode = 0
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1rhr7"]
 resource_name = "Material.010"
 cull_mode = 2
+shading_mode = 0
 albedo_texture = ExtResource("21_62gs6")
-roughness = 0.5
+stencil_flags = 2
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_ipucx"]
 resource_name = "Female Zombie all anim2_Lower_Right_Torso"
@@ -615,11 +755,27 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_62gs6"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
+grow = true
+grow_amount = 0.01
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hyxfe"]
 resource_name = "Material.003"
+next_pass = SubResource("StandardMaterial3D_62gs6")
 cull_mode = 2
+shading_mode = 0
 albedo_texture = ExtResource("22_pptru")
-roughness = 0.5
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0.30272168, 0.1497229, 0.008692101, 1)
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_pj2qc"]
 resource_name = "Female Zombie all anim2_Skirt Legging left_001"
@@ -14555,6 +14711,7 @@ skin = SubResource("Skin_llxv1")
 skeleton = NodePath("..")
 
 [node name="Female Songkran_002" type="MeshInstance3D" parent="ZombieModel/rig_002/Skeleton3D" unique_id=1197248803]
+transform = Transform3D(0.99999845, 0.0010035251, -0.0014329979, -0.0010019286, 0.99999887, 0.0011201511, 0.0014341145, -0.0011187211, 0.99999833, 0, 0, 0)
 mesh = SubResource("ArrayMesh_krrq4")
 skin = SubResource("Skin_llxv1")
 skeleton = NodePath("..")
@@ -14605,6 +14762,7 @@ skin = SubResource("Skin_llxv1")
 skeleton = NodePath("..")
 
 [node name="Lower Torso" type="MeshInstance3D" parent="ZombieModel/rig_002/Skeleton3D" unique_id=1840923298]
+visible = false
 mesh = SubResource("ArrayMesh_ipucx")
 skin = SubResource("Skin_llxv1")
 skeleton = NodePath("..")
@@ -14694,7 +14852,7 @@ collision_layer = 8198
 collision_mask = 4
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="ZombieModel/rig_002/Skeleton3D/HitboxAttachHead/HitboxHead" unique_id=1314754887]
-transform = Transform3D(1, -1.0164395e-20, 0, 7.1150755e-20, 1, 0, 0, -1.9895197e-13, 1, -4.0925596e-14, 0.13578784, -0.020606514)
+transform = Transform3D(0.9999939, -0.0034947656, -6.058812e-05, 0.0034951828, 0.9999472, 0.009667285, 2.6851892e-05, -0.009667404, 0.99995327, 0, 0.13578784, -0.020606503)
 shape = SubResource("SphereShape3D_4mgb0")
 
 [node name="HitboxZone" type="Node" parent="ZombieModel/rig_002/Skeleton3D/HitboxAttachHead/HitboxHead" unique_id=1362152341]

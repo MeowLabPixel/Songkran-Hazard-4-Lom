@@ -24,10 +24,6 @@ ItemManager="*res://scripts/items/item_manager.gd"
 
 enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
 
-[filesystem]
-
-import/blender/enabled=false
-
 [global_group]
 
 player_hitbox=""

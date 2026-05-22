@@ -90,3 +90,6 @@ transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.0
 
 [node name="SpawnPoint" type="Node3D" parent="Sniper" unique_id=130137317]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.03310444, -0.01666484, -0.40025687)
+
+[editable path="Pistol/Gun_Optimized"]
+[editable path="Sniper/rifle_optimized"]

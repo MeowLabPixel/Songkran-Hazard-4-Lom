@@ -70,7 +70,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.736355, 0.47146058, 0.189
 material = SubResource("StandardMaterial3D_8tv4d")
 
 [node name="player" parent="." unique_id=324464419 instance=ExtResource("2_1da4k")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.067429, 0.056225806, -11.089496)
+transform = Transform3D(-0.99983305, 0, -0.018272487, 0, 1, 0, 0.018272487, 0, -0.99983305, 10.067429, 0.056225806, -12.954782)
 collision_layer = 14
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=831039779]
@@ -151,5 +151,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.531391, 0, 4.336993)
 [node name="WaterGunZombie" parent="." unique_id=1468367870 instance=ExtResource("12_3phbt")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1601298, 0, 1.5610623)
 
+[node name="Enemy3" parent="." unique_id=1434836882 instance=ExtResource("13_3phbt")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.09216881, 0.16398476, -1.9331474)
+
 [node name="Enemy2" parent="." unique_id=247717746 instance=ExtResource("13_3phbt")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.341727, 0.08199238, 1.3943043)
+
+[node name="Enemy4" parent="." unique_id=26037267 instance=ExtResource("13_3phbt")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.670662, 0.08199238, -2.7195187)
+
+[editable path="Ashley"]
