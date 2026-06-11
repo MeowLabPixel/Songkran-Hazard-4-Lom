@@ -1,0 +1,11 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://10axo1vbmcn4"]
+
+[resource]
+diffuse_mode = 3
+specular_mode = 2
+roughness = 0.0
+rim_enabled = true
+rim = 0.5
+texture_filter = 5
+disable_receive_shadows = true
+stencil_flags = 2

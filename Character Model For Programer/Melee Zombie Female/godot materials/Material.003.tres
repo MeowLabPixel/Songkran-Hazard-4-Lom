@@ -1,0 +1,12 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://dv1n8cki7wwnf"]
+
+[ext_resource type="Texture2D" uid="uid://dlc5j3x5ucmn1" path="res://Character Model For Programer/Melee Zombie Female/textures/female zombie hair.001.png" id="1_td1hg"]
+
+[resource]
+resource_name = "Material.003"
+cull_mode = 2
+albedo_texture = ExtResource("1_td1hg")
+roughness = 0.5
+metadata/extras = {
+"yp": {}
+}

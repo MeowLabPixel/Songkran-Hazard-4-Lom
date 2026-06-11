@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://dib1cmhanwjhd"]
+
+[ext_resource type="Texture2D" uid="uid://cr5wlck56i158" path="res://Character Model For Programer/Leon/textures/Base Male Body 2.png" id="1_t2ot3"]
+
+[resource]
+resource_name = "body male"
+cull_mode = 2
+albedo_texture = ExtResource("1_t2ot3")
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://2rqvrlnovehd"]
+
+[ext_resource type="Texture2D" uid="uid://br7uywia14umb" path="res://Character Model For Programer/Leon/textures/Leon Face Expression.png" id="1_8v52b"]
+
+[resource]
+resource_name = "Mouth"
+cull_mode = 2
+albedo_texture = ExtResource("1_8v52b")
+roughness = 0.5
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

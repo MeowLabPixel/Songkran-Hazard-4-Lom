@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://d1wpd7sln4ioo"]
+
+[ext_resource type="Texture2D" uid="uid://b6hadadv1k2ag" path="res://Character Model For Programer/Melee Zombie Male/textures/Base Zombie short pant.png" id="1_b4dhf"]
+
+[resource]
+resource_name = "Pant"
+cull_mode = 2
+albedo_texture = ExtResource("1_b4dhf")
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

@@ -1,0 +1,16 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://uvly11qdh88j"]
+
+[ext_resource type="Texture2D" uid="uid://o1763gav4xke" path="res://Character Model For Programer/Melee Zombie Female/textures/Female Songkran Jacket.png" id="1_clct2"]
+
+[resource]
+resource_name = "Base Songkran Jacket Gradiant.003"
+transparency = 4
+cull_mode = 2
+albedo_texture = ExtResource("1_clct2")
+roughness = 0.5
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

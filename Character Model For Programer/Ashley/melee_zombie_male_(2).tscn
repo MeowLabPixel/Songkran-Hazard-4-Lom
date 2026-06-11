@@ -1,5 +1,0 @@
-[gd_scene format=3 uid="uid://c2ngdti12b078"]
-
-[ext_resource type="PackedScene" uid="uid://byo8kdo207i4m" path="res://models/enemies/Melee Zombie Male (2).glb" id="1_0eult"]
-
-[node name="Melee Zombie Male (2)" unique_id=778972152 instance=ExtResource("1_0eult")]

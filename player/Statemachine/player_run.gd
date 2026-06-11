@@ -14,9 +14,9 @@ func _enter() -> void:
 
 func _update(_delta:float) -> void:
 	set_direction()
-	calculate_velocity(SPEED,direction,_delta)
-	owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position",input_dir)
-	owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position",input_dir)
+	calculate_velocity(owner.walk_speed,direction,_delta)
+	owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position", Vector2(input_dir.x, -input_dir.y))
+	owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position", Vector2(input_dir.x, -input_dir.y))
 	#owner.anim.get("parameters/Main/Run/Pis/BlendSpace2D/blend_position").set(direction)
 
 	if direction == Vector3.ZERO:
@@ -28,7 +28,7 @@ func _update(_delta:float) -> void:
 func _state_input(_event: InputEvent) -> void:
 	if Input.is_action_pressed("quick_turn") and not owner.is_quick_turn:
 		finished.emit("Quick_turn")
-	if Input.is_action_pressed("sprint"):
+	if Input.is_action_pressed("sprint") and input_dir.y < -0.1:
 		finished.emit("Sprint")
 	if Input.is_action_pressed("Reload") :
 		finished.emit("Reload")

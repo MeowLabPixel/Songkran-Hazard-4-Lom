@@ -47,10 +47,6 @@ func _input(event: InputEvent)-> void:
 		enter_aim()
 	if event.is_action_released("aim"):
 		exit_aim()
-	if event.is_action_pressed("sprint") and not character.is_aimming and not character.is_quick_turn:
-		enter_sprint()
-	if event.is_action_released("sprint") and not character.is_aimming and not character.is_quick_turn:
-		exit_sprint()
 
 func camera_look(mouse_movement: Vector2)-> void:
 	camera_rotation += mouse_movement
@@ -61,9 +57,6 @@ func camera_look(mouse_movement: Vector2)-> void:
 	rotate_object_local(Vector3(1,0,0),-camera_rotation.y)	
 	
 	camera_rotation.y = clamp(camera_rotation.y,-max_y_rot,max_y_rot)
-	target.global_transform = targetref.global_transform
-	# Keep aim target Y the same as the reference (negating it inverted pitch)
-	target.global_position.y = targetref.global_position.y
 
 func swap_camera_align()-> void:
 	match current_camera_align:

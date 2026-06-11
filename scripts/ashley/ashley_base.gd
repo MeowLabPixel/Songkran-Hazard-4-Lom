@@ -35,6 +35,10 @@ var is_cornered: bool = false:
 			help_label.visible = value
 
 func _ready() -> void:
+	if has_node("asley/AnimationPlayer"):
+		anim_player = $asley/AnimationPlayer
+	elif has_node("asley2/AnimationPlayer"):
+		anim_player = $asley2/AnimationPlayer
 	health = max_health
 	help_label.visible = false
 	add_to_group("ashley")

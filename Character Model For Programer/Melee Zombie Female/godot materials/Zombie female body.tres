@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://dbofnm2n21wm0"]
+
+[ext_resource type="Texture2D" uid="uid://c6022rw0tpwff" path="res://Character Model For Programer/Melee Zombie Female/textures/Base Female Zombie Body-1.png.001.png" id="1_31l6k"]
+
+[resource]
+resource_name = "Zombie female body"
+cull_mode = 2
+albedo_texture = ExtResource("1_31l6k")
+roughness = 0.5
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

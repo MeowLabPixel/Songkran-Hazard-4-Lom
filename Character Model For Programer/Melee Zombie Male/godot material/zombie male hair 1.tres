@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://22uf3cfjfquy"]
+
+[ext_resource type="Texture2D" uid="uid://c6yivf1nerrvl" path="res://Character Model For Programer/Melee Zombie Male/textures/zombie 1 hair.png" id="1_dxeqs"]
+
+[resource]
+resource_name = "zombie male hair 1"
+transparency = 4
+cull_mode = 2
+albedo_texture = ExtResource("1_dxeqs")
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

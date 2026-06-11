@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://c37888br6bpm8"]
+
+[ext_resource type="Texture2D" uid="uid://br7uywia14umb" path="res://Character Model For Programer/Leon/textures/Leon Face Expression.png" id="1_3siyp"]
+
+[resource]
+resource_name = "Eyes"
+cull_mode = 2
+albedo_texture = ExtResource("1_3siyp")
+roughness = 0.5
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://de421d1n8uw8i"]
+
+[ext_resource type="Texture2D" uid="uid://e77uxk5meuh3" path="res://Character Model For Programer/Leon/textures/Base_Leon_Hair.png" id="1_liyyu"]
+
+[resource]
+resource_name = "Hair.001"
+cull_mode = 2
+albedo_texture = ExtResource("1_liyyu")
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

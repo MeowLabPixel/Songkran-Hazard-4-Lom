@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://ce5hsak5yja0"]
+
+[ext_resource type="Texture2D" uid="uid://dibx80fulo0h4" path="res://Character Model For Programer/Leon/textures/Base_Cloth_Body.png" id="1_ewc1l"]
+
+[resource]
+resource_name = "Base_Cloth_Body"
+cull_mode = 2
+albedo_texture = ExtResource("1_ewc1l")
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

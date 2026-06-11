@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://belc4icwtiue1"]
+
+[ext_resource type="Texture2D" uid="uid://betlcl7gttj1o" path="res://Character Model For Programer/Melee Zombie Male/textures/Base Zombie Male Face.png" id="1_lpwbd"]
+
+[resource]
+resource_name = "Head.001"
+cull_mode = 2
+albedo_texture = ExtResource("1_lpwbd")
+roughness = 0.5
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

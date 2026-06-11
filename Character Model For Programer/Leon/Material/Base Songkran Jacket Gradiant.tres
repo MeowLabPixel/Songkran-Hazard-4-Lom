@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://cl4yf7ajl2xkc"]
+
+[ext_resource type="Texture2D" uid="uid://bere2mbdcahfy" path="res://Character Model For Programer/Leon/textures/Base Leon Songkran Jacket.png" id="1_fx6f1"]
+
+[resource]
+resource_name = "Base Songkran Jacket Gradiant"
+cull_mode = 2
+albedo_texture = ExtResource("1_fx6f1")
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

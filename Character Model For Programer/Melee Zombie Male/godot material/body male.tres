@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://bkaiy6wi2wcy7"]
+
+[ext_resource type="Texture2D" uid="uid://17hquwl42b7t" path="res://Character Model For Programer/Melee Zombie Male/textures/Base Male Body 2.png" id="1_f43at"]
+
+[resource]
+resource_name = "body male"
+cull_mode = 2
+albedo_texture = ExtResource("1_f43at")
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

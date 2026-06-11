@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://c5elb0lyjaxyv"]
+
+[ext_resource type="Texture2D" uid="uid://dw6w7bwrdtwdy" path="res://Character Model For Programer/Leon/textures/Flower Farment.png" id="1_o2x5y"]
+
+[resource]
+resource_name = "Flower Garment"
+transparency = 4
+cull_mode = 2
+albedo_texture = ExtResource("1_o2x5y")
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

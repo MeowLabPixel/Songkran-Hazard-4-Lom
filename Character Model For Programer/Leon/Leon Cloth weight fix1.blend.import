@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://4qc3xbvgpjpc"
+uid="uid://bbwhclhaewece"
 path="res://.godot/imported/Leon Cloth weight fix1.blend-bcf8007b598ae10bd607c89838c81d4a.scn"
 
 [deps]
@@ -34,9 +34,9 @@ animation/trimming=false
 animation/remove_immutable_tracks=true
 animation/import_rest_as_RESET=false
 import_script/path=""
-materials/extract=0
+materials/extract=2
 materials/extract_format=0
-materials/extract_path=""
+materials/extract_path="res://Character Model For Programer/Leon/Material"
 _subresources={}
 blender/nodes/visible=0
 blender/nodes/active_collection_only=false

@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://cl0dewf5e8v5t"]
+
+[ext_resource type="Texture2D" uid="uid://hdcabvjg5cuo" path="res://Character Model For Programer/Melee Zombie Female/textures/Skirt.png" id="1_sgfy3"]
+
+[resource]
+resource_name = "Skirt.001"
+transparency = 4
+cull_mode = 2
+albedo_texture = ExtResource("1_sgfy3")
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://c85bpb25vwuct"]
+
+[ext_resource type="Texture2D" uid="uid://dvnngrq4ideaf" path="res://Character Model For Programer/Leon/textures/Leon_Pant.png" id="1_se4wq"]
+
+[resource]
+resource_name = "Pant"
+cull_mode = 2
+albedo_texture = ExtResource("1_se4wq")
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://ccggklrsdhqfx"]
+
+[ext_resource type="Texture2D" uid="uid://cw04m3n6u5ee4" path="res://Character Model For Programer/Leon/textures/Base_Flipflop.png" id="1_n2bxb"]
+
+[resource]
+resource_name = "Shoes"
+cull_mode = 2
+albedo_texture = ExtResource("1_n2bxb")
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

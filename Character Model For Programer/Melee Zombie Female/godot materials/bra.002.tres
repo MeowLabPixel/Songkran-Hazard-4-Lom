@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://c2i6b56lh5kkg"]
+
+[ext_resource type="Texture2D" uid="uid://d2xpit3cowtdc" path="res://Character Model For Programer/Melee Zombie Female/textures/bra.png" id="1_o7oys"]
+
+[resource]
+resource_name = "bra.002"
+cull_mode = 2
+albedo_texture = ExtResource("1_o7oys")
+roughness = 0.5
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

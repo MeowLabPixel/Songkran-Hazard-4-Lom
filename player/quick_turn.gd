@@ -35,11 +35,11 @@ func quick_turn():
 	var traget_y_rotation = owner.rotation.y + -PI
 	
 	var tween:= create_tween() as Tween
-	tween.tween_property(owner,"rotation:y",traget_y_rotation,owner.quick_trun_speed)
+	tween.tween_property(owner,"rotation:y",traget_y_rotation,owner.quick_turn_speed)
 	tween.finished.connect(func(): owner.camera.camera_rotation.x += PI; owner.is_quick_turn = false)
 
 	# Safety fallback: if animation/anim_done doesn't fire, ensure we exit quick turn
-	var fallback_time: float = owner.quick_trun_speed + 0.2
+	var fallback_time: float = owner.quick_turn_speed + 0.2
 	var timer := get_tree().create_timer(fallback_time)
 	timer.timeout.connect(_qt_fallback_timeout)
 	

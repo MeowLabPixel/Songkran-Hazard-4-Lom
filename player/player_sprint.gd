@@ -12,14 +12,21 @@ func _enter() -> void:
 		owner.hitboxB.body_entered.connect(hitback)
 	owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale",2.0)
 	owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale",2.0)
+	
+	var camera_node = owner.get_node_or_null("Camera")
+	if camera_node and camera_node.has_method("enter_sprint"):
+		camera_node.enter_sprint()
 
 
 func _update(_delta:float) -> void:
 	set_direction()
-	calculate_velocity(SPEED_sprint,direction,_delta)
+	if input_dir.y >= -0.1:
+		finished.emit("Run")
+		return
+	calculate_velocity(owner.run_speed,direction,_delta)
 	
-	owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position",input_dir)
-	owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position",input_dir)
+	owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position", Vector2(input_dir.x, -input_dir.y))
+	owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position", Vector2(input_dir.x, -input_dir.y))
 	#owner.anim.get("parameters/Main/Run/Pis/BlendSpace2D/blend_position").set(direction)
 	D=_delta
 	if direction == Vector3.ZERO:
@@ -30,6 +37,10 @@ func _update(_delta:float) -> void:
 func _exit() -> void:
 	owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale",1.0)
 	owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale",1.0)
+	
+	var camera_node = owner.get_node_or_null("Camera")
+	if camera_node and camera_node.has_method("exit_sprint"):
+		camera_node.exit_sprint()
 	
 	
 func _state_input(event: InputEvent) -> void:

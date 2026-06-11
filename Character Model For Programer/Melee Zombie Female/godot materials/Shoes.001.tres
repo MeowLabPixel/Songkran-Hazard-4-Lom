@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://b0oclof5tgfs7"]
+
+[ext_resource type="Texture2D" uid="uid://dug16ugsd22ic" path="res://Character Model For Programer/Melee Zombie Female/textures/Melee Zombie Female 1 Flipflop.png" id="1_df7fk"]
+
+[resource]
+resource_name = "Shoes.001"
+transparency = 4
+cull_mode = 2
+albedo_texture = ExtResource("1_df7fk")
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}
