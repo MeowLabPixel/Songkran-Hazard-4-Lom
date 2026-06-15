@@ -1,7 +1,7 @@
 class_name StateHunt
 extends EnemyState
 
-@export var move_speed: float = 2.5
+@export var move_speed: float = 2.0
 @export var attack_cone_half_angle: float = 45.0
 @export var attack_range: float = 0.8
 @export var attack_state: String = "StateAttack"
@@ -69,12 +69,19 @@ func physics_update(_delta: float) -> void:
 	move_dir.y = 0.0
 
 	if move_dir.length() > 0.01:
-		enemy.velocity = move_dir * move_speed
-		enemy.move_and_slide()
+		var target_vel = move_dir * move_speed
+		if nav_agent and nav_agent.avoidance_enabled:
+			nav_agent.set_velocity(target_vel)
+		else:
+			enemy.velocity = target_vel
+			enemy.move_and_slide()
 		enemy.look_at(enemy.global_position + move_dir, Vector3.UP)
 		_play_anim(_walk_anim)
 	else:
-		enemy.velocity = Vector3.ZERO
+		if nav_agent and nav_agent.avoidance_enabled:
+			nav_agent.set_velocity(Vector3.ZERO)
+		else:
+			enemy.velocity = Vector3.ZERO
 		_play_anim(enemy.anim_set.idle)
 
 func _flee(dir_to_player: Vector3) -> void:
@@ -89,12 +96,19 @@ func _flee(dir_to_player: Vector3) -> void:
 		flee_dir.y = 0.0
 
 	if flee_dir.length() > 0.01:
-		enemy.velocity = flee_dir * move_speed * flee_speed_multiplier
-		enemy.move_and_slide()
+		var target_vel = flee_dir * move_speed * flee_speed_multiplier
+		if nav_agent and nav_agent.avoidance_enabled:
+			nav_agent.set_velocity(target_vel)
+		else:
+			enemy.velocity = target_vel
+			enemy.move_and_slide()
 		enemy.look_at(enemy.global_position + (-flee_dir), Vector3.UP)
 		_play_anim(_walk_anim)
 	else:
-		enemy.velocity = Vector3.ZERO
+		if nav_agent and nav_agent.avoidance_enabled:
+			nav_agent.set_velocity(Vector3.ZERO)
+		else:
+			enemy.velocity = Vector3.ZERO
 		_play_anim(enemy.anim_set.idle)
 
 func handle_hit(hit_data: Dictionary) -> String:

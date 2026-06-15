@@ -1,6 +1,13 @@
 extends Motion
 
+var is_stopping: bool = false
+var last_input_dir: Vector2 = Vector2.ZERO
+var stop_timer: float = 0.0
+var _linger_anim_speed: float = 1.0
+
 func _enter() -> void:
+	is_stopping = false
+	stop_timer = 0.0
 	print(name)
 	owner.aim_bone_on(true)
 	set_gun_anim()
@@ -14,13 +21,53 @@ func _enter() -> void:
 
 func _update(_delta:float) -> void:
 	set_direction()
-	calculate_velocity(owner.walk_speed,direction,_delta)
-	owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position", Vector2(input_dir.x, -input_dir.y))
-	owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position", Vector2(input_dir.x, -input_dir.y))
-	#owner.anim.get("parameters/Main/Run/Pis/BlendSpace2D/blend_position").set(direction)
-
-	if direction == Vector3.ZERO:
-		finished.emit("Idle")
+	
+	if direction != Vector3.ZERO:
+		is_stopping = false
+		last_input_dir = input_dir
+		
+		var current_speed = owner.walk_speed
+		var current_anim_speed = owner.walk_anim_speed
+		
+		if input_dir.y > 0.0:
+			current_speed = owner.walk_Back_speed
+			current_anim_speed = owner.walk_back_anim_speed
+		elif input_dir.x != 0.0:
+			current_speed = owner.walk_Back_speed
+			current_anim_speed = owner.walk_side_anim_speed
+			
+		_linger_anim_speed = current_anim_speed
+			
+		calculate_velocity(current_speed, direction, _delta)
+		
+		owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale", current_anim_speed)
+		owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale", current_anim_speed)
+		
+		owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position", Vector2(input_dir.x, -input_dir.y))
+		owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position", Vector2(input_dir.x, -input_dir.y))
+	else:
+		if not is_stopping:
+			is_stopping = true
+			stop_timer = 0.15 # Stopping step duration in seconds
+			
+		stop_timer -= _delta
+		if stop_timer <= 0.0:
+			finished.emit("Idle")
+			return
+			
+		# Smooth physical deceleration
+		velocity.x = lerpf(velocity.x, 0.0, _delta * 20.0)
+		velocity.z = lerpf(velocity.z, 0.0, _delta * 20.0)
+		velocity_updated.emit(velocity)
+		
+		# Smooth animation deceleration
+		var decay_speed = lerpf(0.0, _linger_anim_speed, stop_timer / 0.15)
+		owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale", decay_speed)
+		owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale", decay_speed)
+		
+		# Lock blend position so it doesn't snap to idle during the stop
+		owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position", Vector2(last_input_dir.x, -last_input_dir.y))
+		owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position", Vector2(last_input_dir.x, -last_input_dir.y))
 	if owner.HP <= 0:
 			finished.emit("Die")
 

@@ -37,7 +37,67 @@ import_script/path=""
 materials/extract=2
 materials/extract_format=0
 materials/extract_path="res://Character Model For Programer/Leon/Material"
-_subresources={}
+_subresources={
+"materials": {
+"Base Songkran Jacket Gradiant": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Leon/Material/Base Songkran Jacket Gradiant.tres",
+"use_external/path": "uid://cl4yf7ajl2xkc"
+},
+"Base_Cloth_Body": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Leon/Material/Base_Cloth_Body.tres",
+"use_external/path": "uid://ce5hsak5yja0"
+},
+"Eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Leon/Material/Eyes.tres",
+"use_external/path": "uid://c37888br6bpm8"
+},
+"Flower Garment": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Leon/Material/Flower Garment.tres",
+"use_external/path": "uid://c5elb0lyjaxyv"
+},
+"Hair.001": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Leon/Material/Hair.001.tres",
+"use_external/path": "uid://de421d1n8uw8i"
+},
+"Head": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Leon/Material/Head.tres",
+"use_external/path": "uid://6mlilkh8roc3"
+},
+"Mouth": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Leon/Material/Mouth.tres",
+"use_external/path": "uid://2rqvrlnovehd"
+},
+"Pant": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Leon/Material/Pant.tres",
+"use_external/path": "uid://c85bpb25vwuct"
+},
+"Shoes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Leon/Material/Shoes.tres",
+"use_external/path": "uid://ccggklrsdhqfx"
+},
+"body male": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Leon/Material/body male.tres",
+"use_external/path": "uid://dib1cmhanwjhd"
+}
+},
+"nodes": {
+"PATH:rig/Skeleton3D": {
+"retarget/bone_map": Object(BoneMap,"resource_local_to_scene":false,"resource_name":"","profile":Object(SkeletonProfileHumanoid,"resource_local_to_scene":false,"resource_name":"","root_bone":&"Root","scale_base_bone":&"Hips","group_size":4,"bone_size":56,"script":null)
+,"bonemap":null,"bone_map/Root":&"MCH-torso.parent","bone_map/Hips":&"hips","bone_map/Spine":&"MCH-torso.parent","bone_map/Chest":&"neck","bone_map/UpperChest":&"MCH-ROT-head","bone_map/Neck":&"","bone_map/Head":&"head","bone_map/LeftEye":&"","bone_map/RightEye":&"","bone_map/Jaw":&"","bone_map/LeftShoulder":&"","bone_map/LeftUpperArm":&"","bone_map/LeftLowerArm":&"","bone_map/LeftHand":&"","bone_map/LeftThumbMetacarpal":&"","bone_map/LeftThumbProximal":&"","bone_map/LeftThumbDistal":&"","bone_map/LeftIndexProximal":&"","bone_map/LeftIndexIntermediate":&"","bone_map/LeftIndexDistal":&"","bone_map/LeftMiddleProximal":&"","bone_map/LeftMiddleIntermediate":&"","bone_map/LeftMiddleDistal":&"","bone_map/LeftRingProximal":&"","bone_map/LeftRingIntermediate":&"","bone_map/LeftRingDistal":&"","bone_map/LeftLittleProximal":&"","bone_map/LeftLittleIntermediate":&"","bone_map/LeftLittleDistal":&"","bone_map/RightShoulder":&"","bone_map/RightUpperArm":&"","bone_map/RightLowerArm":&"","bone_map/RightHand":&"","bone_map/RightThumbMetacarpal":&"","bone_map/RightThumbProximal":&"","bone_map/RightThumbDistal":&"","bone_map/RightIndexProximal":&"","bone_map/RightIndexIntermediate":&"","bone_map/RightIndexDistal":&"","bone_map/RightMiddleProximal":&"","bone_map/RightMiddleIntermediate":&"","bone_map/RightMiddleDistal":&"","bone_map/RightRingProximal":&"","bone_map/RightRingIntermediate":&"","bone_map/RightRingDistal":&"","bone_map/RightLittleProximal":&"","bone_map/RightLittleIntermediate":&"","bone_map/RightLittleDistal":&"","bone_map/LeftUpperLeg":&"","bone_map/LeftLowerLeg":&"","bone_map/LeftFoot":&"","bone_map/LeftToes":&"","bone_map/RightUpperLeg":&"","bone_map/RightLowerLeg":&"","bone_map/RightFoot":&"","bone_map/RightToes":&"","script":null)
+
+}
+}
+}
 blender/nodes/visible=0
 blender/nodes/active_collection_only=false
 blender/nodes/punctual_lights=true

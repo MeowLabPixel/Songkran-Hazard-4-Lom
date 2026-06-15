@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://6dpsrl7b7ygy"]
+
+[ext_resource type="Texture2D" uid="uid://bl02b6q3ll01i" path="res://Character Model For Programer/Melee Zombie Female/textures/hat.png" id="1_mpyt2"]
+
+[resource]
+resource_name = "Hat.001"
+transparency = 4
+cull_mode = 2
+albedo_texture = ExtResource("1_mpyt2")
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

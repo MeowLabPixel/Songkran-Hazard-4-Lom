@@ -99,21 +99,25 @@ func fire_projectiles():
 
 func _add_collision_objects_recursive(node: Node, exclude_array: Array):
 	if node is CollisionObject3D:
-		exclude_array.append(node)
+		exclude_array.append(node.get_rid())
 	for child in node.get_children():
 		_add_collision_objects_recursive(child, exclude_array)
 
 func fire_pellet():
-# ... (rest of fire_pellet unchanged)
 	var horizontal_spread: float = deg_to_rad(randf_range(-current_spread, current_spread))
 	var vertical_spread: float = deg_to_rad(randf_range(-current_spread, current_spread))
 	
+	var from: Vector3 = camera.global_transform.origin
 	var direction: Vector3 = -camera.global_transform.basis.z
+	
+	var player = get_tree().get_first_node_in_group("player")
+	if player and "true_aim_position" in player:
+		direction = (player.true_aim_position - from).normalized()
+		
 	direction = direction.rotated(Vector3.UP, horizontal_spread)
 	direction = direction.rotated(camera.global_transform.basis.x, vertical_spread)
 
 	# Raycast
-	var from: Vector3 = camera.global_transform.origin
 	var to: Vector3 = from + direction * 1000.0	
 
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
@@ -125,7 +129,7 @@ func fire_pellet():
 	var node: Node = self
 	while node:
 		if node is CollisionObject3D:
-			exclude_nodes.append(node)
+			exclude_nodes.append(node.get_rid())
 		node = node.get_parent()
 	
 	# Exclude all nodes in the "player" group and their descendants that are CollisionObject3D

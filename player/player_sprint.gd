@@ -10,8 +10,8 @@ func _enter() -> void:
 		owner.hitboxF.body_entered.connect(hitfront)
 	if not owner.hitboxB.body_entered.is_connected(hitback):
 		owner.hitboxB.body_entered.connect(hitback)
-	owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale",2.0)
-	owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale",2.0)
+	owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale", owner.sprint_anim_speed)
+	owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale", owner.sprint_anim_speed)
 	
 	var camera_node = owner.get_node_or_null("Camera")
 	if camera_node and camera_node.has_method("enter_sprint"):
@@ -35,8 +35,8 @@ func _update(_delta:float) -> void:
 		finished.emit("Die")
 		
 func _exit() -> void:
-	owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale",1.0)
-	owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale",1.0)
+	owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale", owner.walk_anim_speed)
+	owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale", owner.walk_anim_speed)
 	
 	var camera_node = owner.get_node_or_null("Camera")
 	if camera_node and camera_node.has_method("exit_sprint"):

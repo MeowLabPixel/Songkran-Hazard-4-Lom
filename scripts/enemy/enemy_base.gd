@@ -8,7 +8,7 @@ signal enemy_defeated()
 signal enemy_hit(hit_data: Dictionary)
 
 # ─── HP ────────────────────────────────────────────────────────────────────
-const MAX_HP: int = 50
+const MAX_HP: int = 25
 var current_hp: int = MAX_HP
 var _second_chance_used: bool = false
 var is_defeated: bool = false
@@ -22,6 +22,15 @@ var is_defeated: bool = false
 @onready var state_machine: EnemyStateMachine = $EnemyStateMachine
 @export var anim_set: ZombieAnimSet
 var anim_player: AnimationPlayer = null
+
+# ─── Procedural Animation Properties ───────────────────────────────────────
+var last_y_rotation: float = 0.0
+var _smoothed_turn_speed: float = 0.0
+var _smoothed_angular_velocity: float = 0.0
+@export var rotation_tilt_sensitivity: float = 2.0
+@export var max_roll_angle: float = 15.0
+@export var tilt_speed: float = 5.0
+var rig: Node3D
 
 func _find_anim_player() -> AnimationPlayer:
 	var model := get_node_or_null("ZombieModel")
@@ -48,14 +57,44 @@ func _ready() -> void:
 		print("[EnemyBase] AnimationPlayer found: %s" % anim_player.get_path())
 		print("[EnemyBase] %d animations available" % anim_player.get_animation_list().size())
 	_disable_attack_hitboxes()
+	
+	# ── Collision Setup ────────────────────────────────────────────────────────
+	# Set Layer 3 (value 4) and Mask 3 (value 4) to ensure zombies collide with each other
+	set_collision_layer_value(3, true)
+	set_collision_mask_value(3, true)
+
+	# ── Navigation Avoidance Setup ─────────────────────────────────────────────
+	var nav = get_node_or_null("NavigationAgent3D") as NavigationAgent3D
+	if nav:
+		nav.avoidance_enabled = true
+		nav.radius = 0.4
+		nav.neighbor_distance = 5.0
+		nav.max_neighbors = 10
+		nav.max_speed = 5.0
+		nav.velocity_computed.connect(_on_nav_velocity_computed)
+		
+	# ── Procedural Animation Modifiers Setup ───────────────────────────────────
+	var skel = _find_skeleton(self)
+	if skel:
+		rig = skel.get_parent()
+		var lean = EnemyLeanModifier.new()
+		lean.enemy = self
+		lean.name = "EnemyLeanModifier"
+		skel.add_child(lean)
+		
+		var head = EnemyHeadLookAt.new()
+		head.enemy = self
+		head.name = "EnemyHeadLookAt"
+		skel.add_child(head)
+	
 	state_machine.initialize("StateIdle")
 	state_machine.state_changed.connect(_on_state_changed)
 
 func _disable_attack_hitboxes() -> void:
 	for skel_base in [
-		"ZombieModel/rig_001/Skeleton3D",
-		"ZombieModel/rig/Skeleton3D",
-		"ZombieModel/rig_002/Skeleton3D"
+		"ZombieModel/rig_002/GeneralSkeleton",
+		"ZombieModel/rig_002/GeneralSkeleton",
+		"ZombieModel/rig_002/GeneralSkeleton"
 	]:
 		for suffix in [
 			"/HitboxAttachLeftHand/AttackHitbox",
@@ -113,3 +152,44 @@ func _spawn_drops() -> void:
 
 func _on_state_changed(old_state: String, new_state: String) -> void:
 	print("[EnemyBase] State: %s → %s  |  HP: %d/%d" % [old_state, new_state, current_hp, MAX_HP])
+
+# ─── Navigation ────────────────────────────────────────────────────────────
+func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
+	velocity = safe_velocity
+	move_and_slide()
+
+# ─── Procedural Animation ──────────────────────────────────────────────────
+func _physics_process(delta: float) -> void:
+	_update_skeleton_tilt(delta)
+
+func _update_skeleton_tilt(delta: float) -> void:
+	if not rig: return
+	var current_y_rot = atan2(global_transform.basis.z.x, global_transform.basis.z.z)
+	var rotation_delta = angle_difference(last_y_rotation, current_y_rot)
+	last_y_rotation = current_y_rot
+	
+	var angular_velocity = 0.0
+	if delta > 0.0:
+		angular_velocity = rotation_delta / delta
+		
+	var raw_speed = abs(angular_velocity)
+	if raw_speed > _smoothed_turn_speed:
+		_smoothed_turn_speed = lerp(_smoothed_turn_speed, raw_speed, delta * 25.0)
+	else:
+		_smoothed_turn_speed = lerp(_smoothed_turn_speed, raw_speed, delta * 18.0)
+		
+	_smoothed_angular_velocity = lerp(_smoothed_angular_velocity, angular_velocity, delta * 15.0)
+	
+	var turn_tilt_deg = -_smoothed_angular_velocity * rotation_tilt_sensitivity
+	var turn_tilt_rad = deg_to_rad(turn_tilt_deg)
+	
+	var target_z = clamp(turn_tilt_rad, deg_to_rad(-max_roll_angle), deg_to_rad(max_roll_angle))
+	
+	rig.rotation.z = lerp_angle(rig.rotation.z, target_z, delta * tilt_speed)
+
+func _find_skeleton(node: Node) -> Skeleton3D:
+	if node is Skeleton3D: return node
+	for child in node.get_children():
+		var result = _find_skeleton(child)
+		if result: return result
+	return null

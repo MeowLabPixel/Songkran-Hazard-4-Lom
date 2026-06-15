@@ -15,12 +15,25 @@ extends Node3D
 @export var targetref: Marker3D
 
 var camera_rotation: Vector2= Vector2.ZERO
+var pending_camera_rotation: Vector2 = Vector2.ZERO
 var mouse_sensitivity: float = 0.002
-var max_y_rot:float= 0.5
+@export var max_look_up: float = 1.4 # ~80 degrees up
+@export var max_look_down: float = 1.4 # ~80 degrees down
+@export var look_up_lift_amount: float = 1.5 # How much the camera lifts when looking up
+@export var look_down_lift_amount: float = 1.5 # How much the camera lifts when looking down
+var aim_offset: Vector2 = Vector2.ZERO
+
+@export_group("Aim Deadzones")
+@export var aim_deadzone_left: float = 0.15 # Small limit on left to avoid body blocking
+@export var aim_deadzone_right: float = 0.35 # Larger limit on right
+@export var aim_deadzone_up: float = 0.2
+@export var aim_deadzone_down: float = 0.2
 
 var camera_tween:Tween
 enum cameraalign{LEFT=-1,RIGHT=1,CENTER=0}
-var current_camera_align: int = cameraalign.RIGHT
+var current_camera_align:cameraalign = cameraalign.RIGHT
+
+var base_position_y: float = 0.0
 
 @onready var defaut_edge_spring_arm_length: float = edge_spring_arm.spring_length
 @onready var defaut_rear_spring_arm_length: float = rear_spring_arm.spring_length
@@ -30,6 +43,24 @@ var current_camera_align: int = cameraalign.RIGHT
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	base_position_y = position.y
+	
+	# Remove camera collision with NPCs/Enemies by restricting it to only the Environment layer (Layer 1)
+	if edge_spring_arm:
+		edge_spring_arm.collision_mask = 1
+	if rear_spring_arm:
+		rear_spring_arm.collision_mask = 1
+
+func _process(delta: float) -> void:
+	if character and not character.is_aimming:
+		aim_offset = aim_offset.lerp(Vector2.ZERO, delta * 15.0)
+		
+	# Smoothly apply the deadzone excess rotation for a heavier, cinematic feel
+	if pending_camera_rotation.length_squared() > 0.000001:
+		var applied = pending_camera_rotation * min(delta * 15.0, 1.0)
+		camera_rotation += applied
+		pending_camera_rotation -= applied
+		_apply_camera_rotation()
 
 func _input(event: InputEvent)-> void:
 	if event.is_action_pressed("ui_cancel"):
@@ -49,14 +80,46 @@ func _input(event: InputEvent)-> void:
 		exit_aim()
 
 func camera_look(mouse_movement: Vector2)-> void:
-	camera_rotation += mouse_movement
+	if character.is_aimming:
+		aim_offset += mouse_movement
+		
+		var excess_vector = Vector2.ZERO
+		
+		# Asymmetrical X boundaries
+		if aim_offset.x > aim_deadzone_right:
+			excess_vector.x = aim_offset.x - aim_deadzone_right
+			aim_offset.x = aim_deadzone_right
+		elif aim_offset.x < -aim_deadzone_left:
+			excess_vector.x = aim_offset.x + aim_deadzone_left
+			aim_offset.x = -aim_deadzone_left
+			
+		# Asymmetrical Y boundaries
+		if aim_offset.y > aim_deadzone_down:
+			excess_vector.y = aim_offset.y - aim_deadzone_down
+			aim_offset.y = aim_deadzone_down
+		elif aim_offset.y < -aim_deadzone_up:
+			excess_vector.y = aim_offset.y + aim_deadzone_up
+			aim_offset.y = -aim_deadzone_up
+			
+		pending_camera_rotation += excess_vector
+	else:
+		camera_rotation += mouse_movement
+		_apply_camera_rotation()
+		
+func _apply_camera_rotation() -> void:
+	camera_rotation.y = clamp(camera_rotation.y, -max_look_up, max_look_down)
+	
 	transform.basis = Basis()
 	character.transform.basis = Basis()
 	if not character.is_quick_turn:
 		character.rotate_object_local(Vector3(0,1,0),-camera_rotation.x)
 	rotate_object_local(Vector3(1,0,0),-camera_rotation.y)	
 	
-	camera_rotation.y = clamp(camera_rotation.y,-max_y_rot,max_y_rot)
+	# Dynamically push the camera's pivot UP when looking up or down to prevent the body from blocking the view!
+	if camera_rotation.y < 0.0: # Looking UP
+		position.y = base_position_y + (abs(camera_rotation.y) * look_up_lift_amount)
+	else: # Looking DOWN
+		position.y = base_position_y + (abs(camera_rotation.y) * look_down_lift_amount)
 
 func swap_camera_align()-> void:
 	match current_camera_align:

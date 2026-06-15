@@ -9,9 +9,11 @@
 [ext_resource type="PackedScene" uid="uid://ek1ncjc2swrw" path="res://player/test/temp_enemi.tscn" id="7_ih2au"]
 [ext_resource type="Script" uid="uid://dxr0w5vn4oq5s" path="res://player/test/UI.gd" id="8_6c3wv"]
 [ext_resource type="PackedScene" uid="uid://c6uqvqrlxwm0g" path="res://scenes/ashley/ashley.tscn" id="10_1pr3x"]
-[ext_resource type="PackedScene" uid="uid://cct03w215xpte" path="res://scenes/enemy/balloon_zombie.tscn" id="11_2sc32"]
-[ext_resource type="PackedScene" uid="uid://bfo2fsp5vncs4" path="res://scenes/enemy/water_gun_zombie.tscn" id="12_3phbt"]
-[ext_resource type="PackedScene" uid="uid://sa4u82tfijxi" path="res://scenes/enemy/female_zombie.tscn" id="13_3phbt"]
+[ext_resource type="PackedScene" uid="uid://cct03w215xpte" path="res://scenes/enemy/BalloonZom.tscn" id="11_2sc32"]
+[ext_resource type="PackedScene" uid="uid://bfo2fsp5vncs4" path="res://scenes/enemy/GunZom.tscn" id="12_3phbt"]
+[ext_resource type="PackedScene" uid="uid://sa4u82tfijxi" path="res://scenes/enemy/FMeleeZom.tscn" id="13_3phbt"]
+[ext_resource type="PackedScene" uid="uid://c2ngdti12b078" path="res://scenes/enemy/MMeleeZom.tscn" id="13_jof4o"]
+[ext_resource type="PackedScene" path="res://scenes/enemy/EnemySpawner.tscn" id="14_jof4o"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ljqf5"]
 albedo_texture = ExtResource("2_1fcdn")
@@ -142,23 +144,43 @@ theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 41
 text = "AAAAAA"
 
-[node name="Ashley" parent="." unique_id=1099023628 instance=ExtResource("10_1pr3x")]
+[node name="Ashley(Follower)" parent="." unique_id=1099023628 instance=ExtResource("10_1pr3x")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.9785824, 0, -1.0953765)
 
-[node name="BalloonZombie" parent="." unique_id=525148414 instance=ExtResource("11_2sc32")]
+[node name="BalloonZom" parent="." unique_id=525148414 instance=ExtResource("11_2sc32")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.531391, 0, 4.336993)
 
-[node name="WaterGunZombie" parent="." unique_id=1468367870 instance=ExtResource("12_3phbt")]
+[node name="GunZombie" parent="." unique_id=1468367870 instance=ExtResource("12_3phbt")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1601298, 0, 1.5610623)
 
-[node name="Enemy3" parent="." unique_id=1434836882 instance=ExtResource("13_3phbt")]
+[node name="FMeleeZom2" parent="." unique_id=1434836882 instance=ExtResource("13_3phbt")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.09216881, 0.16398476, -1.9331474)
 
-[node name="Enemy2" parent="." unique_id=247717746 instance=ExtResource("13_3phbt")]
+[node name="FMeleeZom3" parent="." unique_id=247717746 instance=ExtResource("13_3phbt")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.341727, 0.08199238, 1.3943043)
 
-[node name="Enemy4" parent="." unique_id=26037267 instance=ExtResource("13_3phbt")]
+[node name="FMeleeZom1" parent="." unique_id=26037267 instance=ExtResource("13_3phbt")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.670662, 0.08199238, -2.7195187)
 
-[editable path="Ashley"]
-[editable path="Ashley/asley2"]
+[node name="MMeleeZom1" parent="." unique_id=793898799 instance=ExtResource("13_jof4o")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6281147, 0, 0)
+
+[node name="EnemySpawner" parent="." unique_id=1812457875 instance=ExtResource("14_jof4o")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8009324, 0.0500288, -6.9369454)
+enemy_scenes = Array[PackedScene]([ExtResource("13_3phbt"), ExtResource("13_jof4o")])
+total_enemies_to_spawn = 10
+max_concurrent_enemies = 10
+
+[node name="TriggerArea" parent="EnemySpawner" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0189586, 0, -5.916219)
+
+[node name="SpawnPoints" parent="EnemySpawner" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0189586, 0, -5.916219)
+
+[node name="Marker3D" type="Marker3D" parent="EnemySpawner/SpawnPoints" index="0" unique_id=315711536]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.999706, 0, -1.1774769)
+
+[node name="Marker3D2" type="Marker3D" parent="EnemySpawner/SpawnPoints" index="1" unique_id=212455588]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.999706, 0, 4.083725)
+
+[editable path="EnemySpawner"]

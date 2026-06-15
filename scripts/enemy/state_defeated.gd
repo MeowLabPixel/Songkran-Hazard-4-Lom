@@ -7,6 +7,8 @@ var player_is_aiming: bool = false
 var _was_aiming: bool      = false
 var _walking: bool         = false   # true once the dead intro anim finishes
 
+@onready var nav_agent: NavigationAgent3D = enemy.get_node_or_null("NavigationAgent3D") if enemy else null
+
 func enter() -> void:
 	player_is_aiming = false
 	_was_aiming      = false
@@ -55,8 +57,12 @@ func physics_update(_delta: float) -> void:
 		return
 
 	var flee_dir: Vector3 = -to_player.normalized()
-	enemy.velocity = flee_dir * move_speed
-	enemy.move_and_slide()
+	var target_vel = flee_dir * move_speed
+	if nav_agent and nav_agent.avoidance_enabled:
+		nav_agent.set_velocity(target_vel)
+	else:
+		enemy.velocity = target_vel
+		enemy.move_and_slide()
 	enemy.look_at(enemy.global_position + flee_dir, Vector3.UP)
 
 func handle_hit(_hit_data: Dictionary) -> String:

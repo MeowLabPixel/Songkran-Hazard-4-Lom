@@ -34,10 +34,70 @@ animation/trimming=false
 animation/remove_immutable_tracks=true
 animation/import_rest_as_RESET=false
 import_script/path=""
-materials/extract=0
+materials/extract=1
 materials/extract_format=0
 materials/extract_path=""
-_subresources={}
+_subresources={
+"materials": {
+"Base Songkran Jacket Gradiant.002": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Female/Base Songkran Jacket Gradiant.002.tres",
+"use_external/path": "uid://deoqpgb4nbdic"
+},
+"Body.001": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Female/Body.001.tres",
+"use_external/path": "uid://bq57u8s83fn58"
+},
+"Eyes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Female/Eyes.tres",
+"use_external/path": "uid://iqo17fwm3exv"
+},
+"Female zombie hair.001": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Female/Female zombie hair.001.tres",
+"use_external/path": "uid://brn86p0clg5nq"
+},
+"Hat.001": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Female/Hat.001.tres",
+"use_external/path": "uid://6dpsrl7b7ygy"
+},
+"Head": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Female/Head.tres",
+"use_external/path": "uid://bnj4huc2xcx37"
+},
+"Mouth": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Female/Mouth.tres",
+"use_external/path": "uid://dr8h12yijq4x7"
+},
+"Shoes.001": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Female/Shoes.001.tres",
+"use_external/path": "uid://d21w3anehiwwq"
+},
+"Skirt.001": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Female/Skirt.001.tres",
+"use_external/path": "uid://bttgtfaemb3kl"
+},
+"bra.002": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Female/bra.002.tres",
+"use_external/path": "uid://cqgvhkxsomnlj"
+}
+},
+"nodes": {
+"PATH:rig/Skeleton3D": {
+"retarget/bone_map": Object(BoneMap,"resource_local_to_scene":false,"resource_name":"","profile":Object(SkeletonProfileHumanoid,"resource_local_to_scene":false,"resource_name":"","root_bone":&"Root","scale_base_bone":&"Hips","group_size":4,"bone_size":56,"script":null)
+,"bonemap":null,"bone_map/Root":&"MCH-torso.parent","bone_map/Hips":&"hips","bone_map/Spine":&"MCH-torso.parent","bone_map/Chest":&"neck","bone_map/UpperChest":&"MCH-ROT-head","bone_map/Neck":&"","bone_map/Head":&"head","bone_map/LeftEye":&"","bone_map/RightEye":&"","bone_map/Jaw":&"","bone_map/LeftShoulder":&"","bone_map/LeftUpperArm":&"","bone_map/LeftLowerArm":&"","bone_map/LeftHand":&"","bone_map/LeftThumbMetacarpal":&"","bone_map/LeftThumbProximal":&"","bone_map/LeftThumbDistal":&"","bone_map/LeftIndexProximal":&"","bone_map/LeftIndexIntermediate":&"","bone_map/LeftIndexDistal":&"","bone_map/LeftMiddleProximal":&"","bone_map/LeftMiddleIntermediate":&"","bone_map/LeftMiddleDistal":&"","bone_map/LeftRingProximal":&"","bone_map/LeftRingIntermediate":&"","bone_map/LeftRingDistal":&"","bone_map/LeftLittleProximal":&"","bone_map/LeftLittleIntermediate":&"","bone_map/LeftLittleDistal":&"","bone_map/RightShoulder":&"","bone_map/RightUpperArm":&"","bone_map/RightLowerArm":&"","bone_map/RightHand":&"","bone_map/RightThumbMetacarpal":&"","bone_map/RightThumbProximal":&"","bone_map/RightThumbDistal":&"","bone_map/RightIndexProximal":&"","bone_map/RightIndexIntermediate":&"","bone_map/RightIndexDistal":&"","bone_map/RightMiddleProximal":&"","bone_map/RightMiddleIntermediate":&"","bone_map/RightMiddleDistal":&"","bone_map/RightRingProximal":&"","bone_map/RightRingIntermediate":&"","bone_map/RightRingDistal":&"","bone_map/RightLittleProximal":&"","bone_map/RightLittleIntermediate":&"","bone_map/RightLittleDistal":&"","bone_map/LeftUpperLeg":&"","bone_map/LeftLowerLeg":&"","bone_map/LeftFoot":&"","bone_map/LeftToes":&"","bone_map/RightUpperLeg":&"","bone_map/RightLowerLeg":&"","bone_map/RightFoot":&"","bone_map/RightToes":&"","script":null)
+
+}
+}
+}
 blender/nodes/visible=0
 blender/nodes/active_collection_only=false
 blender/nodes/punctual_lights=true

@@ -2199,6 +2199,7 @@ advance_mode = 2
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_j55il"]
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_s3g0c"]
+xfade_time = 0.3
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_7l6ig"]
 xfade_time = 0.1
@@ -2284,6 +2285,7 @@ gun_controller = NodePath("Re4Lom Base Rig/rig/Skeleton3D/Gun/GunController")
 crosshair_texture = ExtResource("2_e7oew")
 min_scale = 0.02
 max_scale = 0.3
+aim_visual_offset = Vector3(0.4, 0.7, 0)
 
 [node name="Re4Lom Base Rig_rig_Skeleton3D_spine02_Hitbox_F#CollisionShape3D" type="CollisionShape3D" parent="." unique_id=912103734]
 transform = Transform3D(1.0000031, 9.872019e-08, -4.172325e-07, 4.172325e-07, 8.940697e-08, 1.0000086, 1.17346644e-07, -1.0000058, -5.364418e-07, -0.001, 0.10255525, -0.068)
@@ -4160,20 +4162,7 @@ primary_positive_damp_threshold = 1.0
 primary_negative_limit_angle = 0.7853982
 primary_negative_damp_threshold = 1.0
 
-[node name="SpineLookAt" type="LookAtModifier3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=1439458440]
-target_node = NodePath("../../../../Aim_target")
-bone_name = "DEF-spine.003"
-bone = 4
-primary_rotation_axis = 0
-use_secondary_rotation = false
-use_angle_limitation = true
-symmetry_limitation = false
-primary_positive_limit_angle = 3.1415927
-primary_positive_damp_threshold = 1.0
-primary_negative_limit_angle = 0.08726646
-primary_negative_damp_threshold = 1.0
-
-[node name="SpineLookAt2" type="LookAtModifier3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=693962850]
+[node name="HeadLookAt" type="LookAtModifier3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=693962850]
 target_node = NodePath("../../../../Aim_target")
 bone_name = "DEF-spine.006"
 bone = 7
@@ -4181,9 +4170,22 @@ primary_rotation_axis = 0
 use_secondary_rotation = false
 use_angle_limitation = true
 symmetry_limitation = false
-primary_positive_limit_angle = 3.1415927
+primary_positive_limit_angle = 0.2617994
 primary_positive_damp_threshold = 1.0
-primary_negative_limit_angle = 0.17453292
+primary_negative_limit_angle = 0.19198622
+primary_negative_damp_threshold = 1.0
+
+[node name="SpineLookAt" type="LookAtModifier3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=1416955839]
+target_node = NodePath("../../../../Aim_target")
+bone_name = "DEF-spine.002"
+bone = 3
+primary_rotation_axis = 0
+use_secondary_rotation = false
+use_angle_limitation = true
+symmetry_limitation = false
+primary_positive_limit_angle = 0.17453292
+primary_positive_damp_threshold = 1.0
+primary_negative_limit_angle = 0.08726646
 primary_negative_damp_threshold = 1.0
 
 [node name="Gun" type="BoneAttachment3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=622329853]
@@ -4192,14 +4194,14 @@ bone_name = "ORG-hand.R"
 bone_idx = 148
 
 [node name="GunController" parent="Re4Lom Base Rig/rig/Skeleton3D/Gun" unique_id=870463544 node_paths=PackedStringArray("camera") instance=ExtResource("5_e7oew")]
-transform = Transform3D(0.8001374, 0.54431874, -0.25199273, -0.3037734, 0.0054749623, -0.95272875, -0.51720184, 0.8388669, 0.16972816, 0.1486817, 0.2725687, 0.10969007)
+transform = Transform3D(0.72403145, 0.596743, -0.3459841, -0.3919496, -0.056841217, -0.9182376, -0.5676061, 0.80043596, 0.1927349, 0.14343172, 0.25298446, 0.095948815)
 camera = NodePath("../../../../../Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D")
 
 [node name="Pistol" parent="Re4Lom Base Rig/rig/Skeleton3D/Gun/GunController" index="0" unique_id=1327767996]
 transform = Transform3D(1, 5.9604645e-08, -1.0058284e-07, -4.4703484e-08, 1.0000004, 1.1175871e-08, -5.5879354e-09, -2.2351742e-08, 1, 0.004838705, -0.0014542043, -0.016784072)
 
 [node name="Gun_Optimized" parent="Re4Lom Base Rig/rig/Skeleton3D/Gun/GunController/Pistol" index="0" unique_id=2081630820]
-transform = Transform3D(-1, 0, -1.509958e-07, 0, 1, 0, 1.509958e-07, 0, -1, 0, -0.15755624, 0.124977455)
+transform = Transform3D(-0.996983, -0.065060005, -0.042338304, -0.064901024, 0.9978785, -0.005116999, 0.04258141, -0.0023537595, -0.99908984, 0.023987532, -0.16112682, 0.12921643)
 
 [node name="Bottle" parent="Re4Lom Base Rig/rig/Skeleton3D/Gun/GunController/Pistol/Gun_Optimized" index="0" unique_id=2024523276]
 surface_material_override/0 = SubResource("StandardMaterial3D_hjies")
@@ -4233,18 +4235,23 @@ libraries/rest = SubResource("AnimationLibrary_1s1yo")
 libraries/walk = SubResource("AnimationLibrary_5ejfk")
 
 [node name="Camera" type="Node3D" parent="." unique_id=1309180085 node_paths=PackedStringArray("character", "edge_spring_arm", "rear_spring_arm", "camera", "target", "targetref")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6392021, 1.4476088, -0.57340336)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6392021, 1.5452327, -0.46493244)
 script = ExtResource("2_eja1v")
 character = NodePath("..")
 edge_spring_arm = NodePath("edgeSpringArm3D")
 rear_spring_arm = NodePath("edgeSpringArm3D/rearSpringArm3D")
 camera = NodePath("edgeSpringArm3D/rearSpringArm3D/Camera3D")
-aim_rear_spring_arm_length = 1.0
-aim_edge_spring_arm_length = 1.0
+aim_rear_spring_arm_length = 1.05
+aim_edge_spring_arm_length = 1.05
 aim_fov = 65.0
 sprint_fov = 65.0
 target = NodePath("../Aim_target")
 targetref = NodePath("Aim_target_ref")
+max_look_up = 0.5
+max_look_down = 0.5
+look_up_lift_amount = 1.0
+look_down_lift_amount = -0.3
+aim_deadzone_right = 0.2
 
 [node name="edgeSpringArm3D" type="SpringArm3D" parent="Camera" unique_id=1838177617]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
@@ -4343,10 +4350,10 @@ color = Color(0, 0, 0, 1)
 libraries/ = SubResource("AnimationLibrary_32hag")
 
 [node name="Aim_target_ref" type="Marker3D" parent="Camera" unique_id=295127675]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6392021, 1.4476088, -5.5259337)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5231075, -0.12769401, -4.5339456)
 
 [node name="Aim_target" type="Marker3D" parent="." unique_id=864209651]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6392021, 1.4476088, -5.5259337)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1552505, 1.4123328, -5.5259337)
 
 [node name="Statemachine" type="Node" parent="." unique_id=474127841 node_paths=PackedStringArray("Start_state")]
 script = ExtResource("30_a2xo5")
@@ -4410,49 +4417,9 @@ parameters/Main/Run/Shot/TimeScale/scale = 1.0
 wait_time = 0.5
 one_shot = true
 
-[node name="Leon Cloth weight fix1 (Blender Replacement)" parent="." unique_id=2054249915 instance=ExtResource("49_3dxkp")]
+[node name="Leon Cloth weight fix1" parent="." unique_id=2054249915 instance=ExtResource("49_3dxkp")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -1.9803317, 0, 0)
 visible = false
-
-[node name="Skeleton3D" parent="Leon Cloth weight fix1 (Blender Replacement)/rig" parent_id_path=PackedInt32Array(2054249915, 809263830) index="0" unique_id=66700179]
-bones/8/rotation = Quaternion(0.15419608, 0.9400046, 0.25547454, 0.16537169)
-bones/8/scale = Vector3(1, 14.921207, 1)
-bones/9/rotation = Quaternion(-0.15419604, 0.9400044, 0.25547493, -0.16537176)
-bones/9/scale = Vector3(1, 14.921221, 1)
-bones/10/rotation = Quaternion(0.94815826, 0.10669795, -0.29443496, 0.0540333)
-bones/10/scale = Vector3(0.9999999, 19.220366, 0.9999999)
-bones/11/rotation = Quaternion(0.94815826, -0.10669793, 0.294435, 0.054033376)
-bones/11/scale = Vector3(1.0000001, 19.220362, 1)
-bones/28/scale = Vector3(0.99999964, 0.9999996, 1.0000163)
-bones/29/rotation = Quaternion(-0.068544425, 0.9955787, -0.06406919, -0.0044746264)
-bones/29/scale = Vector3(1.0000051, 0.9999999, 0.9999836)
-bones/42/scale = Vector3(1, 0.9999998, 1.0000165)
-bones/43/rotation = Quaternion(0.06854441, 0.99557865, -0.06406922, 0.004474949)
-bones/43/scale = Vector3(1.000005, 0.9999999, 0.99998367)
-bones/60/rotation = Quaternion(-0.068543784, 0.99557847, -0.06407151, -0.0044873613)
-bones/71/scale = Vector3(0.99999994, 0.9999919, 1.0000169)
-bones/72/rotation = Quaternion(-0.06854458, 0.99557865, -0.06406914, -0.004476721)
-bones/72/scale = Vector3(1.0000052, 0.9999998, 0.9999839)
-bones/90/scale = Vector3(0.9999998, 0.99999225, 1.0000165)
-bones/91/scale = Vector3(1.0000052, 0.99999964, 0.99998415)
-bones/107/rotation = Quaternion(0.92457265, 1.8167763e-07, 4.408706e-07, -0.38100594)
-bones/115/rotation = Quaternion(0.6185442, 0.3464759, 0.5299853, -0.46526676)
-bones/145/rotation = Quaternion(0.6185444, -0.34647575, -0.5299852, -0.4652667)
-bones/146/rotation = Quaternion(-0.015868496, 0.9275291, -0.030034201, -0.3722042)
-bones/161/rotation = Quaternion(-0.5250409, 0.706246, -0.42979625, -0.20204909)
-bones/165/rotation = Quaternion(-0.52410173, 0.6945206, -0.45108664, -0.19869421)
-bones/168/rotation = Quaternion(-0.015868502, 0.92752856, -0.030034188, -0.37220562)
-bones/170/rotation = Quaternion(-0.01586887, 0.9275294, -0.030033726, -0.37220365)
-bones/181/rotation = Quaternion(0.6185442, 0.3464759, 0.5299853, -0.46526676)
-bones/182/rotation = Quaternion(0.6185444, -0.34647575, -0.5299852, -0.4652667)
-bones/188/rotation = Quaternion(0.89023215, -7.452292e-10, -0.3441556, -0.29840186)
-bones/190/rotation = Quaternion(-0.49792397, 0.6945845, -0.50604534, -0.11637112)
-bones/193/rotation = Quaternion(0.89023215, 1.4937624e-09, 0.34415564, -0.29840183)
-bones/202/rotation = Quaternion(0.99896824, -0.0031471308, 8.6223205e-05, -0.045305043)
-bones/204/scale = Vector3(0.9999998, 0.99999994, 0.999983)
-bones/216/rotation = Quaternion(0.99896824, 0.0031471308, -8.6223205e-05, -0.045305043)
-bones/218/scale = Vector3(0.9999998, 0.99999994, 0.999983)
-bones/219/rotation = Quaternion(0.001246872, 0.01890663, 0.997238, -0.07181494)
 
 [node name="Hair Light" type="SpotLight3D" parent="." unique_id=942507479]
 transform = Transform3D(1, 0, 0, 0, 0.9916374, 0.12905522, 0, -0.12905522, 0.9916374, -0.034689274, 1.8492275, 0.36591297)
@@ -4470,4 +4437,4 @@ spot_angle_attenuation = 0.0005417829
 [editable path="Re4Lom Base Rig/rig/Skeleton3D/Gun/GunController"]
 [editable path="Re4Lom Base Rig/rig/Skeleton3D/Gun/GunController/Pistol/Gun_Optimized"]
 [editable path="Re4Lom Base Rig/rig/Skeleton3D/Gun/GunController/Sniper/rifle_optimized"]
-[editable path="Leon Cloth weight fix1 (Blender Replacement)"]
+[editable path="Leon Cloth weight fix1"]

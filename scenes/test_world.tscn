@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://sx2lfrw3gahc"]
 
 [ext_resource type="Script" uid="uid://bw20hhytpnu8j" path="res://scripts/test_world.gd" id="1_kyfjp"]
-[ext_resource type="PackedScene" uid="uid://qeaipwg5cq4v" path="res://scenes/enemy/enemy.tscn" id="2_amxg5"]
+[ext_resource type="PackedScene" uid="uid://qeaipwg5cq4v" path="res://scenes/enemy/other scenes/enemy.tscn" id="2_amxg5"]
 [ext_resource type="Script" uid="uid://csjccrhj5wnx7" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_3d.gd" id="3_ynswa"]
 [ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="4_dvny0"]
 [ext_resource type="Script" uid="uid://bd046eokvcnu2" path="res://addons/phantom_camera/scripts/phantom_camera_host/phantom_camera_host.gd" id="5_xwrkq"]

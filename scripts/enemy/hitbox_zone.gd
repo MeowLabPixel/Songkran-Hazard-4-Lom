@@ -18,6 +18,10 @@ extends Node
 var _enemy: EnemyBase = null
 
 func _ready() -> void:
+	var parent_name = get_parent().name
+	if parent_name in ["HitboxLeftThigh", "HitboxLeftShin", "HitboxRightThigh", "HitboxRightShin"]:
+		zone_name = "body"
+
 	# Walk up the full tree, crossing sub-scene boundaries, to find EnemyBase.
 	# The hitboxes live inside the ZombieModel sub-scene (zombie_animated.tscn),
 	# so we must continue past that Node3D boundary to reach the CharacterBody3D

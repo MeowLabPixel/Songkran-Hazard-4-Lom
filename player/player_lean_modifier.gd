@@ -3,9 +3,19 @@ class_name PlayerLeanModifier
 
 @export var pivot_bone: String = "DEF-spine"
 
-@export var max_tilt_angle: float = 6.0 # in degrees
+@export var max_tilt_angle: float = 3.0 # in degrees
+@export var max_backward_tilt_angle: float = 5.0 # in degrees
 @export var tilt_speed: float = 10.0
 @export var sprint_tilt_multiplier: float = 1.5 # extra tilt multiplier when sprinting
+
+@export_group("Body Bobbing")
+@export var bobbing_amount: float = 0.015
+@export var bobbing_sway_amount: float = 0.0075
+@export var bobbing_speed: float = 8.0
+@export var arm_bob_multiplier: float = 1.5 # How much more the arms bounce compared to the body
+@export var arm_sway_multiplier: float = 3.0 # How much the chest twists to create left/right weapon sway
+@export var sprint_bobbing_speed_multiplier: float = 1.3
+@export var sprint_bobbing_amount_multiplier: float = 1.5
 
 @export_group("Spine Lean Multipliers")
 @export var spine_tilt_multiplier: float = 1.0
@@ -31,6 +41,11 @@ var is_aiming: bool = false
 var current_tilt_x: float = 0.0
 var current_tilt_z: float = 0.0
 var _debug_non_zero_printed: bool = false
+var _bob_time: float = 0.0
+var _current_bob_weight: float = 0.0
+var current_global_bob_offset: Vector3 = Vector3.ZERO
+var current_bob_x: float = 0.0
+var current_bob_y: float = 0.0
 
 # Bone names categorized by group
 var spine_bones: Array[String] = ["DEF-spine", "ORG-spine"]
@@ -60,10 +75,17 @@ func _process_modification() -> void:
 
 	# Calculate base tilts based on input
 	var active_max_tilt = max_tilt_angle
+	var active_backward_tilt = max_backward_tilt_angle
 	if is_sprinting:
 		active_max_tilt *= sprint_tilt_multiplier
+		active_backward_tilt *= sprint_tilt_multiplier
 
-	var target_tilt_x = deg_to_rad(-input_dir.y * active_max_tilt)
+	var target_tilt_x = 0.0
+	if input_dir.y < 0.0:
+		target_tilt_x = deg_to_rad(-input_dir.y * active_max_tilt)
+	elif input_dir.y > 0.0:
+		target_tilt_x = deg_to_rad(-input_dir.y * active_backward_tilt)
+		
 	var target_tilt_z = deg_to_rad(input_dir.x * active_max_tilt)
 	
 	if is_aiming:
@@ -81,11 +103,53 @@ func _process_modification() -> void:
 
 	var pivot_pos = skeleton.get_bone_global_pose(pivot_idx).origin
 
-	# 1. Apply tilt to the spine bones
-	_apply_tilt_to_group(skeleton, spine_bones, current_tilt_x * spine_tilt_multiplier, current_tilt_z * spine_tilt_multiplier)
+	# Calculate and apply body bobbing
+	var target_bob_weight = 1.0 if input_dir != Vector2.ZERO and not is_aiming else 0.0
+	_current_bob_weight = lerpf(_current_bob_weight, target_bob_weight, delta * 10.0)
 
-	# 2. Apply tilt to the chest bones (LookAt target bones)
-	_apply_tilt_to_group(skeleton, chest_bones, current_tilt_x * chest_tilt_multiplier, current_tilt_z * chest_tilt_multiplier)
+	var active_bob_speed = bobbing_speed
+	var active_bob_amount = bobbing_amount
+	var active_sway_amount = bobbing_sway_amount
+	if is_sprinting:
+		active_bob_speed *= sprint_bobbing_speed_multiplier
+		active_bob_amount *= sprint_bobbing_amount_multiplier
+		active_sway_amount *= sprint_bobbing_amount_multiplier
+
+	if _current_bob_weight > 0.01:
+		_bob_time += delta * active_bob_speed
+	else:
+		_bob_time = 0.0
+
+	var bob_y = abs(sin(_bob_time)) * active_bob_amount * _current_bob_weight
+	var bob_x = sin(_bob_time) * active_sway_amount * _current_bob_weight
+	
+	# Expose pure values for camera-based aiming offsets (reversed to create weapon lag)
+	current_bob_x = -bob_x
+	current_bob_y = -bob_y
+	
+	var pivot_pose = skeleton.get_bone_pose(pivot_idx)
+	
+	# Calculate the true UP and RIGHT vectors in the parent bone's local space
+	var parent_idx = skeleton.get_bone_parent(pivot_idx)
+	var up_dir_local = Vector3(0, 1, 0)
+	var right_dir_local = Vector3(1, 0, 0)
+	if parent_idx != -1:
+		var parent_global_pose = skeleton.get_bone_global_pose(parent_idx)
+		up_dir_local = parent_global_pose.basis.inverse() * Vector3(0, 1, 0)
+		right_dir_local = parent_global_pose.basis.inverse() * Vector3(1, 0, 0)
+		
+	pivot_pose.origin += up_dir_local.normalized() * bob_y
+	pivot_pose.origin += right_dir_local.normalized() * bob_x
+	skeleton.set_bone_pose(pivot_idx, pivot_pose)
+	
+	# Create a global offset vector to apply to the detached IK arms (and aim target)
+	current_global_bob_offset = Vector3(bob_x, bob_y, 0) * arm_bob_multiplier
+
+	# 1. Apply tilt to the spine bones (add Yaw for weapon sway!)
+	_apply_tilt_to_group(skeleton, spine_bones, current_tilt_x * spine_tilt_multiplier, current_tilt_z * spine_tilt_multiplier, current_bob_x * arm_sway_multiplier)
+	
+	# 2. Apply tilt to the chest bones
+	_apply_tilt_to_group(skeleton, chest_bones, current_tilt_x * chest_tilt_multiplier, current_tilt_z * chest_tilt_multiplier, current_bob_x * arm_sway_multiplier)
 
 	# 3. Apply tilt to the head bones
 	_apply_tilt_to_group(skeleton, head_bones, current_tilt_x * head_tilt_multiplier, current_tilt_z * head_tilt_multiplier)
@@ -115,7 +179,8 @@ func _process_modification() -> void:
 				shift_x = current_tilt_z * right_arm_outward_x_offset
 			shift_z = -current_tilt_x * right_arm_extra_z_offset
 
-		var extra_shift = Vector3(shift_x, 0.0, shift_z)
+		# Add the global bobbing offset so the IK hands bounce with the body
+		var extra_shift = Vector3(shift_x, 0.0, shift_z) + current_global_bob_offset
 
 		var pose = skeleton.get_bone_pose(bone_idx)
 		var offset = pose.origin - pivot_pos
@@ -152,9 +217,10 @@ func _process_modification() -> void:
 		skeleton.set_bone_pose(bone_idx, pose)
 
 
-func _apply_tilt_to_group(skeleton: Skeleton3D, bone_group: Array[String], tilt_x: float, tilt_z: float) -> void:
-	var group_tilt_basis = Basis.from_euler(Vector3(tilt_x, 0.0, tilt_z))
-	for bone_name in bone_group:
+func _apply_tilt_to_group(skeleton: Skeleton3D, bone_names: Array[String], tilt_x: float, tilt_z: float, tilt_y: float = 0.0) -> void:
+	# Create the tilt rotation in global space (Pitch, Yaw, Roll)
+	var group_tilt_basis = Basis.from_euler(Vector3(tilt_x, tilt_y, tilt_z))
+	for bone_name in bone_names:
 		var bone_idx = skeleton.find_bone(bone_name)
 		if bone_idx == -1:
 			continue
@@ -167,6 +233,7 @@ func _apply_tilt_to_group(skeleton: Skeleton3D, bone_group: Array[String], tilt_
 			local_tilt_basis = group_tilt_basis
 		else:
 			var parent_global_pose = skeleton.get_bone_global_pose(parent_idx)
+			# Convert the global tilt rotation into the bone's local space
 			local_tilt_basis = parent_global_pose.basis.inverse() * group_tilt_basis * parent_global_pose.basis
 
 		pose.basis = local_tilt_basis * pose.basis

@@ -1,0 +1,348 @@
+[remap]
+
+importer="scene"
+importer_version=1
+type="PackedScene"
+uid="uid://ccpq5g4aughuc"
+path="res://.godot/imported/Melee Zombie Male.blend-07f64fd90a5941f63efbb4c785c74c3e.scn"
+
+[deps]
+
+source_file="res://Character Model For Programer/Melee Zombie Male/Melee Zombie Male.blend"
+dest_files=["res://.godot/imported/Melee Zombie Male.blend-07f64fd90a5941f63efbb4c785c74c3e.scn"]
+
+[params]
+
+nodes/root_type=""
+nodes/root_name=""
+nodes/root_script=null
+nodes/apply_root_scale=true
+nodes/root_scale=1.0
+nodes/import_as_skeleton_bones=false
+nodes/use_name_suffixes=true
+nodes/use_node_type_suffixes=true
+meshes/ensure_tangents=true
+meshes/generate_lods=true
+meshes/create_shadow_meshes=true
+meshes/light_baking=1
+meshes/lightmap_texel_size=0.2
+meshes/force_disable_compression=false
+skins/use_named_skins=true
+animation/import=true
+animation/fps=30
+animation/trimming=false
+animation/remove_immutable_tracks=true
+animation/import_rest_as_RESET=false
+import_script/path=""
+materials/extract=2
+materials/extract_format=0
+materials/extract_path="res://Character Model For Programer/Melee Zombie Male/godot material"
+_subresources={
+"materials": {
+"Base_Male_Zombie_Shirt": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Male/godot material/Base_Male_Zombie_Shirt.tres",
+"use_external/path": "uid://bvxh15cobqm7o"
+},
+"Eyes.003": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Male/godot material/Eyes.003.tres",
+"use_external/path": "uid://dgg54320kqncq"
+},
+"Head.001": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Male/godot material/Head.001.tres",
+"use_external/path": "uid://belc4icwtiue1"
+},
+"Mouth": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Male/godot material/Mouth.tres",
+"use_external/path": "uid://djuia7gp7vwdq"
+},
+"Pant": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Male/godot material/Pant.tres",
+"use_external/path": "uid://d1wpd7sln4ioo"
+},
+"Shoes": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Male/godot material/Shoes.tres",
+"use_external/path": "uid://cpc8a4ypjleef"
+},
+"body male": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Male/godot material/body male.tres",
+"use_external/path": "uid://bkaiy6wi2wcy7"
+},
+"zombie male hair 1": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://Character Model For Programer/Melee Zombie Male/godot material/zombie male hair 1.tres",
+"use_external/path": "uid://22uf3cfjfquy"
+}
+},
+"nodes": {
+"PATH:WGT-rig_VIS_thigh_ik_pole_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_VIS_thigh_ik_pole_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_VIS_upper_arm_ik_pole_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_VIS_upper_arm_ik_pole_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_breast_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_breast_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_chest": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_foot_fk_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_foot_fk_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_foot_heel_ik_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_foot_heel_ik_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_foot_ik_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_foot_ik_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_foot_spin_ik_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_foot_spin_ik_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_foot_tweak_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_foot_tweak_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_forearm_fk_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_forearm_fk_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_forearm_tweak_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_forearm_tweak_L_001": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_forearm_tweak_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_forearm_tweak_R_001": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_hand_fk_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_hand_fk_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_hand_ik_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_hand_ik_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_hand_tweak_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_hand_tweak_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_head": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_hips": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_neck": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_root": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_shin_fk_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_shin_fk_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_shin_tweak_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_shin_tweak_L_001": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_shin_tweak_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_shin_tweak_R_001": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_shoulder_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_shoulder_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_spine_fk": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_spine_fk_001": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_spine_fk_002": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_spine_fk_003": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_thigh_fk_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_thigh_fk_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_thigh_ik_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_thigh_ik_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_thigh_ik_target_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_thigh_ik_target_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_thigh_parent_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_thigh_parent_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_thigh_tweak_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_thigh_tweak_L_001": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_thigh_tweak_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_thigh_tweak_R_001": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_toe_fk_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_toe_fk_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_toe_ik_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_toe_ik_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_torso": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_tweak_spine": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_tweak_spine_001": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_tweak_spine_002": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_tweak_spine_003": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_tweak_spine_004": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_tweak_spine_005": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_upper_arm_fk_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_upper_arm_fk_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_upper_arm_ik_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_upper_arm_ik_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_upper_arm_ik_target_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_upper_arm_ik_target_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_upper_arm_parent_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_upper_arm_parent_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_upper_arm_tweak_L": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_upper_arm_tweak_L_001": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_upper_arm_tweak_R": {
+"import/skip_import": true
+},
+"PATH:WGT-rig_upper_arm_tweak_R_001": {
+"import/skip_import": true
+},
+"PATH:rig/Skeleton3D": {
+"retarget/bone_map": null
+}
+}
+}
+blender/nodes/visible=0
+blender/nodes/active_collection_only=false
+blender/nodes/punctual_lights=false
+blender/nodes/cameras=false
+blender/nodes/custom_properties=true
+blender/nodes/modifiers=1
+blender/meshes/colors=false
+blender/meshes/uvs=true
+blender/meshes/normals=true
+blender/meshes/export_geometry_nodes_instances=false
+blender/meshes/gpu_instances=false
+blender/meshes/tangents=true
+blender/meshes/skins=2
+blender/meshes/export_bones_deforming_mesh_only=false
+blender/materials/unpack_enabled=true
+blender/materials/export_materials=1
+blender/animation/limit_playback=true
+blender/animation/always_sample=true
+blender/animation/group_tracks=true
+gltf/naming_version=2
