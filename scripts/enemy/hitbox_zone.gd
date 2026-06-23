@@ -49,8 +49,21 @@ func _ready() -> void:
 func _on_body_entered(body: Node3D) -> void:
 	if not (body.is_in_group("player_projectile") or body.is_in_group("bullet") or body.is_in_group("player_attack")):
 		return
+	
+	var hit_dir: Vector3 = Vector3.ZERO
+	if "velocity" in body:
+		hit_dir = body.velocity.normalized()
+	elif "linear_velocity" in body:
+		hit_dir = body.linear_velocity.normalized()
+	else:
+		if _enemy:
+			hit_dir = (_enemy.global_position - body.global_position).normalized()
+	hit_dir.y = 0.0
+	hit_dir = hit_dir.normalized()
+
 	_enemy.take_hit({
 		"damage": base_damage,
 		"hit_zone": zone_name,
 		"source": body,
+		"hit_direction": hit_dir,
 	})

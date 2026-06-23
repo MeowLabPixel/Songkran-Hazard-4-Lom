@@ -36,6 +36,46 @@ var _smoothed_angular_velocity: float = 0.0
 @export var rotation_tilt_sensitivity: float = 2.0
 @export var max_roll_angle: float = 15.0
 @export var tilt_speed: float = 5.0
+
+# ─── Hit Reaction Properties ───────────────────────────────────────────────
+@export_group("Hit Reaction Stiffness")
+@export var head_reaction_stiffness: float = 260.0
+@export var body_reaction_stiffness: float = 260.0
+@export var arms_reaction_stiffness: float = 220.0
+@export var legs_reaction_stiffness: float = 240.0
+
+@export_group("Hit Reaction Damping")
+@export var head_reaction_damping: float = 18.0
+@export var body_reaction_damping: float = 18.0
+@export var arms_reaction_damping: float = 16.0
+@export var legs_reaction_damping: float = 18.0
+
+@export var head_reaction_force: float = 26.0
+@export var body_reaction_force: float = -6.0
+@export var arms_reaction_force: float = -14.0
+@export var legs_reaction_force: float = -10.0
+@export var legs_knockdown_dampening: float = 0.5
+
+@export_group("Hit Reaction Randomness")
+@export var force_randomness_min: float = 0.8
+@export var force_randomness_max: float = 1.2
+@export var side_offset_min: float = 0.3
+@export var side_offset_max: float = 0.6
+
+@export_group("Flipflop Eat Leg Feature")
+@export var flipflop_slide_height: float = 0.38
+@export var flipflop_slide_speed: float = 2.0
+@export var flipflop_rot_x: float = 85.0
+@export var flipflop_rot_z: float = 35.0
+@export var flipflop_slide_duration: float = 1.0
+@export var flipflop_blend_duration: float = 0.4
+@export var flipflop_slide_depth: float = 0.06
+@export var flipflop_min_height: float = 0.28
+@export var flipflop_blend_min_height: float = 0.00
+@export var flipflop_blend_min_depth: float = 0.00
+@export var flipflop_blend_height_speed: float = 1.0
+@export var flipflop_blend_depth_speed: float = 1.0
+@export var flipflop_blend_rot_speed: float = 1.0
 var rig: Node3D
 
 func _find_anim_player() -> AnimationPlayer:
@@ -97,6 +137,51 @@ func _ready() -> void:
 		head.enemy = self
 		head.name = "EnemyHeadLookAt"
 		skel.add_child(head)
+
+		var hit_react = EnemyHitReactionModifier.new()
+		hit_react.enemy = self
+		hit_react.name = "EnemyHitReactionModifier"
+		
+		# Copy inspector adjustable settings
+		hit_react.head_stiffness = head_reaction_stiffness
+		hit_react.head_damping = head_reaction_damping
+		hit_react.head_force = head_reaction_force
+		
+		hit_react.body_stiffness = body_reaction_stiffness
+		hit_react.body_damping = body_reaction_damping
+		hit_react.body_force = body_reaction_force
+		
+		hit_react.arms_stiffness = arms_reaction_stiffness
+		hit_react.arms_damping = arms_reaction_damping
+		hit_react.arms_force = arms_reaction_force
+		
+		hit_react.legs_stiffness = legs_reaction_stiffness
+		hit_react.legs_damping = legs_reaction_damping
+		hit_react.legs_force = legs_reaction_force
+		hit_react.legs_knockdown_dampening = legs_knockdown_dampening
+		
+		# Copy randomness settings
+		hit_react.force_randomness_min = force_randomness_min
+		hit_react.force_randomness_max = force_randomness_max
+		hit_react.side_offset_min = side_offset_min
+		hit_react.side_offset_max = side_offset_max
+		
+		# Copy flip-flop settings
+		hit_react.flipflop_slide_height = flipflop_slide_height
+		hit_react.flipflop_slide_speed = flipflop_slide_speed
+		hit_react.flipflop_rot_x = flipflop_rot_x
+		hit_react.flipflop_rot_z = flipflop_rot_z
+		hit_react.flipflop_blend_duration = flipflop_blend_duration
+		hit_react.flipflop_slide_duration = flipflop_slide_duration
+		hit_react.flipflop_slide_depth = flipflop_slide_depth
+		hit_react.flipflop_min_height = flipflop_min_height
+		hit_react.flipflop_blend_min_height = flipflop_blend_min_height
+		hit_react.flipflop_blend_min_depth = flipflop_blend_min_depth
+		hit_react.flipflop_blend_height_speed = flipflop_blend_height_speed
+		hit_react.flipflop_blend_depth_speed = flipflop_blend_depth_speed
+		hit_react.flipflop_blend_rot_speed = flipflop_blend_rot_speed
+		
+		skel.add_child(hit_react)
 	
 	state_machine.initialize("StateIdle")
 	state_machine.state_changed.connect(_on_state_changed)

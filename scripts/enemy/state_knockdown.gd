@@ -117,6 +117,9 @@ func _start_act4() -> void:
 func _start_act5() -> void:
 	_phase = Phase.ACT5
 	_timer = 0.0
+	if enemy:
+		enemy.velocity = Vector3.ZERO
+		enemy.move_and_slide()
 	var getup_anim = enemy.anim_set.get_up_anim(knockdown_type)
 	_force_anim(getup_anim, "hit/hit_takedown")
 	

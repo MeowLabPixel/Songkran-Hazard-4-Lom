@@ -12,6 +12,22 @@ extends EnemyState
 
 @export var stun_recovery_pause: float = 1.0
 
+@export_group("Hunt Sprint")
+@export var sprint_speed: float = 4.0
+@export var sprint_timescale: float = 3.5
+@export var sprint_duration_min: float = 2.0
+@export var sprint_duration_max: float = 3.0
+@export var sprint_cooldown_min: float = 5.0
+@export var sprint_cooldown_max: float = 10.0
+@export var sprint_activation_chance_per_sec: float = 0.2
+
+static var sprinting_enemies: Array = []
+
+var is_sprinting: bool = false
+var _sprint_timer: float = 0.0
+var _sprint_duration: float = 0.0
+var _sprint_cooldown_timer: float = 0.0
+
 var nav_agent: NavigationAgent3D:
 	get: return enemy.get_node_or_null("NavigationAgent3D") if enemy else null
 
@@ -22,6 +38,20 @@ var trigger_attack_recovery: bool = false
 var _recovery_pause_timer: float = 0.0
 var _path_update_timer: float = 0.0
 var _getup_block_timer: float = 0.0
+
+static func can_start_sprint() -> bool:
+	var active_sprinters = []
+	for s in sprinting_enemies:
+		if is_instance_valid(s) and s.is_sprinting:
+			active_sprinters.append(s)
+	sprinting_enemies = active_sprinters
+
+	var current_count = sprinting_enemies.size()
+	if current_count >= 2:
+		return false
+	if current_count == 1:
+		return randf() < 0.15
+	return true
 
 func initialize_state() -> void:
 	if enemy and enemy.anim_set:
@@ -35,9 +65,13 @@ func trigger_getup_block(duration: float) -> void:
 func enter() -> void:
 	print("[StateHunt] Entered Hunt.")
 	_is_fleeing = false
+	is_sprinting = false
+	_sprint_timer = 0.0
+	_sprint_duration = 0.0
 	
 	if enemy and enemy.anim_set:
 		_walk_anim = enemy.anim_set.get_walk_anim()
+		_update_walk_timescale()
 
 	var apply_offset: float = -1.0
 	
@@ -71,11 +105,19 @@ func exit() -> void:
 	_getup_block_timer = 0.0
 	if enemy:
 		enemy.attack_blocked = false
+	_end_sprint()
 
 func physics_update(_delta: float) -> void:
-	if nav_agent:
-		nav_agent.max_speed = move_speed
-		
+	# ─── Sprint Cooldown ─────────────────────────────────────────────────────
+	if _sprint_cooldown_timer > 0.0:
+		_sprint_cooldown_timer -= _delta
+
+	# ─── Sprint Update ───────────────────────────────────────────────────────
+	if is_sprinting:
+		_sprint_timer += _delta
+		if _sprint_timer >= _sprint_duration:
+			_end_sprint()
+
 	if _getup_block_timer > 0.0:
 		_getup_block_timer -= _delta
 		if _getup_block_timer <= 0.0:
@@ -101,6 +143,9 @@ func physics_update(_delta: float) -> void:
 	var to_target: Vector3 = (target_pos - enemy.global_position)
 	to_target.y = 0.0
 	var flat_dist: float = to_target.length()
+
+	if is_sprinting and flat_dist <= 3.0:
+		_end_sprint()
 
 	if flat_dist <= guaranteed_grab_range:
 		if enemy and "guaranteed_grab_next_attack" in enemy:
@@ -152,6 +197,12 @@ func physics_update(_delta: float) -> void:
 			state_machine.transition_to(attack_state)
 			return
 
+	# ─── Sprint Activation Check ─────────────────────────────────────────────
+	if not is_sprinting and _sprint_cooldown_timer <= 0.0 and flat_dist > 3.0:
+		if randf() < sprint_activation_chance_per_sec * _delta:
+			if can_start_sprint():
+				_start_sprint()
+
 	# ── Move toward target ───────────────────────────────────────────────────────
 	_path_update_timer -= _delta
 	if _path_update_timer <= 0.0:
@@ -168,10 +219,13 @@ func physics_update(_delta: float) -> void:
 			move_dir = diff.normalized()
 	move_dir.y = 0.0
 
+	var current_speed = sprint_speed if is_sprinting else move_speed
+	if nav_agent:
+		nav_agent.max_speed = current_speed
+
 	if move_dir.length() > 0.01:
-		var target_vel = move_dir * move_speed
+		var target_vel = move_dir * current_speed
 		if nav_agent and nav_agent.avoidance_enabled:
-			nav_agent.max_speed = move_speed
 			nav_agent.set_velocity(target_vel)
 			# Look where we are actually going (Avoidance safe velocity)
 			var cur_vel = enemy.velocity
@@ -207,7 +261,8 @@ func _play_anim(anim_name: String, sub_machine: String = "") -> void:
 	if enemy and enemy.anim_tree:
 		# Always reset timescale to normal forward speed unless fleeing/walking back
 		if not _is_fleeing:
-			enemy.anim_tree.set(scale_path, 2.0)
+			var speed_scale = sprint_timescale if is_sprinting else 2.0
+			enemy.anim_tree.set(scale_path, speed_scale)
 	
 	super._play_anim(anim_name, sub_machine)
 
@@ -254,11 +309,46 @@ func _walk_back(dir_to_player: Vector3, delta: float) -> void:
 
 func handle_hit(hit_data: Dictionary) -> String:
 	var zone: String = hit_data.get("hit_zone", "body")
+	
+	if is_sprinting and zone in ["foot", "left_foot", "right_foot", "left_leg", "right_leg", "leg"]:
+		var knockdown = state_machine._states.get("StateKnockdown")
+		if knockdown:
+			knockdown.knockdown_mode = "SWING_SHOT"
+			knockdown.stun_type = "head"
+		return "StateKnockdown"
+
 	match zone:
 		"head", "foot", "left_foot", "right_foot":
 			return "StateTakedownable"
 		_:
 			return "StateStun"
+
+func _start_sprint() -> void:
+	if is_sprinting: return
+	is_sprinting = true
+	_sprint_timer = 0.0
+	_sprint_duration = randf_range(sprint_duration_min, sprint_duration_max)
+	if not sprinting_enemies.has(self):
+		sprinting_enemies.append(self)
+	
+	print("[StateHunt] %s started sprinting! Duration: %.2f" % [enemy.name, _sprint_duration])
+	_update_walk_timescale()
+
+func _end_sprint() -> void:
+	if not is_sprinting: return
+	is_sprinting = false
+	_sprint_cooldown_timer = randf_range(sprint_cooldown_min, sprint_cooldown_max)
+	sprinting_enemies.erase(self)
+	
+	print("[StateHunt] %s ended sprinting." % enemy.name)
+	_update_walk_timescale()
+
+func _update_walk_timescale() -> void:
+	if enemy and enemy.anim_tree and not _walk_anim.is_empty():
+		var scale_path = "parameters/" + _walk_anim + "/TimeScale/scale"
+		if not _is_fleeing:
+			var speed_scale = sprint_timescale if is_sprinting else 2.0
+			enemy.anim_tree.set(scale_path, speed_scale)
 
 func _get_target_position() -> Vector3:
 	var player := _get_player()
