@@ -1,7 +1,7 @@
 extends SkeletonModifier3D
 class_name EnemyLeanModifier
 
-@export var max_tilt_angle: float = 15.0
+@export var max_tilt_angle: float = 5.0
 @export var tilt_speed: float = 6.0
 
 var current_tilt_x: float = 0.0
@@ -19,13 +19,27 @@ func _process_modification() -> void:
 	
 	var local_vel = enemy.global_transform.basis.inverse() * enemy.velocity
 	
-	# Assume zombie max speed is around 2.5
-	var speed_factor = clamp(local_vel.length() / 2.5, 0.0, 1.0)
-	var dir = local_vel.normalized() if local_vel.length() > 0.1 else Vector3.ZERO
+	# Only lean at meaningful speeds (move_speed is 2.0)
+	var speed_factor = clamp((local_vel.length() - 0.8) / 2.0, 0.0, 1.0)
+	
+	# Only apply lean during active movement states (Hunt walking, Defeated walking)
+	# Disable for all stationary states to prevent residual velocity causing a forward lean
+	var lean_multiplier = 1.0
+	if "state_machine" in enemy and enemy.state_machine != null:
+		var sm = enemy.state_machine
+		if sm.current_state:
+			var state_name = sm.current_state.name
+			if state_name == "StateTakedownable":
+				lean_multiplier = 2.0 # Exaggerated lean during stumble
+			elif state_name not in ["StateHunt", "StateDefeated"]:
+				speed_factor = 0.0
+	
+	# Ignore residual velocities from the avoidance move_toward smoothing
+	var dir = local_vel.normalized() if local_vel.length() > 0.8 else Vector3.ZERO
 	
 	# local_vel.z is negative when moving forward
-	var target_tilt_x = deg_to_rad(-dir.z * max_tilt_angle * speed_factor)
-	var target_tilt_z = deg_to_rad(dir.x * max_tilt_angle * speed_factor)
+	var target_tilt_x = deg_to_rad(-dir.z * max_tilt_angle * speed_factor * lean_multiplier)
+	var target_tilt_z = deg_to_rad(dir.x * max_tilt_angle * speed_factor * lean_multiplier)
 	
 	current_tilt_x = lerp_angle(current_tilt_x, target_tilt_x, delta * tilt_speed)
 	current_tilt_z = lerp_angle(current_tilt_z, target_tilt_z, delta * tilt_speed)

@@ -26,6 +26,11 @@ func initialize(starting_state_name: String) -> void:
 	if not _states.has(starting_state_name):
 		push_error("EnemyStateMachine: unknown starting state '%s'" % starting_state_name)
 		return
+		
+	for state in _states.values():
+		if state.has_method("initialize_state"):
+			state.initialize_state()
+			
 	current_state = _states[starting_state_name]
 	current_state.enter()
 
@@ -43,6 +48,16 @@ func transition_to(new_state_name: String) -> void:
 	current_state = _states[new_state_name]
 	current_state.enter()
 	state_changed.emit(old_name, new_state_name)
+
+# --- Animation Event Hooks ---
+
+func open_hitboxes() -> void:
+	if current_state and current_state.has_method("open_hitboxes"):
+		current_state.open_hitboxes()
+
+func close_hitboxes() -> void:
+	if current_state and current_state.has_method("close_hitboxes"):
+		current_state.close_hitboxes()
 
 func _physics_process(delta: float) -> void:
 	if current_state:

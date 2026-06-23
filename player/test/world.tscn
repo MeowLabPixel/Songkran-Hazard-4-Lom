@@ -15,6 +15,11 @@
 [ext_resource type="PackedScene" uid="uid://c2ngdti12b078" path="res://scenes/enemy/MMeleeZom.tscn" id="13_jof4o"]
 [ext_resource type="PackedScene" path="res://scenes/enemy/EnemySpawner.tscn" id="14_jof4o"]
 
+[sub_resource type="NavigationMesh" id="NavigationMesh_jhkh1"]
+vertices = PackedVector3Array(2, 0.45000005, -13.25, 14, 0.45000005, -13.25, 14, 0.45000005, -13.75, -13.75, 0.45000005, -13.75, -13.75, 0.45000005, -9, -1.75, 0.45000005, -9, -2, 0.45000005, -13, 2, 0.45000005, -9, 14, 0.45000005, -9, -1, 3.45, -12.25, -1, 3.45, -10, 1, 3.45, -10, 1, 3.45, -12.25, -0.75, 0.45000005, -12, -0.75, 0.45000005, -10.25, 1, 0.45000005, -10.25, 1, 0.45000005, -12, -13.75, 0.45000005, -1, -12.5, 0.45000005, -0.75, 12.25, 0.45000005, -0.75, 14, 0.45000005, -1, -12.5, 0.45000005, 1, -13.75, 0.45000005, 1.25, -13.75, 0.45000005, 14, -1, 0.45000005, 14, -0.75, 0.45000005, 12.5, 1, 0.45000005, 12.5, 1.25, 0.45000005, 14, 14, 0.45000005, 14, 14, 0.45000005, 1.25, 12.25, 0.45000005, 1)
+polygons = [PackedInt32Array(1, 0, 2), PackedInt32Array(2, 0, 3), PackedInt32Array(5, 4, 6), PackedInt32Array(6, 4, 3), PackedInt32Array(3, 0, 6), PackedInt32Array(0, 1, 7), PackedInt32Array(7, 1, 8), PackedInt32Array(12, 11, 9), PackedInt32Array(9, 11, 10), PackedInt32Array(16, 15, 13), PackedInt32Array(13, 15, 14), PackedInt32Array(17, 4, 18), PackedInt32Array(18, 4, 5), PackedInt32Array(20, 19, 8), PackedInt32Array(8, 19, 7), PackedInt32Array(22, 21, 23), PackedInt32Array(23, 21, 25), PackedInt32Array(23, 25, 24), PackedInt32Array(21, 18, 5), PackedInt32Array(27, 26, 28), PackedInt32Array(28, 26, 30), PackedInt32Array(28, 30, 29), PackedInt32Array(26, 25, 30), PackedInt32Array(30, 25, 7), PackedInt32Array(7, 25, 5), PackedInt32Array(5, 25, 21), PackedInt32Array(7, 19, 30)]
+sample_partition_type = 1
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ljqf5"]
 albedo_texture = ExtResource("2_1fcdn")
 uv1_triplanar = true
@@ -41,33 +46,36 @@ ambient_light_energy = 5.49
 transform = Transform3D(0.99237937, 0.10671208, -0.061610267, -0.039422534, 0.7486801, 0.6617583, 0.11674399, -0.6542864, 0.74718153, 0, 6.899949, 14.61018)
 shadow_enabled = true
 
-[node name="CSGCombiner3D" type="CSGCombiner3D" parent="." unique_id=902555937]
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="." unique_id=56880252]
+navigation_mesh = SubResource("NavigationMesh_jhkh1")
+
+[node name="CSGCombiner3D" type="CSGCombiner3D" parent="NavigationRegion3D" unique_id=902555937]
 use_collision = true
 
-[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D" unique_id=2110859541]
+[node name="CSGBox3D" type="CSGBox3D" parent="NavigationRegion3D/CSGCombiner3D" unique_id=2110859541]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2968384, 0)
 size = Vector3(30, 2.6936767, 30)
 material = ExtResource("1_vbped")
 
-[node name="CSGBox3D2" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1881150151]
+[node name="CSGBox3D2" type="CSGBox3D" parent="NavigationRegion3D/CSGCombiner3D" unique_id=1881150151]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.020614, 0)
 operation = 2
 size = Vector3(29, 7.941171, 29)
 material = ExtResource("1_vbped")
 
-[node name="CSGBox3D3" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1058089165]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.47146058, -12.883755)
+[node name="CSGBox3D3" type="CSGBox3D" parent="NavigationRegion3D/CSGCombiner3D" unique_id=1058089165]
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 1.6277826, -11.159111)
 material = SubResource("StandardMaterial3D_ljqf5")
 
-[node name="CSGBox3D6" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1518354322]
+[node name="CSGBox3D6" type="CSGBox3D" parent="NavigationRegion3D/CSGCombiner3D" unique_id=1518354322]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.47146058, 13.722176)
 material = SubResource("StandardMaterial3D_3unug")
 
-[node name="CSGBox3D4" type="CSGBox3D" parent="CSGCombiner3D" unique_id=276955226]
+[node name="CSGBox3D4" type="CSGBox3D" parent="NavigationRegion3D/CSGCombiner3D" unique_id=276955226]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.357422, 0.47146058, 0.18946648)
 material = SubResource("StandardMaterial3D_8ciq1")
 
-[node name="CSGBox3D5" type="CSGBox3D" parent="CSGCombiner3D" unique_id=292205911]
+[node name="CSGBox3D5" type="CSGBox3D" parent="NavigationRegion3D/CSGCombiner3D" unique_id=292205911]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.736355, 0.47146058, 0.18946648)
 material = SubResource("StandardMaterial3D_8tv4d")
 
@@ -145,6 +153,7 @@ theme_override_font_sizes/font_size = 41
 text = "AAAAAA"
 
 [node name="Ashley(Follower)" parent="." unique_id=1099023628 instance=ExtResource("10_1pr3x")]
+process_mode = 4
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.9785824, 0, -1.0953765)
 
 [node name="BalloonZom" parent="." unique_id=525148414 instance=ExtResource("11_2sc32")]
@@ -160,10 +169,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.09216881, 0.16398476, -1.93
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.341727, 0.08199238, 1.3943043)
 
 [node name="FMeleeZom1" parent="." unique_id=26037267 instance=ExtResource("13_3phbt")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.670662, 0.08199238, -2.7195187)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.670662, 0.08199238, 2.9289522)
+
+[node name="MMeleeZom2" parent="." unique_id=1174570564 instance=ExtResource("13_jof4o")]
+transform = Transform3D(0.39487216, 0, -0.9187361, 0, 1, 0, 0.9187361, 0, 0.39487216, 4.4516573, 0, -9.408919)
 
 [node name="MMeleeZom1" parent="." unique_id=793898799 instance=ExtResource("13_jof4o")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6281147, 0, 0)
+transform = Transform3D(0.552359, 0, -0.83360636, 0, 1, 0, 0.83360636, 0, 0.552359, 5.6281147, 0, -10.546129)
 
 [node name="EnemySpawner" parent="." unique_id=1812457875 instance=ExtResource("14_jof4o")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8009324, 0.0500288, -6.9369454)

@@ -1,0 +1,93 @@
+[gd_resource type="AnimationNodeStateMachine" format=3 uid="uid://ccor0d0vva62p"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_a5bf2"]
+animation = &"HIT Right Arm"
+use_custom_timeline = true
+timeline_length = 0.4000001
+stretch_time_scale = false
+start_offset = 5.4
+loop_mode = 0
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_nyqs1"]
+
+[sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_r1yio"]
+graph_offset = Vector2(66.954544, 77.96193)
+nodes/output/position = Vector2(1120, 176)
+nodes/Animation/node = SubResource("AnimationNodeAnimation_a5bf2")
+nodes/Animation/position = Vector2(512, 176)
+nodes/TimeScale/node = SubResource("AnimationNodeTimeScale_nyqs1")
+nodes/TimeScale/position = Vector2(784, 176)
+node_connections = [&"output", 0, &"TimeScale", &"TimeScale", 0, &"Animation"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_ag2rg"]
+animation = &"HIT Left arm"
+use_custom_timeline = true
+timeline_length = 5.4
+stretch_time_scale = false
+start_offset = 0.0
+loop_mode = 1
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_irqx0"]
+animation = &"Hit Leg act 2 (Slipping_Ilde) "
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_rx5lt"]
+animation = &"HIT head act 5 (get_up )"
+use_custom_timeline = true
+timeline_length = 1.2199999
+stretch_time_scale = false
+start_offset = 0.88
+loop_mode = 1
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_j1y4a"]
+filter_enabled = true
+filters = ["%GeneralSkeleton:DEF-forearm.L", "%GeneralSkeleton:DEF-forearm.L.001", "%GeneralSkeleton:DEF-hand.L", "%GeneralSkeleton:DEF-shoulder.L", "%GeneralSkeleton:DEF-spine", "%GeneralSkeleton:DEF-spine.001", "%GeneralSkeleton:DEF-spine.002", "%GeneralSkeleton:DEF-spine.003", "%GeneralSkeleton:DEF-spine.004", "%GeneralSkeleton:DEF-spine.005", "%GeneralSkeleton:DEF-spine.006", "%GeneralSkeleton:DEF-upper_arm.L", "%GeneralSkeleton:DEF-upper_arm.L.001", "%GeneralSkeleton:MCH-forearm_ik.L", "%GeneralSkeleton:MCH-forearm_tweak.L", "%GeneralSkeleton:MCH-forearm_tweak.L.001", "%GeneralSkeleton:MCH-hand_fk.L", "%GeneralSkeleton:MCH-hand_tweak.L", "%GeneralSkeleton:MCH-spine.001", "%GeneralSkeleton:MCH-upper_arm_ik_swing.L", "%GeneralSkeleton:MCH-upper_arm_parent.L", "%GeneralSkeleton:MCH-upper_arm_parent_widget.L", "%GeneralSkeleton:MCH-upper_arm_tweak.L", "%GeneralSkeleton:MCH-upper_arm_tweak.L.001", "%GeneralSkeleton:ORG-forearm.L", "%GeneralSkeleton:ORG-hand.L", "%GeneralSkeleton:ORG-shoulder.L", "%GeneralSkeleton:ORG-upper_arm.L", "%GeneralSkeleton:chest", "%GeneralSkeleton:forearm_fk.L", "%GeneralSkeleton:forearm_tweak.L", "%GeneralSkeleton:forearm_tweak.L.001", "%GeneralSkeleton:hand_fk.L", "%GeneralSkeleton:hand_tweak.L", "%GeneralSkeleton:upper_arm_fk.L", "%GeneralSkeleton:upper_arm_ik.L", "%GeneralSkeleton:upper_arm_parent.L", "%GeneralSkeleton:upper_arm_tweak.L", "%GeneralSkeleton:upper_arm_tweak.L.001"]
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_nolcx"]
+filter_enabled = true
+filters = ["", "%GeneralSkeleton:Chest", "%GeneralSkeleton:DEF-breast.L", "%GeneralSkeleton:DEF-breast.R", "%GeneralSkeleton:DEF-foot.L", "%GeneralSkeleton:DEF-foot.R", "%GeneralSkeleton:DEF-forearm.R.001", "%GeneralSkeleton:DEF-hand.R", "%GeneralSkeleton:DEF-pelvis.L", "%GeneralSkeleton:DEF-pelvis.R", "%GeneralSkeleton:DEF-shin.L", "%GeneralSkeleton:DEF-shin.L.001", "%GeneralSkeleton:DEF-shin.R", "%GeneralSkeleton:DEF-shin.R.001", "%GeneralSkeleton:DEF-shoulder.L", "%GeneralSkeleton:DEF-shoulder.R", "%GeneralSkeleton:DEF-spine", "%GeneralSkeleton:DEF-spine.001", "%GeneralSkeleton:DEF-spine.002", "%GeneralSkeleton:DEF-spine.003", "%GeneralSkeleton:DEF-spine.004", "%GeneralSkeleton:DEF-spine.005", "%GeneralSkeleton:DEF-spine.006", "%GeneralSkeleton:DEF-thigh.L", "%GeneralSkeleton:DEF-thigh.L.001", "%GeneralSkeleton:DEF-thigh.R", "%GeneralSkeleton:DEF-thigh.R.001", "%GeneralSkeleton:DEF-toe.L", "%GeneralSkeleton:DEF-toe.R", "%GeneralSkeleton:DEF-upper_arm.L", "%GeneralSkeleton:DEF-upper_arm.R", "%GeneralSkeleton:DEF-upper_arm.R.001", "%GeneralSkeleton:Head", "%GeneralSkeleton:Hips", "%GeneralSkeleton:MCH-ROT-neck", "%GeneralSkeleton:MCH-STR-neck", "%GeneralSkeleton:MCH-WGT-chest", "%GeneralSkeleton:MCH-WGT-hips", "%GeneralSkeleton:MCH-foot_fk.L", "%GeneralSkeleton:MCH-foot_fk.R", "%GeneralSkeleton:MCH-foot_ik.parent.L", "%GeneralSkeleton:MCH-foot_ik.parent.R", "%GeneralSkeleton:MCH-foot_roll.L", "%GeneralSkeleton:MCH-foot_roll.R", "%GeneralSkeleton:MCH-foot_tweak.L", "%GeneralSkeleton:MCH-foot_tweak.R", "%GeneralSkeleton:MCH-forearm_ik.L", "%GeneralSkeleton:MCH-forearm_ik.R", "%GeneralSkeleton:MCH-forearm_tweak.L", "%GeneralSkeleton:MCH-forearm_tweak.L.001", "%GeneralSkeleton:MCH-forearm_tweak.R", "%GeneralSkeleton:MCH-forearm_tweak.R.001", "%GeneralSkeleton:MCH-hand_fk.L", "%GeneralSkeleton:MCH-hand_fk.R", "%GeneralSkeleton:MCH-hand_tweak.L", "%GeneralSkeleton:MCH-hand_tweak.R", "%GeneralSkeleton:MCH-heel.02_rock1.L", "%GeneralSkeleton:MCH-heel.02_rock1.R", "%GeneralSkeleton:MCH-heel.02_rock2.L", "%GeneralSkeleton:MCH-heel.02_rock2.R", "%GeneralSkeleton:MCH-heel.02_roll1.L", "%GeneralSkeleton:MCH-heel.02_roll1.R", "%GeneralSkeleton:MCH-heel.02_roll2.L", "%GeneralSkeleton:MCH-heel.02_roll2.R", "%GeneralSkeleton:MCH-pivot", "%GeneralSkeleton:MCH-shin_ik.L", "%GeneralSkeleton:MCH-shin_ik.R", "%GeneralSkeleton:MCH-shin_tweak.L", "%GeneralSkeleton:MCH-shin_tweak.L.001", "%GeneralSkeleton:MCH-shin_tweak.R", "%GeneralSkeleton:MCH-shin_tweak.R.001", "%GeneralSkeleton:MCH-spine", "%GeneralSkeleton:MCH-spine.001", "%GeneralSkeleton:MCH-spine.002", "%GeneralSkeleton:MCH-spine.003", "%GeneralSkeleton:MCH-spine.005", "%GeneralSkeleton:MCH-thigh_ik_swing.L", "%GeneralSkeleton:MCH-thigh_ik_swing.R", "%GeneralSkeleton:MCH-thigh_ik_target.L", "%GeneralSkeleton:MCH-thigh_ik_target.R", "%GeneralSkeleton:MCH-thigh_ik_target.parent.L", "%GeneralSkeleton:MCH-thigh_ik_target.parent.R", "%GeneralSkeleton:MCH-thigh_parent.L", "%GeneralSkeleton:MCH-thigh_parent.R", "%GeneralSkeleton:MCH-thigh_parent_widget.L", "%GeneralSkeleton:MCH-thigh_parent_widget.R", "%GeneralSkeleton:MCH-thigh_tweak.L", "%GeneralSkeleton:MCH-thigh_tweak.L.001", "%GeneralSkeleton:MCH-thigh_tweak.R", "%GeneralSkeleton:MCH-thigh_tweak.R.001", "%GeneralSkeleton:MCH-toe_fk.L", "%GeneralSkeleton:MCH-toe_fk.R", "%GeneralSkeleton:MCH-toe_ik_parent.L", "%GeneralSkeleton:MCH-toe_ik_parent.R", "%GeneralSkeleton:MCH-upper_arm_ik_swing.L", "%GeneralSkeleton:MCH-upper_arm_ik_swing.R", "%GeneralSkeleton:MCH-upper_arm_parent.L", "%GeneralSkeleton:MCH-upper_arm_parent.R", "%GeneralSkeleton:MCH-upper_arm_parent_widget.L", "%GeneralSkeleton:MCH-upper_arm_parent_widget.R", "%GeneralSkeleton:MCH-upper_arm_tweak.L", "%GeneralSkeleton:MCH-upper_arm_tweak.L.001", "%GeneralSkeleton:MCH-upper_arm_tweak.R", "%GeneralSkeleton:MCH-upper_arm_tweak.R.001", "%GeneralSkeleton:ORG-breast.L", "%GeneralSkeleton:ORG-breast.R", "%GeneralSkeleton:ORG-foot.L", "%GeneralSkeleton:ORG-foot.R", "%GeneralSkeleton:ORG-forearm.L", "%GeneralSkeleton:ORG-forearm.R", "%GeneralSkeleton:ORG-hand.L", "%GeneralSkeleton:ORG-hand.R", "%GeneralSkeleton:ORG-heel.02.L", "%GeneralSkeleton:ORG-heel.02.R", "%GeneralSkeleton:ORG-pelvis.L", "%GeneralSkeleton:ORG-pelvis.R", "%GeneralSkeleton:ORG-shin.L", "%GeneralSkeleton:ORG-shin.R", "%GeneralSkeleton:ORG-shoulder.L", "%GeneralSkeleton:ORG-spine", "%GeneralSkeleton:ORG-spine.001", "%GeneralSkeleton:ORG-spine.002", "%GeneralSkeleton:ORG-spine.003", "%GeneralSkeleton:ORG-spine.004", "%GeneralSkeleton:ORG-spine.005", "%GeneralSkeleton:ORG-spine.006", "%GeneralSkeleton:ORG-thigh.L", "%GeneralSkeleton:ORG-thigh.R", "%GeneralSkeleton:ORG-toe.L", "%GeneralSkeleton:ORG-toe.R", "%GeneralSkeleton:ORG-upper_arm.L", "%GeneralSkeleton:UpperChest", "%GeneralSkeleton:VIS_thigh_ik_pole.L", "%GeneralSkeleton:VIS_thigh_ik_pole.R", "%GeneralSkeleton:VIS_upper_arm_ik_pole.L", "%GeneralSkeleton:VIS_upper_arm_ik_pole.R", "%GeneralSkeleton:breast.L", "%GeneralSkeleton:breast.R", "%GeneralSkeleton:chest", "%GeneralSkeleton:foot_fk.L", "%GeneralSkeleton:foot_fk.R", "%GeneralSkeleton:foot_heel_ik.L", "%GeneralSkeleton:foot_heel_ik.R", "%GeneralSkeleton:foot_ik.L", "%GeneralSkeleton:foot_ik.R", "%GeneralSkeleton:foot_spin_ik.L", "%GeneralSkeleton:foot_spin_ik.R", "%GeneralSkeleton:foot_tweak.L", "%GeneralSkeleton:foot_tweak.R", "%GeneralSkeleton:forearm_fk.L", "%GeneralSkeleton:forearm_fk.R", "%GeneralSkeleton:forearm_tweak.L", "%GeneralSkeleton:forearm_tweak.L.001", "%GeneralSkeleton:forearm_tweak.R", "%GeneralSkeleton:forearm_tweak.R.001", "%GeneralSkeleton:hand_fk.L", "%GeneralSkeleton:hand_fk.R", "%GeneralSkeleton:hand_tweak.L", "%GeneralSkeleton:hand_tweak.R", "%GeneralSkeleton:position", "%GeneralSkeleton:root", "%GeneralSkeleton:shin_fk.L", "%GeneralSkeleton:shin_fk.R", "%GeneralSkeleton:shin_tweak.L", "%GeneralSkeleton:shin_tweak.L.001", "%GeneralSkeleton:shin_tweak.R", "%GeneralSkeleton:shin_tweak.R.001", "%GeneralSkeleton:shoulder.L", "%GeneralSkeleton:shoulder.R", "%GeneralSkeleton:spine_fk", "%GeneralSkeleton:spine_fk.001", "%GeneralSkeleton:spine_fk.002", "%GeneralSkeleton:spine_fk.003", "%GeneralSkeleton:thigh_fk.L", "%GeneralSkeleton:thigh_fk.R", "%GeneralSkeleton:thigh_ik.L", "%GeneralSkeleton:thigh_ik.R", "%GeneralSkeleton:thigh_ik_target.L", "%GeneralSkeleton:thigh_ik_target.R", "%GeneralSkeleton:thigh_parent.L", "%GeneralSkeleton:thigh_parent.R", "%GeneralSkeleton:thigh_tweak.L", "%GeneralSkeleton:thigh_tweak.L.001", "%GeneralSkeleton:thigh_tweak.R", "%GeneralSkeleton:thigh_tweak.R.001", "%GeneralSkeleton:toe_fk.L", "%GeneralSkeleton:toe_fk.R", "%GeneralSkeleton:toe_ik.L", "%GeneralSkeleton:toe_ik.R", "%GeneralSkeleton:torso", "%GeneralSkeleton:tweak_spine", "%GeneralSkeleton:tweak_spine.001", "%GeneralSkeleton:tweak_spine.002", "%GeneralSkeleton:tweak_spine.003", "%GeneralSkeleton:tweak_spine.004", "%GeneralSkeleton:tweak_spine.005", "%GeneralSkeleton:upper_arm_fk.L", "%GeneralSkeleton:upper_arm_fk.R", "%GeneralSkeleton:upper_arm_ik.L", "%GeneralSkeleton:upper_arm_ik.R", "%GeneralSkeleton:upper_arm_parent.L", "%GeneralSkeleton:upper_arm_parent.R", "%GeneralSkeleton:upper_arm_tweak.L", "%GeneralSkeleton:upper_arm_tweak.L.001", "%GeneralSkeleton:upper_arm_tweak.R", "%GeneralSkeleton:upper_arm_tweak.R.001", "..", "rig/GeneralSkeleton:position"]
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_2qr8f"]
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_r1yio"]
+
+[sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_ncjt2"]
+graph_offset = Vector2(-130.04941, 80.70024)
+nodes/output/position = Vector2(1040, 144)
+nodes/TimeScale/node = SubResource("AnimationNodeTimeScale_r1yio")
+nodes/TimeScale/position = Vector2(336, 64)
+"nodes/TimeScale 2/node" = SubResource("AnimationNodeTimeScale_2qr8f")
+"nodes/TimeScale 2/position" = Vector2(336, 288)
+nodes/Blend2/node = SubResource("AnimationNodeBlend2_nolcx")
+nodes/Blend2/position = Vector2(544, 80)
+nodes/Animation/node = SubResource("AnimationNodeAnimation_rx5lt")
+nodes/Animation/position = Vector2(80, 128)
+"nodes/Animation 2/node" = SubResource("AnimationNodeAnimation_ag2rg")
+"nodes/Animation 2/position" = Vector2(48, 304)
+"nodes/Blend2 2/node" = SubResource("AnimationNodeBlend2_j1y4a")
+"nodes/Blend2 2/position" = Vector2(816, 160)
+"nodes/Animation 3/node" = SubResource("AnimationNodeAnimation_irqx0")
+"nodes/Animation 3/position" = Vector2(480, 368)
+node_connections = [&"output", 0, &"Blend2 2", &"TimeScale", 0, &"Animation", &"TimeScale 2", 0, &"Animation 2", &"Blend2", 0, &"TimeScale 2", &"Blend2", 1, &"TimeScale", &"Blend2 2", 0, &"Blend2", &"Blend2 2", 1, &"Animation 3"]
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_m5i14"]
+switch_mode = 2
+advance_mode = 2
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_rr75s"]
+xfade_time = 0.15
+advance_mode = 2
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_c1uyr"]
+xfade_time = 0.3
+break_loop_at_end = true
+switch_mode = 2
+advance_mode = 2
+
+[resource]
+"states/End Anim/node" = SubResource("AnimationNodeBlendTree_r1yio")
+"states/End Anim/position" = Vector2(715.00006, 87.616)
+states/Start/position = Vector2(158.4, 90.4)
+"states/Start Anim/node" = SubResource("AnimationNodeBlendTree_ncjt2")
+"states/Start Anim/position" = Vector2(490.8, 136.4)
+transitions = ["End Anim", "End", SubResource("AnimationNodeStateMachineTransition_m5i14"), "Start", "Start Anim", SubResource("AnimationNodeStateMachineTransition_rr75s"), "Start Anim", "End Anim", SubResource("AnimationNodeStateMachineTransition_c1uyr")]
+graph_offset = Vector2(72, -2)

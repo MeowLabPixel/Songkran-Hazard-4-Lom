@@ -8951,7 +8951,7 @@ shape = SubResource("BoxShape3D_y2gle")
 
 [node name="HitboxZone" type="Node" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachLeftFoot/HitboxLeftFoot" unique_id=1617672984]
 script = ExtResource("14_p5s7y")
-zone_name = "left_leg"
+zone_name = "left_foot"
 base_damage = 1
 
 [node name="HitboxAttachRightFoot" type="BoneAttachment3D" parent="All zombie fix/rig_001/Skeleton3D" unique_id=967580448]
@@ -8970,7 +8970,7 @@ shape = SubResource("BoxShape3D_rlvu4")
 
 [node name="HitboxZone" type="Node" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachRightFoot/HitboxRightFoot" unique_id=288461888]
 script = ExtResource("14_p5s7y")
-zone_name = "right_leg"
+zone_name = "right_foot"
 base_damage = 1
 
 [node name="HitboxAttachRightForeArm" type="BoneAttachment3D" parent="All zombie fix/rig_001/Skeleton3D" unique_id=1257620605]

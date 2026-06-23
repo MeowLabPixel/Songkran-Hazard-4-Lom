@@ -162,6 +162,9 @@ Pickup={
 [physics]
 
 3d/physics_engine="Jolt Physics"
+jolt_physics_3d/physics_interpolation/enable_warnings=false
+jolt_physics_3d/collisions/report_unsupported_scales=false
+jolt_3d/collisions/report_unsupported_scales=false
 
 [rendering]
 

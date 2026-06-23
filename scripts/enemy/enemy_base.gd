@@ -12,6 +12,8 @@ const MAX_HP: int = 25
 var current_hp: int = MAX_HP
 var _second_chance_used: bool = false
 var is_defeated: bool = false
+var attack_blocked: bool = false  # Set true to prevent this zombie from entering attack state
+var last_attack_time: float = -100.0
 
 # ─── Drop Table ────────────────────────────────────────────────────────────
 @export var drop_table: Array[Dictionary] = [
@@ -22,6 +24,10 @@ var is_defeated: bool = false
 @onready var state_machine: EnemyStateMachine = $EnemyStateMachine
 @export var anim_set: ZombieAnimSet
 var anim_player: AnimationPlayer = null
+var anim_tree: AnimationTree = null
+
+var next_idle_offset: float = -1.0
+var guaranteed_grab_next_attack: bool = false
 
 # ─── Procedural Animation Properties ───────────────────────────────────────
 var last_y_rotation: float = 0.0
@@ -48,11 +54,14 @@ func _find_anim_player() -> AnimationPlayer:
 
 # ─── Ready ─────────────────────────────────────────────────────────────────
 func _ready() -> void:
+	add_to_group("enemies")
 	current_hp = MAX_HP
 	if not anim_set:
 		anim_set = ZombieAnimSet.new()
 		push_warning("[EnemyBase] anim_set not assigned in Inspector — using defaults")
 	anim_player = _find_anim_player()
+	anim_tree = get_node_or_null("ZombieModel/AnimationTree") as AnimationTree
+	
 	if anim_player:
 		print("[EnemyBase] AnimationPlayer found: %s" % anim_player.get_path())
 		print("[EnemyBase] %d animations available" % anim_player.get_animation_list().size())
@@ -67,10 +76,12 @@ func _ready() -> void:
 	var nav = get_node_or_null("NavigationAgent3D") as NavigationAgent3D
 	if nav:
 		nav.avoidance_enabled = true
-		nav.radius = 0.4
-		nav.neighbor_distance = 5.0
+		nav.radius = 0.5
+		nav.neighbor_distance = 10.0
 		nav.max_neighbors = 10
-		nav.max_speed = 5.0
+		nav.max_speed = 3.0
+		nav.time_horizon_agents = 2.0 # They look 2 seconds ahead to steer earlier and smoother
+		nav.avoidance_enabled = true
 		nav.velocity_computed.connect(_on_nav_velocity_computed)
 		
 	# ── Procedural Animation Modifiers Setup ───────────────────────────────────
@@ -141,6 +152,17 @@ func _trigger_defeat() -> void:
 	enemy_defeated.emit()
 	_spawn_drops()
 
+# --- Animation Event Hooks ---
+# Call these from AnimationPlayer Method Tracks on the root node
+
+func open_hitboxes() -> void:
+	if state_machine.has_method("open_hitboxes"):
+		state_machine.open_hitboxes()
+
+func close_hitboxes() -> void:
+	if state_machine.has_method("close_hitboxes"):
+		state_machine.close_hitboxes()
+
 func _spawn_drops() -> void:
 	var parent: Node = get_tree().current_scene
 	for entry in drop_table:
@@ -155,7 +177,16 @@ func _on_state_changed(old_state: String, new_state: String) -> void:
 
 # ─── Navigation ────────────────────────────────────────────────────────────
 func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
-	velocity = safe_velocity
+	# Only apply avoidance velocity when the zombie is actively hunting.
+	# All other states manage their own velocity and move_and_slide() calls.
+	if not state_machine or not state_machine.current_state:
+		return
+	if state_machine.current_state.name != "StateHunt":
+		return
+	
+	var current_y = velocity.y
+	velocity = velocity.move_toward(safe_velocity, 0.25)
+	velocity.y = current_y
 	move_and_slide()
 
 # ─── Procedural Animation ──────────────────────────────────────────────────

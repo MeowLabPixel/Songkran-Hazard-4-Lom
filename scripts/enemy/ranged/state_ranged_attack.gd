@@ -73,7 +73,7 @@ func physics_update(delta: float) -> void:
 func handle_hit(hit_data: Dictionary) -> String:
 	var zone: String = hit_data.get("hit_zone", "body")
 	match zone:
-		"head", "left_leg", "right_leg", "foot":
+		"head", "left_foot", "right_foot", "foot":
 			return "StateTakedownable"
 		_:
 			return "StateStun"

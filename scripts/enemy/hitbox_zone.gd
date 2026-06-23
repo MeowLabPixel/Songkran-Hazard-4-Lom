@@ -19,8 +19,10 @@ var _enemy: EnemyBase = null
 
 func _ready() -> void:
 	var parent_name = get_parent().name
-	if parent_name in ["HitboxLeftThigh", "HitboxLeftShin", "HitboxRightThigh", "HitboxRightShin"]:
-		zone_name = "body"
+	if parent_name in ["HitboxLeftThigh", "HitboxLeftShin"]:
+		zone_name = "left_leg"
+	elif parent_name in ["HitboxRightThigh", "HitboxRightShin"]:
+		zone_name = "right_leg"
 
 	# Walk up the full tree, crossing sub-scene boundaries, to find EnemyBase.
 	# The hitboxes live inside the ZombieModel sub-scene (zombie_animated.tscn),

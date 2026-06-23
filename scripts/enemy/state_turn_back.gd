@@ -8,6 +8,9 @@ var _target_basis: Basis
 
 func enter() -> void:
 	_timer = 0.0
+	if enemy:
+		enemy.velocity = Vector3.ZERO
+		enemy.move_and_slide()
 	print("[StateTurnBack] Turning 180°.")
 	_target_basis = enemy.global_transform.basis.rotated(Vector3.UP, PI)
 	_play_anim(enemy.anim_set.idle)
@@ -27,7 +30,7 @@ func physics_update(delta: float) -> void:
 func handle_hit(hit_data: Dictionary) -> String:
 	var zone: String = hit_data.get("hit_zone", "body")
 	match zone:
-		"head", "foot":
+		"head", "foot", "left_foot", "right_foot":
 			return "StateTakedownable"
 		_:
 			return "StateStun"

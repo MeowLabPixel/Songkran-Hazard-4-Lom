@@ -26,23 +26,33 @@ func _process_modification() -> void:
 	var head_idx = skeleton.find_bone(head_bone_name)
 	if head_idx == -1: return
 	
-	# Look at chest/head level of the player
-	var target_pos = player.global_position + Vector3(0, 1.4, 0)
+	# Target the player's camera height rather than face height
+	var target_pos = player.global_position + Vector3(0, 3.0, 0)
+	
+	# Try to find the exact Head bone attachment node
+	var exact_head = player.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/Head")
+	if exact_head and exact_head is Node3D:
+		target_pos = exact_head.global_position
 	var my_head_pos = skeleton.to_global(skeleton.get_bone_global_pose(head_idx).origin)
 	var dir_to_target = (target_pos - my_head_pos).normalized()
 	
 	var local_dir = enemy.global_transform.basis.inverse() * dir_to_target
 	# local forward is -Z. Right is X. Up is Y.
 	var target_yaw = atan2(-local_dir.x, -local_dir.z)
-	var target_pitch = asin(local_dir.y)
+	# Invert the pitch calculation because this bone's positive X rotation bends it downward!
+	# Without this inversion, looking at a lower target causes the neck to bend UP.
+	var target_pitch = -asin(local_dir.y)
 	
 	# Clamp angles to prevent snapping necks Exorcist-style
 	target_yaw = clamp(target_yaw, deg_to_rad(-max_angle_deg), deg_to_rad(max_angle_deg))
-	target_pitch = clamp(target_pitch, deg_to_rad(-max_angle_deg), deg_to_rad(max_angle_deg))
+	
+	# Restrict looking down to prevent unnatural neck drooping
+	var max_down = 5.0
+	target_pitch = clamp(target_pitch, deg_to_rad(-max_angle_deg), deg_to_rad(max_down))
 	
 	var dist = enemy.global_position.distance_to(player.global_position)
-	if dist > 15.0 or dist < 0.8:
-		# Don't track if too far, or if too close (to avoid head twisting down unnaturally)
+	if dist > 15.0 or dist < 0.3:
+		# Don't track if too far, or if extremely close (to avoid neck snapping)
 		target_yaw = 0.0
 		target_pitch = 0.0
 		

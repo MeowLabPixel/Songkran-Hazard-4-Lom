@@ -69,4 +69,7 @@ func _on_area_entered(area: Area3D) -> void:
 		"attack":
 			print("Player attacked!")
 			Attacked.emit()
-			_player.take_damage(base_damage)
+			# DO NOT call _player.take_damage here! 
+			# The enemy's state_attack.gd script already detects the hit and calls _player.take_damage(attack_damage)
+			# If we call it here too, the player takes double damage (or 1 extra damage per hitbox touched)!
+			# _player.take_damage(base_damage)

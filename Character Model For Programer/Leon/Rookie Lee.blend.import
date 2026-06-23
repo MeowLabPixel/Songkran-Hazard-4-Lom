@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://bbwhclhaewece"
-path="res://.godot/imported/Leon Cloth weight fix1.blend-bcf8007b598ae10bd607c89838c81d4a.scn"
+path="res://.godot/imported/Rookie Lee.blend-86fda1ccca2d3ea04cc970b94c841fce.scn"
 
 [deps]
 
-source_file="res://Character Model For Programer/Leon/Leon Cloth weight fix1.blend"
-dest_files=["res://.godot/imported/Leon Cloth weight fix1.blend-bcf8007b598ae10bd607c89838c81d4a.scn"]
+source_file="res://Character Model For Programer/Leon/Rookie Lee.blend"
+dest_files=["res://.godot/imported/Rookie Lee.blend-86fda1ccca2d3ea04cc970b94c841fce.scn"]
 
 [params]
 

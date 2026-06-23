@@ -1,0 +1,102 @@
+[gd_resource type="AnimationNodeStateMachine" format=3 uid="uid://0ghtpopfmqh0"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_a5bf2"]
+animation = &"HIT Body"
+use_custom_timeline = true
+timeline_length = 1.1999998
+stretch_time_scale = false
+start_offset = 4.5
+loop_mode = 0
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_nyqs1"]
+
+[sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_r1yio"]
+graph_offset = Vector2(-59.445457, 33.161926)
+nodes/output/position = Vector2(1120, 176)
+nodes/Animation/node = SubResource("AnimationNodeAnimation_a5bf2")
+nodes/Animation/position = Vector2(512, 176)
+nodes/TimeScale/node = SubResource("AnimationNodeTimeScale_nyqs1")
+nodes/TimeScale/position = Vector2(784, 176)
+node_connections = [&"output", 0, &"TimeScale", &"TimeScale", 0, &"Animation"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_ag2rg"]
+animation = &"HIT Right Arm"
+use_custom_timeline = true
+timeline_length = 4.0
+stretch_time_scale = false
+start_offset = 0.0
+loop_mode = 0
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_irqx0"]
+animation = &"Hit RightLeg act 2 (Slipping_Ilde)"
+use_custom_timeline = true
+timeline_length = 1.5999999999999999
+stretch_time_scale = false
+start_offset = 0.0
+loop_mode = 0
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_rx5lt"]
+animation = &"Hit RightLeg act 2 (Slipping_Ilde)"
+use_custom_timeline = true
+timeline_length = 1.5999999999999999
+stretch_time_scale = false
+start_offset = 0.0
+loop_mode = 0
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_j1y4a"]
+filter_enabled = true
+filters = ["%GeneralSkeleton:DEF-forearm.L", "%GeneralSkeleton:DEF-forearm.R", "%GeneralSkeleton:DEF-forearm.R.001", "%GeneralSkeleton:DEF-hand.R", "%GeneralSkeleton:DEF-spine.006", "%GeneralSkeleton:DEF-upper_arm.R", "%GeneralSkeleton:DEF-upper_arm.R.001", "%GeneralSkeleton:MCH-forearm_ik.R", "%GeneralSkeleton:MCH-pivot", "%GeneralSkeleton:MCH-spine.002", "%GeneralSkeleton:MCH-spine.003", "%GeneralSkeleton:MCH-upper_arm_ik_swing.R", "%GeneralSkeleton:MCH-upper_arm_ik_target.R", "%GeneralSkeleton:MCH-upper_arm_parent_widget.L", "%GeneralSkeleton:MCH-upper_arm_tweak.R", "%GeneralSkeleton:ORG-spine.002", "%GeneralSkeleton:forearm_tweak.R", "%GeneralSkeleton:spine_fk.002", "%GeneralSkeleton:spine_fk.003", "%GeneralSkeleton:tweak_spine.002", "%GeneralSkeleton:upper_arm_ik.R", "%GeneralSkeleton:upper_arm_tweak.L.001", "%GeneralSkeleton:upper_arm_tweak.R"]
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_nolcx"]
+filter_enabled = true
+filters = ["%GeneralSkeleton:DEF-forearm.L", "%GeneralSkeleton:DEF-forearm.L.001", "%GeneralSkeleton:DEF-forearm.R", "%GeneralSkeleton:DEF-forearm.R.001", "%GeneralSkeleton:DEF-hand.L", "%GeneralSkeleton:DEF-hand.R", "%GeneralSkeleton:DEF-shoulder.R", "%GeneralSkeleton:DEF-spine.002", "%GeneralSkeleton:DEF-upper_arm.L", "%GeneralSkeleton:DEF-upper_arm.L.001", "%GeneralSkeleton:DEF-upper_arm.R", "%GeneralSkeleton:DEF-upper_arm.R.001", "%GeneralSkeleton:MCH-forearm_ik.L", "%GeneralSkeleton:MCH-forearm_ik.R", "%GeneralSkeleton:MCH-forearm_tweak.L", "%GeneralSkeleton:MCH-forearm_tweak.L.001", "%GeneralSkeleton:MCH-forearm_tweak.R", "%GeneralSkeleton:MCH-forearm_tweak.R.001", "%GeneralSkeleton:MCH-hand_fk.L", "%GeneralSkeleton:MCH-hand_fk.R", "%GeneralSkeleton:MCH-hand_ik.parent.L", "%GeneralSkeleton:MCH-hand_ik.parent.R", "%GeneralSkeleton:MCH-hand_tweak.L", "%GeneralSkeleton:MCH-hand_tweak.R", "%GeneralSkeleton:MCH-upper_arm_ik_swing.L", "%GeneralSkeleton:MCH-upper_arm_ik_swing.R", "%GeneralSkeleton:MCH-upper_arm_ik_target.L", "%GeneralSkeleton:MCH-upper_arm_ik_target.R", "%GeneralSkeleton:MCH-upper_arm_ik_target.parent.L", "%GeneralSkeleton:MCH-upper_arm_ik_target.parent.R", "%GeneralSkeleton:MCH-upper_arm_parent.L", "%GeneralSkeleton:MCH-upper_arm_parent.R", "%GeneralSkeleton:MCH-upper_arm_parent_widget.L", "%GeneralSkeleton:MCH-upper_arm_parent_widget.R", "%GeneralSkeleton:MCH-upper_arm_tweak.L.001", "%GeneralSkeleton:MCH-upper_arm_tweak.R", "%GeneralSkeleton:MCH-upper_arm_tweak.R.001", "%GeneralSkeleton:ORG-forearm.L", "%GeneralSkeleton:ORG-forearm.R", "%GeneralSkeleton:ORG-hand.L", "%GeneralSkeleton:ORG-hand.R", "%GeneralSkeleton:ORG-shoulder.L", "%GeneralSkeleton:ORG-upper_arm.L", "%GeneralSkeleton:ORG-upper_arm.R", "%GeneralSkeleton:forearm_fk.L", "%GeneralSkeleton:forearm_fk.R", "%GeneralSkeleton:forearm_tweak.L", "%GeneralSkeleton:forearm_tweak.L.001", "%GeneralSkeleton:forearm_tweak.R", "%GeneralSkeleton:forearm_tweak.R.001", "%GeneralSkeleton:hand_fk.L", "%GeneralSkeleton:hand_fk.R", "%GeneralSkeleton:hand_ik.L", "%GeneralSkeleton:hand_ik.R", "%GeneralSkeleton:hand_tweak.L", "%GeneralSkeleton:hand_tweak.R", "%GeneralSkeleton:upper_arm_fk.L", "%GeneralSkeleton:upper_arm_fk.R", "%GeneralSkeleton:upper_arm_ik.L", "%GeneralSkeleton:upper_arm_ik_target.L", "%GeneralSkeleton:upper_arm_ik_target.R", "%GeneralSkeleton:upper_arm_parent.R", "%GeneralSkeleton:upper_arm_tweak.L.001", "%GeneralSkeleton:upper_arm_tweak.R", "%GeneralSkeleton:upper_arm_tweak.R.001"]
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_2qr8f"]
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_s52hl"]
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_r1yio"]
+
+[sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_ncjt2"]
+graph_offset = Vector2(-242.8509, -4.9031615)
+nodes/output/position = Vector2(1040, 144)
+nodes/TimeScale/node = SubResource("AnimationNodeTimeScale_r1yio")
+nodes/TimeScale/position = Vector2(176, 352)
+"nodes/TimeScale 2/node" = SubResource("AnimationNodeTimeScale_2qr8f")
+"nodes/TimeScale 2/position" = Vector2(256, 96)
+nodes/Blend2/node = SubResource("AnimationNodeBlend2_nolcx")
+nodes/Blend2/position = Vector2(544, 80)
+nodes/Animation/node = SubResource("AnimationNodeAnimation_rx5lt")
+nodes/Animation/position = Vector2(-128, 336)
+"nodes/Animation 2/node" = SubResource("AnimationNodeAnimation_ag2rg")
+"nodes/Animation 2/position" = Vector2(-16, 112)
+"nodes/Blend2 2/node" = SubResource("AnimationNodeBlend2_j1y4a")
+"nodes/Blend2 2/position" = Vector2(816, 160)
+"nodes/Animation 3/node" = SubResource("AnimationNodeAnimation_irqx0")
+"nodes/Animation 3/position" = Vector2(336, 448)
+"nodes/TimeScale 3/node" = SubResource("AnimationNodeTimeScale_s52hl")
+"nodes/TimeScale 3/position" = Vector2(656, 320)
+node_connections = [&"output", 0, &"Blend2 2", &"TimeScale", 0, &"Animation", &"TimeScale 2", 0, &"Animation 2", &"Blend2", 0, &"TimeScale 2", &"Blend2", 1, &"TimeScale", &"Blend2 2", 0, &"Blend2", &"Blend2 2", 1, &"TimeScale 3", &"TimeScale 3", 0, &"Animation 3"]
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_rr75s"]
+xfade_time = 0.15
+advance_mode = 2
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_s52hl"]
+xfade_time = 0.2
+switch_mode = 2
+advance_mode = 2
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_c1uyr"]
+xfade_time = 0.5
+switch_mode = 2
+advance_mode = 2
+
+[resource]
+"states/End Anim/node" = SubResource("AnimationNodeBlendTree_r1yio")
+"states/End Anim/position" = Vector2(719.80005, 100.4032)
+states/Start/position = Vector2(165.59999, 90.4)
+"states/Start Anim/node" = SubResource("AnimationNodeBlendTree_ncjt2")
+"states/Start Anim/position" = Vector2(492.4, 135.59999)
+transitions = ["Start", "Start Anim", SubResource("AnimationNodeStateMachineTransition_rr75s"), "End Anim", "End", SubResource("AnimationNodeStateMachineTransition_s52hl"), "Start Anim", "End Anim", SubResource("AnimationNodeStateMachineTransition_c1uyr")]
+graph_offset = Vector2(114, -3)

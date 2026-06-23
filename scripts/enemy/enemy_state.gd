@@ -32,8 +32,42 @@ func handle_hit(_hit_data: Dictionary) -> String:
 
 ## Plays an animation, skipping only if it is actively mid-play right now.
 ## Uses is_playing() + current_animation so a finished one-shot can replay.
-func _play_anim(anim_name: String) -> void:
-	if not (enemy and enemy.anim_player):
+func _play_anim(anim_name: String, sub_machine: String = "") -> void:
+	if not enemy: return
+	
+	var tree = enemy.get_node_or_null("AnimationTree") as AnimationTree
+	if not tree:
+		tree = enemy.get_node_or_null("ZombieModel/AnimationTree") as AnimationTree
+		
+	if tree and tree.active and tree.get("parameters/playback") != null:
+		var root_playback = tree.get("parameters/playback") as AnimationNodeStateMachinePlayback
+		if root_playback:
+			if sub_machine != "":
+				var folders = sub_machine.split("/")
+				root_playback.travel(folders[0])
+				if folders.size() > 1:
+					var intermediate = tree.get("parameters/" + folders[0] + "/playback") as AnimationNodeStateMachinePlayback
+					if intermediate: intermediate.travel(folders[1])
+				
+				var sub_path = "parameters/" + sub_machine + "/playback"
+				var sub_playback = tree.get(sub_path) as AnimationNodeStateMachinePlayback
+				if sub_playback:
+					sub_playback.travel(anim_name)
+				else:
+					push_warning("[EnemyState] _play_anim: sub_playback not found at " + sub_path)
+			else:
+				root_playback.travel(anim_name)
+				
+			if anim_name == enemy.anim_set.idle and enemy.next_idle_offset >= 0.0:
+				var offset = enemy.next_idle_offset
+				enemy.next_idle_offset = -1.0
+				enemy.get_tree().process_frame.connect(func():
+					if is_instance_valid(enemy) and is_instance_valid(enemy.anim_tree):
+						enemy.anim_tree.advance(offset)
+				, CONNECT_ONE_SHOT)
+			return
+			
+	if not enemy.anim_player:
 		push_warning("[EnemyState] _play_anim: no anim_player on %s" % enemy.name)
 		return
 	var ap: AnimationPlayer = enemy.anim_player
@@ -44,11 +78,46 @@ func _play_anim(anim_name: String) -> void:
 		return
 	ap.play(anim_name)
 
-func _force_anim(anim_name: String) -> void:
-	if not (enemy and enemy.anim_player):
+func _force_anim(anim_name: String, sub_machine: String = "", custom_speed: float = 1.0) -> void:
+	if not enemy: return
+	
+	var tree = enemy.get_node_or_null("AnimationTree") as AnimationTree
+	if not tree:
+		tree = enemy.get_node_or_null("ZombieModel/AnimationTree") as AnimationTree
+		
+	if tree and tree.active and tree.get("parameters/playback") != null:
+		var root_playback = tree.get("parameters/playback") as AnimationNodeStateMachinePlayback
+		if root_playback:
+			if sub_machine != "":
+				var folders = sub_machine.split("/")
+				root_playback.travel(folders[0])
+				if folders.size() > 1:
+					var intermediate = tree.get("parameters/" + folders[0] + "/playback") as AnimationNodeStateMachinePlayback
+					if intermediate: intermediate.travel(folders[1])
+				
+				var sub_path = "parameters/" + sub_machine + "/playback"
+				var sub_playback = tree.get(sub_path) as AnimationNodeStateMachinePlayback
+				if sub_playback:
+					sub_playback.travel(anim_name)
+				else:
+					push_warning("[EnemyState] _force_anim: sub_playback not found at " + sub_path)
+			else:
+				root_playback.travel(anim_name)
+				
+			if anim_name == enemy.anim_set.idle and enemy.next_idle_offset >= 0.0:
+				var offset = enemy.next_idle_offset
+				enemy.next_idle_offset = -1.0
+				enemy.get_tree().process_frame.connect(func():
+					if is_instance_valid(enemy) and is_instance_valid(enemy.anim_tree):
+						enemy.anim_tree.advance(offset)
+				, CONNECT_ONE_SHOT)
+			return
+			
+	if not enemy.anim_player:
 		push_warning("[EnemyState] _force_anim: no anim_player on %s" % enemy.name)
 		return
 	if not enemy.anim_player.has_animation(anim_name):
 		push_warning("[EnemyState] _force_anim: animation '%s' not found on %s" % [anim_name, enemy.name])
 		return
-	enemy.anim_player.play(anim_name)
+	enemy.anim_player.play(anim_name, -1.0, custom_speed)
+

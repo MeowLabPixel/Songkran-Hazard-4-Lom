@@ -2,6 +2,8 @@
 extends RefCounted
 
 const ErrorCodes := preload("res://addons/godot_ai/utils/error_codes.gd")
+const DiagnosticsCapture := preload("res://addons/godot_ai/utils/diagnostics_capture.gd")
+const LoggerLoader := preload("res://addons/godot_ai/runtime/logger_loader.gd")
 
 ## Handles script creation, reading, attaching, detaching, and symbol inspection.
 
@@ -50,6 +52,17 @@ func create_script(params: Dictionary) -> Dictionary:
 	file.store_string(content)
 	file.close()
 
+	var data := {
+		"path": path,
+		"size": content.length(),
+		"committed": true,
+		"import_settled": existed_before,
+		"import_settle": "already_known" if existed_before else "not_waited",
+		"undoable": false,
+		"reason": "File system operations cannot be undone via editor undo",
+	}
+	_attach_gdscript_diagnostics(data, path, content)
+
 	# Register just this file with the editor instead of a full recursive
 	# scan(). A scan() per write stacks `update_scripts_classes` /
 	# `update_script_paths_documentation` WorkerThreadPool tasks under concurrent
@@ -61,15 +74,6 @@ func create_script(params: Dictionary) -> Dictionary:
 	if efs != null:
 		efs.update_file(path)
 
-	var data := {
-		"path": path,
-		"size": content.length(),
-		"committed": true,
-		"import_settled": existed_before,
-		"import_settle": "already_known" if existed_before else "not_waited",
-		"undoable": false,
-		"reason": "File system operations cannot be undone via editor undo",
-	}
 	# `.gd.uid` is the sidecar Godot generates on scan; list both so the caller
 	# can rm the full set in one go.
 	McpResourceIO.attach_cleanup_hint(data, existed_before, [path, path + ".uid"])
@@ -165,6 +169,99 @@ func read_script(params: Dictionary) -> Dictionary:
 	}
 
 
+func _attach_gdscript_diagnostics(data: Dictionary, path: String, content: String) -> void:
+	var validation := _validate_gdscript_source(content)
+	var diagnostics: Array = []
+	var diagnostics_detail := "none"
+	var diagnostics_status := "checked"
+
+	if not validation.get("ok", true):
+		var capture := _capture_gdscript_load_diagnostics(path)
+		diagnostics = capture.get("diagnostics", [])
+		diagnostics_detail = capture.get("diagnostics_detail", "none")
+		diagnostics_status = capture.get("diagnostics_status", "checked")
+	if not validation.get("ok", true) and diagnostics.is_empty():
+		diagnostics.append(_fallback_gdscript_diagnostic(path, validation.get("error_code", FAILED), content))
+		diagnostics_detail = "fallback"
+	data["diagnostics"] = diagnostics
+	data["diagnostics_detail"] = diagnostics_detail
+	data["diagnostics_scope"] = "this_file"
+	data["diagnostics_status"] = diagnostics_status
+
+
+static func _validate_gdscript_source(content: String) -> Dictionary:
+	var script := GDScript.new()
+	script.source_code = content
+	## Keep validation off the live cached resource: assigning resource_path to
+	## this ephemeral Script can collide with loaded instances. reload() still
+	## performs normal GDScript analysis, including static initializer work, so
+	## this check is intentionally scoped to `.gd` writes where the editor would
+	## compile the file on scan anyway.
+	var err := script.reload()
+	return {
+		"ok": err == OK,
+		"error_code": err,
+	}
+
+
+static func _capture_gdscript_load_diagnostics(path: String) -> Dictionary:
+	if not (ClassDB.class_exists("Logger") and OS.has_method("add_logger") and OS.has_method("remove_logger")):
+		return _empty_diagnostics_capture()
+	var logger_script := LoggerLoader.build(LoggerLoader.VALIDATION_LOGGER_PATH)
+	if logger_script == null:
+		return _empty_diagnostics_capture()
+	var buffer := McpEditorLogBuffer.new()
+	var logger = logger_script.new(buffer)
+	var capture := DiagnosticsCapture.capture_this_file(buffer, path, func() -> Dictionary:
+		OS.call("add_logger", logger)
+		# ResourceLoader.load() reports parse failure instead of throwing, and
+		# a failed GDScript parse does not execute user code; remove immediately
+		# after the synchronous load to keep the private capture window tiny.
+		ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE)
+		OS.call("remove_logger", logger)
+		return {}
+	)
+	return capture
+
+
+static func _empty_diagnostics_capture() -> Dictionary:
+	return {
+		"diagnostics": [],
+		"diagnostics_detail": "none",
+		"diagnostics_scope": "this_file",
+		"diagnostics_status": "checked",
+	}
+
+
+static func _fallback_gdscript_diagnostic(path: String, error_code: int, content: String) -> Dictionary:
+	var line := _fallback_gdscript_error_line(content)
+	return {
+		"source": "editor",
+		"level": "error",
+		"text": "GDScript reload failed with error code %d." % error_code,
+		"path": path,
+		"line": line,
+		"function": "GDScript::reload",
+		"details": {
+			"code": "gdscript_reload_failed",
+			"error_code": error_code,
+			"fallback_line": true,
+			"source": {
+				"path": path,
+				"line": line,
+			},
+		},
+	}
+
+
+static func _fallback_gdscript_error_line(content: String) -> int:
+	var lines := content.split("\n")
+	for i in range(lines.size() - 1, -1, -1):
+		if not str(lines[i]).strip_edges().is_empty():
+			return i + 1
+	return 1
+
+
 func patch_script(params: Dictionary) -> Dictionary:
 	var path: String = params.get("path", "")
 	var old_text: String = params.get("old_text", "")
@@ -214,21 +311,22 @@ func patch_script(params: Dictionary) -> Dictionary:
 	write.store_string(new_content)
 	write.close()
 
+	var data := {
+		"path": path,
+		"replacements": replacements,
+		"size": new_content.length(),
+		"old_size": content.length(),
+		"undoable": false,
+		"reason": "File system operations cannot be undone via editor undo",
+	}
+	_attach_gdscript_diagnostics(data, path, new_content)
+
 	# Single-file register, not a full scan() — see create_script (dsarno/godot#6).
 	var efs := EditorInterface.get_resource_filesystem()
 	if efs != null:
 		efs.update_file(path)
 
-	return {
-		"data": {
-			"path": path,
-			"replacements": replacements,
-			"size": new_content.length(),
-			"old_size": content.length(),
-			"undoable": false,
-			"reason": "File system operations cannot be undone via editor undo",
-		}
-	}
+	return {"data": data}
 
 
 func attach_script(params: Dictionary) -> Dictionary:

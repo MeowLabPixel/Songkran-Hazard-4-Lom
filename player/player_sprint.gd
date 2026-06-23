@@ -44,7 +44,7 @@ func _exit() -> void:
 	
 	
 func _state_input(event: InputEvent) -> void:
-	if Input.is_action_pressed("quick_turn") and not owner.is_quick_turn:
+	if Input.is_action_just_pressed("quick_turn") and not owner.is_quick_turn and owner.quick_turn_cooldown <= 0.0:
 		finished.emit("Quick_turn")
 	if Input.is_action_just_released("sprint"):
 		finished.emit("Run")

@@ -5,6 +5,7 @@ class_name Player extends CharacterBody3D
 @export var walk_Back_speed = 2.5
 @export var turn_speed:= 180.0
 @export var quick_turn_speed:= 0.3 #in second
+@export var quick_turn_cooldown_duration: float = 0.5 # cooldown in seconds before another quick turn
 @export var run_speed:=4.5
 @export var aim_bone: LookAtModifier3D
 @export var aim_bone2: LookAtModifier3D
@@ -61,6 +62,7 @@ var start_qte = false
 
 const GRAVITY = -9.81
 var is_quick_turn: bool = false
+var quick_turn_cooldown: float = 0.0
 var is_aimming:bool = false
 var is_reload:bool = false
 var is_grab:bool = false
@@ -198,7 +200,10 @@ func _process(delta: float) -> void:
 	
 	# Smoothly blend the aiming influence. Full tracking when aiming, only 25% when idle/running
 	var target_influence = 1.0 if is_aimming else 0.25
-	current_aim_influence = lerpf(current_aim_influence, target_influence, delta * 10.0)
+	if is_quick_turn:
+		target_influence = 0.0
+		
+	current_aim_influence = lerpf(current_aim_influence, target_influence, delta * 15.0)
 	
 	if aim_bone:
 		aim_bone.influence = current_aim_influence
@@ -210,6 +215,8 @@ func _process(delta: float) -> void:
 		if head_lookat:
 			# Ensure horizontal twisting is always on so the head can lead turns!
 			head_lookat.use_secondary_rotation = true
+			# Fade out head look IK during quickturn to prevent neck snapping!
+			head_lookat.influence = current_aim_influence
 			
 		var lean_modifier = skeleton.get_node_or_null("SpineLeanModifier")
 		if lean_modifier:
@@ -377,6 +384,9 @@ func set_velocity_from_motion(vel: Vector3)-> void:
 	velocity = vel
 
 func _physics_process(_delta: float) -> void:
+	if quick_turn_cooldown > 0.0:
+		quick_turn_cooldown -= _delta
+		
 	var sm = get_node_or_null("Statemachine")
 	if sm and sm.current_state and sm.current_state.name == "Reload":
 		# Completely disable WASD sliding/movement during reload (keep gravity)
