@@ -16,7 +16,7 @@ warnings/check_invalid_track_paths=false
 
 config/name="Songkran Hazard 4-Lom"
 run/main_scene="uid://n5m17a8leco1"
-config/features=PackedStringArray("4.6", "Forward Plus")
+config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
@@ -24,6 +24,10 @@ config/icon="res://icon.svg"
 PhantomCameraManager="*uid://duq6jhf6unyis"
 ItemManager="*res://scripts/items/item_manager.gd"
 _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
+
+[debug]
+
+settings/physics_interpolation/enable_warnings=false
 
 [editor_plugins]
 
@@ -162,9 +166,7 @@ Pickup={
 [physics]
 
 3d/physics_engine="Jolt Physics"
-jolt_physics_3d/physics_interpolation/enable_warnings=false
 jolt_physics_3d/collisions/report_unsupported_scales=false
-jolt_3d/collisions/report_unsupported_scales=false
 
 [rendering]
 

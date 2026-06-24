@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ZombieAnimSet" format=3 uid="uid://dgmqltmeqh0uk"]
+
+[ext_resource type="Script" uid="uid://q2kvjm2waqt0" path="res://scripts/enemy/zombie_anims.gd" id="1_5y26r"]
+
+[resource]
+script = ExtResource("1_5y26r")
+walk_anim = "Non binary walk"
+hit_right_arm = "HIT Right Arm"
+metadata/_custom_type_script = "uid://q2kvjm2waqt0"

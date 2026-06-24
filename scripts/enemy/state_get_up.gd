@@ -25,11 +25,19 @@ func enter() -> void:
 	else:
 		getup_duration = 1.5
 
+	if enemy:
+		enemy.set_meta("getup_elapsed_time", 0.0)
+		enemy.set_meta("getup_duration", getup_duration)
+
 func exit() -> void:
 	pass
 
 func physics_update(delta: float) -> void:
 	_timer += delta
+	if enemy and enemy.has_meta("getup_elapsed_time"):
+		var elapsed = enemy.get_meta("getup_elapsed_time") + delta
+		enemy.set_meta("getup_elapsed_time", elapsed)
+
 	if _timer >= 0.5:
 		var hunt = state_machine._states.get("StateHunt")
 		if hunt:
@@ -38,11 +46,14 @@ func physics_update(delta: float) -> void:
 		state_machine.transition_to("StateHunt")
 
 func handle_hit(hit_data: Dictionary) -> String:
-	if _timer >= 0.5:
-		var zone: String = hit_data.get("hit_zone", "body")
-		match zone:
-			"head", "foot", "left_foot", "right_foot":
-				return "StateTakedownable"
-			_:
-				return "StateStun"
+	if enemy and enemy.has_meta("getup_elapsed_time") and enemy.has_meta("getup_duration"):
+		var elapsed = enemy.get_meta("getup_elapsed_time")
+		var duration = enemy.get_meta("getup_duration")
+		if elapsed >= (duration / 2.0):
+			var zone: String = hit_data.get("hit_zone", "body")
+			match zone:
+				"head", "foot", "left_foot", "right_foot":
+					return "StateTakedownable"
+				_:
+					return "StateStun"
 	return ""

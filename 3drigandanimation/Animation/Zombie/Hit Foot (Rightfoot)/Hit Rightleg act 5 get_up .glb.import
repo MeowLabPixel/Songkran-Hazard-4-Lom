@@ -16,6 +16,8 @@ dest_files=["res://.godot/imported/Hit Rightleg act 5 get_up .glb-ef6ee7af1ffc79
 nodes/root_type=""
 nodes/root_name=""
 nodes/root_script=null
+mesh_library/use_node_names_as_mesh_names=false
+array_mesh/deduplicate_surfaces=true
 nodes/apply_root_scale=true
 nodes/root_scale=1.0
 nodes/import_as_skeleton_bones=false
@@ -41,7 +43,7 @@ _subresources={
 "animations": {
 "HIT Rightleg act 5 (get_up )": {
 "save_to_file/enabled": true,
-"save_to_file/fallback_path": "res://AnimationsExport/Zombies/HIT Rightleg act 5 (get_up ).res",
+"save_to_file/fallback_path": "res://AnimationsExport/Zombies/Hit RightLeg act 5 (get_up ).res",
 "save_to_file/keep_custom_tracks": "",
 "save_to_file/path": "uid://lxme86hip5ig",
 "settings/loop_mode": 0,
@@ -2111,3 +2113,4 @@ _subresources={
 }
 gltf/naming_version=2
 gltf/embedded_image_handling=1
+gltf/texture_map_mode=0

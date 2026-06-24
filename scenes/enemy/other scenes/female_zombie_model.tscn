@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bn8bd7885fqrh"]
 
-[ext_resource type="PackedScene" uid="uid://de785xxpulfg4" path="res://models/enemies/Female Zombie all anim2.glb" id="1_seop5"]
+[ext_resource type="PackedScene" uid="uid://de785xxpulfg4" path="res://Character Model For Programer/Melee Zombie Female/Female Zombie all anim2.glb" id="1_seop5"]
 [ext_resource type="Script" uid="uid://rk4yb4oq18ft" path="res://scripts/enemy/hitbox_zone.gd" id="2_dm4og"]
 [ext_resource type="Script" uid="uid://dhc80rjjahn72" path="res://scenes/enemy/attack_hitbox.gd" id="3_n3jrr"]
 

@@ -25,6 +25,7 @@ var last_attack_time: float = -100.0
 @export var anim_set: ZombieAnimSet
 var anim_player: AnimationPlayer = null
 var anim_tree: AnimationTree = null
+var debug_label: Label3D = null
 
 var next_idle_offset: float = -1.0
 var guaranteed_grab_next_attack: bool = false
@@ -183,8 +184,22 @@ func _ready() -> void:
 		
 		skel.add_child(hit_react)
 	
+	# Create debug label for state display
+	debug_label = Label3D.new()
+	debug_label.name = "DebugStateLabel"
+	debug_label.position = Vector3(0, 2.3, 0) # Adjust height above the head
+	debug_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	debug_label.no_depth_test = true # Visible through walls for debugging
+	debug_label.font_size = 40
+	debug_label.outline_size = 10
+	debug_label.modulate = Color.YELLOW
+	debug_label.outline_modulate = Color.BLACK
+	add_child(debug_label)
+	
 	state_machine.initialize("StateIdle")
 	state_machine.state_changed.connect(_on_state_changed)
+	if debug_label:
+		debug_label.text = "State: %s" % state_machine.get_current_state_name()
 
 func _disable_attack_hitboxes() -> void:
 	for skel_base in [
@@ -259,6 +274,8 @@ func _spawn_drops() -> void:
 
 func _on_state_changed(old_state: String, new_state: String) -> void:
 	print("[EnemyBase] State: %s → %s  |  HP: %d/%d" % [old_state, new_state, current_hp, MAX_HP])
+	if debug_label:
+		debug_label.text = "State: %s\n(%s → %s)" % [new_state, old_state, new_state]
 
 # ─── Navigation ────────────────────────────────────────────────────────────
 func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:

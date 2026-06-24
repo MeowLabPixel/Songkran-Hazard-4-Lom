@@ -1,0 +1,32 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://blee5206v4c4r"]
+
+[ext_resource type="Texture2D" uid="uid://b0ni6uii0vw2g" path="res://Character Model For Programer/Melee Zombie Female/textures/Base Female Zombie-1 Face.001.png" id="1_1vf6k"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cxude"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.5882353)
+grow = true
+grow_amount = 0.003
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+stencil_reference = 4
+metadata/_stencil_owned = true
+
+[resource]
+next_pass = SubResource("StandardMaterial3D_cxude")
+diffuse_mode = 3
+specular_mode = 2
+albedo_texture = ExtResource("1_1vf6k")
+roughness = 0.0
+rim_enabled = true
+rim = 0.5
+texture_filter = 5
+disable_receive_shadows = true
+stencil_mode = 1
+stencil_flags = 2
+stencil_reference = 4
+stencil_color = Color(0, 0, 0, 0.5882353)
+stencil_outline_thickness = 0.003

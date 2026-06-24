@@ -16,6 +16,8 @@ dest_files=["res://.godot/imported/Hit Rightleg act 4 take_down_idle loop.glb-63
 nodes/root_type=""
 nodes/root_name=""
 nodes/root_script=null
+mesh_library/use_node_names_as_mesh_names=false
+array_mesh/deduplicate_surfaces=true
 nodes/apply_root_scale=true
 nodes/root_scale=1.0
 nodes/import_as_skeleton_bones=false
@@ -41,7 +43,7 @@ _subresources={
 "animations": {
 "HIT Rightleg act 4 (Take_down_idle)": {
 "save_to_file/enabled": true,
-"save_to_file/fallback_path": "res://AnimationsExport/Zombies/HIT Rightleg act 4 (Take_down_idle).res",
+"save_to_file/fallback_path": "res://AnimationsExport/Zombies/Hit RightLeg act 4 (Take_down_idle).res",
 "save_to_file/keep_custom_tracks": "",
 "save_to_file/path": "uid://stsnaqua0tgr",
 "settings/loop_mode": 1,
@@ -2111,3 +2113,4 @@ _subresources={
 }
 gltf/naming_version=2
 gltf/embedded_image_handling=1
+gltf/texture_map_mode=0

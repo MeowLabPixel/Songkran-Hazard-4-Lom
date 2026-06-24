@@ -9,6 +9,7 @@
 ##       └── HitboxZone  <── this script
 ##
 ## Valid zone_name values: "head" | "foot" | "right_arm" | "left_arm" | "body"
+@tool
 class_name HitboxZone
 extends Node
 
@@ -16,6 +17,7 @@ extends Node
 @export var base_damage: int = 5
 
 var _enemy: EnemyBase = null
+var _attachment: BoneAttachment3D = null
 
 func _ready() -> void:
 	var parent_name = get_parent().name
@@ -41,10 +43,56 @@ func _ready() -> void:
 
 	var area := get_parent() as Area3D
 	if area:
+		# Scrub any inherited or baked non-uniform scale to prevent Jolt Physics warnings
+		area.transform.basis = area.transform.basis.orthonormalized()
+		
+		# Find the Skeleton3D and the corresponding BoneAttachment3D node
+		var skeleton: Skeleton3D = null
+		var s_nodes = [_enemy]
+		while s_nodes.size() > 0:
+			var curr = s_nodes.pop_back()
+			if curr is Skeleton3D:
+				skeleton = curr
+				break
+			s_nodes.append_array(curr.get_children())
+			
+		if skeleton:
+			var suffix = parent_name.replace("Hitbox", "")
+			if parent_name == "HitboxRightArm":
+				suffix = "RightForeArm"
+			elif parent_name == "HitboxLeftArm":
+				suffix = "LeftForeArm"
+			elif parent_name == "HitboxUpperRightArm":
+				suffix = "RightUpperArm"
+			elif parent_name == "HitboxUpperLeftArm":
+				suffix = "LeftUpperArm"
+			
+			_attachment = skeleton.get_node_or_null("HitboxAttach" + suffix)
+		
 		area.body_entered.connect(_on_body_entered)
 		area.add_to_group("enemy")
 	else:
 		push_error("[HitboxZone] Parent must be Area3D (zone '%s')" % zone_name)
+
+func _process(_delta: float) -> void:
+	var area := get_parent() as Area3D
+	if area:
+		if _attachment:
+			var target_trans = _attachment.global_transform
+			target_trans.basis = target_trans.basis.orthonormalized()
+			area.global_transform = target_trans
+		else:
+			area.scale = Vector3.ONE
+
+func _physics_process(_delta: float) -> void:
+	var area := get_parent() as Area3D
+	if area:
+		if _attachment:
+			var target_trans = _attachment.global_transform
+			target_trans.basis = target_trans.basis.orthonormalized()
+			area.global_transform = target_trans
+		else:
+			area.scale = Vector3.ONE
 
 func _on_body_entered(body: Node3D) -> void:
 	if not (body.is_in_group("player_projectile") or body.is_in_group("bullet") or body.is_in_group("player_attack")):

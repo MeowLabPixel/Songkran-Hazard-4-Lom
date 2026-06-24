@@ -81,7 +81,7 @@ func enter() -> void:
 	
 	if trigger_stun_recovery:
 		trigger_stun_recovery = false
-		_recovery_pause_timer = stun_recovery_pause
+		_recovery_pause_timer = stun_recovery_pause * 0.5
 		# Don't force-play idle here — let the AnimationTree's own
 		# blend transitions (hit_stun → End → hit → End) handle the smooth exit.
 		# The recovery pause timer keeps the zombie still while the blend plays.
@@ -105,6 +105,10 @@ func exit() -> void:
 	_getup_block_timer = 0.0
 	if enemy:
 		enemy.attack_blocked = false
+		if enemy.has_meta("getup_elapsed_time"):
+			enemy.remove_meta("getup_elapsed_time")
+		if enemy.has_meta("getup_duration"):
+			enemy.remove_meta("getup_duration")
 	_end_sprint()
 
 func physics_update(_delta: float) -> void:
@@ -118,11 +122,20 @@ func physics_update(_delta: float) -> void:
 		if _sprint_timer >= _sprint_duration:
 			_end_sprint()
 
+	# Accumulate get-up elapsed time
+	if enemy and enemy.has_meta("getup_elapsed_time"):
+		var elapsed = enemy.get_meta("getup_elapsed_time") + _delta
+		enemy.set_meta("getup_elapsed_time", elapsed)
+
 	if _getup_block_timer > 0.0:
 		_getup_block_timer -= _delta
 		if _getup_block_timer <= 0.0:
 			if enemy:
 				enemy.attack_blocked = false
+				if enemy.has_meta("getup_elapsed_time"):
+					enemy.remove_meta("getup_elapsed_time")
+				if enemy.has_meta("getup_duration"):
+					enemy.remove_meta("getup_duration")
 		if nav_agent and nav_agent.avoidance_enabled:
 			nav_agent.set_velocity(Vector3.ZERO)
 		else:
@@ -308,6 +321,19 @@ func _walk_back(dir_to_player: Vector3, delta: float) -> void:
 		_play_anim(enemy.anim_set.idle)
 
 func handle_hit(hit_data: Dictionary) -> String:
+	# Ignore hits during stun recovery pause to prevent animation tree freeze / lock
+	if _recovery_pause_timer > 0.0:
+		return ""
+
+	# Ignore hits during the first half of get-up animation
+	if enemy and enemy.has_meta("getup_elapsed_time") and enemy.has_meta("getup_duration"):
+		var elapsed = enemy.get_meta("getup_elapsed_time")
+		var duration = enemy.get_meta("getup_duration")
+		if elapsed < (duration / 2.0):
+			return ""
+	elif _getup_block_timer > 0.0:
+		return ""
+
 	var zone: String = hit_data.get("hit_zone", "body")
 	
 	if is_sprinting and zone in ["foot", "left_foot", "right_foot", "left_leg", "right_leg", "leg"]:

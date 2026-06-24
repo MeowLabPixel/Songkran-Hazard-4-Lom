@@ -1,0 +1,43 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://860wpirrbump"]
+
+[ext_resource type="Texture2D" uid="uid://e77uxk5meuh3" path="res://Character Model For Programer/Leon/textures/Base_Leon_Hair.png" id="1_4j3dl"]
+[ext_resource type="Texture2D" uid="uid://bvbfrtouxp56x" path="res://Character Model For Programer/Leon/textures/Hair Rim Light Texture2.png" id="2_k2nih"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lsd8d"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.5882353)
+grow = true
+grow_amount = 0.003
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+stencil_reference = 5
+metadata/_stencil_owned = true
+
+[resource]
+next_pass = SubResource("StandardMaterial3D_lsd8d")
+cull_mode = 2
+diffuse_mode = 3
+specular_mode = 2
+albedo_texture = ExtResource("1_4j3dl")
+roughness = 0.5
+rim_enabled = true
+rim = 0.8
+rim_tint = 1.0
+rim_texture = ExtResource("2_k2nih")
+clearcoat = 0.43
+clearcoat_roughness = 1.0
+heightmap_scale = -5.703
+subsurf_scatter_strength = 1.0
+subsurf_scatter_texture = ExtResource("2_k2nih")
+subsurf_scatter_transmittance_enabled = true
+subsurf_scatter_transmittance_depth = 1.0
+backlight = Color(0.510034, 0.510034, 0.510034, 1)
+texture_filter = 5
+stencil_mode = 1
+stencil_flags = 2
+stencil_reference = 5
+stencil_color = Color(0, 0, 0, 0.5882353)
+stencil_outline_thickness = 0.003

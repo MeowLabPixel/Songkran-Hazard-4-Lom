@@ -11,7 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://c6uqvqrlxwm0g" path="res://scenes/ashley/ashley.tscn" id="10_1pr3x"]
 [ext_resource type="PackedScene" uid="uid://cct03w215xpte" path="res://scenes/enemy/BalloonZom.tscn" id="11_2sc32"]
 [ext_resource type="PackedScene" uid="uid://bfo2fsp5vncs4" path="res://scenes/enemy/GunZom.tscn" id="12_3phbt"]
-[ext_resource type="PackedScene" uid="uid://sa4u82tfijxi" path="res://scenes/enemy/FMeleeZom.tscn" id="13_3phbt"]
+[ext_resource type="PackedScene" uid="uid://dwsg88o0s1s4i" path="res://scenes/enemy/FMeleeZom.tscn" id="13_3phbt"]
 [ext_resource type="PackedScene" uid="uid://c2ngdti12b078" path="res://scenes/enemy/MMeleeZom.tscn" id="13_jof4o"]
 [ext_resource type="PackedScene" path="res://scenes/enemy/EnemySpawner.tscn" id="14_jof4o"]
 
@@ -155,6 +155,7 @@ text = "AAAAAA"
 [node name="Ashley(Follower)" parent="." unique_id=1099023628 instance=ExtResource("10_1pr3x")]
 process_mode = 4
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.9785824, 0, -1.0953765)
+visible = false
 
 [node name="BalloonZom" parent="." unique_id=525148414 instance=ExtResource("11_2sc32")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.531391, 0, 4.336993)

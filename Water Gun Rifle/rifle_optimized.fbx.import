@@ -44,6 +44,14 @@ _subresources={
 "use_external/fallback_path": "res://Water Gun Rifle/Rifle.tres",
 "use_external/path": "uid://dcj6iikqr38m7"
 }
+},
+"nodes": {
+"PATH:Camera": {
+"import/skip_import": true
+},
+"PATH:Light": {
+"import/skip_import": true
+}
 }
 }
 fbx/importer=0

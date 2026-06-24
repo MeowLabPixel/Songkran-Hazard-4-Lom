@@ -1,0 +1,19 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://u7kkr04c11ii"]
+
+[ext_resource type="Texture2D" uid="uid://b8b5fxfwflw0w" path="res://Character Model For Programer/Leon/textures/Face Rim Light Texture.png" id="1_5u7ee"]
+
+[resource]
+transparency = 1
+cull_mode = 2
+diffuse_mode = 3
+specular_mode = 2
+albedo_color = Color(1, 1, 1, 0)
+roughness = 0.0
+rim = 0.5
+rim_texture = ExtResource("1_5u7ee")
+texture_filter = 5
+disable_receive_shadows = true
+stencil_flags = 2
+stencil_reference = 4
+stencil_color = Color(0, 0, 0, 0.5882353)
+stencil_outline_thickness = 0.003

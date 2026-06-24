@@ -45,6 +45,10 @@ func _start_act1() -> void:
 					enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/hit_far", false)
 					enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/hit_close", true)
 				_act1_velocity = -move_dir * head_hit_move_speed # Move backward
+	else:
+		# If it's a leg hit during get-up, we need the hit_getup condition to be true
+		if enemy and enemy.anim_tree:
+			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/hit_getup", true)
 				
 	_force_anim(anim, "hit/hit_takedown")
 
@@ -57,6 +61,7 @@ func exit() -> void:
 	if enemy and enemy.anim_tree:
 		enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/hit_far", false)
 		enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/hit_close", false)
+		enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/hit_getup", false)
 
 func physics_update(delta: float) -> void:
 	if takedown_triggered:

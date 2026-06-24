@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://de785xxpulfg4"
-path="res://.godot/imported/Female Zombie all anim2.glb-3de3595135d9c87ad341cc4b6b5475df.scn"
+path="res://.godot/imported/Female Zombie all anim2.glb-0b0b23b372322c0727332488dc937a28.scn"
 
 [deps]
 
-source_file="res://models/enemies/Female Zombie all anim2.glb"
-dest_files=["res://.godot/imported/Female Zombie all anim2.glb-3de3595135d9c87ad341cc4b6b5475df.scn"]
+source_file="res://Character Model For Programer/Melee Zombie Female/Female Zombie all anim2.glb"
+dest_files=["res://.godot/imported/Female Zombie all anim2.glb-0b0b23b372322c0727332488dc937a28.scn"]
 
 [params]
 
@@ -31,7 +31,7 @@ skins/use_named_skins=true
 animation/import=true
 animation/fps=30
 animation/trimming=false
-animation/remove_immutable_tracks=true
+animation/remove_immutable_tracks=false
 animation/import_rest_as_RESET=false
 import_script/path=""
 materials/extract=0
@@ -24714,9 +24714,8 @@ _subresources={
 },
 "nodes": {
 "PATH:rig_002/Skeleton3D": {
-"retarget/bone_map": Object(BoneMap,"resource_local_to_scene":false,"resource_name":"","profile":Object(SkeletonProfileHumanoid,"resource_local_to_scene":false,"resource_name":"","root_bone":&"Root","scale_base_bone":&"Hips","group_size":4,"bone_size":56,"script":null)
-,"bonemap":null,"bone_map/Root":&"","bone_map/Hips":&"DEF-spine","bone_map/Spine":&"","bone_map/Chest":&"","bone_map/UpperChest":&"","bone_map/Neck":&"","bone_map/Head":&"","bone_map/LeftEye":&"","bone_map/RightEye":&"","bone_map/Jaw":&"","bone_map/LeftShoulder":&"","bone_map/LeftUpperArm":&"","bone_map/LeftLowerArm":&"","bone_map/LeftHand":&"","bone_map/LeftThumbMetacarpal":&"","bone_map/LeftThumbProximal":&"","bone_map/LeftThumbDistal":&"","bone_map/LeftIndexProximal":&"","bone_map/LeftIndexIntermediate":&"","bone_map/LeftIndexDistal":&"","bone_map/LeftMiddleProximal":&"","bone_map/LeftMiddleIntermediate":&"","bone_map/LeftMiddleDistal":&"","bone_map/LeftRingProximal":&"","bone_map/LeftRingIntermediate":&"","bone_map/LeftRingDistal":&"","bone_map/LeftLittleProximal":&"","bone_map/LeftLittleIntermediate":&"","bone_map/LeftLittleDistal":&"","bone_map/RightShoulder":&"","bone_map/RightUpperArm":&"","bone_map/RightLowerArm":&"","bone_map/RightHand":&"","bone_map/RightThumbMetacarpal":&"","bone_map/RightThumbProximal":&"","bone_map/RightThumbDistal":&"","bone_map/RightIndexProximal":&"","bone_map/RightIndexIntermediate":&"","bone_map/RightIndexDistal":&"","bone_map/RightMiddleProximal":&"","bone_map/RightMiddleIntermediate":&"","bone_map/RightMiddleDistal":&"","bone_map/RightRingProximal":&"","bone_map/RightRingIntermediate":&"","bone_map/RightRingDistal":&"","bone_map/RightLittleProximal":&"","bone_map/RightLittleIntermediate":&"","bone_map/RightLittleDistal":&"","bone_map/LeftUpperLeg":&"","bone_map/LeftLowerLeg":&"","bone_map/LeftFoot":&"","bone_map/LeftToes":&"","bone_map/RightUpperLeg":&"","bone_map/RightLowerLeg":&"","bone_map/RightFoot":&"","bone_map/RightToes":&"","script":null)
-
+"retarget/bone_map": null,
+"retarget/remove_tracks/unimportant_positions": false
 }
 }
 }
