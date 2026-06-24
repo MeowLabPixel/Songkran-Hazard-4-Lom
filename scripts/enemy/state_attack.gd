@@ -2,8 +2,8 @@ class_name StateAttack
 extends EnemyState
 
 @export var grab_chance: float      = 0.25
-@export var grab_damage: int        = 12
-@export var attack_damage: int      = 6
+@export var grab_damage: int        = 30
+@export var attack_damage: int      = 30
 
 @export_group("Attack Windows")
 @export var attack1_swing_start_frac: float = 0.5
@@ -15,18 +15,19 @@ extends EnemyState
 @export var qte_duration: float     = 2.5
 @export var qte_shakes_needed: int  = 5
 @export_group("Attack Movement")
-@export var attack_forward_speed: float = 4.0
+@export var attack_forward_speed: float = 10.0
 @export var attack_tracking_speed: float = 4.0
 @export var attack_min_speed: float = 0.0
-@export var recovery_friction: float = 5.0
-@export var recovery_tracking_speed: float = 0.5
+@export var recovery_friction: float = 0.0
+@export var recovery_tracking_speed: float = 0.0
 
 @export_group("Grab Movement")
+@export var grab_hold_distance: float = 0.5
 @export var grab_forward_speed: float = 4.0
-@export var grab_tracking_speed: float = 4.0
-@export var grab_min_speed: float = 0.0
-@export var grab_recovery_friction: float = 5.0
-@export var grab_recovery_tracking_speed: float = 0.5
+@export var grab_tracking_speed: float = 3.5
+@export var grab_min_speed: float = 2.0
+@export var grab_recovery_friction: float = 0.0
+@export var grab_recovery_tracking_speed: float = 0.0
 enum Phase { ATTACK, GRAB_REACHING, GRAB_HOLDING, GRAB_RESOLVING, DONE }
 enum SwingPhase { WINDUP, SWING, RECOVERY }
 
@@ -194,8 +195,14 @@ func _start_grab_hold() -> void:
 		# Force alignment
 		var to_player = player.global_position - enemy.global_position
 		to_player.y = 0.0
-		if to_player.length_squared() > 0.01:
-			enemy.global_transform.basis = Basis.looking_at(to_player.normalized(), Vector3.UP)
+		var current_dist = to_player.length()
+		if current_dist > 0.01:
+			var dir_to_player = to_player / current_dist
+			enemy.global_transform.basis = Basis.looking_at(dir_to_player, Vector3.UP)
+			
+			# Pull the zombie closer to the player to align the grab animations
+			if current_dist > grab_hold_distance:
+				enemy.global_position += dir_to_player * (current_dist - grab_hold_distance)
 			
 		var to_zombie = enemy.global_position - player.global_position
 		to_zombie.y = 0.0

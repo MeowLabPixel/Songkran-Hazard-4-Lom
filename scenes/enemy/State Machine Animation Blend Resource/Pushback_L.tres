@@ -1,0 +1,41 @@
+[gd_resource type="AnimationNodeBlendTree" format=3 uid="uid://diolosak3aec4"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_lvu4b"]
+animation = &"HIT Left arm"
+use_custom_timeline = true
+timeline_length = 1.4
+stretch_time_scale = false
+start_offset = 0.0
+loop_mode = 0
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_2thyy"]
+animation = &"Walk zombie va2"
+play_mode = 1
+use_custom_timeline = true
+timeline_length = 2.0
+stretch_time_scale = false
+start_offset = 0.0
+loop_mode = 0
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_1jkmu"]
+filter_enabled = true
+filters = ["%GeneralSkeleton:DEF-pelvis.L", "%GeneralSkeleton:DEF-pelvis.R", "%GeneralSkeleton:DEF-spine.002", "%GeneralSkeleton:DEF-spine.003", "%GeneralSkeleton:DEF-spine.004", "%GeneralSkeleton:DEF-spine.005", "%GeneralSkeleton:DEF-spine.006", "%GeneralSkeleton:DEF-upper_arm.R", "%GeneralSkeleton:DEF-upper_arm.R.001", "%GeneralSkeleton:Hips", "%GeneralSkeleton:MCH-pivot", "%GeneralSkeleton:MCH-spine.002", "%GeneralSkeleton:MCH-spine.003", "%GeneralSkeleton:ORG-spine.002", "%GeneralSkeleton:ORG-spine.004", "%GeneralSkeleton:ORG-spine.005", "%GeneralSkeleton:ORG-spine.006", "%GeneralSkeleton:chest", "%GeneralSkeleton:shoulder.L", "%GeneralSkeleton:shoulder.R", "%GeneralSkeleton:spine_fk.002", "%GeneralSkeleton:spine_fk.003", "%GeneralSkeleton:torso", "%GeneralSkeleton:tweak_spine.002"]
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_6bc2x"]
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_xuumt"]
+
+[resource]
+graph_offset = Vector2(-223.85454, 86.21818)
+nodes/output/position = Vector2(480, 144)
+nodes/Animation/node = SubResource("AnimationNodeAnimation_2thyy")
+nodes/Animation/position = Vector2(-208, 96)
+nodes/TimeScale/node = SubResource("AnimationNodeTimeScale_xuumt")
+nodes/TimeScale/position = Vector2(0, 64)
+nodes/Blend2/node = SubResource("AnimationNodeBlend2_1jkmu")
+nodes/Blend2/position = Vector2(220.1304, 131.68399)
+"nodes/Animation 2/node" = SubResource("AnimationNodeAnimation_lvu4b")
+"nodes/Animation 2/position" = Vector2(-208, 288)
+"nodes/TimeScale 2/node" = SubResource("AnimationNodeTimeScale_6bc2x")
+"nodes/TimeScale 2/position" = Vector2(16, 256)
+node_connections = [&"output", 0, &"Blend2", &"TimeScale", 0, &"Animation", &"Blend2", 0, &"TimeScale", &"Blend2", 1, &"TimeScale 2", &"TimeScale 2", 0, &"Animation 2"]

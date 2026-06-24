@@ -36,8 +36,8 @@ func _state_input(_event: InputEvent) -> void:
 		switch_gun(2)
 	if Input.is_action_pressed("Takedown") and owner.is_near_stunt:
 		# Trigger any nearby enemy takedownable state, then transition
-		owner.attempt_takedown()
-		finished.emit("Takedown")
+		if owner.attempt_takedown():
+			finished.emit("Takedown")
 
 func hitfront(body: Area3D):
 		owner.Hit_info.bullet = body

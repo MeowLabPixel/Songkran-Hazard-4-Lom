@@ -70,20 +70,38 @@ func _process(delta: float) -> void:
 ## Convenience: forward a hit event to the current state.
 ## If the state returns a non-empty string, transition to that state.
 func handle_hit(hit_data: Dictionary) -> void:
-	if current_state:
-		var next := current_state.handle_hit(hit_data)
-		if next != "":
-			# Pre-load zone data into destination state before enter() runs.
-			if next == "StateTakedownable" and _states.has("StateTakedownable"):
-				_states["StateTakedownable"].stun_type = hit_data.get("hit_zone", "head")
-			if next == "StateStun" and _states.has("StateStun"):
-				_states["StateStun"].hit_zone = hit_data.get("hit_zone", "body")
-			# Forward stun_type to Knockdown so it plays the right leg/head sequence.
-			if next == "StateKnockdown" and _states.has("StateKnockdown"):
-				var td = _states.get("StateTakedownable")
-				if td:
-					_states["StateKnockdown"].stun_type = td.stun_type
-			transition_to(next)
+	if not current_state:
+		return
+
+	# Handle custom system hit types
+	var hit_type = hit_data.get("hit_type", "")
+	if hit_type == "push":
+		if not current_state.name in ["StateKnockdown", "StateGetUp", "StateDefeated"]:
+			if _states.has("StateHitPush"):
+				_states["StateHitPush"].push_direction = hit_data.get("hit_direction", Vector3.ZERO)
+				transition_to("StateHitPush")
+				return
+	elif hit_type == "takedown_splash":
+		if not current_state.name in ["StateKnockdown", "StateGetUp", "StateDefeated"]:
+			if _states.has("StateKnockdown"):
+				_states["StateKnockdown"].knockdown_mode = "NORMAL"
+				_states["StateKnockdown"].stun_type = hit_data.get("hit_zone", "head")
+				transition_to("StateKnockdown")
+				return
+
+	var next := current_state.handle_hit(hit_data)
+	if next != "":
+		# Pre-load zone data into destination state before enter() runs.
+		if next == "StateTakedownable" and _states.has("StateTakedownable"):
+			_states["StateTakedownable"].stun_type = hit_data.get("hit_zone", "head")
+		if next == "StateStun" and _states.has("StateStun"):
+			_states["StateStun"].hit_zone = hit_data.get("hit_zone", "body")
+		# Forward stun_type to Knockdown so it plays the right leg/head sequence.
+		if next == "StateKnockdown" and _states.has("StateKnockdown"):
+			var td = _states.get("StateTakedownable")
+			if td:
+				_states["StateKnockdown"].stun_type = td.stun_type
+		transition_to(next)
 
 ## Returns the name of the current state, or "" if uninitialised.
 func get_current_state_name() -> String:

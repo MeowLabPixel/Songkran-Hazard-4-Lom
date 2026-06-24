@@ -40,19 +40,19 @@ var _smoothed_angular_velocity: float = 0.0
 
 # ─── Hit Reaction Properties ───────────────────────────────────────────────
 @export_group("Hit Reaction Stiffness")
-@export var head_reaction_stiffness: float = 260.0
+@export var head_reaction_stiffness: float = 220.0
 @export var body_reaction_stiffness: float = 260.0
 @export var arms_reaction_stiffness: float = 220.0
-@export var legs_reaction_stiffness: float = 240.0
+@export var legs_reaction_stiffness: float = 260.0
 
 @export_group("Hit Reaction Damping")
-@export var head_reaction_damping: float = 18.0
+@export var head_reaction_damping: float = 10.0
 @export var body_reaction_damping: float = 18.0
 @export var arms_reaction_damping: float = 16.0
 @export var legs_reaction_damping: float = 18.0
 
 @export var head_reaction_force: float = 26.0
-@export var body_reaction_force: float = -6.0
+@export var body_reaction_force: float = -7.0
 @export var arms_reaction_force: float = -14.0
 @export var legs_reaction_force: float = -10.0
 @export var legs_knockdown_dampening: float = 0.5
@@ -64,19 +64,19 @@ var _smoothed_angular_velocity: float = 0.0
 @export var side_offset_max: float = 0.6
 
 @export_group("Flipflop Eat Leg Feature")
-@export var flipflop_slide_height: float = 0.38
-@export var flipflop_slide_speed: float = 2.0
+@export var flipflop_slide_height: float = 0.35
+@export var flipflop_slide_speed: float = 1.0
 @export var flipflop_rot_x: float = 85.0
 @export var flipflop_rot_z: float = 35.0
-@export var flipflop_slide_duration: float = 1.0
-@export var flipflop_blend_duration: float = 0.4
+@export var flipflop_slide_duration: float = 0.8
+@export var flipflop_blend_duration: float = 0.6
 @export var flipflop_slide_depth: float = 0.06
 @export var flipflop_min_height: float = 0.28
-@export var flipflop_blend_min_height: float = 0.00
-@export var flipflop_blend_min_depth: float = 0.00
-@export var flipflop_blend_height_speed: float = 1.0
-@export var flipflop_blend_depth_speed: float = 1.0
-@export var flipflop_blend_rot_speed: float = 1.0
+@export var flipflop_blend_min_height: float = 0.23
+@export var flipflop_blend_min_depth: float = 0.03
+@export var flipflop_blend_height_speed: float = 10.0
+@export var flipflop_blend_depth_speed: float = 10.0
+@export var flipflop_blend_rot_speed: float = 10.0
 var rig: Node3D
 
 func _find_anim_player() -> AnimationPlayer:

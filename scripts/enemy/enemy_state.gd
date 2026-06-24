@@ -79,6 +79,12 @@ func _play_anim(anim_name: String, sub_machine: String = "") -> void:
 	ap.play(anim_name)
 
 func _force_anim(anim_name: String, sub_machine: String = "", custom_speed: float = 1.0) -> void:
+	_force_anim_ext(anim_name, sub_machine, custom_speed, false)
+
+func _force_anim_instant(anim_name: String, sub_machine: String = "", custom_speed: float = 1.0) -> void:
+	_force_anim_ext(anim_name, sub_machine, custom_speed, true)
+
+func _force_anim_ext(anim_name: String, sub_machine: String = "", custom_speed: float = 1.0, start_instant: bool = false) -> void:
 	if not enemy: return
 	
 	var tree = enemy.get_node_or_null("AnimationTree") as AnimationTree
@@ -90,19 +96,32 @@ func _force_anim(anim_name: String, sub_machine: String = "", custom_speed: floa
 		if root_playback:
 			if sub_machine != "":
 				var folders = sub_machine.split("/")
-				root_playback.travel(folders[0])
+				if start_instant:
+					root_playback.start(folders[0])
+				else:
+					root_playback.travel(folders[0])
 				if folders.size() > 1:
 					var intermediate = tree.get("parameters/" + folders[0] + "/playback") as AnimationNodeStateMachinePlayback
-					if intermediate: intermediate.travel(folders[1])
+					if intermediate:
+						if start_instant:
+							intermediate.start(folders[1])
+						else:
+							intermediate.travel(folders[1])
 				
 				var sub_path = "parameters/" + sub_machine + "/playback"
 				var sub_playback = tree.get(sub_path) as AnimationNodeStateMachinePlayback
 				if sub_playback:
-					sub_playback.travel(anim_name)
+					if start_instant:
+						sub_playback.start(anim_name)
+					else:
+						sub_playback.travel(anim_name)
 				else:
 					push_warning("[EnemyState] _force_anim: sub_playback not found at " + sub_path)
 			else:
-				root_playback.travel(anim_name)
+				if start_instant:
+					root_playback.start(anim_name)
+				else:
+					root_playback.travel(anim_name)
 				
 			if anim_name == enemy.anim_set.idle and enemy.next_idle_offset >= 0.0:
 				var offset = enemy.next_idle_offset

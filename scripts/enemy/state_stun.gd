@@ -14,7 +14,7 @@ func enter() -> void:
 		enemy.move_and_slide()
 	var anim: String = enemy.anim_set.hit_reaction(hit_zone)
 	_current_stun_anim = anim
-	_force_anim(anim, "hit/hit_stun")
+	_force_anim_instant(anim, "hit/hit_stun")
 
 func exit() -> void:
 	match hit_zone:
@@ -73,5 +73,5 @@ func handle_hit(hit_data: Dictionary) -> String:
 			_grace_timer = 0.0
 			hit_zone = zone
 			_current_stun_anim = new_anim
-			_force_anim(new_anim, "hit/hit_stun")
+			_force_anim_instant(new_anim, "hit/hit_stun")
 			return ""

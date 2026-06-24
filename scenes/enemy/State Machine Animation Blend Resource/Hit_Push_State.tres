@@ -1,0 +1,30 @@
+[gd_resource type="AnimationNodeStateMachine" format=3 uid="uid://bepql02oljhpg"]
+
+[ext_resource type="AnimationNodeBlendTree" uid="uid://diolosak3aec4" path="res://scenes/enemy/State Machine Animation Blend Resource/Pushback_L.tres" id="1_kvb2k"]
+[ext_resource type="AnimationNodeBlendTree" uid="uid://dauy0ks71c360" path="res://scenes/enemy/State Machine Animation Blend Resource/Pushback_R.tres" id="2_j08av"]
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_cbxlv"]
+xfade_time = 0.2
+advance_mode = 2
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_xuumt"]
+xfade_time = 0.2
+advance_mode = 2
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_xnytj"]
+xfade_time = 0.2
+switch_mode = 2
+advance_mode = 2
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_wv8hy"]
+xfade_time = 0.2
+switch_mode = 2
+advance_mode = 2
+
+[resource]
+states/Push_L/node = ExtResource("1_kvb2k")
+states/Push_L/position = Vector2(414.86142, 40)
+states/Push_R/node = ExtResource("2_j08av")
+states/Push_R/position = Vector2(435.79996, 152.4)
+transitions = ["Start", "Push_L", SubResource("AnimationNodeStateMachineTransition_cbxlv"), "Start", "Push_R", SubResource("AnimationNodeStateMachineTransition_xuumt"), "Push_L", "End", SubResource("AnimationNodeStateMachineTransition_xnytj"), "Push_R", "End", SubResource("AnimationNodeStateMachineTransition_wv8hy")]
+graph_offset = Vector2(87, -15)

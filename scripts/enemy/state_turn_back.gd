@@ -1,7 +1,7 @@
 class_name StateTurnBack
 extends EnemyState
 
-@export var turn_duration: float = 1.5
+@export var turn_duration: float = 1.0
 
 var _timer: float = 0.0
 var _target_basis: Basis

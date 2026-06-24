@@ -86,8 +86,8 @@ func _state_input(_event: InputEvent) -> void:
 	if Input.is_action_pressed("Gun3"):
 		switch_gun(2)
 	if Input.is_action_pressed("Takedown") and owner.is_near_stunt:
-		owner.attempt_takedown()
-		finished.emit("Takedown")
+		if owner.attempt_takedown():
+			finished.emit("Takedown")
 	if Input.is_action_pressed("aim") :
 		finished.emit("Aim")
 

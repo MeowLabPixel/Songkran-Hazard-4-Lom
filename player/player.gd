@@ -35,6 +35,8 @@ var anim_playback = "parameters/Main/playback"
 @export var pickup_detect: Area3D
 
 var HP = MaxHP
+var takedown_target: Node = null
+var takedown_prompt_label: Label = null
 var Hit_info = {
 	"bullet": null,
 	"location": null
@@ -134,9 +136,38 @@ const JUMP_VELOCITY = 4.5
 
 func _ready() -> void:
 	add_to_group("player")
-	stun_detect.area_entered.connect(stun_detect_in)
-	stun_detect.area_exited.connect(stun_detect_out)
+	var td_hitbox = get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox")
+	if td_hitbox:
+		td_hitbox.collision_mask = 8196 # Detect enemy hitboxes (layers 3 & 14)
+		td_hitbox.collision_layer = 0 # No layer needed for detection
+	
 	pickup_detect.area_entered.connect(pickup_detect_area)
+
+	# Create programmatic takedown prompt UI
+	var prompt_layer = CanvasLayer.new()
+	add_child(prompt_layer)
+	
+	takedown_prompt_label = Label.new()
+	takedown_prompt_label.text = "[E] Takedown"
+	takedown_prompt_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	takedown_prompt_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	takedown_prompt_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	
+	takedown_prompt_label.offset_left = -200
+	takedown_prompt_label.offset_right = 200
+	takedown_prompt_label.offset_top = -150
+	takedown_prompt_label.offset_bottom = -50
+	
+	takedown_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	takedown_prompt_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	
+	takedown_prompt_label.add_theme_font_size_override("font_size", 36)
+	takedown_prompt_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	takedown_prompt_label.add_theme_constant_override("outline_size", 8)
+	takedown_prompt_label.add_theme_color_override("font_color", Color.YELLOW)
+	
+	prompt_layer.add_child(takedown_prompt_label)
+	takedown_prompt_label.visible = false
 
 	# Connect player hitbox zone signals (Grabbed/Attacked) to handlers
 	_connect_player_hitboxes()
@@ -232,6 +263,7 @@ func _process(delta: float) -> void:
 	_update_skeleton_tilt(delta)
 	_update_aim_target(delta)
 	_update_idle_turn_blend(delta)
+	check_if_near_stun()
 
 func _update_aim_target(delta: float) -> void:
 	if aim_target and camera and camera.targetref:
@@ -425,25 +457,39 @@ func Heal(amount):
 	else:
 		HP +=amount
 		
-func stun_detect_in (area: Area3D):
-	var body = _find_enemy_from_area(area)
-	if body is EnemyBase :
-		near_enemy_list.append(body)
-	check_if_near_stun()
-
-func stun_detect_out (area: Area3D):
-	var body = _find_enemy_from_area(area)
-	if body is EnemyBase and  near_enemy_list.has(body):
-		var index = near_enemy_list.find(body,0)
-		near_enemy_list.remove_at(index)
-	check_if_near_stun()
-		
 func check_if_near_stun():
 	is_near_stunt = false
+	near_enemy_list.clear()
+	
+	if not stun_detect:
+		if takedown_prompt_label:
+			takedown_prompt_label.visible = false
+		return
+		
+	var areas := stun_detect.get_overlapping_areas()
+	for a in areas:
+		if not a:
+			continue
+		var body = _find_enemy_from_area(a)
+		if body is EnemyBase and not body.is_defeated:
+			if not near_enemy_list.has(body):
+				near_enemy_list.append(body)
+				
+	var valid_list = []
 	for i in near_enemy_list:
-		var sm = i.get_node_or_null("EnemyStateMachine")
-		if sm.current_state == sm._states["StateTakedownable"]:
-			is_near_stunt = true
+		if is_instance_valid(i) and not i.is_queued_for_deletion():
+			valid_list.append(i)
+			var sm = i.get_node_or_null("EnemyStateMachine")
+			if sm and sm.current_state == sm._states.get("StateTakedownable"):
+				is_near_stunt = true
+	near_enemy_list = valid_list
+	
+	var sm_player = get_node_or_null("Statemachine")
+	if sm_player and sm_player.current_state and sm_player.current_state.name in ["Takedown", "Grab", "Get_hit", "Die"]:
+		is_near_stunt = false
+	
+	if takedown_prompt_label:
+		takedown_prompt_label.visible = is_near_stunt
 
 func aim_bone_on(value):
 	aim_bone.active = value
@@ -477,11 +523,12 @@ func on_hitbox_grabbed_with_area(area: Area3D) -> void:
 	if sm:
 		sm._change_state("Grab")
 
-func attempt_takedown() -> void:
+func attempt_takedown() -> bool:
 	# Called when player presses takedown and is_near_stunt is true.
-
 	if not stun_detect:
-		return
+		return false
+	takedown_target = null
+	
 	# First try overlapping bodies on the takedown Area
 	var areas := stun_detect.get_overlapping_areas()
 	for a in areas:
@@ -490,14 +537,13 @@ func attempt_takedown() -> void:
 
 		var enemy := _find_enemy_from_area(a)
 		if enemy:
-			
 			var sm = enemy.get_node_or_null("EnemyStateMachine")
 			if sm:
-				
 				var td = sm.get_node_or_null("StateTakedownable")
-				if td:
-					td.trigger_takedown()
-					return
+				if td and sm.current_state == td:
+					takedown_target = enemy
+					# We do NOT trigger knockdown yet; it triggers when the hand sweeps
+					return true
 	# Fallback: use near_enemy_list (populated by stun_detect) to find a takedownable enemy
 	for e in near_enemy_list:
 		if not e:
@@ -505,23 +551,10 @@ func attempt_takedown() -> void:
 		var sm2 = e.get_node_or_null("EnemyStateMachine")
 		if sm2:
 			var td2 = sm2.get_node_or_null("StateTakedownable")
-			if td2:
-				
-				td2.trigger_takedown()
-				return
-	# Final fallback: search nearby enemies by group within a small radius
-	var enemies = get_tree().get_nodes_in_group("enemy")
-	var radius := 2.0
-	for en in enemies:
-		if not en:
-			continue
-		if en.global_position.distance_to(global_position) <= radius:
-			var sm3 = en.get_node_or_null("EnemyStateMachine")
-			if sm3:
-				var td3 = sm3.get_node_or_null("StateTakedownable")
-				if td3:
-					td3.trigger_takedown()
-					return
+			if td2 and sm2.current_state == td2:
+				takedown_target = e
+				return true
+	return false
 
 func _find_enemy_from_area(area: Area3D) -> Node:
 	var node = area

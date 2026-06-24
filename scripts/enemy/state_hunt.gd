@@ -3,22 +3,26 @@ extends EnemyState
 
 @export var move_speed: float = 2.0
 @export var attack_cone_half_angle: float = 45.0
-@export var attack_range: float = 1.5
-@export var attack_cooldown: float = 2.0
+@export var attack_range: float = 2.0
+@export var attack_cooldown: float = 1.3
 @export var attack_state: String = "StateAttack"
-@export var walk_back_range: float = 1.4
-@export var guaranteed_grab_range: float = 0.3
+@export var walk_back_range: float = 1.8
+@export var guaranteed_grab_range: float = 1.0
 @export var walk_back_speed_multiplier: float = 0.8
 
-@export var stun_recovery_pause: float = 1.0
+@export_group("Animation Timescales")
+@export var walk_timescale: float = 2.0
+@export var walk_back_timescale: float = -2.0
+
+@export var stun_recovery_pause: float = 0.5
 
 @export_group("Hunt Sprint")
 @export var sprint_speed: float = 4.0
-@export var sprint_timescale: float = 3.5
-@export var sprint_duration_min: float = 2.0
-@export var sprint_duration_max: float = 3.0
-@export var sprint_cooldown_min: float = 5.0
-@export var sprint_cooldown_max: float = 10.0
+@export var sprint_timescale: float = 1.75
+@export var sprint_duration_min: float = 1.5
+@export var sprint_duration_max: float = 2.5
+@export var sprint_cooldown_min: float = 3.0
+@export var sprint_cooldown_max: float = 6.0
 @export var sprint_activation_chance_per_sec: float = 0.2
 
 static var sprinting_enemies: Array = []
@@ -274,7 +278,7 @@ func _play_anim(anim_name: String, sub_machine: String = "") -> void:
 	if enemy and enemy.anim_tree:
 		# Always reset timescale to normal forward speed unless fleeing/walking back
 		if not _is_fleeing:
-			var speed_scale = sprint_timescale if is_sprinting else 2.0
+			var speed_scale = sprint_timescale if is_sprinting else walk_timescale
 			enemy.anim_tree.set(scale_path, speed_scale)
 	
 	super._play_anim(anim_name, sub_machine)
@@ -310,8 +314,8 @@ func _walk_back(dir_to_player: Vector3, delta: float) -> void:
 		_play_anim(_walk_anim)
 		if enemy and enemy.anim_tree:
 			var scale_path = "parameters/" + _walk_anim + "/TimeScale/scale"
-			# Set negative timescale for backwards walk
-			enemy.anim_tree.set(scale_path, -2.0)
+			# Set timescale for backwards walk
+			enemy.anim_tree.set(scale_path, walk_back_timescale)
 	else:
 		if nav_agent and nav_agent.avoidance_enabled:
 			nav_agent.set_velocity(Vector3.ZERO)
@@ -373,7 +377,7 @@ func _update_walk_timescale() -> void:
 	if enemy and enemy.anim_tree and not _walk_anim.is_empty():
 		var scale_path = "parameters/" + _walk_anim + "/TimeScale/scale"
 		if not _is_fleeing:
-			var speed_scale = sprint_timescale if is_sprinting else 2.0
+			var speed_scale = sprint_timescale if is_sprinting else walk_timescale
 			enemy.anim_tree.set(scale_path, speed_scale)
 
 func _get_target_position() -> Vector3:

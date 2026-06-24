@@ -2,7 +2,7 @@ class_name StateTakedownable
 extends EnemyState
 
 @export var takedown_window: float = 2.0
-@export var head_hit_move_speed: float = 1.5
+@export var head_hit_move_speed: float = 2.0
 
 var _act2_timer: float = 0.0
 var _act1_timer: float = 0.0
@@ -50,7 +50,7 @@ func _start_act1() -> void:
 		if enemy and enemy.anim_tree:
 			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/hit_getup", true)
 				
-	_force_anim(anim, "hit/hit_takedown")
+	_force_anim_instant(anim, "hit/hit_takedown")
 
 func exit() -> void:
 	if stun_type == "head":
@@ -163,3 +163,8 @@ func handle_hit(hit_data: Dictionary) -> String:
 
 func trigger_takedown() -> void:
 	takedown_triggered = true
+	var knockdown = state_machine._states.get("StateKnockdown")
+	if knockdown:
+		knockdown.knockdown_mode = "NORMAL"
+		knockdown.stun_type = stun_type
+	state_machine.transition_to("StateKnockdown")
