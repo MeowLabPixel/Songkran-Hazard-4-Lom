@@ -1,8 +1,8 @@
 class_name StateHitPush
 extends EnemyState
 
-@export var push_speed: float = 4.0
-@export var push_decay: float = 10.0
+@export var push_speed: float = 3.0
+@export var push_decay: float = 8.0
 
 var push_direction: Vector3 = Vector3.ZERO
 var _grace_timer: float = 0.0

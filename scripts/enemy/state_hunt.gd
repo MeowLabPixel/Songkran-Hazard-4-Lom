@@ -142,18 +142,16 @@ func physics_update(_delta: float) -> void:
 					enemy.remove_meta("getup_duration")
 		if nav_agent and nav_agent.avoidance_enabled:
 			nav_agent.set_velocity(Vector3.ZERO)
-		else:
-			enemy.velocity = Vector3.ZERO
-			enemy.move_and_slide()
+		enemy.velocity = Vector3.ZERO
+		enemy.move_and_slide()
 		return
 		
 	if _recovery_pause_timer > 0.0:
 		_recovery_pause_timer -= _delta
 		if nav_agent and nav_agent.avoidance_enabled:
 			nav_agent.set_velocity(Vector3.ZERO)
-		else:
-			enemy.velocity = Vector3.ZERO
-			enemy.move_and_slide()
+		enemy.velocity = Vector3.ZERO
+		enemy.move_and_slide()
 		return
 		
 	var target_pos: Vector3 = _get_target_position()
@@ -390,3 +388,6 @@ func _get_target_position() -> Vector3:
 func _get_player() -> Node3D:
 	var players = enemy.get_tree().get_nodes_in_group("player")
 	return players[0] if players.size() > 0 else null
+
+func is_movement_blocked() -> bool:
+	return _getup_block_timer > 0.0 or _recovery_pause_timer > 0.0

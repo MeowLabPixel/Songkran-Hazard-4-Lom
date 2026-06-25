@@ -112,6 +112,9 @@ func _ready() -> void:
 	# Set Layer 3 (value 4) and Mask 3 (value 4) to ensure zombies collide with each other
 	set_collision_layer_value(3, true)
 	set_collision_mask_value(3, true)
+	# Set Mask 2 (value 2) to ensure zombies collide with the player
+	set_collision_mask_value(2, true)
+
 
 	# ── Navigation Avoidance Setup ─────────────────────────────────────────────
 	var nav = get_node_or_null("NavigationAgent3D") as NavigationAgent3D
@@ -284,6 +287,8 @@ func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
 	if not state_machine or not state_machine.current_state:
 		return
 	if state_machine.current_state.name != "StateHunt":
+		return
+	if state_machine.current_state.is_movement_blocked():
 		return
 	
 	var current_y = velocity.y

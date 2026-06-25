@@ -227,9 +227,11 @@ func _apply_damage_to_result(result: Dictionary) -> void:
 		
 		if hitbox_zone:
 			var enemy = hitbox_zone._enemy
+			var anchalee = hitbox_zone.get("_anchalee")
+			var target = enemy if enemy else anchalee
 			
-			if enemy:
-				enemy.take_hit({
+			if target:
+				target.take_hit({
 					"damage": int(damage),
 					"hit_zone": hitbox_zone.zone_name,
 					"position": result.position

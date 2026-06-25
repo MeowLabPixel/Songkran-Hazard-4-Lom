@@ -6,9 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://btccymluo63tk" path="res://player/img/kenney_prototype-textures/PNG/Orange/texture_06.png" id="3_ih2au"]
 [ext_resource type="Texture2D" uid="uid://qpgo13y43xub" path="res://player/img/kenney_prototype-textures/PNG/Purple/texture_08.png" id="4_6c3wv"]
 [ext_resource type="Texture2D" uid="uid://cfa0r7igmb3vg" path="res://player/img/kenney_prototype-textures/PNG/Light/texture_09.png" id="5_33i3r"]
-[ext_resource type="PackedScene" uid="uid://ek1ncjc2swrw" path="res://player/test/temp_enemi.tscn" id="7_ih2au"]
-[ext_resource type="Script" uid="uid://dxr0w5vn4oq5s" path="res://player/test/UI.gd" id="8_6c3wv"]
-[ext_resource type="PackedScene" uid="uid://c6uqvqrlxwm0g" path="res://scenes/ashley/ashley.tscn" id="10_1pr3x"]
+[ext_resource type="PackedScene" uid="uid://c6uqvqrlxwm0g" path="res://scenes/anchalee/Anchalee.tscn" id="10_1pr3x"]
 [ext_resource type="PackedScene" uid="uid://cct03w215xpte" path="res://scenes/enemy/BalloonZom.tscn" id="11_2sc32"]
 [ext_resource type="PackedScene" uid="uid://bfo2fsp5vncs4" path="res://scenes/enemy/GunZom.tscn" id="12_3phbt"]
 [ext_resource type="PackedScene" uid="uid://dwsg88o0s1s4i" path="res://scenes/enemy/FMeleeZom.tscn" id="13_3phbt"]
@@ -86,76 +84,8 @@ collision_layer = 14
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=831039779]
 environment = SubResource("Environment_1da4k")
 
-[node name="Temp_enemi" parent="." unique_id=1389743187 instance=ExtResource("7_ih2au")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 6)
-
-[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=424261850 node_paths=PackedStringArray("water", "air", "player")]
-script = ExtResource("8_6c3wv")
-water = NodePath("Water")
-air = NodePath("Air")
-player = NodePath("../player")
-
-[node name="HP" type="Label" parent="CanvasLayer" unique_id=2143956174]
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -205.0
-offset_top = -185.0
-offset_right = -42.0
-offset_bottom = -128.0
-grow_horizontal = 0
-grow_vertical = 0
-pivot_offset = Vector2(79, 28)
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 41
-text = "AAAAAA"
-
-[node name="Air" type="Label" parent="CanvasLayer" unique_id=212945901]
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -205.0
-offset_top = -85.0
-offset_right = -42.0
-offset_bottom = -28.0
-grow_horizontal = 0
-grow_vertical = 0
-pivot_offset = Vector2(79, 28)
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 41
-text = "AAAAAA"
-
-[node name="Water" type="Label" parent="CanvasLayer" unique_id=1425413778]
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -205.0
-offset_top = -133.0
-offset_right = -42.0
-offset_bottom = -76.0
-grow_horizontal = 0
-grow_vertical = 0
-pivot_offset = Vector2(79, 28)
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 41
-text = "AAAAAA"
-
-[node name="Ashley(Follower)" parent="." unique_id=1099023628 instance=ExtResource("10_1pr3x")]
-process_mode = 4
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.9785824, 0, -1.0953765)
-visible = false
+[node name="Anchalee(Follower)" parent="." unique_id=1099023628 instance=ExtResource("10_1pr3x")]
+transform = Transform3D(-0.99708885, 0, -0.076248564, 0, 1, 0, 0.076248564, 0, -0.99708885, 11.543953, 0.015388727, -12.987386)
 
 [node name="BalloonZom" parent="." unique_id=525148414 instance=ExtResource("11_2sc32")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.531391, 0, 4.336993)
@@ -164,10 +94,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.531391, 0, 4.336993)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1601298, 0, 1.5610623)
 
 [node name="FMeleeZom1" parent="." unique_id=26037267 instance=ExtResource("13_3phbt")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.670662, 0.08199238, -7.866104)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.670662, 0.08199238, 4.199516)
 
 [node name="MMeleeZom1" parent="." unique_id=793898799 instance=ExtResource("13_jof4o")]
-transform = Transform3D(0.552359, 0, -0.83360636, 0, 1, 0, 0.83360636, 0, 0.552359, 5.6281147, 0, -10.546129)
+transform = Transform3D(0.552359, 0, -0.83360636, 0, 1, 0, 0.83360636, 0, 0.552359, 5.6281147, 0, 1.5194907)
 
 [node name="EnemySpawner" parent="." unique_id=1812457875 instance=ExtResource("14_jof4o")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8009324, 0.0500288, -6.9369454)

@@ -6,10 +6,27 @@ extends CanvasLayer
 @onready var hp: Label = $HP
 
 func _ready() -> void:
+	if not player:
+		var players = get_tree().get_nodes_in_group("player")
+		if players.size() > 0:
+			player = players[0]
+			
+	if not player: return
+	
 	update_display()
 	hp.text = "HP: " + str(player.HP)
 
 func _process(_delta: float) -> void:
+	if not player:
+		if owner is Player:
+			player = owner as Player
+		else:
+			var players = get_tree().get_nodes_in_group("player")
+			if players.size() > 0:
+				player = players[0]
+		if not player:
+			return
+			
 	if player.HP <=0:
 		self.visible = false
 	update_display()

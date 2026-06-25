@@ -1,7 +1,7 @@
 ## Player — test controller.
 ## WASD movement on the XZ plane.
 ## Faces the mouse cursor position projected onto the ground plane.
-## Belongs to the "player" group so Ashley and pickups can identify it.
+## Belongs to the "player" group so Anchalee and pickups can identify it.
 #class_name Player
 extends CharacterBody3D
 
@@ -24,6 +24,8 @@ signal health_changed(current: int, maximum: int)
 func _ready() -> void:
 	add_to_group("player")
 	current_health = max_health
+	# Enable collision mask for Layer 3 (Enemies)
+	set_collision_mask_value(3, true)
 
 func _physics_process(delta: float) -> void:
 	# Freeze all movement while grabbed.

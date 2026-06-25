@@ -1,0 +1,353 @@
+## AnchaleeBase: root script for the Anchalee follower character.
+## Handles the state machine, threat tracking, and exposes helpers to states.
+class_name AnchaleeBase
+extends CharacterBody3D
+
+# ─── Signals ───────────────────────────────────────────────────────────────
+signal threat_entered()
+signal threat_cleared()
+signal player_entered_friend_area()
+signal player_exited_friend_area()
+
+# ─── References ────────────────────────────────────────────────────────────
+@onready var state_machine: AnchaleeStateMachine = $AnchaleeStateMachine
+@onready var nav_agent: NavigationAgent3D = $NavigationAgent3D
+@onready var threat_area: Area3D = $ThreatArea
+@onready var friend_area: Area3D = $FriendArea
+@onready var help_label: Label3D = $HelpLabel
+@onready var rig: Node3D = $AnchaleeModel/rig_002
+var anim_player: AnimationPlayer = null  # assigned at runtime once model is finalized
+
+# ─── Health ────────────────────────────────────────────────────────────────
+@export var max_health: int = 100
+var health: int = max_health
+var is_dead: bool = false
+
+# ─── Following ─────────────────────────────────────────────────────────────
+@export_group("Following")
+@export var follow_start_distance: float = 1.5
+@export var follow_stop_distance: float = 0.5
+@export var friend_area_push_back_offset: float = 0.8
+
+@export_group("Aim Detection")
+@export var aim_detect_radius: float = 2.0
+
+@export_group("Procedural Turn Lean")
+@export var rotation_tilt_sensitivity: float = 3.5
+@export var rotation_yaw_sensitivity: float = 6.0
+@export var max_tilt_angle: float = 6.0
+@export var max_yaw_angle: float = 15.0
+@export var turn_tilt_speed: float = 10.0
+
+var last_y_rotation: float = 0.0
+var _smoothed_angular_velocity: float = 0.0
+var has_initialized_rotation: bool = false
+
+# ─── Tracking ───────────────────────────────────────────────────────
+## All CharacterBody3D nodes (enemies) currently inside the threat radius.
+var nearby_threats: Array = []
+var is_player_in_friend_area: bool = false
+var is_walking_backward: bool = false
+var player_is_sprinting: bool = false
+var smoothed_target_pos: Vector3 = Vector3.ZERO
+
+## Set by states when Anchalee is stuck.
+var is_cornered: bool = false:
+	set(value):
+		if value == is_cornered:
+			return
+		is_cornered = value
+		if is_node_ready() and help_label:
+			help_label.visible = value
+
+func _ready() -> void:
+	if has_node("AnchaleeModel/AnimationPlayer"):
+		anim_player = $AnchaleeModel/AnimationPlayer
+	health = max_health
+	help_label.visible = false
+	add_to_group("Anchalee")
+	
+
+
+	# Configure threat_area and friend_area collision settings programmatically
+	# to prevent them from colliding with player weapon raycasts and projectiles (layer = 0)
+	if threat_area:
+		threat_area.collision_layer = 0
+		threat_area.collision_mask = 1 | 8192 # Detect enemies on layer 1 & layer 14
+		threat_area.body_entered.connect(_on_threat_entered)
+		threat_area.body_exited.connect(_on_threat_exited)
+	
+	if friend_area:
+		friend_area.collision_layer = 0
+		friend_area.collision_mask = 1 | 14 # Detect player on layer 1 & layer 14
+		friend_area.body_entered.connect(_on_friend_entered)
+		friend_area.body_exited.connect(_on_friend_exited)
+	
+	# Start in Idle state
+	state_machine.initialize("AnchaleeStateIdle")
+	state_machine.state_changed.connect(_on_state_changed)
+	
+	if nav_agent:
+		nav_agent.target_desired_distance = follow_stop_distance
+		nav_agent.velocity_computed.connect(_on_nav_velocity_computed)
+	
+	# Prevent physically pushing the player
+	call_deferred("_setup_collision_exceptions")
+	
+	# Initial check for player in friend area
+	if friend_area:
+		for body in friend_area.get_overlapping_bodies():
+			if body.is_in_group("player"):
+				is_player_in_friend_area = true
+				break
+
+	# Setup lean modifier programmatically
+	var skel = get_node_or_null("AnchaleeModel/rig_002/GeneralSkeleton/RetargetModifier3D/OriginalSkeleton")
+	if not skel:
+		skel = find_child("OriginalSkeleton", true, false)
+	if skel:
+		var lean = AnchaleeLeanModifier.new()
+		lean.anchalee = self
+		lean.name = "AnchaleeLeanModifier"
+		skel.add_child(lean)
+
+func _setup_collision_exceptions() -> void:
+	var player = get_player()
+	if player:
+		add_collision_exception_with(player)
+
+func _unhandled_input(event: InputEvent) -> void:
+	pass # Wait behavior replaced by dynamic Idle/Walk
+
+## Called by enemy attack hitboxes to damage Anchalee.
+func take_damage(amount: int, _hit_data: Dictionary = {}) -> void:
+	if is_dead:
+		return
+		
+	# Ignore damage if we are ducking or getting up
+	var current = state_machine.get_current_state_name()
+	if current in ["AnchaleeStateDuck", "AnchaleeStateGetUp"]:
+		return
+		
+	health -= amount
+	print("[Anchalee] Took %d damage -- HP: %d/%d" % [amount, health, max_health])
+	if health <= 0:
+		health = 0
+		is_dead = true
+		print("[Anchalee] Dead.")
+		state_machine.transition_to("AnchaleeStateDie")
+		return
+	state_machine.transition_to("AnchaleeStateHit")
+
+## Called by player gun/bullets (friendly fire)
+func take_hit(hit_data: Dictionary) -> void:
+	if is_dead: return
+	var amount = hit_data.get("damage", 10)
+	health -= amount
+	print("[Anchalee] Friendly Fire! Took %d damage -- HP: %d/%d" % [amount, health, max_health])
+	if health <= 0:
+		health = 0
+		is_dead = true
+		print("[Anchalee] Dead to Friendly Fire.")
+		state_machine.transition_to("AnchaleeStateDie")
+		return
+	state_machine.transition_to("AnchaleeStateHit")
+
+# --- Sensor callbacks ---
+func _on_threat_entered(body: Node3D) -> void:
+	if body == self: return
+	if body is CharacterBody3D and body.is_in_group("enemies") and body not in nearby_threats:
+		nearby_threats.append(body)
+		threat_entered.emit()
+
+func _on_threat_exited(body: Node3D) -> void:
+	if nearby_threats.has(body):
+		nearby_threats.erase(body)
+		if nearby_threats.is_empty():
+			is_cornered = false
+			threat_cleared.emit()
+
+func _on_friend_entered(body: Node3D) -> void:
+	if body.is_in_group("player"):
+		is_player_in_friend_area = true
+		player_entered_friend_area.emit()
+
+func _on_friend_exited(body: Node3D) -> void:
+	if body.is_in_group("player"):
+		is_player_in_friend_area = false
+		player_exited_friend_area.emit()
+
+# ─── Helpers for states ────────────────────────────────────────────────────
+
+func get_player() -> Node3D:
+	var players = get_tree().get_nodes_in_group("player")
+	if players.size() > 0:
+		return players[0]
+	return null
+
+func get_friend_target_pos() -> Vector3:
+	var player = get_player()
+	if not player: return global_position
+	# Look for the FriendArea node on the player scene
+	var friend_area_node = player.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/FriendArea")
+	if friend_area_node:
+		var pos = friend_area_node.global_position
+		
+		# Offset back if player is moving backward or turning right (ang_vel < -0.1) while standing still
+		var player_forward = -player.global_transform.basis.z
+		var is_player_moving_backward = player.velocity.dot(player_forward) < -0.1 or Input.is_action_pressed("ui_down")
+		var ang_vel = player.get("angular_velocity")
+		var is_player_standing_still = player.velocity.length_squared() < 0.01
+		var is_turning_right = ang_vel and ang_vel < -0.1 and is_player_standing_still
+		
+		if is_player_moving_backward or is_turning_right:
+			var back_dir = player.global_transform.basis.z.normalized()
+			pos += back_dir * friend_area_push_back_offset
+			
+		# Offset to the left if the player is rotating left (ang_vel > 0.1) while standing still
+		if ang_vel and ang_vel > 0.1 and is_player_standing_still:
+			var left_dir = friend_area_node.global_transform.basis.x.normalized()
+			var offset_amount = clampf(abs(ang_vel) * 0.4, 0.0, 1.2)
+			pos += left_dir * offset_amount
+		return pos
+	return player.global_position
+
+func _physics_process(delta: float) -> void:
+	if is_dead: return
+	var target_pos = get_friend_target_pos()
+	if smoothed_target_pos == Vector3.ZERO:
+		smoothed_target_pos = global_position
+	smoothed_target_pos = smoothed_target_pos.lerp(target_pos, delta * 6.0)
+
+	# Turn tilt calculation (root tilt when rotating)
+	var current_y_rot = global_rotation.y
+	if not has_initialized_rotation:
+		last_y_rotation = current_y_rot
+		has_initialized_rotation = true
+		
+	var rotation_delta = angle_difference(last_y_rotation, current_y_rot)
+	last_y_rotation = current_y_rot
+	
+	var angular_velocity = 0.0
+	if delta > 0.0:
+		angular_velocity = rotation_delta / delta
+		
+	_smoothed_angular_velocity = lerp(_smoothed_angular_velocity, angular_velocity, delta * 15.0)
+	
+	# Only apply turn lean when in walking state
+	var is_walking = false
+	if state_machine and state_machine.current_state and state_machine.current_state.name == "AnchaleeStateWalk":
+		is_walking = true
+		
+	var turn_tilt_deg = 0.0
+	var turn_yaw_deg = 0.0
+	if is_walking:
+		turn_tilt_deg = -_smoothed_angular_velocity * rotation_tilt_sensitivity
+		turn_yaw_deg = _smoothed_angular_velocity * rotation_yaw_sensitivity
+		
+	var turn_tilt_rad = deg_to_rad(turn_tilt_deg)
+	var turn_yaw_rad = deg_to_rad(turn_yaw_deg)
+	
+	var target_z = clamp(turn_tilt_rad, deg_to_rad(-max_tilt_angle), deg_to_rad(max_tilt_angle))
+	var target_y = clamp(turn_yaw_rad, deg_to_rad(-max_yaw_angle), deg_to_rad(max_yaw_angle))
+	
+	if rig:
+		rig.rotation.x = lerp_angle(rig.rotation.x, 0.0, delta * turn_tilt_speed)
+		rig.rotation.y = lerp_angle(rig.rotation.y, target_y, delta * turn_tilt_speed)
+		rig.rotation.z = lerp_angle(rig.rotation.z, target_z, delta * turn_tilt_speed)
+
+	# Manage collision shape size based on ducking state
+	var current_state_name = state_machine.get_current_state_name() if state_machine else ""
+	var target_height = 1.6469727
+	var target_col_y = 0.8234863
+	
+	if current_state_name in ["AnchaleeStateDuck", "AnchaleeStateGetUp"]:
+		target_height = 0.8
+		target_col_y = 0.4
+		
+	if has_node("CollisionShape3D"):
+		var col = $CollisionShape3D as CollisionShape3D
+		if col and col.shape is CapsuleShape3D:
+			if col.shape.height != target_height:
+				if not col.shape.resource_local_to_scene:
+					col.shape = col.shape.duplicate()
+				col.shape.height = target_height
+				col.position.y = target_col_y
+
+func get_threat_count() -> int:
+	# Clean up any dead or freed enemies from the list
+	var active_threats = []
+	for threat in nearby_threats:
+		if is_instance_valid(threat):
+			active_threats.append(threat)
+	nearby_threats = active_threats
+	return nearby_threats.size()
+
+func _distance_to_segment(p: Vector3, a: Vector3, b: Vector3) -> float:
+	var ab = b - a
+	var ap = p - a
+	var ab_len_sq = ab.length_squared()
+	if ab_len_sq < 0.0001:
+		return ap.length()
+	var t = ap.dot(ab) / ab_len_sq
+	t = clampf(t, 0.0, 1.0)
+	var closest_point = a + ab * t
+	return p.distance_to(closest_point)
+
+func is_player_aiming_or_takedown() -> bool:
+	var player = get_player()
+	if not player: return false
+	
+	# 1. Aiming duck detection: only when player is aiming AND the aiming ray (large crosshair) overlaps Anchalee
+	if player.get("is_aimming") == true:
+		var camera = player.get_node_or_null("Camera")
+		if camera and camera.get("camera"):
+			var camera3d = camera.get("camera") as Camera3D
+			if camera3d:
+				var screen_size = get_viewport().get_visible_rect().size
+				var screen_center = screen_size / 2.0
+				var crosshair_speed = screen_size.y * 1.25
+				var offset_x = camera.get("aim_offset").x * crosshair_speed
+				var crosshair_center = Vector2(screen_center.x + offset_x, screen_center.y)
+				
+				var ray_origin = camera3d.project_ray_origin(crosshair_center)
+				var ray_dir = camera3d.project_ray_normal(crosshair_center)
+				
+				# Math: Distance from Anchalee center to the camera look ray
+				var anchalee_center = global_position + Vector3(0, 0.8, 0)
+				var to_center = anchalee_center - ray_origin
+				var t = to_center.dot(ray_dir)
+				t = maxf(t, 0.0)
+				var closest_point = ray_origin + ray_dir * t
+				var distance_to_ray = anchalee_center.distance_to(closest_point)
+				
+				if distance_to_ray <= aim_detect_radius:
+					return true
+			
+	# 2. Takedown duck detection: only when player is in takedown states AND she is within 1.5m
+	var sm = player.get_node_or_null("Statemachine")
+	if sm and sm.get("current_state"):
+		if sm.current_state.name in ["Takedown", "Grab", "Get_hit", "Die"]:
+			var dist = global_position.distance_to(player.global_position)
+			if dist <= 1.5:
+				return true
+			
+	return false
+
+# ─── Debug ─────────────────────────────────────────────────────────────────
+func _on_state_changed(old_state: String, new_state: String) -> void:
+	print("[Anchalee] State: %s → %s" % [old_state, new_state])
+
+# ─── Navigation ────────────────────────────────────────────────────────────
+func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
+	# Only apply avoidance velocity when Anchalee is actively moving in the Walk state.
+	# All other states manage their own velocity and move_and_slide() calls.
+	if not state_machine or not state_machine.current_state:
+		return
+	if state_machine.current_state.name != "AnchaleeStateWalk":
+		return
+	
+	var current_y = velocity.y
+	velocity = velocity.move_toward(safe_velocity, 10.0 * get_physics_process_delta_time())
+	velocity.y = current_y
+	move_and_slide()

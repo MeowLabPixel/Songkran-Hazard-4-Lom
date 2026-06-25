@@ -17,6 +17,7 @@ extends Node
 @export var base_damage: int = 5
 
 var _enemy: EnemyBase = null
+var _anchalee: AnchaleeBase = null
 var _attachment: BoneAttachment3D = null
 
 func _ready() -> void:
@@ -26,19 +27,19 @@ func _ready() -> void:
 	elif parent_name in ["HitboxRightThigh", "HitboxRightShin"]:
 		zone_name = "right_leg"
 
-	# Walk up the full tree, crossing sub-scene boundaries, to find EnemyBase.
-	# The hitboxes live inside the ZombieModel sub-scene (zombie_animated.tscn),
-	# so we must continue past that Node3D boundary to reach the CharacterBody3D
-	# root of enemy.tscn where EnemyBase lives.
+	# Walk up the full tree, crossing sub-scene boundaries, to find EnemyBase or AnchaleeBase.
 	var node: Node = get_parent()
 	while node != null:
 		if node is EnemyBase:
 			_enemy = node
 			break
+		elif node is AnchaleeBase:
+			_anchalee = node
+			break
 		node = node.get_parent()
 
-	if not _enemy:
-		push_error("[HitboxZone] No EnemyBase found above zone '%s' - hitbox must be inside enemy.tscn" % zone_name)
+	if not _enemy and not _anchalee:
+		push_error("[HitboxZone] No EnemyBase or AnchaleeBase found above zone '%s'" % zone_name)
 		return
 
 	var area := get_parent() as Area3D
@@ -48,13 +49,15 @@ func _ready() -> void:
 		
 		# Find the Skeleton3D and the corresponding BoneAttachment3D node
 		var skeleton: Skeleton3D = null
-		var s_nodes = [_enemy]
-		while s_nodes.size() > 0:
-			var curr = s_nodes.pop_back()
-			if curr is Skeleton3D:
-				skeleton = curr
-				break
-			s_nodes.append_array(curr.get_children())
+		var root_node = _enemy if _enemy else _anchalee
+		if root_node:
+			var s_nodes = [root_node]
+			while s_nodes.size() > 0:
+				var curr = s_nodes.pop_back()
+				if curr is Skeleton3D:
+					skeleton = curr
+					break
+				s_nodes.append_array(curr.get_children())
 			
 		if skeleton:
 			var suffix = parent_name.replace("Hitbox", "")
@@ -67,10 +70,18 @@ func _ready() -> void:
 			elif parent_name == "HitboxUpperLeftArm":
 				suffix = "LeftUpperArm"
 			
-			_attachment = skeleton.get_node_or_null("HitboxAttach" + suffix)
+			var attach_name = "HitboxAttach" + suffix
+			_attachment = skeleton.get_node_or_null(attach_name)
+			# Also search recursively for Anchalee-style rigs where the attachment
+			# lives under RetargetModifier3D/OriginalSkeleton
+			if not _attachment:
+				_attachment = skeleton.find_child(attach_name, true, false)
 		
 		area.body_entered.connect(_on_body_entered)
-		area.add_to_group("enemy")
+		if _enemy:
+			area.add_to_group("enemy")
+		elif _anchalee:
+			area.add_to_group("anchalee_hitbox")
 	else:
 		push_error("[HitboxZone] Parent must be Area3D (zone '%s')" % zone_name)
 
@@ -99,19 +110,21 @@ func _on_body_entered(body: Node3D) -> void:
 		return
 	
 	var hit_dir: Vector3 = Vector3.ZERO
+	var target = _enemy if _enemy else _anchalee
 	if "velocity" in body:
 		hit_dir = body.velocity.normalized()
 	elif "linear_velocity" in body:
 		hit_dir = body.linear_velocity.normalized()
 	else:
-		if _enemy:
-			hit_dir = (_enemy.global_position - body.global_position).normalized()
+		if target:
+			hit_dir = (target.global_position - body.global_position).normalized()
 	hit_dir.y = 0.0
 	hit_dir = hit_dir.normalized()
 
-	_enemy.take_hit({
-		"damage": base_damage,
-		"hit_zone": zone_name,
-		"source": body,
-		"hit_direction": hit_dir,
-	})
+	if target:
+		target.take_hit({
+			"damage": base_damage,
+			"hit_zone": zone_name,
+			"source": body,
+			"hit_direction": hit_dir,
+		})

@@ -108,6 +108,8 @@ var aim_target_head: Marker3D
 @export var aim_visual_offset: Vector3 = Vector3(0.0, 0.25, 0.0)
 @export var aim_parallax_correction: float = 1.5 # Dynamically pulls the gun right when aiming left
 var true_aim_position: Vector3 = Vector3.ZERO
+var nav_agent: NavigationAgent3D = null
+var player_obstacle: NavigationObstacle3D = null
 
 const TILT_SPEED = 10.0
 var last_y_rotation: float = 0.0
@@ -125,7 +127,7 @@ var _anim_time: float = 0.53
 var _is_returning_to_neutral: bool = false
 var _stop_timer: float = 0.0
 var _peak_blend: float = 0.0
-@onready var cross_hair: TextureRect = $Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/TextureRect
+@onready var cross_hair: TextureRect = $Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/Die/TextureRect
 @onready var reload_timer: Timer = $Reload_timer
 
 #const BULLET = preload("uid://csdtdj7sci5vk")
@@ -136,6 +138,24 @@ const JUMP_VELOCITY = 4.5
 
 func _ready() -> void:
 	add_to_group("player")
+	
+	# Enable collision mask for Layer 3 (Enemies) so the player physically collides with enemies
+	set_collision_mask_value(3, true)
+	
+	# Configure FriendNearArea collision mask to detect Anchalee (layer 5, value 16)
+	var near_area = get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/FriendNearArea")
+	if near_area:
+		near_area.collision_mask = 15 | 16
+	
+	# Add a NavigationObstacle3D to Hitbox_F2 (hitboxF) so that the follower/zombies avoid the player's physical space
+	if hitboxF:
+		player_obstacle = NavigationObstacle3D.new()
+		player_obstacle.name = "PlayerAvoidanceObstacle"
+		player_obstacle.radius = 0.5
+		player_obstacle.avoidance_enabled = true
+		hitboxF.add_child(player_obstacle)
+
+	nav_agent = get_node_or_null("NavigationAgent3D")
 	var td_hitbox = get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox")
 	if td_hitbox:
 		td_hitbox.collision_mask = 8196 # Detect enemy hitboxes (layers 3 & 14)
@@ -426,6 +446,13 @@ func _physics_process(_delta: float) -> void:
 		velocity.z = 0.0
 		
 	move_and_slide()
+	if nav_agent and nav_agent.avoidance_enabled:
+		nav_agent.set_velocity(velocity)
+	if player_obstacle:
+		player_obstacle.velocity = velocity
+		# Disable avoidance when aiming to prevent enemies/follower from sliding/dodging sideways 
+		# due to skeleton/Hitbox_F2 rotation sweeps.
+		player_obstacle.avoidance_enabled = not is_aimming
 
 #func change_gun():
 #	if gun_controller:

@@ -30,6 +30,10 @@ func update(_delta: float) -> void:
 func handle_hit(_hit_data: Dictionary) -> String:
 	return ""
 
+## Returns true if the state currently blocks the enemy from moving.
+func is_movement_blocked() -> bool:
+	return false
+
 ## Plays an animation, skipping only if it is actively mid-play right now.
 ## Uses is_playing() + current_animation so a finished one-shot can replay.
 func _play_anim(anim_name: String, sub_machine: String = "") -> void:

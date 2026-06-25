@@ -140,8 +140,8 @@ func _on_enemy_died() -> void:
 
 func _on_trigger_area_body_entered(body: Node3D) -> void:
 	print("[EnemySpawner] Body entered trigger: ", body.name, " in groups: ", body.get_groups())
-	# Allow both the player and Ashley to trigger the spawner
-	if body.is_in_group("player") or body.name == "Player" or body.is_in_group("ashley") or "Ashley" in body.name:
+	# Allow both the player and Anchalee to trigger the spawner
+	if body.is_in_group("player") or body.name == "Player" or body.is_in_group("anchalee") or "Anchalee" in body.name:
 		start_spawning()
 
 func _on_trigger_area_body_exited(body: Node3D) -> void:
