@@ -182,14 +182,14 @@ func fire_pellet():
 		
 		# Position and Align with Normal
 		var normal = result.normal
+		if normal.length_squared() < 0.01:
+			normal = Vector3.UP
 		hit_vfx.global_position = result.position + (normal * 0.01) # Slight offset to prevent clipping
 
-		if normal.is_equal_approx(Vector3.UP):
-			hit_vfx.look_at(hit_vfx.global_position + Vector3.UP, Vector3.FORWARD)
-		elif normal.is_equal_approx(Vector3.DOWN):
-			hit_vfx.look_at(hit_vfx.global_position + Vector3.DOWN, Vector3.BACK)
-		else:
-			hit_vfx.look_at(hit_vfx.global_position + normal, Vector3.UP)
+		var up_dir = Vector3.UP
+		if abs(normal.dot(Vector3.UP)) > 0.999:
+			up_dir = Vector3.FORWARD
+		hit_vfx.look_at(hit_vfx.global_position + normal, up_dir)
 		
 		# Apply custom offset (local to the hit orientation) and scale
 		hit_vfx.position += hit_vfx.global_transform.basis * impact_offset

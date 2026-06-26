@@ -3,7 +3,7 @@ extends EditorScript
 
 func _run() -> void:
 	print("--- FIXING CORRUPT MIXAMO QUATERNIONS ---")
-	var scenes = ["res://scenes/enemy/MMeleeZom.tscn", "res://scenes/enemy/FMeleeZom.tscn"]
+	var scenes = ["res://scenes/enemy/MMeleeZom.tscn", "res://scenes/enemy/FMeleeZom.tscn", "res://player/player.tscn"]
 	
 	for scene_path in scenes:
 		if not ResourceLoader.exists(scene_path):

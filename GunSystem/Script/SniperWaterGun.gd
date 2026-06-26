@@ -52,9 +52,13 @@ func fire_sniper_super_shot():
 			var hit_vfx: Node3D = hit_vfx_scene.instantiate()
 			get_tree().current_scene.add_child(hit_vfx)
 			var normal = result.normal
+			if normal.length_squared() < 0.01:
+				normal = Vector3.UP
 			hit_vfx.global_position = result.position + (normal * 0.01)
-			if not normal.is_equal_approx(Vector3.UP) and not normal.is_equal_approx(Vector3.DOWN):
-				hit_vfx.look_at(hit_vfx.global_position + normal, Vector3.UP)
+			var up_dir = Vector3.UP
+			if abs(normal.dot(Vector3.UP)) > 0.999:
+				up_dir = Vector3.FORWARD
+			hit_vfx.look_at(hit_vfx.global_position + normal, up_dir)
 			hit_vfx.scale = impact_scale
 			if hit_vfx is GPUParticles3D:
 				hit_vfx.emitting = true

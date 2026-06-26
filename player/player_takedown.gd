@@ -32,15 +32,7 @@ func _update(_delta: float) -> void:
 	_check_overlapping_splash()
 
 func _exit() -> void:
-	# Safety fallback: if the state exits and we didn't hit the primary target,
-	# guarantee they get knocked down anyway.
-	if not _hit_primary and is_instance_valid(owner.takedown_target):
-		var sm = owner.takedown_target.get_node_or_null("EnemyStateMachine")
-		if sm:
-			var td = sm.get_node_or_null("StateTakedownable")
-			if td:
-				td.trigger_takedown()
-				_hit_primary = true
+	# Removed the safety fallback: enemies will now ONLY be knocked down if the physical TakedownHitbox actually collided with them!
 
 	owner.stun_detect.monitorable = false
 	if owner.anim and owner.anim.animation_finished.is_connected(anim_done):
