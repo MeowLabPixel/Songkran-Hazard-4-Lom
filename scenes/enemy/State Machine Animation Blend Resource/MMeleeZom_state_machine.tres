@@ -281,7 +281,7 @@ loop_mode = 0
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_5i1gu"]
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_pbru4"]
-graph_offset = Vector2(-453.6, -6.5683594)
+graph_offset = Vector2(-420.8, 44.63164)
 nodes/Animation/node = SubResource("AnimationNodeAnimation_myhm0")
 nodes/Animation/position = Vector2(-368, 128)
 nodes/TimeScale/node = SubResource("AnimationNodeTimeScale_5i1gu")
@@ -299,27 +299,18 @@ loop_mode = 0
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_pbru4"]
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_jek6t"]
-graph_offset = Vector2(-422.4, -127.2)
+graph_offset = Vector2(-383.2, 30.4)
 nodes/TimeScale/node = SubResource("AnimationNodeTimeScale_pbru4")
-nodes/TimeScale/position = Vector2(48.328194, 92.75896)
+nodes/TimeScale/position = Vector2(48, 96)
 nodes/Animation/node = SubResource("AnimationNodeAnimation_5i1gu")
 nodes/Animation/position = Vector2(-400, 48)
 node_connections = [&"output", 0, &"TimeScale", &"TimeScale", 0, &"Animation"]
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_nr1lu"]
-xfade_time = 0.2
-switch_mode = 2
-advance_mode = 2
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_lqb6l"]
-xfade_time = 0.2
-switch_mode = 2
-advance_mode = 2
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_ivbyx"]
-xfade_time = 0.2
-switch_mode = 2
-advance_mode = 2
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_rir43"]
 xfade_time = 0.2
@@ -347,7 +338,7 @@ advance_condition = &"act2_skip"
 "states/Hit RightLeg act 5 (get_up )/node" = SubResource("AnimationNodeBlendTree_jek6t")
 "states/Hit RightLeg act 5 (get_up )/position" = Vector2(430.696, 174.79999)
 transitions = ["Start", "HIT head act 5 (get_up )", SubResource("AnimationNodeStateMachineTransition_nr1lu"), "Start", "Hit Leg act 5 (get_up )", SubResource("AnimationNodeStateMachineTransition_lqb6l"), "Start", "Hit RightLeg act 5 (get_up )", SubResource("AnimationNodeStateMachineTransition_ivbyx"), "HIT head act 5 (get_up )", "End", SubResource("AnimationNodeStateMachineTransition_rir43"), "Hit Leg act 5 (get_up )", "End", SubResource("AnimationNodeStateMachineTransition_6iq3s"), "Hit RightLeg act 5 (get_up )", "End", SubResource("AnimationNodeStateMachineTransition_6v5hr"), "Start", "End", SubResource("AnimationNodeStateMachineTransition_gy6a3")]
-graph_offset = Vector2(156, -110)
+graph_offset = Vector2(117, -43)
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_nolcx"]
 animation = &"HIT Body"
@@ -892,9 +883,9 @@ loop_mode = 0
 graph_offset = Vector2(-64.225784, -29.6)
 nodes/output/position = Vector2(512, 112)
 nodes/Animation/node = SubResource("AnimationNodeAnimation_1ylu7")
-nodes/Animation/position = Vector2(0, 100)
+nodes/Animation/position = Vector2(0, 96)
 nodes/TimeScale/node = SubResource("AnimationNodeTimeScale_ljb3q")
-nodes/TimeScale/position = Vector2(300, 100)
+nodes/TimeScale/position = Vector2(304, 96)
 node_connections = [&"output", 0, &"TimeScale", &"TimeScale", 0, &"Animation"]
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_44sxv"]
@@ -990,7 +981,7 @@ loop_mode = 0
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_fuj0a"]
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_m5i14"]
-graph_offset = Vector2(-53.6, -88.0261)
+graph_offset = Vector2(-64.8, -16.026098)
 nodes/output/position = Vector2(608, 128)
 nodes/Animation/node = SubResource("AnimationNodeAnimation_6pdiy")
 nodes/Animation/position = Vector2(0, 100)
@@ -1100,7 +1091,7 @@ loop_mode = 0
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_rdfpp"]
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_70dpa"]
-graph_offset = Vector2(-84, -67.2)
+graph_offset = Vector2(-81.6, 31.2)
 nodes/output/position = Vector2(608, 112)
 nodes/Animation/node = SubResource("AnimationNodeAnimation_i52mt")
 nodes/Animation/position = Vector2(0, 100)
@@ -1126,8 +1117,6 @@ switch_mode = 2
 advance_mode = 2
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_7fgrd"]
-xfade_time = 0.1
-break_loop_at_end = true
 switch_mode = 2
 advance_mode = 2
 
@@ -1143,7 +1132,6 @@ switch_mode = 2
 advance_mode = 2
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_rdfpp"]
-xfade_time = 0.15
 switch_mode = 2
 advance_mode = 2
 
@@ -1209,8 +1197,6 @@ advance_expression = "For Grab Fail Trabsition
 For Head_TakeDown player Hit Box Interation"
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_6pdiy"]
-xfade_time = 0.15
-break_loop_at_end = true
 switch_mode = 2
 advance_mode = 2
 
@@ -1324,7 +1310,7 @@ states/End/position = Vector2(1650.4, 171.20001)
 "states/HIT head act 4 (Take_down_idle)/node" = SubResource("AnimationNodeBlendTree_kbudh")
 "states/HIT head act 4 (Take_down_idle)/position" = Vector2(1099.1199, -69.7088)
 "states/HIT head act 5 (get_up )/node" = SubResource("AnimationNodeBlendTree_5wcys")
-"states/HIT head act 5 (get_up )/position" = Vector2(1376.0001, 0.8718066)
+"states/HIT head act 5 (get_up )/position" = Vector2(1376.0001, 0.7115516)
 "states/Hit Leg act 1 Slipping/node" = SubResource("AnimationNodeBlendTree_7kybi")
 "states/Hit Leg act 1 Slipping/position" = Vector2(224.70398, 206)
 "states/Hit Leg act 2 (Slipping_Ilde)/node" = SubResource("AnimationNodeBlendTree_nf8l5")
@@ -1349,7 +1335,7 @@ states/End/position = Vector2(1650.4, 171.20001)
 "states/Hit RightLeg act 5 (get_up )/position" = Vector2(1576.7999, 356.96002)
 states/Start/position = Vector2(-1.6, 200)
 transitions = ["Start", "HIT head act 1 - when get hit", SubResource("AnimationNodeStateMachineTransition_nf8l5"), "HIT head act 1 - when get hit", "HIT head act 2(Stun_idle)", SubResource("AnimationNodeStateMachineTransition_dqcew"), "Start", "Hit Leg act 1 Slipping", SubResource("AnimationNodeStateMachineTransition_fuj0a"), "Hit Leg act 3 (Take_down)", "Hit Leg act 4 (Take_down_idle)", SubResource("AnimationNodeStateMachineTransition_yvrxc"), "Hit Leg act 5 (get_up )", "End", SubResource("AnimationNodeStateMachineTransition_7fgrd"), "Start", "Hit RightLeg act 1 Slipping", SubResource("AnimationNodeStateMachineTransition_rlf6b"), "Hit RightLeg act 1 Slipping", "Hit RightLeg act 2 (Slipping_Ilde)", SubResource("AnimationNodeStateMachineTransition_bugpf"), "Hit RightLeg act 3 (Take_down)", "Hit RightLeg act 4 (Take_down_idle)", SubResource("AnimationNodeStateMachineTransition_i52mt"), "Hit RightLeg act 5 (get_up )", "End", SubResource("AnimationNodeStateMachineTransition_rdfpp"), "HIT head act 4 (Take_down_idle)", "HIT head act 5 (get_up )", SubResource("AnimationNodeStateMachineTransition_j1hbu"), "Hit Leg act 2 (Slipping_Ilde)", "Hit Leg act 3 (Take_down)", SubResource("AnimationNodeStateMachineTransition_xorvn"), "Hit Leg act 4 (Take_down_idle)", "Hit Leg act 5 (get_up )", SubResource("AnimationNodeStateMachineTransition_ix8m6"), "Hit RightLeg act 4 (Take_down_idle)", "Hit RightLeg act 5 (get_up )", SubResource("AnimationNodeStateMachineTransition_sy7hg"), "Hit RightLeg act 2 (Slipping_Ilde)", "Hit RightLeg act 3 (Take_down)", SubResource("AnimationNodeStateMachineTransition_r2dw4"), "HIT head act 2(Stun_idle)", "End", SubResource("AnimationNodeStateMachineTransition_djpli"), "Hit Leg act 1 Slipping", "Hit Leg act 2 (Slipping_Ilde)", SubResource("AnimationNodeStateMachineTransition_f067e"), "Hit Leg act 2 (Slipping_Ilde)", "End", SubResource("AnimationNodeStateMachineTransition_tgcde"), "Hit RightLeg act 2 (Slipping_Ilde)", "End", SubResource("AnimationNodeStateMachineTransition_rx5lt"), "Hit Leg act 2 (Slipping_Ilde)", "HIT head act 3-take down Special_L", SubResource("AnimationNodeStateMachineTransition_5wcys"), "Hit RightLeg act 2 (Slipping_Ilde)", "HIT head act 3-take down Special_L", SubResource("AnimationNodeStateMachineTransition_44sxv"), "HIT head act 2(Stun_idle)", "Hit RightLeg act 3 (Take_down)", SubResource("AnimationNodeStateMachineTransition_0cpjc"), "HIT head act 2(Stun_idle)", "Hit Leg act 3 (Take_down)", SubResource("AnimationNodeStateMachineTransition_7kybi"), "HIT head act 2(Stun_idle)", "Hit Leg act 3-take down for head", SubResource("AnimationNodeStateMachineTransition_np0y8"), "Hit Leg act 3-take down for head", "HIT head act 4 (Take_down_idle)", SubResource("AnimationNodeStateMachineTransition_3ej54"), "Start", "Hit Leg act 3-take down for head", SubResource("AnimationNodeStateMachineTransition_kj2yh"), "HIT head act 5 (get_up )", "End", SubResource("AnimationNodeStateMachineTransition_6pdiy"), "Start", "HIT head act 3-take down Special for Attack Swing Leg Shot", SubResource("AnimationNodeStateMachineTransition_2m32b"), "HIT head act 3-take down Special for Attack Swing Leg Shot", "HIT head act 4 (Take_down_idle)", SubResource("AnimationNodeStateMachineTransition_yiqbh"), "Start", "HIT head act 1 - when get hit when close", SubResource("AnimationNodeStateMachineTransition_ojwuk"), "HIT head act 1 - when get hit when close", "HIT head act 2(Stun_idle)", SubResource("AnimationNodeStateMachineTransition_sl1ji"), "HIT head act 2(Stun_idle)", "HIT head act 3-take down Special_L", SubResource("AnimationNodeStateMachineTransition_2kj7h"), "Hit RightLeg act 2 (Slipping_Ilde)", "HIT RightLeg act 3-take down Special_R", SubResource("AnimationNodeStateMachineTransition_j0xyf"), "HIT RightLeg act 3-take down Special_R", "Hit RightLeg act 4 (Take_down_idle)", SubResource("AnimationNodeStateMachineTransition_tjbd8"), "HIT head act 3-take down Special_L", "Hit Leg act 4 (Take_down_idle)", SubResource("AnimationNodeStateMachineTransition_h8ktu"), "HIT head act 2(Stun_idle)", "HIT RightLeg act 3-take down Special_R", SubResource("AnimationNodeStateMachineTransition_i7w6x"), "HIT head act 5 (get_up )", "HIT head act 1 - when get hit", SubResource("AnimationNodeStateMachineTransition_dqab8"), "HIT head act 5 (get_up )", "HIT head act 1 - when get hit when close", SubResource("AnimationNodeStateMachineTransition_3ihtg"), "HIT head act 5 (get_up )", "Hit Leg act 1 Slipping", SubResource("AnimationNodeStateMachineTransition_b3sbd"), "HIT head act 5 (get_up )", "Hit RightLeg act 1 Slipping", SubResource("AnimationNodeStateMachineTransition_8ofwp"), "Hit Leg act 5 (get_up )", "HIT head act 1 - when get hit", SubResource("AnimationNodeStateMachineTransition_pr57p"), "Hit Leg act 5 (get_up )", "HIT head act 1 - when get hit when close", SubResource("AnimationNodeStateMachineTransition_t50xl"), "Hit Leg act 5 (get_up )", "Hit Leg act 1 Slipping", SubResource("AnimationNodeStateMachineTransition_vdmil"), "Hit Leg act 5 (get_up )", "Hit RightLeg act 1 Slipping", SubResource("AnimationNodeStateMachineTransition_ro1hu"), "Hit RightLeg act 5 (get_up )", "Hit RightLeg act 1 Slipping", SubResource("AnimationNodeStateMachineTransition_411l5"), "Hit RightLeg act 5 (get_up )", "Hit Leg act 1 Slipping", SubResource("AnimationNodeStateMachineTransition_2g2iy"), "Hit RightLeg act 5 (get_up )", "HIT head act 1 - when get hit", SubResource("AnimationNodeStateMachineTransition_yci6l"), "Hit RightLeg act 5 (get_up )", "HIT head act 1 - when get hit when close", SubResource("AnimationNodeStateMachineTransition_lt8gi")]
-graph_offset = Vector2(1129.085, 71.64807)
+graph_offset = Vector2(1035.085, 2.6480713)
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_6hwsk"]
 xfade_time = 0.3
@@ -1392,7 +1378,6 @@ switch_mode = 2
 advance_mode = 2
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_a8e01"]
-xfade_time = 0.2
 switch_mode = 2
 advance_mode = 2
 
@@ -1419,9 +1404,9 @@ states/hit_push/position = Vector2(486.3135, 307.2)
 states/hit_stun/node = SubResource("AnimationNodeStateMachine_6nhn0")
 states/hit_stun/position = Vector2(299.50403, 56.4)
 states/hit_takedown/node = SubResource("AnimationNodeStateMachine_70dpa")
-states/hit_takedown/position = Vector2(170.54271, 313.2)
+states/hit_takedown/position = Vector2(173.74272, 313.2)
 transitions = ["hit_stun", "End", SubResource("AnimationNodeStateMachineTransition_6hwsk"), "Start", "hit_takedown", SubResource("AnimationNodeStateMachineTransition_k7xiy"), "Start", "hit_stun", SubResource("AnimationNodeStateMachineTransition_shvbp"), "hit_stun", "hit_takedown", SubResource("AnimationNodeStateMachineTransition_w7d0t"), "hit_takedown", "hit_stun", SubResource("AnimationNodeStateMachineTransition_kbudh"), "Start", "hit_push", SubResource("AnimationNodeStateMachineTransition_myhm0"), "hit_takedown", "hit_push", SubResource("AnimationNodeStateMachineTransition_di8y2"), "hit_push", "hit_takedown", SubResource("AnimationNodeStateMachineTransition_5i1gu"), "hit_push", "hit_stun", SubResource("AnimationNodeStateMachineTransition_pbru4"), "hit_stun", "hit_push", SubResource("AnimationNodeStateMachineTransition_jek6t"), "hit_push", "End", SubResource("AnimationNodeStateMachineTransition_fo2g8"), "hit_takedown", "Getup_End", SubResource("AnimationNodeStateMachineTransition_a8e01"), "Getup_End", "End", SubResource("AnimationNodeStateMachineTransition_0xldr"), "Getup_End", "hit_stun", SubResource("AnimationNodeStateMachineTransition_5yskj"), "Getup_End", "hit_push", SubResource("AnimationNodeStateMachineTransition_e8f0v"), "Getup_End", "hit_takedown", SubResource("AnimationNodeStateMachineTransition_ufupo")]
-graph_offset = Vector2(-70.08652, 284)
+graph_offset = Vector2(-74.08652, 274)
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_ppr3h"]
 xfade_time = 0.15
@@ -1520,4 +1505,4 @@ states/defeated/position = Vector2(400, -100.8)
 states/hit/node = SubResource("AnimationNodeStateMachine_f7n70")
 states/hit/position = Vector2(680.00006, 156.80003)
 transitions = ["attack", "defeated", SubResource("AnimationNodeStateMachineTransition_ppr3h"), "hit", "defeated", SubResource("AnimationNodeStateMachineTransition_85o7v"), "attack", "hit", SubResource("AnimationNodeStateMachineTransition_0dr6x"), "Walk zombie va2", "hit", SubResource("AnimationNodeStateMachineTransition_jr721"), "Walk zombie va2", "attack", SubResource("AnimationNodeStateMachineTransition_kyw6q"), "Walk zombie va2", "defeated", SubResource("AnimationNodeStateMachineTransition_ncjt2"), "Walk zombie va2", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_r1yio"), "Zombie Idle", "Walk zombie va2", SubResource("AnimationNodeStateMachineTransition_1bsmv"), "Start", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_qdr1e"), "hit", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_54tec"), "attack", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_psfbe"), "Zombie Idle", "attack", SubResource("AnimationNodeStateMachineTransition_7rkpk"), "Zombie Idle", "defeated", SubResource("AnimationNodeStateMachineTransition_xlsxt"), "Zombie Idle", "hit", SubResource("AnimationNodeStateMachineTransition_1ylu7"), "hit", "Walk zombie va2", SubResource("AnimationNodeStateMachineTransition_ljb3q"), "Walk zombie va2", "Run zombie  ", SubResource("AnimationNodeStateMachineTransition_xix8b"), "Run zombie  ", "Walk zombie va2", SubResource("AnimationNodeStateMachineTransition_a51ae"), "Run zombie  ", "hit", SubResource("AnimationNodeStateMachineTransition_3twba"), "Run zombie  ", "attack", SubResource("AnimationNodeStateMachineTransition_qoxow"), "Run zombie  ", "defeated", SubResource("AnimationNodeStateMachineTransition_p1uri"), "Run zombie  ", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_jcmwy"), "hit", "Run zombie  ", SubResource("AnimationNodeStateMachineTransition_i2j6k"), "hit", "attack", SubResource("AnimationNodeStateMachineTransition_378r0")]
-graph_offset = Vector2(82.72388, 109)
+graph_offset = Vector2(198.72388, 37)

@@ -264,8 +264,11 @@ func physics_update(delta: float) -> void:
 					if act2_skip_val == false:
 						var pb = enemy.anim_tree.get("parameters/hit/playback")
 						if pb:
+							pb.travel("Getup_End")
+						var child_pb = enemy.anim_tree.get("parameters/hit/Getup_End/playback")
+						if child_pb:
 							var getup_anim = enemy.anim_set.get_up_anim(knockdown_type)
-							pb.travel("Getup_End/" + getup_anim)
+							child_pb.travel(getup_anim)
 
 			if _timer >= 0.5:
 				var hunt = state_machine._states.get("StateHunt")
