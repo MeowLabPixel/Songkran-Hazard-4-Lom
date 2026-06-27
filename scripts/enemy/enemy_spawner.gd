@@ -120,6 +120,12 @@ func _spawn_enemy() -> void:
 	enemy.global_position = spawn_point.global_position
 	enemy.global_rotation = spawn_point.global_rotation
 	
+	# Force spawned enemy to combat mode (StateHunt) immediately
+	if enemy.has_node("EnemyStateMachine"):
+		var sm = enemy.get_node("EnemyStateMachine")
+		if sm and sm.has_method("transition_to"):
+			sm.transition_to("StateHunt")
+	
 	# Track
 	_enemies_spawned_so_far += 1
 	_current_active_enemies += 1
