@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ds4wssdu6do8s"
-path.s3tc="res://.godot/imported/elephant pant.png-6de62c1f8cbf5bd90c32f5f602d1269a.s3tc.ctex"
+path.s3tc="res://.godot/imported/elephant pant.png-400ceaa9567ddcafa5947049f18f0130.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://Character Model For Programer/Albert Wesker/textures/elephant pant.png"
-dest_files=["res://.godot/imported/elephant pant.png-6de62c1f8cbf5bd90c32f5f602d1269a.s3tc.ctex"]
+source_file="res://Character Model For Programer/Albert Wesker/Textures/elephant pant.png"
+dest_files=["res://.godot/imported/elephant pant.png-400ceaa9567ddcafa5947049f18f0130.s3tc.ctex"]
 
 [params]
 

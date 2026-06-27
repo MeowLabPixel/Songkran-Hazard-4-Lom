@@ -233,14 +233,14 @@ func _enter_tree() -> void:
 
 	_telemetry = Telemetry.new(_connection)
 
-	_debugger_plugin = DebuggerPlugin.new(_log_buffer, _game_log_buffer)
+	_debugger_plugin = DebuggerPlugin.new(_log_buffer, _game_log_buffer, _editor_log_buffer)
 	add_debugger_plugin(_debugger_plugin)
 	_ensure_game_helper_autoload()
 
 	var editor_handler := EditorHandler.new(_log_buffer, _connection, _debugger_plugin, _game_log_buffer, _editor_log_buffer)
 	var scene_handler := SceneHandler.new(_connection)
 	var node_handler := NodeHandler.new(get_undo_redo())
-	var project_handler := ProjectHandler.new(_connection, _debugger_plugin)
+	var project_handler := ProjectHandler.new(_connection, _debugger_plugin, _editor_log_buffer)
 	var client_handler := ClientHandler.new()
 	var script_handler := ScriptHandler.new(get_undo_redo(), _connection)
 	var resource_handler := ResourceHandler.new(get_undo_redo(), _connection)

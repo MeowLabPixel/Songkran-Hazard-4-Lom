@@ -143,4 +143,3 @@ func _force_anim_ext(anim_name: String, sub_machine: String = "", custom_speed: 
 		push_warning("[EnemyState] _force_anim: animation '%s' not found on %s" % [anim_name, enemy.name])
 		return
 	enemy.anim_player.play(anim_name, -1.0, custom_speed)
-

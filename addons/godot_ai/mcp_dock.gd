@@ -42,6 +42,7 @@ const PortPickerPanelScript := preload("res://addons/godot_ai/dock_panels/port_p
 const DEV_MODE_SETTING := "godot_ai/dev_mode"
 const CLIENT_STATUS_REFRESH_COOLDOWN_MSEC := 15 * 1000
 const CLIENT_STATUS_REFRESH_TIMEOUT_MSEC := 30 * 1000
+const CLIENT_ACTION_TIMEOUT_MSEC := 30 * 1000
 static var COLOR_MUTED := Color(0.7, 0.7, 0.7)
 static var COLOR_HEADER := Color(0.95, 0.95, 0.95)
 ## Used for "in-progress" / "stale, action needed" UI: the startup-grace
@@ -65,7 +66,7 @@ var _clients_window: Window
 var _dev_mode_toggle: CheckButton
 var _install_label: Label
 
-# Settings tab (secondary window, Tab 2) — domain-exclusion UI for clients
+# Tools tab (secondary window, Tab 2) — domain-exclusion UI for clients
 # that cap total tool count (Antigravity: 100). Pending set is mutated by
 # checkbox clicks; saved set reflects what the spawned server actually
 # sees. `Apply & Restart Server` writes pending → setting and triggers a
@@ -147,23 +148,24 @@ static var _orphaned_client_status_refresh_threads: Array[Thread] = []
 
 ## Per-row worker state for Configure / Remove. Issue #239: shelling out
 ## to a hung CLI on main hangs the editor. We dispatch each click to its
-## own thread (one slot per client) and apply the result via call_deferred
-## once the subprocess returns or the wall-clock budget in McpCliExec
-## kicks in. The buttons stay disabled while the slot is busy so the user
-## can't queue a re-click on the same row.
+## own thread (one slot per client), then `_process` reaps completed workers
+## and applies returned payloads on main. The buttons stay disabled while
+## the slot is busy so the user can't queue a re-click on the same row.
 ##
 ## Per-client (not single-slot) so Configure-all can fan out — the
 ## workers are independent, only the row UI is shared, and McpCliExec
 ## bounds the wall-clock for each.
 ##
-## No orphan-thread list (unlike the refresh worker): action threads
-## never get abandoned mid-flight. McpCliExec's wall-clock budget caps
-## the worst case at ~10s, so the `_exit_tree` / `McpUpdateManager`
-## install-time drain blocks briefly and finishes — there's no path that
-## "gives up" on an action thread the way `_abandon_client_status_refresh_thread`
-## does for the refresh worker.
+## A watchdog can abandon a slot when a worker fails to report completion.
+## The thread object is retained in `_orphaned_client_action_threads` until
+## it finishes so GDScript does not destroy a live Thread object.
 var _client_action_threads: Dictionary = {}
 var _client_action_generations: Dictionary = {}
+var _client_action_started_msec: Dictionary = {}
+var _client_action_names: Dictionary = {}
+## Timed-out Configure/Remove workers are abandoned but retained here until
+## they finish, so GDScript does not destroy a live Thread object.
+static var _orphaned_client_action_threads: Array[Thread] = []
 
 # Dev-mode only
 var _dev_section: VBoxContainer
@@ -238,10 +240,14 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	_prune_orphaned_client_status_refresh_threads()
+	_prune_orphaned_client_action_threads()
+	_poll_completed_client_status_refresh_thread()
+	_poll_completed_client_action_threads()
+	_check_client_status_refresh_timeout()
+	_check_client_action_timeouts()
 	if _connection == null:
 		return
-	_prune_orphaned_client_status_refresh_threads()
-	_check_client_status_refresh_timeout()
 	_retry_deferred_client_status_refresh()
 	_update_status()
 	if _log_viewer != null and _log_viewer.visible:
@@ -275,6 +281,8 @@ func _exit_tree() -> void:
 ## drains directly because it has additional state-machine work
 ## (SHUTTING_DOWN sticky-set) that the install-time path must NOT inherit.
 func prepare_for_self_update_drain() -> void:
+	_poll_completed_client_status_refresh_thread()
+	_poll_completed_client_action_threads()
 	_drain_client_status_refresh_workers()
 	_drain_client_action_workers()
 
@@ -309,13 +317,13 @@ func _drain_client_action_workers() -> void:
 	## plugin disable / install-update path reloads our script class, so any
 	## live Thread must finish before its slot is GC'd or we hit
 	## `~Thread … destroyed without its completion having been realized` →
-	## VM corruption. Bounded by `McpCliExec` wall-clock budgets, so the
-	## worst case is a ~10s blocking drain, vs. an unbounded SIGSEGV.
+	## VM corruption. Normal UI recovery is handled by the per-row watchdog;
+	## teardown still blocks because GDScript's Thread API has no kill/timeout
+	## primitive and destroying a live Thread corrupts the VM.
 	##
-	## Generation-bumped per-row so any pending `call_deferred(
-	## "_apply_client_action_result")` from a worker that finished after we
-	## started draining detects the generation mismatch and short-circuits
-	## without touching freed UI state.
+	## Generation-bumped per-row so any result from a worker that finished
+	## after we started draining detects the generation mismatch and
+	## short-circuits without touching freed UI state.
 	##
 	## After draining, restore the row UI for any in-flight rows: bare
 	## `_client_action_threads.clear()` would leave the dock stuck showing
@@ -328,6 +336,8 @@ func _drain_client_action_workers() -> void:
 		if t != null:
 			t.wait_to_finish()
 		_client_action_generations[client_id] = int(_client_action_generations.get(client_id, 0)) + 1
+		_client_action_started_msec.erase(client_id)
+		_client_action_names.erase(client_id)
 		_finalize_action_buttons(String(client_id))
 		var row: Dictionary = _client_rows.get(String(client_id), {})
 		if not row.is_empty():
@@ -337,6 +347,71 @@ func _drain_client_action_workers() -> void:
 				""
 			)
 	_client_action_threads.clear()
+	for thread in _orphaned_client_action_threads:
+		if thread != null:
+			thread.wait_to_finish()
+	_orphaned_client_action_threads.clear()
+	_client_action_started_msec.clear()
+	_client_action_names.clear()
+
+
+func _check_client_action_timeouts() -> void:
+	var now := Time.get_ticks_msec()
+	for client_id in _client_action_threads.keys():
+		if not _client_action_started_msec.has(client_id):
+			continue
+		var started := int(_client_action_started_msec.get(client_id, 0))
+		if now - started >= CLIENT_ACTION_TIMEOUT_MSEC:
+			_abandon_client_action_thread(String(client_id))
+
+
+func _abandon_client_action_thread(client_id: String) -> void:
+	if not _client_action_threads.has(client_id):
+		return
+	var thread: Thread = _client_action_threads[client_id]
+	var elapsed := Time.get_ticks_msec() - int(_client_action_started_msec.get(client_id, Time.get_ticks_msec()))
+	var worker_alive := thread != null and thread.is_alive()
+	if thread != null:
+		_orphaned_client_action_threads.append(thread)
+	_client_action_threads.erase(client_id)
+	_client_action_started_msec.erase(client_id)
+	var action := str(_client_action_names.get(client_id, "configure"))
+	_client_action_names.erase(client_id)
+	_client_action_generations[client_id] = int(_client_action_generations.get(client_id, 0)) + 1
+	_finalize_action_buttons(client_id)
+	print("MCP | client action timed out: client=%s action=%s elapsed_ms=%d worker_alive=%s" % [
+		client_id,
+		action,
+		elapsed,
+		str(worker_alive),
+	])
+	var label := "Remove" if action == "remove" else "Configure"
+	_apply_row_status(
+		client_id,
+		Client.Status.ERROR,
+		"%s did not report completion in time; refreshing current status." % label
+	)
+	_refresh_clients_summary()
+	if is_inside_tree():
+		_request_client_status_refresh(true)
+
+
+func _prune_orphaned_client_action_threads() -> void:
+	var completed_orphan := false
+	for i in range(_orphaned_client_action_threads.size() - 1, -1, -1):
+		var thread := _orphaned_client_action_threads[i]
+		if thread == null:
+			_orphaned_client_action_threads.remove_at(i)
+		elif not thread.is_alive():
+			thread.wait_to_finish()
+			_orphaned_client_action_threads.remove_at(i)
+			completed_orphan = true
+	if completed_orphan and is_inside_tree():
+		_request_client_action_completion_refresh()
+
+
+func _request_client_action_completion_refresh() -> void:
+	_request_client_status_refresh(true)
 
 
 func _notification(what: int) -> void:
@@ -558,30 +633,37 @@ func _build_ui() -> void:
 	add_child(HSeparator.new())
 
 	# --- Clients ---
-	var clients_row := HBoxContainer.new()
-	clients_row.add_theme_constant_override("separation", 8)
+	var clients_header_row := HBoxContainer.new()
+	clients_header_row.add_theme_constant_override("separation", 8)
 
 	var clients_header := _make_header("Clients")
-	clients_row.add_child(clients_header)
+	clients_header_row.add_child(clients_header)
 
 	_clients_summary_label = Label.new()
 	_clients_summary_label.add_theme_color_override("font_color", COLOR_MUTED)
+	_clients_summary_label.clip_text = true
+	_clients_summary_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_clients_summary_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	clients_row.add_child(_clients_summary_label)
+	clients_header_row.add_child(_clients_summary_label)
+
+	var clients_actions := HFlowContainer.new()
+	clients_actions.add_theme_constant_override("h_separation", 8)
+	clients_actions.add_theme_constant_override("v_separation", 4)
 
 	var clients_refresh_btn := Button.new()
 	clients_refresh_btn.text = "Refresh"
 	clients_refresh_btn.tooltip_text = "Refresh client status in the background. Cached status stays visible while checks run."
 	clients_refresh_btn.pressed.connect(_on_refresh_clients_pressed)
-	clients_row.add_child(clients_refresh_btn)
+	clients_actions.add_child(clients_refresh_btn)
 
 	var clients_open_btn := Button.new()
-	clients_open_btn.text = "Clients & Settings"
-	clients_open_btn.tooltip_text = "Open the MCP settings window — configure AI clients, choose telemetry preferences, or disable tool domains to fit under a client's hard tool-count cap (e.g. Antigravity's 100)."
+	clients_open_btn.text = "Clients & Tools"
+	clients_open_btn.tooltip_text = "Open the Clients & Tools window — configure AI clients, choose telemetry preferences, or disable tool domains to fit under a client's hard tool-count cap (e.g. Antigravity's 100)."
 	clients_open_btn.pressed.connect(_on_open_clients_window)
-	clients_row.add_child(clients_open_btn)
+	clients_actions.add_child(clients_open_btn)
 
-	add_child(clients_row)
+	add_child(clients_header_row)
+	add_child(clients_actions)
 
 	# Drift banner — hidden until a sweep finds at least one mismatched client.
 	_drift_banner = VBoxContainer.new()
@@ -600,7 +682,7 @@ func _build_ui() -> void:
 	add_child(_drift_banner)
 
 	_clients_window = Window.new()
-	_clients_window.title = "MCP Clients & Settings"
+	_clients_window.title = "Godot AI"
 	## `Vector2i * float` yields Vector2; wrap the result back to Vector2i.
 	_clients_window.min_size = Vector2i(Vector2(560, 460) * EditorInterface.get_editor_scale())
 	_clients_window.visible = false
@@ -1548,28 +1630,65 @@ func _dispatch_client_action(client_id: String, action: String) -> void:
 	_client_action_generations[client_id] = generation
 	var thread := Thread.new()
 	_client_action_threads[client_id] = thread
+	_client_action_started_msec[client_id] = Time.get_ticks_msec()
+	_client_action_names[client_id] = action
 	var err := thread.start(
 		Callable(self, "_run_client_action_worker").bind(client_id, action, server_url, generation)
 	)
 	if err != OK:
 		_client_action_threads.erase(client_id)
+		_client_action_started_msec.erase(client_id)
+		_client_action_names.erase(client_id)
 		_finalize_action_buttons(client_id)
 		_apply_row_status(client_id, Client.Status.ERROR, "couldn't start worker thread")
 		_refresh_clients_summary()
 
 
-func _run_client_action_worker(client_id: String, action: String, server_url: String, generation: int) -> void:
+func _run_client_action_worker(client_id: String, action: String, server_url: String, generation: int) -> Dictionary:
 	var result: Dictionary
 	if action == "remove":
 		result = ClientConfigurator.remove(client_id, server_url)
 	else:
 		result = ClientConfigurator.configure(client_id, server_url)
-	if _refresh_state != ClientRefreshStateScript.SHUTTING_DOWN:
-		call_deferred("_apply_client_action_result", client_id, action, result, generation)
+	return {
+		"client_id": client_id,
+		"action": action,
+		"result": result,
+		"generation": generation,
+	}
+
+
+func _poll_completed_client_action_threads() -> void:
+	for client_id in _client_action_threads.keys():
+		var thread: Thread = _client_action_threads[client_id]
+		if thread == null or thread.is_alive():
+			continue
+		var payload: Variant = thread.wait_to_finish()
+		_client_action_threads[client_id] = null
+		if payload is Dictionary:
+			var data := payload as Dictionary
+			var result: Dictionary = data.get("result", {})
+			_apply_client_action_result(
+				String(data.get("client_id", client_id)),
+				String(data.get("action", _client_action_names.get(client_id, "configure"))),
+				result,
+				int(data.get("generation", _client_action_generations.get(client_id, 0)))
+			)
+		else:
+			_apply_client_action_result(
+				String(client_id),
+				String(_client_action_names.get(client_id, "configure")),
+				{"status": "error", "message": "worker returned no result"},
+				int(_client_action_generations.get(client_id, 0))
+			)
 
 
 func _apply_client_action_result(client_id: String, action: String, result: Dictionary, generation: int) -> void:
 	if int(_client_action_generations.get(client_id, 0)) != generation:
+		if _client_action_threads.get(client_id, null) == null:
+			_client_action_threads.erase(client_id)
+			_client_action_started_msec.erase(client_id)
+			_client_action_names.erase(client_id)
 		return
 	if _refresh_state == ClientRefreshStateScript.SHUTTING_DOWN:
 		return
@@ -1577,7 +1696,9 @@ func _apply_client_action_result(client_id: String, action: String, result: Dict
 		var t: Thread = _client_action_threads[client_id]
 		if t != null:
 			t.wait_to_finish()
-		_client_action_threads.erase(client_id)
+	_client_action_threads.erase(client_id)
+	_client_action_started_msec.erase(client_id)
+	_client_action_names.erase(client_id)
 	_finalize_action_buttons(client_id)
 	if _server_blocks_client_health():
 		_apply_row_status(client_id, Client.Status.ERROR, _server_blocked_client_message())
@@ -1645,7 +1766,7 @@ func _on_configure_all_clients() -> void:
 			_apply_row_status(String(client_id), Client.Status.ERROR, _server_blocked_client_message())
 		_refresh_clients_summary()
 		return
-	if ClientRefreshStateScript.has_worker_alive(_refresh_state):
+	if ClientRefreshStateScript.should_disable_client_actions(_refresh_state):
 		return
 	for client_id in _client_rows:
 		var status: Client.Status = _client_rows[client_id].get("status", Client.Status.NOT_CONFIGURED)
@@ -1700,7 +1821,7 @@ func _build_tools_tab(tabs: TabContainer) -> void:
 	var tools_tab := VBoxContainer.new()
 	tools_tab.add_theme_constant_override("separation", 8)
 	var tools_margin := _build_margin_container()
-	tools_margin.name = "Settings"
+	tools_margin.name = "Tools"
 	tools_margin.add_child(tools_tab)
 	tabs.add_child(tools_margin)
 
@@ -1976,7 +2097,7 @@ func _refresh_clients_summary() -> void:
 		)
 	_clients_summary_label.text = text
 	if _client_configure_all_btn != null:
-		_client_configure_all_btn.disabled = ClientRefreshStateScript.has_worker_alive(_refresh_state)
+		_client_configure_all_btn.disabled = ClientRefreshStateScript.should_disable_client_actions(_refresh_state)
 	_refresh_drift_banner(mismatched_ids)
 
 
@@ -2167,8 +2288,8 @@ func _warm_strategy_bytecode() -> void:
 
 func _begin_client_status_refresh_run() -> int:
 	## Marks a refresh as starting and returns the new generation token.
-	## Generation is bumped here (not at completion) so that a worker callback
-	## arriving after `_abandon_client_status_refresh_thread` or `_exit_tree`
+	## Generation is bumped here (not at completion) so that a worker result
+	## reaped after `_abandon_client_status_refresh_thread` or `_exit_tree`
 	## fires can be detected as stale via generation mismatch.
 	_refresh_state = ClientRefreshStateScript.RUNNING
 	_client_status_refresh_pending = false
@@ -2181,7 +2302,7 @@ func _begin_client_status_refresh_run() -> int:
 
 func _finalize_completed_refresh() -> void:
 	## Stamps cooldown and clears in-flight state. Called at the end of every
-	## refresh that successfully applied results — the worker callback path
+	## refresh that successfully applied results — the worker reaping path
 	## and the no-CLI fast path in `_perform_initial_client_status_refresh`.
 	_last_client_status_refresh_completed_msec = Time.get_ticks_msec()
 	if _refresh_state != ClientRefreshStateScript.SHUTTING_DOWN:
@@ -2308,7 +2429,7 @@ func _retry_deferred_client_status_refresh() -> void:
 		_request_client_status_refresh(force)
 
 
-func _run_client_status_refresh_worker(client_probes: Array[Dictionary], server_url: String, generation: int) -> void:
+func _run_client_status_refresh_worker(client_probes: Array[Dictionary], server_url: String, generation: int) -> Dictionary:
 	var results: Dictionary = {}
 	for probe in client_probes:
 		var client_id := String(probe.get("id", ""))
@@ -2325,8 +2446,25 @@ func _run_client_status_refresh_worker(client_probes: Array[Dictionary], server_
 			"installed": installed,
 			"error_msg": details.get("error_msg", ""),
 		}
-	if _refresh_state != ClientRefreshStateScript.SHUTTING_DOWN:
-		call_deferred("_apply_client_status_refresh_results", results, generation)
+	return {"results": results, "generation": generation}
+
+
+func _poll_completed_client_status_refresh_thread() -> void:
+	if _client_status_refresh_thread == null:
+		return
+	if _client_status_refresh_thread.is_alive():
+		return
+	var payload: Variant = _client_status_refresh_thread.wait_to_finish()
+	_client_status_refresh_thread = null
+	if payload is Dictionary:
+		var data := payload as Dictionary
+		var results: Dictionary = data.get("results", {})
+		_apply_client_status_refresh_results(
+			results,
+			int(data.get("generation", _client_status_refresh_generation))
+		)
+	else:
+		_apply_client_status_refresh_results({}, _client_status_refresh_generation)
 
 
 func _apply_client_status_refresh_results(results: Dictionary, generation: int) -> void:

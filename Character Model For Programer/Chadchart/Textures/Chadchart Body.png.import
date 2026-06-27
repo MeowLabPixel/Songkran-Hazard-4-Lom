@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dejb5hfk2ejgk"
-path.s3tc="res://.godot/imported/Chadchart Body.png-59dbe22f29d95a6fd1be323aeb784a73.s3tc.ctex"
+path.s3tc="res://.godot/imported/Chadchart Body.png-8eddc59571d6dbe1f6df7d6aa20b942d.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://Character Model For Programer/Chadchart/textures/Chadchart Body.png"
-dest_files=["res://.godot/imported/Chadchart Body.png-59dbe22f29d95a6fd1be323aeb784a73.s3tc.ctex"]
+source_file="res://Character Model For Programer/Chadchart/Textures/Chadchart Body.png"
+dest_files=["res://.godot/imported/Chadchart Body.png-8eddc59571d6dbe1f6df7d6aa20b942d.s3tc.ctex"]
 
 [params]
 

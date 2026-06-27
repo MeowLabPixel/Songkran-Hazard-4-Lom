@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://70y3j0apvhbr"
-path.s3tc="res://.godot/imported/Base Zombie Male Face.png-0e3851e482dc88a8cef791059d8c31e4.s3tc.ctex"
+path.s3tc="res://.godot/imported/Base Zombie Male Face.png-1cfdc0a6af3623869b0094b2782b938e.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://Character Model For Programer/Albert Wesker/textures/Base Zombie Male Face.png"
-dest_files=["res://.godot/imported/Base Zombie Male Face.png-0e3851e482dc88a8cef791059d8c31e4.s3tc.ctex"]
+source_file="res://Character Model For Programer/Albert Wesker/Textures/Base Zombie Male Face.png"
+dest_files=["res://.godot/imported/Base Zombie Male Face.png-1cfdc0a6af3623869b0094b2782b938e.s3tc.ctex"]
 
 [params]
 
