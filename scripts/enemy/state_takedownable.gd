@@ -58,10 +58,11 @@ func exit() -> void:
 	stun_type = "head"
 	takedown_triggered = false
 	_in_act1 = false
-	if enemy and enemy.anim_tree:
-		enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/hit_far", false)
-		enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/hit_close", false)
-		enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/hit_getup", false)
+	if enemy:
+		if enemy.anim_tree:
+			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/hit_far", false)
+			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/hit_close", false)
+		enemy.reset_getup_conditions()
 
 func physics_update(delta: float) -> void:
 	if takedown_triggered:
@@ -110,6 +111,9 @@ func physics_update(delta: float) -> void:
 				enemy.velocity = Vector3.ZERO
 				enemy.move_and_slide()
 	else:
+		if enemy and enemy.anim_tree:
+			if "parameters/hit/Getup_End/conditions/act2_skip" in enemy.anim_tree:
+				enemy.anim_tree.set("parameters/hit/Getup_End/conditions/act2_skip", true)
 		_act2_timer += delta
 		if _act2_timer >= takedown_window:
 			var hunt = state_machine._states.get("StateHunt")

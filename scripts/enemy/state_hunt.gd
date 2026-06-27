@@ -66,6 +66,9 @@ func trigger_getup_block(duration: float) -> void:
 	if enemy:
 		enemy.attack_blocked = true
 
+func is_in_vulnerable_getup() -> bool:
+	return _getup_block_timer > 0.0
+
 func enter() -> void:
 	print("[StateHunt] Entered Hunt.")
 	_is_fleeing = false
@@ -113,6 +116,8 @@ func exit() -> void:
 			enemy.remove_meta("getup_elapsed_time")
 		if enemy.has_meta("getup_duration"):
 			enemy.remove_meta("getup_duration")
+		if enemy.anim_tree and "parameters/hit/Getup_End/conditions/idle_block" in enemy.anim_tree:
+			enemy.anim_tree.set("parameters/hit/Getup_End/conditions/idle_block", false)
 	_end_sprint()
 
 func physics_update(_delta: float) -> void:
@@ -132,10 +137,21 @@ func physics_update(_delta: float) -> void:
 		enemy.set_meta("getup_elapsed_time", elapsed)
 
 	if _getup_block_timer > 0.0:
+		if enemy and enemy.anim_tree:
+			var root_pb = enemy.anim_tree.get("parameters/playback")
+			var hit_pb = enemy.anim_tree.get("parameters/hit/playback")
+			var getup_end_pb = enemy.anim_tree.get("parameters/hit/Getup_End/playback")
+			var root_node = String(root_pb.get_current_node()) if root_pb else "none"
+			var hit_node = String(hit_pb.get_current_node()) if hit_pb else "none"
+			var getup_end_node = String(getup_end_pb.get_current_node()) if getup_end_pb else "none"
+			print("[StateHunt debug] Timer: %.2f | Root Node: %s | Hit Node: %s | Getup_End Node: %s" % [_getup_block_timer, root_node, hit_node, getup_end_node])
+
 		_getup_block_timer -= _delta
 		if _getup_block_timer <= 0.0:
 			if enemy:
 				enemy.attack_blocked = false
+				if enemy.anim_tree and "parameters/hit/Getup_End/conditions/idle_block" in enemy.anim_tree:
+					enemy.anim_tree.set("parameters/hit/Getup_End/conditions/idle_block", true)
 				if enemy.has_meta("getup_elapsed_time"):
 					enemy.remove_meta("getup_elapsed_time")
 				if enemy.has_meta("getup_duration"):
@@ -325,15 +341,6 @@ func _walk_back(dir_to_player: Vector3, delta: float) -> void:
 func handle_hit(hit_data: Dictionary) -> String:
 	# Ignore hits during stun recovery pause to prevent animation tree freeze / lock
 	if _recovery_pause_timer > 0.0:
-		return ""
-
-	# Ignore hits during the first half of get-up animation
-	if enemy and enemy.has_meta("getup_elapsed_time") and enemy.has_meta("getup_duration"):
-		var elapsed = enemy.get_meta("getup_elapsed_time")
-		var duration = enemy.get_meta("getup_duration")
-		if elapsed < (duration / 2.0):
-			return ""
-	elif _getup_block_timer > 0.0:
 		return ""
 
 	var zone: String = hit_data.get("hit_zone", "body")

@@ -67,11 +67,14 @@ func _process_splash_hit(area: Area3D) -> void:
 	if enemy and not enemy.is_defeated:
 		if enemy == owner.takedown_target:
 			if not _hit_primary:
-				var sm = enemy.get_node_or_null("EnemyStateMachine")
-				if sm:
-					var td = sm.get_node_or_null("StateTakedownable")
-					if td:
-						td.trigger_takedown()
+				if enemy.has_method("trigger_takedown"):
+					enemy.trigger_takedown()
+				else:
+					var sm = enemy.get_node_or_null("EnemyStateMachine")
+					if sm:
+						var td = sm.get_node_or_null("StateTakedownable")
+						if td:
+							td.trigger_takedown()
 				_hit_primary = true
 			return
 			

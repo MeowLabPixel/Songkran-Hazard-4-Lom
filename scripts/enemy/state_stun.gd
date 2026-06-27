@@ -24,6 +24,8 @@ func exit() -> void:
 		_: enemy.next_idle_offset = 11.6
 	hit_zone = "body"
 	_current_stun_anim = ""
+	if enemy:
+		enemy.reset_getup_conditions()
 
 func physics_update(delta: float) -> void:
 	_grace_timer += delta

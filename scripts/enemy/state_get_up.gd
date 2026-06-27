@@ -5,12 +5,15 @@ extends EnemyState
 
 var _timer: float     = 0.0
 var stun_type: String = "head"
+var _travelled_to_getup_end: bool = false
 
 func enter() -> void:
 	_timer = 0.0
+	_travelled_to_getup_end = false
 	if enemy:
 		enemy.velocity = Vector3.ZERO
 		enemy.move_and_slide()
+		enemy.reset_getup_conditions()
 	print("[StateGetUp] Getting up. Zone: %s" % stun_type)
 	var anim = enemy.anim_set.get_up_anim(stun_type)
 	_play_anim(anim, "hit/hit_takedown")
@@ -30,13 +33,24 @@ func enter() -> void:
 		enemy.set_meta("getup_duration", getup_duration)
 
 func exit() -> void:
-	pass
+	if enemy:
+		enemy.reset_getup_conditions()
 
 func physics_update(delta: float) -> void:
 	_timer += delta
 	if enemy and enemy.has_meta("getup_elapsed_time"):
 		var elapsed = enemy.get_meta("getup_elapsed_time") + delta
 		enemy.set_meta("getup_elapsed_time", elapsed)
+
+	if _timer >= 0.4 and not _travelled_to_getup_end:
+		_travelled_to_getup_end = true
+		if enemy and enemy.anim_tree:
+			var act2_skip_val = enemy.anim_tree.get("parameters/hit/Getup_End/conditions/act2_skip")
+			if act2_skip_val == false:
+				var pb = enemy.anim_tree.get("parameters/hit/playback")
+				if pb:
+					var getup_anim = enemy.anim_set.get_up_anim(stun_type)
+					pb.travel("Getup_End/" + getup_anim)
 
 	if _timer >= 0.5:
 		var hunt = state_machine._states.get("StateHunt")

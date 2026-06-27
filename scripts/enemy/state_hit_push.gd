@@ -26,6 +26,8 @@ func exit() -> void:
 	_current_push_anim = ""
 	push_direction = Vector3.ZERO
 	_current_push_speed = 0.0
+	if enemy:
+		enemy.reset_getup_conditions()
 
 func physics_update(delta: float) -> void:
 	_grace_timer += delta

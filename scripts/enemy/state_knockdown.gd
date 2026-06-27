@@ -24,12 +24,16 @@ var _timer: float = 0.0
 var _anim_duration: float = 0.0
 var _pushed_enemies: Array[Node] = []
 var _act3_timer: float = 0.0
+var _travelled_to_getup_end: bool = false
 
 func enter() -> void:
 	_timer = 0.0
 	_phase = Phase.ACT3
 	_pushed_enemies.clear()
 	_act3_timer = 0.0
+	_travelled_to_getup_end = false
+	if enemy:
+		enemy.reset_getup_conditions()
 	
 	# Determine push direction and align enemy rotation
 	var is_special = knockdown_mode in ["SPECIAL_LEG_SHOT", "SPECIAL_FOOT_HEAD", "SPECIAL_HEAD_FOOT", "SWING_SHOT"]
@@ -155,6 +159,9 @@ func _start_act5() -> void:
 	var getup_anim = enemy.anim_set.get_up_anim(knockdown_type)
 	_force_anim(getup_anim, "hit/hit_takedown")
 	
+	# Reset travel flag at start of act 5
+	_travelled_to_getup_end = false
+	
 	if enemy and enemy.anim_player and enemy.anim_player.has_animation(getup_anim):
 		var anim_len = enemy.anim_player.get_animation(getup_anim).length
 		var speed: float = 1.0
@@ -250,6 +257,16 @@ func physics_update(delta: float) -> void:
 				
 		Phase.ACT5:
 			_timer += delta
+			if _timer >= 0.4 and not _travelled_to_getup_end:
+				_travelled_to_getup_end = true
+				if enemy and enemy.anim_tree:
+					var act2_skip_val = enemy.anim_tree.get("parameters/hit/Getup_End/conditions/act2_skip")
+					if act2_skip_val == false:
+						var pb = enemy.anim_tree.get("parameters/hit/playback")
+						if pb:
+							var getup_anim = enemy.anim_set.get_up_anim(knockdown_type)
+							pb.travel("Getup_End/" + getup_anim)
+
 			if _timer >= 0.5:
 				var hunt = state_machine._states.get("StateHunt")
 				if hunt:

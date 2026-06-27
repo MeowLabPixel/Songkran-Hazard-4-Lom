@@ -506,8 +506,7 @@ func check_if_near_stun():
 	for i in near_enemy_list:
 		if is_instance_valid(i) and not i.is_queued_for_deletion():
 			valid_list.append(i)
-			var sm = i.get_node_or_null("EnemyStateMachine")
-			if sm and sm.current_state == sm._states.get("StateTakedownable"):
+			if i.has_method("is_takedownable") and i.is_takedownable():
 				is_near_stunt = true
 	near_enemy_list = valid_list
 	
@@ -564,23 +563,17 @@ func attempt_takedown() -> bool:
 
 		var enemy := _find_enemy_from_area(a)
 		if enemy:
-			var sm = enemy.get_node_or_null("EnemyStateMachine")
-			if sm:
-				var td = sm.get_node_or_null("StateTakedownable")
-				if td and sm.current_state == td:
-					takedown_target = enemy
-					# We do NOT trigger knockdown yet; it triggers when the hand sweeps
-					return true
+			if enemy.has_method("is_takedownable") and enemy.is_takedownable():
+				takedown_target = enemy
+				# We do NOT trigger knockdown yet; it triggers when the hand sweeps
+				return true
 	# Fallback: use near_enemy_list (populated by stun_detect) to find a takedownable enemy
 	for e in near_enemy_list:
 		if not e:
 			continue
-		var sm2 = e.get_node_or_null("EnemyStateMachine")
-		if sm2:
-			var td2 = sm2.get_node_or_null("StateTakedownable")
-			if td2 and sm2.current_state == td2:
-				takedown_target = e
-				return true
+		if e.has_method("is_takedownable") and e.is_takedownable():
+			takedown_target = e
+			return true
 	return false
 
 func _find_enemy_from_area(area: Area3D) -> Node:

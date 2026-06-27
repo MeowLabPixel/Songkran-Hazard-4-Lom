@@ -230,6 +230,19 @@ func take_hit(hit_data: Dictionary) -> void:
 		current_hp
 	])
 
+	# Set hit_getup to true if hit during vulnerable getup block
+	var is_vulnerable_getup = false
+	if state_machine:
+		var hunt = state_machine._states.get("StateHunt")
+		if hunt and state_machine.current_state == hunt and hunt.has_method("is_in_vulnerable_getup") and hunt.is_in_vulnerable_getup():
+			is_vulnerable_getup = true
+	
+	if is_vulnerable_getup and anim_tree:
+		if "parameters/hit/Getup_End/conditions/hit_getup" in anim_tree:
+			anim_tree.set("parameters/hit/Getup_End/conditions/hit_getup", true)
+		if "parameters/hit/hit_takedown/conditions/hit_getup" in anim_tree:
+			anim_tree.set("parameters/hit/hit_takedown/conditions/hit_getup", true)
+
 	var dmg: int = hit_data.get("damage", 1)
 	var new_hp: int = current_hp - dmg
 
@@ -274,6 +287,40 @@ func _spawn_drops() -> void:
 		var count: int = randi_range(entry.get("count_min", 1), entry.get("count_max", 1))
 		for i in count:
 			ItemPickup.instantiate_drop(parent, global_position, item_type, value)
+
+func is_takedownable() -> bool:
+	if is_defeated:
+		return false
+	if not state_machine:
+		return false
+	var current_state = state_machine.current_state
+	if current_state == state_machine._states.get("StateTakedownable"):
+		return true
+	# Also takedownable during the vulnerable getup recovery phase
+	var hunt = state_machine._states.get("StateHunt")
+	if hunt and current_state == hunt and hunt.has_method("is_in_vulnerable_getup") and hunt.is_in_vulnerable_getup():
+		return true
+	return false
+
+func trigger_takedown() -> void:
+	if not state_machine:
+		return
+	var td = state_machine._states.get("StateTakedownable")
+	if td:
+		td.trigger_takedown()
+
+func reset_getup_conditions() -> void:
+	if not anim_tree:
+		return
+	for param in [
+		"parameters/hit/Getup_End/conditions/act2_skip",
+		"parameters/hit/Getup_End/conditions/hit_getup",
+		"parameters/hit/hit_takedown/conditions/hit_getup",
+		"parameters/hit/Getup_End/conditions/idle_block"
+	]:
+		if param in anim_tree:
+			anim_tree.set(param, false)
+			print("[EnemyBase debug] Resetting parameter: %s to %s" % [param, anim_tree.get(param)])
 
 func _on_state_changed(old_state: String, new_state: String) -> void:
 	print("[EnemyBase] State: %s → %s  |  HP: %d/%d" % [old_state, new_state, current_hp, MAX_HP])
