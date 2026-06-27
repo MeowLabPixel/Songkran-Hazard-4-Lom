@@ -110,11 +110,15 @@ func _ready() -> void:
 	_disable_attack_hitboxes()
 	
 	# ── Collision Setup ────────────────────────────────────────────────────────
+	# Remove zombie from Layer 1 (World) to prevent player's camera spring arm from hitting it
+	set_collision_layer_value(1, false)
 	# Set Layer 3 (value 4) and Mask 3 (value 4) to ensure zombies collide with each other
 	set_collision_layer_value(3, true)
 	set_collision_mask_value(3, true)
 	# Set Mask 2 (value 2) to ensure zombies collide with the player
 	set_collision_mask_value(2, true)
+	# Set Mask 5 (value 16) to ensure zombies collide with Anchalee (Follower)
+	set_collision_mask_value(5, true)
 
 
 	# ── Navigation Avoidance Setup ─────────────────────────────────────────────

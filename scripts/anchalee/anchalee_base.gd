@@ -67,6 +67,11 @@ func _ready() -> void:
 	help_label.visible = false
 	add_to_group("Anchalee")
 	
+	# Set Layer 5 (value 16) and Mask 1 (value 1) + Mask 3 (value 4) so she collides with world and zombies
+	set_collision_layer_value(5, true)
+	set_collision_mask_value(1, true)
+	set_collision_mask_value(3, true)
+	
 
 
 	# Configure threat_area and friend_area collision settings programmatically
@@ -276,12 +281,29 @@ func _physics_process(delta: float) -> void:
 
 func get_threat_count() -> int:
 	# Clean up any dead or freed enemies from the list
-	var active_threats = []
+	var valid_threats = []
+	var count = 0
+	
 	for threat in nearby_threats:
-		if is_instance_valid(threat):
-			active_threats.append(threat)
-	nearby_threats = active_threats
-	return nearby_threats.size()
+		if is_instance_valid(threat) and not threat.is_queued_for_deletion():
+			valid_threats.append(threat)
+			
+			var is_active_threat = true
+			if threat.is_defeated:
+				is_active_threat = false
+			else:
+				var sm = threat.state_machine
+				if sm and sm.current_state:
+					var state_name = sm.current_state.name.to_lower()
+					# Exclude defeated, hit, push, stun, takedown, knockdown, and getup states
+					if "defeated" in state_name or "stun" in state_name or "push" in state_name or "takedown" in state_name or "knockdown" in state_name or "getup" in state_name or "get_up" in state_name:
+						is_active_threat = false
+			
+			if is_active_threat:
+				count += 1
+				
+	nearby_threats = valid_threats
+	return count
 
 func _distance_to_segment(p: Vector3, a: Vector3, b: Vector3) -> float:
 	var ab = b - a

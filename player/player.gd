@@ -142,6 +142,15 @@ func _ready() -> void:
 	# Enable collision mask for Layer 3 (Enemies) so the player physically collides with enemies
 	set_collision_mask_value(3, true)
 	
+	# Ensure the camera spring arms only collide with Layer 1 (World/Environment)
+	# and ignore player, enemies, and companion to prevent camera snapping.
+	var edge_arm = get_node_or_null("Camera/edgeSpringArm3D") as SpringArm3D
+	if edge_arm:
+		edge_arm.collision_mask = 1
+	var rear_arm = get_node_or_null("Camera/edgeSpringArm3D/rearSpringArm3D") as SpringArm3D
+	if rear_arm:
+		rear_arm.collision_mask = 1
+	
 	# Configure FriendNearArea collision mask to detect Anchalee (layer 5, value 16)
 	var near_area = get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/FriendNearArea")
 	if near_area:
