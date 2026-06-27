@@ -110,9 +110,10 @@ func _ready() -> void:
 	_disable_attack_hitboxes()
 	
 	# ── Collision Setup ────────────────────────────────────────────────────────
-	# Remove zombie from Layer 1 (World) to prevent player's camera spring arm from hitting it
-	set_collision_layer_value(1, false)
-	# Set Layer 3 (value 4) and Mask 3 (value 4) to ensure zombies collide with each other
+	# Ensure the root CharacterBody3D is ONLY on Layer 3 (Enemies).
+	# Specifically, we clear other layers (like Layer 14 / Hitboxes and Layer 1 / World) 
+	# so the weapon raycast passes through the root body capsule to hit the actual hitbox areas.
+	collision_layer = 0
 	set_collision_layer_value(3, true)
 	set_collision_mask_value(3, true)
 	# Set Mask 2 (value 2) to ensure zombies collide with the player
@@ -234,6 +235,11 @@ func take_hit(hit_data: Dictionary) -> void:
 		state_machine.get_current_state_name(),
 		current_hp
 	])
+	
+	# Trigger procedural hit impact sway
+	var is_takedown = (hit_data.get("hit_type") == "takedown_splash" or 
+					   (state_machine and state_machine.current_state and state_machine.current_state.name == "StateTakedownable"))
+	trigger_impact_sway(is_takedown)
 
 	# Set hit_getup to true if hit during vulnerable getup block
 	var is_vulnerable_getup = false
@@ -383,3 +389,10 @@ func _find_skeleton(node: Node) -> Skeleton3D:
 		var result = _find_skeleton(child)
 		if result: return result
 	return null
+
+func trigger_impact_sway(is_takedown: bool) -> void:
+	var skeleton = _find_skeleton(self)
+	if skeleton:
+		var lean = skeleton.get_node_or_null("EnemyLeanModifier")
+		if lean and lean.has_method("trigger_impact_sway"):
+			lean.trigger_impact_sway(is_takedown)

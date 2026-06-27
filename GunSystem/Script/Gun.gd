@@ -122,6 +122,7 @@ func fire_pellet():
 
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var query = PhysicsRayQueryParameters3D.create(from, to)
+	query.collision_mask = 1 | 8192 # Detect Layer 1 (World) and Layer 14 (Hitboxes), ignore root body shapes
 	query.collide_with_areas = true
 	query.collide_with_bodies = true
 	

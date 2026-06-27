@@ -1,13 +1,39 @@
 extends SkeletonModifier3D
 class_name EnemyLeanModifier
 
-@export var max_tilt_angle: float = 5.0
-@export var tilt_speed: float = 6.0
+@export var max_tilt_angle: float = 2.5 # Halved from 5.0
+@export var tilt_speed: float = 3.0 # Halved from 6.0 for smoother lingering lean transitions when turning
 
 var current_tilt_x: float = 0.0
 var current_tilt_z: float = 0.0
 
 var enemy: CharacterBody3D
+
+# Locomotion Sway variables (Drunk / Unbalanced motion)
+var sway_time: float = 0.0
+var sway_frequency: float = 3.5 # Matches walking speed frequency
+var sway_amplitude: float = 4.0 # Halved from 8.0
+
+# Hit Impact Sway variables
+var impact_sway_z: float = 0.0
+var target_impact_sway_z: float = 0.0
+var impact_decay_rate: float = 0.5 # Slower decay rate (lasts ~0.8s to 1.0s) for high impact visibility
+var last_sway_dir: float = 0.0 # Track direction of last shot's sway (alternating left/right)
+
+func trigger_impact_sway(is_takedown: bool) -> void:
+	if is_takedown:
+		# Takedown: strictly sway to the left (negative roll), halved to 7.5 degrees
+		target_impact_sway_z = -deg_to_rad(10)
+		last_sway_dir = -1.0 # Align last direction to left
+	else:
+		# Normal hit: first shot sways randomly, subsequent shots alternate directions
+		if last_sway_dir == 0.0:
+			last_sway_dir = -1.0 if randf() > 0.5 else 1.0
+		else:
+			last_sway_dir = -last_sway_dir
+			
+		var random_offset = randf_range(-1.0, 2.0)
+		target_impact_sway_z = last_sway_dir * deg_to_rad(6.25) + deg_to_rad(random_offset)
 
 func _process_modification() -> void:
 	if not enemy or not enemy.is_inside_tree(): return
@@ -16,6 +42,10 @@ func _process_modification() -> void:
 	
 	var delta = get_process_delta_time()
 	if delta <= 0.0: delta = 0.016
+	
+	# Process impact sway lerping and decay
+	impact_sway_z = lerp(impact_sway_z, target_impact_sway_z, delta * 8.0) # Smooth transition to peak sway
+	target_impact_sway_z = move_toward(target_impact_sway_z, 0.0, delta * impact_decay_rate)
 	
 	var local_vel = enemy.global_transform.basis.inverse() * enemy.velocity
 	
@@ -34,6 +64,17 @@ func _process_modification() -> void:
 			elif state_name not in ["StateHunt", "StateDefeated"]:
 				speed_factor = 0.0
 	
+	# Process locomotion sway accumulator based on movement
+	if speed_factor > 0.01:
+		sway_time += delta * sway_frequency
+	else:
+		sway_time = move_toward(sway_time, 0.0, delta * 5.0)
+		
+	# Locomotion sway (drunk tilt left/right)
+	var movement_sway = 0.0
+	if speed_factor > 0.01:
+		movement_sway = sin(sway_time) * deg_to_rad(sway_amplitude) * speed_factor
+	
 	# Ignore residual velocities from the avoidance move_toward smoothing
 	var dir = local_vel.normalized() if local_vel.length() > 0.8 else Vector3.ZERO
 	
@@ -44,7 +85,9 @@ func _process_modification() -> void:
 	current_tilt_x = lerp_angle(current_tilt_x, target_tilt_x, delta * tilt_speed)
 	current_tilt_z = lerp_angle(current_tilt_z, target_tilt_z, delta * tilt_speed)
 	
-	var group_tilt_basis = Basis.from_euler(Vector3(current_tilt_x, 0.0, current_tilt_z))
+	# Blend lean, locomotion sway, and impact sway into the roll axis (Z) of the group
+	var total_tilt_z = current_tilt_z + movement_sway + impact_sway_z
+	var group_tilt_basis = Basis.from_euler(Vector3(current_tilt_x, 0.0, total_tilt_z))
 	
 	var bones = ["DEF-spine", "DEF-spine.001", "DEF-spine.002", "DEF-spine.003"]
 	for bone_name in bones:

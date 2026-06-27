@@ -37,7 +37,7 @@ func fire_sniper_super_shot():
 		exclude.append(n.get_rid())
 
 	for i in range(max_penetration):
-		var query = PhysicsRayQueryParameters3D.create(from, to, 0xFFFFFFFF, exclude)
+		var query = PhysicsRayQueryParameters3D.create(from, to, 1 | 8192, exclude) # Detect Layer 1 (World) and Layer 14 (Hitboxes), ignore root body shapes
 		query.collide_with_areas = true   # ← required to hit Area3D hitboxes
 		query.collide_with_bodies = true
 		var result = space_state.intersect_ray(query)

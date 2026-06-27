@@ -34,6 +34,8 @@ func enter() -> void:
 	_travelled_to_getup_end = false
 	if enemy:
 		enemy.reset_getup_conditions()
+		if enemy.has_method("trigger_impact_sway"):
+			enemy.trigger_impact_sway(true)
 	
 	# Determine push direction and align enemy rotation
 	var is_special = knockdown_mode in ["SPECIAL_LEG_SHOT", "SPECIAL_FOOT_HEAD", "SPECIAL_HEAD_FOOT", "SWING_SHOT"]

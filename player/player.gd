@@ -320,6 +320,7 @@ func _update_aim_target(delta: float) -> void:
 			var ray_origin = camera.camera.project_ray_origin(crosshair_center)
 			var ray_dir = camera.camera.project_ray_normal(crosshair_center)
 			var query = PhysicsRayQueryParameters3D.create(ray_origin, ray_origin + ray_dir * 1000.0)
+			query.collision_mask = 1 | 8192 # Detect Layer 1 (World) and Layer 14 (Hitboxes), ignore root body shapes
 			
 			# Exclude the player from this targeting raycast
 			var exclude_nodes: Array = []

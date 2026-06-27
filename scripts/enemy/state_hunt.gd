@@ -18,7 +18,7 @@ extends EnemyState
 
 @export_group("Hunt Sprint")
 @export var sprint_speed: float = 4.0
-@export var sprint_timescale: float = 1.75
+@export var sprint_timescale: float = 4.0
 @export var sprint_duration_min: float = 1.5
 @export var sprint_duration_max: float = 2.5
 @export var sprint_cooldown_min: float = 3.0
@@ -127,6 +127,8 @@ func exit() -> void:
 	_getup_block_timer = 0.0
 	if enemy:
 		enemy.attack_blocked = false
+		if enemy.anim_player:
+			enemy.anim_player.speed_scale = 1.0
 		if enemy.has_meta("getup_elapsed_time"):
 			enemy.remove_meta("getup_elapsed_time")
 		if enemy.has_meta("getup_duration"):
@@ -317,6 +319,26 @@ func physics_update(_delta: float) -> void:
 			move_dir = diff.normalized()
 	move_dir.y = 0.0
 
+	# ─── Separation / Repulsion from Other Zombies ─────────────────────────────
+	# Add an active steer-away force if we are too close to other zombies.
+	# This ensures they actively turn and walk around each other.
+	var separation_force = Vector3.ZERO
+	var close_count = 0
+	for other in enemy.get_tree().get_nodes_in_group("enemies"):
+		if other == enemy or not is_instance_valid(other) or other.is_defeated:
+			continue
+		var dist = enemy.global_position.distance_to(other.global_position)
+		if dist < 1.2 and dist > 0.01:
+			var push = (enemy.global_position - other.global_position).normalized()
+			var strength = (1.2 - dist) / 1.2
+			separation_force += push * strength
+			close_count += 1
+			
+	if close_count > 0:
+		# Blend the steer-away vector into our movement direction
+		move_dir = (move_dir + separation_force * 0.8).normalized()
+		move_dir.y = 0.0
+
 	var current_speed = sprint_speed if is_sprinting else move_speed
 	if nav_agent:
 		nav_agent.max_speed = current_speed
@@ -353,14 +375,18 @@ func _play_anim(anim_name: String, sub_machine: String = "") -> void:
 	if not enemy or not enemy.anim_tree: return
 	
 	var pb = enemy.anim_tree.get("parameters/playback")
-	if pb and pb.get_current_node() == anim_name: return
+	if pb and pb.get_current_node() == anim_name:
+		# Keep AnimationPlayer speed_scale updated even if we are already in the same state
+		if enemy.anim_player and not _is_fleeing:
+			var speed_scale = sprint_timescale if is_sprinting else walk_timescale
+			enemy.anim_player.speed_scale = speed_scale
+		return
 	
-	var scale_path = "parameters/" + anim_name + "/TimeScale/scale"
-	if enemy and enemy.anim_tree:
-		# Always reset timescale to normal forward speed unless fleeing/walking back
+	if enemy and enemy.anim_player:
+		# Always reset speed_scale to normal forward speed unless fleeing/walking back
 		if not _is_fleeing:
 			var speed_scale = sprint_timescale if is_sprinting else walk_timescale
-			enemy.anim_tree.set(scale_path, speed_scale)
+			enemy.anim_player.speed_scale = speed_scale
 	
 	super._play_anim(anim_name, sub_machine)
 
@@ -393,10 +419,9 @@ func _walk_back(dir_to_player: Vector3, delta: float) -> void:
 		enemy.rotation.y = lerp_angle(current_y, target_y, 5.0 * enemy.get_physics_process_delta_time())
 		
 		_play_anim(_walk_anim)
-		if enemy and enemy.anim_tree:
-			var scale_path = "parameters/" + _walk_anim + "/TimeScale/scale"
-			# Set timescale for backwards walk
-			enemy.anim_tree.set(scale_path, walk_back_timescale)
+		if enemy and enemy.anim_player:
+			# Set timescale for backwards walk on AnimationPlayer
+			enemy.anim_player.speed_scale = walk_back_timescale
 	else:
 		if nav_agent and nav_agent.avoidance_enabled:
 			nav_agent.set_velocity(Vector3.ZERO)
@@ -446,11 +471,10 @@ func _end_sprint() -> void:
 	_update_walk_timescale()
 
 func _update_walk_timescale() -> void:
-	if enemy and enemy.anim_tree and not _walk_anim.is_empty():
-		var scale_path = "parameters/" + _walk_anim + "/TimeScale/scale"
+	if enemy and enemy.anim_player:
 		if not _is_fleeing:
 			var speed_scale = sprint_timescale if is_sprinting else walk_timescale
-			enemy.anim_tree.set(scale_path, speed_scale)
+			enemy.anim_player.speed_scale = speed_scale
 
 func _get_target_position() -> Vector3:
 	var player := _get_player()
