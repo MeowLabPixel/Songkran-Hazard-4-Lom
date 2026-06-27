@@ -61,16 +61,41 @@ func enter() -> void:
 	_cache_hand_hitboxes()
 	_set_active_hitboxes(false)
 
+	var attack_to_run: String = ""
+	if enemy and "selected_attack_type" in enemy:
+		attack_to_run = enemy.selected_attack_type
+		# Consume the selection
+		enemy.selected_attack_type = ""
+
+	var token_manager = enemy.get_node("/root/AttackTokenManager")
 	var player := _get_player()
 	if player and player.is_grab:
-		_start_attack()
-	elif enemy and "guaranteed_grab_next_attack" in enemy and enemy.guaranteed_grab_next_attack:
-		enemy.guaranteed_grab_next_attack = false
-		_start_grab_reach()
-	elif randf() < grab_chance:
-		_start_grab_reach()
+		_start_attack_with_index(0)
+	elif attack_to_run == "attack_grab":
+		if token_manager.request_grab_token(enemy):
+			_start_grab_reach()
+		else:
+			# Fallback if grab token denied
+			_start_attack_with_index(0)
+	elif attack_to_run == "attack_1":
+		_start_attack_with_index(0)
+	elif attack_to_run == "attack_2":
+		_start_attack_with_index(1)
 	else:
-		_start_attack()
+		# Fallback if no pre-selected attack is set
+		if enemy and "guaranteed_grab_next_attack" in enemy and enemy.guaranteed_grab_next_attack:
+			enemy.guaranteed_grab_next_attack = false
+			if token_manager.request_grab_token(enemy):
+				_start_grab_reach()
+			else:
+				_start_attack_with_index(0)
+		elif randf() < grab_chance:
+			if token_manager.request_grab_token(enemy):
+				_start_grab_reach()
+			else:
+				_start_attack_with_index(0)
+		else:
+			_start_attack_with_index(randi() % 2)
 
 func exit() -> void:
 	var nav_agent = enemy.get_node_or_null("NavigationAgent3D") as NavigationAgent3D
@@ -83,6 +108,22 @@ func exit() -> void:
 	for hand in [_hand_left, _hand_right, _grab_hitbox]:
 		if hand and hand.area_entered.is_connected(_on_hand_area_entered):
 			hand.area_entered.disconnect(_on_hand_area_entered)
+			
+	# Release the attack/grab tokens
+	if enemy:
+		var token_manager = enemy.get_node("/root/AttackTokenManager")
+		token_manager.release_token(enemy)
+
+func _start_attack_with_index(index: int) -> void:
+	_phase = Phase.ATTACK
+	for hand in [_hand_left, _hand_right]:
+		if hand and hand is AttackHitbox:
+			hand.attack_type = "attack"
+	var anim: String = enemy.anim_set.attack_1 if index == 0 else enemy.anim_set.attack_2
+	_current_attack_is_1 = (index == 0)
+	_force_anim(anim, "attack")
+	_anim_duration = _anim_length(anim, "attack")
+	print("[StateAttack] Attack (index %d): %s (%.2fs)" % [index, anim, _anim_duration])
 
 func physics_update(delta: float) -> void:
 	_timer += delta

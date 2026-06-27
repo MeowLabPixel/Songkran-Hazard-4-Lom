@@ -4,7 +4,6 @@
 
 [resource]
 script = ExtResource("1_25cp4")
-walk_anim = "Walk zombie va2"
 range_idle = "Range Zombie Idle "
 range_shoot = "Range Zombie  shot"
 hit_right_arm = "HIT Right Arm"

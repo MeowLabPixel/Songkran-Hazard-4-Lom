@@ -29,6 +29,7 @@ var debug_label: Label3D = null
 
 var next_idle_offset: float = -1.0
 var guaranteed_grab_next_attack: bool = false
+var selected_attack_type: String = ""
 
 # ─── Procedural Animation Properties ───────────────────────────────────────
 var last_y_rotation: float = 0.0

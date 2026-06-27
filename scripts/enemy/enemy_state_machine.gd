@@ -8,6 +8,7 @@ signal state_changed(old_state: String, new_state: String)
 
 ## The state that is currently active.
 var current_state: EnemyState = null
+var next_state_name: String = ""
 
 ## Internal map of state name → EnemyState node, built on ready.
 var _states: Dictionary = {}
@@ -43,8 +44,10 @@ func transition_to(new_state_name: String) -> void:
 		return  # Already in this state, no-op.
 
 	var old_name: String = current_state.name as String if current_state else ""
+	next_state_name = new_state_name
 	if current_state:
 		current_state.exit()
+	next_state_name = ""
 	current_state = _states[new_state_name]
 	current_state.enter()
 	state_changed.emit(old_name, new_state_name)
@@ -85,7 +88,10 @@ func handle_hit(hit_data: Dictionary) -> void:
 		if not current_state.name in ["StateKnockdown", "StateGetUp", "StateDefeated"]:
 			if _states.has("StateKnockdown"):
 				_states["StateKnockdown"].knockdown_mode = "NORMAL"
-				_states["StateKnockdown"].stun_type = hit_data.get("hit_zone", "head")
+				if current_state.name == "StateTakedownable":
+					_states["StateKnockdown"].stun_type = current_state.stun_type
+				else:
+					_states["StateKnockdown"].stun_type = hit_data.get("hit_zone", "head")
 				transition_to("StateKnockdown")
 				return
 

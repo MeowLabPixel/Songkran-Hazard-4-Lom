@@ -108,7 +108,7 @@ transform = Transform3D(0.552359, 0, -0.83360636, 0, 1, 0, 0.83360636, 0, 0.5523
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8009324, 0.0500288, -6.9369454)
 enemy_scenes = Array[PackedScene]([ExtResource("13_3phbt"), ExtResource("13_jof4o")])
 total_enemies_to_spawn = 10
-max_concurrent_enemies = 10
+max_concurrent_enemies = 3
 
 [node name="TriggerArea" parent="EnemySpawner" index="0"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0189586, 0.46217465, -3.8992772)

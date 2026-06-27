@@ -23,6 +23,7 @@ config/icon="res://icon.svg"
 
 PhantomCameraManager="*uid://duq6jhf6unyis"
 ItemManager="*res://scripts/items/item_manager.gd"
+AttackTokenManager="*res://scripts/enemy/attack_token_manager.gd"
 _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 
 [debug]

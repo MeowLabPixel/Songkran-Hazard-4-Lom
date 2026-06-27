@@ -3,7 +3,7 @@ class_name ZombieAnimSet
 extends Resource
 
 @export var idle        := "Zombie Idle"
-@export var walk_anim   := "Walk zombie va"
+@export var walk_anim   := "Walk Zombie"
 @export var attack_1    := "Zombie Attack 1"
 @export var attack_2    := "Zombie Attack 2"
 @export var grab_reach  := "Zombie Attempt Grab"

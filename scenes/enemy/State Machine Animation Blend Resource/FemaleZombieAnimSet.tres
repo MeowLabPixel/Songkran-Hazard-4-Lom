@@ -4,6 +4,5 @@
 
 [resource]
 script = ExtResource("1_5y26r")
-walk_anim = "Non binary walk"
 hit_right_arm = "HIT Right Arm"
 metadata/_custom_type_script = "uid://q2kvjm2waqt0"

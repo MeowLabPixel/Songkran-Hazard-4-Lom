@@ -1,19 +1,5 @@
 [gd_resource type="AnimationNodeStateMachine" format=3 uid="uid://dwapqa1y0pua8"]
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_j1hbu"]
-animation = &"Walk zombie va2"
-
-[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_xorvn"]
-
-[sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_ix8m6"]
-graph_offset = Vector2(-68, 79.2)
-nodes/output/position = Vector2(736, 192)
-nodes/Animation/node = SubResource("AnimationNodeAnimation_j1hbu")
-nodes/Animation/position = Vector2(64, 192)
-nodes/TimeScale/node = SubResource("AnimationNodeTimeScale_xorvn")
-nodes/TimeScale/position = Vector2(326.74915, 210.78748)
-node_connections = [&"output", 0, &"TimeScale", &"TimeScale", 0, &"Animation"]
-
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_kj2yh"]
 animation = &"Walk zombie va2"
 
@@ -1705,8 +1691,6 @@ advance_condition = &"defeated"
 xfade_time = 0.2
 
 [resource]
-"states/Non binary walk/node" = SubResource("AnimationNodeBlendTree_ix8m6")
-"states/Non binary walk/position" = Vector2(-6.599991, 313.00003)
 "states/Run zombie  /node" = SubResource("AnimationNodeAnimation_kj2yh")
 "states/Run zombie  /position" = Vector2(467.72388, 362.2)
 states/Start/position = Vector2(0, 150)

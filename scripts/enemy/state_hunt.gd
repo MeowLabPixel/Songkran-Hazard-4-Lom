@@ -3,7 +3,7 @@ extends EnemyState
 
 @export var move_speed: float = 2.0
 @export var attack_cone_half_angle: float = 45.0
-@export var attack_range: float = 2.0
+@export var attack_range: float = 1.8
 @export var attack_cooldown: float = 1.3
 @export var attack_state: String = "StateAttack"
 @export var walk_back_range: float = 1.8
@@ -43,6 +43,18 @@ var _recovery_pause_timer: float = 0.0
 var _path_update_timer: float = 0.0
 var _getup_block_timer: float = 0.0
 
+var _has_token: bool = false
+var _selected_attack: String = ""
+var _token_hold_elapsed: float = 0.0
+
+@export_group("Attack Token Settings")
+@export var attack_prep_range: float = 4.0
+@export var token_max_hold_time: float = 5
+
+@export_group("Circling / Pacing")
+@export var circling_radius: float = 2.5
+@export var circling_speed: float = 0.3
+
 static func can_start_sprint() -> bool:
 	var active_sprinters = []
 	for s in sprinting_enemies:
@@ -75,6 +87,9 @@ func enter() -> void:
 	is_sprinting = false
 	_sprint_timer = 0.0
 	_sprint_duration = 0.0
+	_has_token = false
+	_selected_attack = ""
+	_token_hold_elapsed = 0.0
 	
 	if enemy and enemy.anim_set:
 		_walk_anim = enemy.anim_set.get_walk_anim()
@@ -118,6 +133,15 @@ func exit() -> void:
 			enemy.remove_meta("getup_duration")
 		if enemy.anim_tree and "parameters/hit/Getup_End/conditions/idle_block" in enemy.anim_tree:
 			enemy.anim_tree.set("parameters/hit/Getup_End/conditions/idle_block", false)
+			
+	if _has_token:
+		if not state_machine or state_machine.next_state_name != "StateAttack":
+			if enemy:
+				var token_manager = enemy.get_node("/root/AttackTokenManager")
+				token_manager.release_token(enemy)
+		_has_token = false
+		_selected_attack = ""
+		
 	_end_sprint()
 
 func physics_update(_delta: float) -> void:
@@ -170,19 +194,25 @@ func physics_update(_delta: float) -> void:
 		enemy.move_and_slide()
 		return
 		
+	var player := _get_player()
+	var player_pos: Vector3 = player.global_position if player else enemy.global_position
+	var to_player: Vector3 = (player_pos - enemy.global_position)
+	to_player.y = 0.0
+	var dist_to_player: float = to_player.length()
+
 	var target_pos: Vector3 = _get_target_position()
 	var to_target: Vector3 = (target_pos - enemy.global_position)
 	to_target.y = 0.0
 	var flat_dist: float = to_target.length()
 
-	if is_sprinting and flat_dist <= 3.0:
+	if is_sprinting and dist_to_player <= 3.0:
 		_end_sprint()
 
-	if flat_dist <= guaranteed_grab_range:
+	if dist_to_player <= guaranteed_grab_range:
 		if enemy and "guaranteed_grab_next_attack" in enemy:
 			enemy.guaranteed_grab_next_attack = true
 
-	var dir_to_target: Vector3 = to_target.normalized()
+	var dir_to_player: Vector3 = to_player.normalized()
 	var forward: Vector3 = -enemy.global_transform.basis.z
 
 	var can_attack: bool = true
@@ -193,15 +223,15 @@ func physics_update(_delta: float) -> void:
 
 	# ─── Walk back check ───────────────────────────────────────────────────────
 	# Walk back if attack is on cooldown OR attacks are blocked (e.g. player grabbed)
-	if is_restricted and walk_back_range > 0.0 and flat_dist < walk_back_range:
+	if is_restricted and walk_back_range > 0.0 and dist_to_player < walk_back_range:
 		_is_fleeing = true
-		_walk_back(dir_to_target, _delta)
+		_walk_back(dir_to_player, _delta)
 		return
 
 	_is_fleeing = false
 
 	# ─── Behind check ──────────────────────────────────────────────────────────
-	var dot: float = forward.dot(dir_to_target)
+	var dot: float = forward.dot(dir_to_player)
 	if dot < -0.7:
 		# Only turn back when the player is almost directly behind (~135°+ from forward)
 		state_machine.transition_to("StateTurnBack")
@@ -216,17 +246,54 @@ func physics_update(_delta: float) -> void:
 		else:
 			enemy.velocity = Vector3.ZERO
 			enemy.move_and_slide()
-		
-		# (Intentionally skipping body rotation so they stand still, 
-		# their procedurally animated head will still track the player!)
 		return
 
-	# ─── Attack range + cone check ───────────────────────────────────────────
-	if flat_dist <= attack_range:
-		var angle_to_target: float = rad_to_deg(acos(clampf(dot, -1.0, 1.0)))
-		if angle_to_target <= attack_cone_half_angle and not enemy.attack_blocked:
-			state_machine.transition_to(attack_state)
-			return
+	# ─── Attack Token and Delay Logic ─────────────────────────────────────────
+	var token_manager = enemy.get_node("/root/AttackTokenManager")
+	var manager_has_token = token_manager.has_token(enemy)
+	
+	if not _has_token:
+		if manager_has_token:
+			# Just gained the token!
+			_has_token = true
+			_selected_attack = ["attack_1", "attack_2", "attack_grab"].pick_random()
+			if enemy:
+				enemy.selected_attack_type = _selected_attack
+			
+			# Set the animation tree Transition parameter
+			if enemy.anim_tree and enemy.anim_tree.active:
+				if "parameters/Walk Zombie/Transition/transition_request" in enemy.anim_tree:
+					enemy.anim_tree.set("parameters/Walk Zombie/Transition/transition_request", _selected_attack)
+					print("[StateHunt] Set Walk transition request to: ", _selected_attack)
+					
+			_token_hold_elapsed = 0.0
+			print("[StateHunt] %s received token. Selected: %s." % [enemy.name, _selected_attack])
+	else:
+		if not manager_has_token:
+			# Lost the token (another zombie got closer and claimed it)
+			_has_token = false
+			_selected_attack = ""
+			_token_hold_elapsed = 0.0
+			print("[StateHunt] %s lost token (revoked)." % enemy.name)
+		else:
+			# Update holding timer
+			_token_hold_elapsed += _delta
+			
+			# If we held it too long (2s max) without reaching attack range, release it!
+			if _token_hold_elapsed >= token_max_hold_time:
+				print("[StateHunt] %s held token for too long (timeout). Releasing." % enemy.name)
+				token_manager.release_token(enemy)
+				_has_token = false
+				_selected_attack = ""
+			else:
+				# Check if we are now in the actual Attack Range (2m)
+				if dist_to_player <= attack_range:
+					var angle_to_player: float = rad_to_deg(acos(clampf(dot, -1.0, 1.0)))
+					if angle_to_player <= attack_cone_half_angle and not enemy.attack_blocked:
+						# Attack range reached! Transition immediately
+						_has_token = false # Clear flag since StateAttack now owns the token life cycle
+						state_machine.transition_to(attack_state)
+						return
 
 	# ─── Sprint Activation Check ─────────────────────────────────────────────
 	if not is_sprinting and _sprint_cooldown_timer <= 0.0 and flat_dist > 3.0:
@@ -387,10 +454,26 @@ func _update_walk_timescale() -> void:
 
 func _get_target_position() -> Vector3:
 	var player := _get_player()
-	if player:
-		# We don't need a random offset anymore! Avoidance handles spacing automatically.
-		return player.global_position
-	return enemy.global_position
+	if not player:
+		return enemy.global_position
+		
+	var to_player = player.global_position - enemy.global_position
+	to_player.y = 0.0
+	var dist = to_player.length()
+	
+	# If close to the player but without an attack token, circle/pace around them
+	var is_waiting = dist < circling_radius + 1.0 and not _has_token
+	
+	if is_waiting:
+		var dir = 1.0 if (enemy.get_instance_id() % 2 == 0) else -1.0
+		var time_sec = Time.get_ticks_msec() * 0.001
+		var angle_offset = deg_to_rad(enemy.get_instance_id() % 360)
+		var current_angle = time_sec * circling_speed * dir + angle_offset
+		
+		var offset = Vector3(cos(current_angle), 0.0, sin(current_angle)) * circling_radius
+		return player.global_position + offset
+		
+	return player.global_position
 
 func _get_player() -> Node3D:
 	var players = enemy.get_tree().get_nodes_in_group("player")
