@@ -4,6 +4,12 @@ extends State
 @export var push_duration: float = 0.5
 @export var stun_duration: float = 1.0
 
+@export_group("Camera Adjustments")
+@export var hit_cam_offset: float = -1.5
+@export var hit_cam_pitch: float = -15.0
+@export var hit_cam_duration_down: float = 0.5
+@export var hit_cam_duration_up: float = 0.5
+
 var elapsed_time: float = 0.0
 var direction: Vector3 = Vector3.ZERO
 var velocity: Vector3 = Vector3.ZERO
@@ -47,8 +53,11 @@ func _enter() -> void:
 	
 	# Start camera transition (lowering camera exactly like grab fail)
 	var cam = owner.camera
-	if cam and cam.has_method("set_action_offset_y"):
-		cam.set_action_offset_y(-1.5, 0.5)
+	if cam:
+		if cam.has_method("set_action_offset_y"):
+			cam.set_action_offset_y(hit_cam_offset, hit_cam_duration_down)
+		if cam.has_method("set_action_pitch"):
+			cam.set_action_pitch(hit_cam_pitch, hit_cam_duration_down)
 
 func _exit() -> void:
 	owner.Hit_info.location = null
@@ -58,8 +67,11 @@ func _exit() -> void:
 	
 	# Failsafe camera reset
 	var cam = owner.camera
-	if cam and cam.has_method("set_action_offset_y"):
-		cam.set_action_offset_y(0.0, 0.2)
+	if cam:
+		if cam.has_method("set_action_offset_y"):
+			cam.set_action_offset_y(0.0, 0.2)
+		if cam.has_method("set_action_pitch"):
+			cam.set_action_pitch(0.0, 0.2)
 
 func _update(delta: float) -> void:
 	elapsed_time += delta
@@ -78,8 +90,11 @@ func _update(delta: float) -> void:
 		if not camera_raised:
 			camera_raised = true
 			var cam = owner.camera
-			if cam and cam.has_method("set_action_offset_y"):
-				cam.set_action_offset_y(0.0, stun_duration - push_duration)
+			if cam:
+				if cam.has_method("set_action_offset_y"):
+					cam.set_action_offset_y(0.0, hit_cam_duration_up)
+				if cam.has_method("set_action_pitch"):
+					cam.set_action_pitch(0.0, hit_cam_duration_up)
 		
 	# Apply gravity if not on floor
 	if not owner.is_on_floor():

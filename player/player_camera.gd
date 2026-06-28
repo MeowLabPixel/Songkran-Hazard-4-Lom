@@ -39,11 +39,20 @@ var base_position_y: float = 0.0
 var action_offset_y: float = 0.0
 var offset_tween: Tween
 
+var action_pitch: float = 0.0
+var pitch_tween: Tween
+
 func set_action_offset_y(target_offset: float, duration: float) -> void:
 	if offset_tween:
 		offset_tween.kill()
 	offset_tween = get_tree().create_tween()
 	offset_tween.tween_property(self, "action_offset_y", target_offset, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+func set_action_pitch(target_pitch_degrees: float, duration: float) -> void:
+	if pitch_tween:
+		pitch_tween.kill()
+	pitch_tween = get_tree().create_tween()
+	pitch_tween.tween_property(self, "action_pitch", deg_to_rad(target_pitch_degrees), duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 @onready var defaut_edge_spring_arm_length: float = edge_spring_arm.spring_length
 @onready var defaut_rear_spring_arm_length: float = rear_spring_arm.spring_length
@@ -129,7 +138,7 @@ func _apply_camera_rotation() -> void:
 		character.transform.basis = Basis()
 		character.rotate_object_local(Vector3(0,1,0),-camera_rotation.x)
 		
-	rotate_object_local(Vector3(1,0,0),-camera_rotation.y)	
+	rotate_object_local(Vector3(1,0,0), -camera_rotation.y + action_pitch)	
 	
 	# Dynamically push the camera's pivot UP when looking up or down to prevent the body from blocking the view!
 	if camera_rotation.y < 0.0: # Looking UP

@@ -2,6 +2,17 @@ extends State
 
 @export var post_grab_delay: float = 1.35
 
+@export_group("Camera Adjustments")
+@export var qte_lose_cam_offset: float = -1.2
+@export var qte_lose_cam_pitch: float = -10.0
+@export var qte_lose_cam_duration_down: float = 0.5
+@export var qte_lose_cam_duration_up: float = 1.0
+
+@export var qte_win_cam_offset: float = 1.2
+@export var qte_win_cam_pitch: float = 10.0
+@export var qte_win_cam_duration_up: float = 0.5
+@export var qte_win_cam_duration_down: float = 1.0
+
 var half = false
 var fail_anim = "Grab/Fail"
 var win_anim ="Grab/Win"
@@ -12,23 +23,49 @@ var last_anim: String
 var _camera_state: int = 0
 
 func _process(_delta: float) -> void:
-	if is_exiting and last_anim == fail_anim:
-		if owner and owner.anim:
-			var pb = owner.anim.get("parameters/Grab/playback")
-			if pb:
-				var current_node = String(pb.get_current_node())
-				if current_node == "Fail" and _camera_state == 0:
-					_camera_state = 1
-					var cam = owner.get_node_or_null("Camera")
-					if cam and cam.has_method("set_action_offset_y"):
-						# Smoothly lower the camera by 1.2 meters over 0.5 seconds
-						cam.set_action_offset_y(-1.2, 0.5)
-				elif current_node == "Getup" and _camera_state == 1:
-					_camera_state = 2
-					var cam = owner.get_node_or_null("Camera")
-					if cam and cam.has_method("set_action_offset_y"):
-						# Smoothly raise the camera back to normal over 1.0 seconds
-						cam.set_action_offset_y(0.0, 1.0)
+	if is_exiting:
+		if last_anim == fail_anim:
+			if owner and owner.anim:
+				var pb = owner.anim.get("parameters/Grab/playback")
+				if pb:
+					var current_node = String(pb.get_current_node())
+					if current_node == "Fail" and _camera_state == 0:
+						_camera_state = 1
+						var cam = owner.get_node_or_null("Camera")
+						if cam:
+							if cam.has_method("set_action_offset_y"):
+								cam.set_action_offset_y(qte_lose_cam_offset, qte_lose_cam_duration_down)
+							if cam.has_method("set_action_pitch"):
+								cam.set_action_pitch(qte_lose_cam_pitch, qte_lose_cam_duration_down)
+					elif current_node == "Getup" and _camera_state == 1:
+						_camera_state = 2
+						var cam = owner.get_node_or_null("Camera")
+						if cam:
+							if cam.has_method("set_action_offset_y"):
+								cam.set_action_offset_y(0.0, qte_lose_cam_duration_up)
+							if cam.has_method("set_action_pitch"):
+								cam.set_action_pitch(0.0, qte_lose_cam_duration_up)
+		elif last_anim == win_anim:
+			if owner and owner.anim:
+				var pb = owner.anim.get("parameters/Grab/playback")
+				if pb:
+					var current_node = String(pb.get_current_node())
+					if current_node == "Win" and _camera_state == 0:
+						_camera_state = 1
+						var cam = owner.get_node_or_null("Camera")
+						if cam:
+							if cam.has_method("set_action_offset_y"):
+								cam.set_action_offset_y(qte_win_cam_offset, qte_win_cam_duration_up)
+							if cam.has_method("set_action_pitch"):
+								cam.set_action_pitch(qte_win_cam_pitch, qte_win_cam_duration_up)
+					elif current_node != "Win" and _camera_state == 1:
+						_camera_state = 2
+						var cam = owner.get_node_or_null("Camera")
+						if cam:
+							if cam.has_method("set_action_offset_y"):
+								cam.set_action_offset_y(0.0, qte_win_cam_duration_down)
+							if cam.has_method("set_action_pitch"):
+								cam.set_action_pitch(0.0, qte_win_cam_duration_down)
 
 
 func _enter() -> void:
@@ -67,8 +104,11 @@ func _exit() -> void:
 	)
 	
 	var cam = owner.get_node_or_null("Camera")
-	if cam and cam.has_method("set_action_offset_y"):
-		cam.set_action_offset_y(0.0, 0.5) # Failsafe reset
+	if cam:
+		if cam.has_method("set_action_offset_y"):
+			cam.set_action_offset_y(0.0, 0.5) # Failsafe reset
+		if cam.has_method("set_action_pitch"):
+			cam.set_action_pitch(0.0, 0.5) # Failsafe reset
 	
 	owner.hitboxF.monitoring = true
 	owner.hitboxB.monitoring = true

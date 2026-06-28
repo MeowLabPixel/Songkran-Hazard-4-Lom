@@ -475,9 +475,21 @@ func _cache_hand_hitboxes() -> void:
 	if not _hand_right:
 		push_warning("[StateAttack] AttackHitbox not found on right hand")
 		
-	_grab_hitbox = enemy.find_child("GrabHitbox", true, false)
+	var skeleton = enemy.find_child("GeneralSkeleton", true, false)
+	if skeleton:
+		var chest_attachment = skeleton.find_child("HitboxAttachChest", true, false)
+		if chest_attachment:
+			_grab_hitbox = chest_attachment.find_child("GrabHitbox", true, false)
+			if not _grab_hitbox:
+				_grab_hitbox = chest_attachment.find_child("GrabCollision", true, false)
+				
 	if not _grab_hitbox:
-		push_warning("[StateAttack] GrabHitbox not found! Please attach a new AttackHitbox named 'GrabHitbox' to the chest bone.")
+		_grab_hitbox = enemy.find_child("GrabHitbox", true, false)
+	if not _grab_hitbox:
+		_grab_hitbox = enemy.find_child("GrabCollision", true, false)
+		
+	if not _grab_hitbox:
+		push_warning("[StateAttack] Grab hitbox (GrabHitbox or GrabCollision Area3D) not found under HitboxAttachChest!")
 		
 	for hand in [_hand_left, _hand_right, _grab_hitbox]:
 		if not hand:
