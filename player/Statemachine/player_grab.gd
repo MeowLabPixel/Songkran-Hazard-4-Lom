@@ -90,13 +90,12 @@ func _enter() -> void:
 	owner.hitboxF.monitoring = false
 	owner.hitboxB.monitoring = false
 	is_exiting = false
-	var timer := get_tree().create_timer(2.0)
+	var timer := get_tree().create_timer(3.0)
 	timer.timeout.connect(_grab_fallback)
 
 func _grab_fallback() -> void:
-	print("Idle from Fallback.")
-	if last_anim == win_anim:
-		finished.emit("Idle")
+	print("[PlayerGrab] Stuck grab fallback triggered. Forcing transition to Idle.")
+	finished.emit("Idle")
 
 func _exit() -> void:
 

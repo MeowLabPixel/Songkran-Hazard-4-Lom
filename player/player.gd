@@ -68,6 +68,7 @@ var is_stunned: bool = false
 var hit_damage_already_applied: bool = false
 var quick_turn_cooldown: float = 0.0
 var is_aimming:bool = false
+var aim_blocked_until_release: bool = false
 var is_reload:bool = false
 var is_grab:bool = false
 var is_knockdown:bool = false
@@ -218,6 +219,14 @@ func _ready() -> void:
 	# Connect player hitbox zone signals (Grabbed/Attacked) to handlers
 	_connect_player_hitboxes()
 
+	# Connect restart/exit buttons
+	var btn_restart = get_node_or_null("Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/Die/ButtonsContainer/RestartButton")
+	if btn_restart:
+		btn_restart.pressed.connect(_on_restart_pressed)
+	var btn_exit = get_node_or_null("Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/Die/ButtonsContainer/ExitButton")
+	if btn_exit:
+		btn_exit.pressed.connect(_on_exit_pressed)
+
 	if cross_hair:
 		cross_hair.visible = false
 		cross_hair.texture = crosshair_texture
@@ -297,14 +306,23 @@ func _process(delta: float) -> void:
 			
 		var lean_modifier = skeleton.get_node_or_null("SpineLeanModifier")
 		if lean_modifier:
-			lean_modifier.input_dir = Motion.input_dir
-			
-			var is_sprinting = false
 			var sm = get_node_or_null("Statemachine")
-			if sm and sm.current_state and sm.current_state.name == "Sprint":
-				is_sprinting = true
-			lean_modifier.is_sprinting = is_sprinting
-			lean_modifier.is_aiming = is_aimming
+			var is_reloading = sm and sm.current_state and sm.current_state.name == "Reload"
+			
+			if is_reloading:
+				lean_modifier.input_dir = Vector2.ZERO
+				lean_modifier.is_sprinting = false
+				lean_modifier.is_aiming = false
+				lean_modifier.is_reloading = true
+			else:
+				lean_modifier.is_reloading = false
+				lean_modifier.input_dir = Motion.input_dir
+				
+				var is_sprinting = false
+				if sm and sm.current_state and sm.current_state.name == "Sprint":
+					is_sprinting = true
+				lean_modifier.is_sprinting = is_sprinting
+				lean_modifier.is_aiming = is_aimming
 
 	_update_skeleton_tilt(delta)
 	_update_aim_target(delta)
@@ -436,6 +454,12 @@ func _update_skeleton_tilt(delta: float) -> void:
 	# For Z turning lean, clamp it to the max tilt angle
 	var target_z = clamp(turn_tilt_rad, deg_to_rad(-max_tilt_angle), deg_to_rad(max_tilt_angle))
 	var target_y = clamp(turn_yaw_rad, deg_to_rad(-max_yaw_angle), deg_to_rad(max_yaw_angle))
+	
+	var sm = get_node_or_null("Statemachine")
+	var is_reloading = sm and sm.current_state and sm.current_state.name == "Reload"
+	if is_reloading:
+		target_z = 0.0
+		target_y = 0.0
 
 	# Rotate the rig node on the Z-axis (roll) and Y-axis (yaw) for turning inertia
 	# We don't tilt on X here since walk tilt is handled by SpineLeanModifier
@@ -549,6 +573,16 @@ func force_die() -> void:
 		var follower = get_tree().get_first_node_in_group("Anchalee")
 		if follower and follower.has_method("kill_anchalee"):
 			follower.kill_anchalee()
+
+func is_dead() -> bool:
+	return HP <= 0
+
+func _on_restart_pressed() -> void:
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	get_tree().call_deferred("change_scene_to_file", "res://scenes/disclaimer.tscn")
+
+func _on_exit_pressed() -> void:
+	get_tree().quit()
 		
 func Heal(amount):
 	if HP +amount >= MaxHP:

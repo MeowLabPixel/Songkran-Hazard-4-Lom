@@ -16,6 +16,10 @@ func _enter() -> void:
 
 
 func _update(_delta:float) -> void:
+	if owner.is_aimming:
+		finished.emit("Aim")
+		return
+		
 	set_direction()
 	if input_dir.y >= -0.1:
 		finished.emit("Run")

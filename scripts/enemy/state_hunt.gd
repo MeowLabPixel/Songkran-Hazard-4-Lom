@@ -202,6 +202,18 @@ func physics_update(_delta: float) -> void:
 		return
 		
 	var player := _get_player()
+	
+	# Stop hunting if player is dead
+	var players = enemy.get_tree().get_nodes_in_group("player")
+	var main_player = players[0] if players.size() > 0 else null
+	if main_player and main_player.has_method("is_dead") and main_player.is_dead():
+		_play_anim(enemy.anim_set.idle)
+		if nav_agent and nav_agent.avoidance_enabled:
+			nav_agent.set_velocity(Vector3.ZERO)
+		enemy.velocity = Vector3.ZERO
+		enemy.move_and_slide()
+		return
+
 	var player_pos: Vector3 = player.global_position if player else enemy.global_position
 	var to_player: Vector3 = (player_pos - enemy.global_position)
 	to_player.y = 0.0

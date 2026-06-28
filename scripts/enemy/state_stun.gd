@@ -5,9 +5,11 @@ extends EnemyState
 var hit_zone: String = "body"
 var _grace_timer: float = 0.0
 var _current_stun_anim: String = ""
+var _has_started_playing: bool = false
 
 func enter() -> void:
 	_grace_timer = 0.0
+	_has_started_playing = false
 	print("[StateStun] Stun! Zone: %s" % hit_zone)
 	if enemy:
 		enemy.velocity = Vector3.ZERO
@@ -24,6 +26,7 @@ func exit() -> void:
 		_: enemy.next_idle_offset = 11.6
 	hit_zone = "body"
 	_current_stun_anim = ""
+	_has_started_playing = false
 	if enemy:
 		enemy.reset_getup_conditions()
 
@@ -47,7 +50,18 @@ func physics_update(delta: float) -> void:
 		var pb = enemy.anim_tree.get("parameters/hit/hit_stun/playback")
 		if pb:
 			var current = String(pb.get_current_node())
-			if current == "End":
+			if current == _current_stun_anim:
+				_has_started_playing = true
+			
+			if current == "End" or (current == "Start" and _grace_timer > 0.5):
+				# If we haven't started playing after 0.5s and it's stuck in Start, or if it naturally reached End
+				var hunt = state_machine._states.get("StateHunt")
+				if hunt:
+					hunt.trigger_stun_recovery = true
+				state_machine.transition_to("StateHunt")
+				return
+				
+			if _has_started_playing and current == "End":
 				var hunt = state_machine._states.get("StateHunt")
 				if hunt:
 					hunt.trigger_stun_recovery = true

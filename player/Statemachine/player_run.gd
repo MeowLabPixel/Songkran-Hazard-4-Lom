@@ -17,6 +17,13 @@ func _enter() -> void:
 
 
 func _update(_delta:float) -> void:
+	if not Input.is_action_pressed("aim"):
+		owner.aim_blocked_until_release = false
+
+	if owner.is_aimming and not owner.aim_blocked_until_release:
+		finished.emit("Aim")
+		return
+		
 	set_direction()
 	
 	if direction != Vector3.ZERO:
@@ -85,7 +92,7 @@ func _state_input(_event: InputEvent) -> void:
 	if Input.is_action_pressed("Takedown") and owner.is_near_stunt:
 		if owner.attempt_takedown():
 			finished.emit("Takedown")
-	if Input.is_action_pressed("aim") :
+	if Input.is_action_pressed("aim") and not owner.aim_blocked_until_release:
 		finished.emit("Aim")
 
 

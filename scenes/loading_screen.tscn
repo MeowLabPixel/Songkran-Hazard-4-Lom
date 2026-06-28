@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://dxgmcjma6yvvi"]
+
+[ext_resource type="Script" path="res://scripts/ui/loading_screen.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://c4mm3of2mc8o5" path="res://addons/phantom_camera/fonts/Nunito-Black.ttf" id="2_font_black"]
+
+[node name="LoadingScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="Background" type="ColorRect" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.02, 0.03, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="CanvasLayer/CenterContainer"]
+custom_minimum_size = Vector2(300, 100)
+layout_mode = 2
+theme_override_fonts/normal_font = ExtResource("2_font_black")
+theme_override_font_sizes/normal_font_size = 40
+bbcode_enabled = true
+text = "[center][wave amp=50 freq=5]loading..[/wave][/center]"
+fit_content = true
+scroll_active = false
+
+[node name="TransitionRect" type="ColorRect" parent="CanvasLayer"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.02, 0.03, 1)

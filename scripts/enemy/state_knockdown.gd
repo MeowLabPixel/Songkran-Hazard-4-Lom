@@ -246,6 +246,9 @@ func physics_update(delta: float) -> void:
 			# Wait for AnimationTree to automatically transition to Act 4
 			# Since we queued travel() for Head, it will take the user's crossfade arrow to Head Act 4!
 			if current_node == act4_anim:
+				if enemy and enemy.is_takedown_defeat:
+					enemy._trigger_defeat()
+					return
 				_phase = Phase.ACT4
 				_timer = 0.0
 				if enemy:

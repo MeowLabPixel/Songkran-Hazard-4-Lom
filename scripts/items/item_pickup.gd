@@ -42,14 +42,27 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 		return
 	# Bob.
-	_mesh_instance.position.y = BOB_HEIGHT * sin(_lifetime_timer * BOB_SPEED + _bob_offset)
-	# Spin.
-	_mesh_instance.rotation.y += SPIN_SPEED * delta
+	var bob_y = BOB_HEIGHT * sin(_lifetime_timer * BOB_SPEED + _bob_offset)
+	_mesh_instance.position.y = bob_y
+	var bottle_node = get_node_or_null("Bottle")
+	if bottle_node:
+		bottle_node.position.y = bob_y
+		bottle_node.rotation.y += SPIN_SPEED * delta
+	else:
+		_mesh_instance.rotation.y += SPIN_SPEED * delta
 
 ## Build and assign a mesh + material onto the MeshInstance3D.
 func _apply_mesh() -> void:
 	if not _mesh_instance:
 		return
+	if item_type == "bottle":
+		var bottle_scene = load("res://DropItem/Bottle.fbx")
+		if bottle_scene:
+			var bottle_instance = bottle_scene.instantiate()
+			bottle_instance.name = "Bottle"
+			add_child(bottle_instance)
+			_mesh_instance.visible = false
+			return
 	if mesh_override:
 		_mesh_instance.mesh = mesh_override
 		return
@@ -98,6 +111,13 @@ func _type_color() -> Color:
 
 func _collect() -> void:
 	collected.emit(item_type, value)
+	if item_type == "bottle":
+		var player = get_tree().get_first_node_in_group("player")
+		if player and player.get("gun_controller"):
+			var gc = player.gun_controller
+			if gc:
+				gc.current_water = min(gc.current_water + gc.max_water * 0.30, gc.max_water)
+				print("Water refilled by 30%: ", gc.current_water)
 	var mgr = get_node_or_null("/root/ItemManager")
 	if mgr:
 		mgr.add_item(item_type, value)

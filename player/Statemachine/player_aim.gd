@@ -17,6 +17,16 @@ func _enter() -> void:
 func _update(_delta:float) -> void:
 	if owner.HP <= 0:
 		finished.emit("Die")
+		return
+		
+	# Automatic shooting during Super Pump (Pistol only)
+	if Input.is_action_pressed("click"):
+		if owner.gun_controller and owner.gun_controller.current_gun:
+			var gun = owner.gun_controller.current_gun
+			if gun is PistolWaterGun and gun.is_super_active:
+				if gun.can_shoot():
+					gun.shoot()
+					owner.anim.set("parameters/Main/Aim/BlendTree/OneShot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
 	
 func _exit() -> void:
 	#owner.is_aimming = false
@@ -38,10 +48,13 @@ func _state_input(_event: InputEvent) -> void:
 		switch_gun(1)
 	if Input.is_action_pressed("Gun3"):
 		switch_gun(2)
-	if Input.is_action_pressed("click"):
+	if Input.is_action_just_pressed("click"):
 		if owner.gun_controller and owner.gun_controller.current_gun:
-			owner.gun_controller.current_gun.shoot()
-			owner.anim.set("parameters/Main/Aim/BlendTree/OneShot/request",AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
+			var gun = owner.gun_controller.current_gun
+			if not (gun is PistolWaterGun and gun.is_super_active):
+				if gun.can_shoot():
+					gun.shoot()
+					owner.anim.set("parameters/Main/Aim/BlendTree/OneShot/request",AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
 
 
 func switch_gun(num:int):

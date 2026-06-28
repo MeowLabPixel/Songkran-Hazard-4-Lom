@@ -1,0 +1,57 @@
+extends Node
+
+signal game_ended
+
+const SURVIVAL_LIMIT: float = 300.0 # 5 minutes
+const KILL_LIMIT: int = 21
+
+var survival_time_elapsed: float = 0.0
+var kill_count: int = 0
+var is_game_ended: bool = false
+var is_game_active: bool = false
+
+func _ready() -> void:
+	# Reset state when autoload loads
+	reset_game()
+
+func start_game() -> void:
+	reset_game()
+	is_game_active = true
+	print("[GameManager] Game loop started. Survive 5 minutes or defeat 21 villagers.")
+
+func reset_game() -> void:
+	survival_time_elapsed = 0.0
+	kill_count = 0
+	is_game_ended = false
+	is_game_active = false
+
+func _process(delta: float) -> void:
+	if not is_game_active or is_game_ended:
+		return
+		
+	# Only tick time if we are in the gameplay world scene
+	if get_tree().current_scene and get_tree().current_scene.scene_file_path.ends_with("world.tscn"):
+		survival_time_elapsed += delta
+		if survival_time_elapsed >= SURVIVAL_LIMIT:
+			print("[GameManager] Time limit reached! Ending game.")
+			end_game()
+
+func register_kill() -> void:
+	if not is_game_active or is_game_ended:
+		return
+		
+	kill_count += 1
+	print("[GameManager] Villager defeated! Total kills: %d/%d" % [kill_count, KILL_LIMIT])
+	if kill_count >= KILL_LIMIT:
+		print("[GameManager] Kill threshold reached! Ending game.")
+		end_game()
+
+func end_game() -> void:
+	if is_game_ended:
+		return
+	is_game_ended = true
+	is_game_active = false
+	game_ended.emit()
+	
+	# Load the ending screen
+	get_tree().change_scene_to_file("res://scenes/ending_screen.tscn")

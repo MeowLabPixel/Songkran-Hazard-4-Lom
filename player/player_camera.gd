@@ -75,6 +75,12 @@ func _ready() -> void:
 	base_position_y = position.y
 	base_spring_length = defaut_rear_spring_arm_length
 	
+	# Initialize camera rotation from character's starting rotation in the editor
+	if character:
+		var init_y = character.rotation.y
+		camera_rotation.x = -init_y
+		target_camera_rotation.x = -init_y
+	
 	# Remove camera collision with NPCs/Enemies by restricting it to only the Environment layer (Layer 1)
 	if edge_spring_arm:
 		edge_spring_arm.collision_mask = 1
@@ -112,8 +118,11 @@ func _input(event: InputEvent)-> void:
 	#if event.is_action_pressed("swap_camera_alignment"):
 		#swap_camera_align()
 	if event.is_action_pressed("aim"):
-		enter_aim()
+		if not character.aim_blocked_until_release:
+			enter_aim()
 	if event.is_action_released("aim"):
+		# Always clear the block when aim is released so re-press works
+		character.aim_blocked_until_release = false
 		exit_aim()
 
 func camera_look(mouse_movement: Vector2)-> void:
@@ -218,6 +227,9 @@ func enter_sprint()-> void:
 	camera_tween.tween_property(edge_spring_arm,"spring_length",defaut_edge_spring_arm_length*current_camera_align,aim_speed)
 	camera_tween.tween_property(self,"base_spring_length",defaut_rear_spring_arm_length,aim_speed)
 func exit_sprint()-> void:
+	if character.is_aimming:
+		return
+		
 	if camera_tween:
 		camera_tween.kill()
 		

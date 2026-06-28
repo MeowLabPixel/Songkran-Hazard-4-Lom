@@ -38,6 +38,7 @@ class_name PlayerLeanModifier
 var input_dir: Vector2 = Vector2.ZERO
 var is_sprinting: bool = false
 var is_aiming: bool = false
+var is_reloading: bool = false
 var current_tilt_x: float = 0.0
 var current_tilt_z: float = 0.0
 var _debug_non_zero_printed: bool = false
@@ -104,7 +105,8 @@ func _process_modification() -> void:
 	var pivot_pos = skeleton.get_bone_global_pose(pivot_idx).origin
 
 	# Calculate and apply body bobbing
-	var target_bob_weight = 1.0 if input_dir != Vector2.ZERO and not is_aiming else 0.0
+	# No bobbing when aiming, reloading, or standing still
+	var target_bob_weight = 1.0 if (input_dir != Vector2.ZERO and not is_aiming and not is_reloading) else 0.0
 	_current_bob_weight = lerpf(_current_bob_weight, target_bob_weight, delta * 10.0)
 
 	var active_bob_speed = bobbing_speed
@@ -115,10 +117,10 @@ func _process_modification() -> void:
 		active_bob_amount *= sprint_bobbing_amount_multiplier
 		active_sway_amount *= sprint_bobbing_amount_multiplier
 
-	if _current_bob_weight > 0.01:
+	# Only advance bob time when the weight is meaningfully active.
+	# Do NOT hard-snap bob_time to 0 — let the weight fade to 0 smoothly to avoid pops.
+	if _current_bob_weight > 0.001:
 		_bob_time += delta * active_bob_speed
-	else:
-		_bob_time = 0.0
 
 	var bob_y = abs(sin(_bob_time)) * active_bob_amount * _current_bob_weight
 	var bob_x = sin(_bob_time) * active_sway_amount * _current_bob_weight

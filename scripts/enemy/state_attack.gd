@@ -72,7 +72,7 @@ func enter() -> void:
 
 	var token_manager = enemy.get_node("/root/AttackTokenManager")
 	var player := _get_player()
-	if player and player.is_grab:
+	if player and "is_grab" in player and player.is_grab:
 		_start_attack_with_index(0)
 	elif attack_to_run == "attack_grab":
 		if token_manager.request_grab_token(enemy):
@@ -532,7 +532,7 @@ func _on_hand_area_entered(area: Area3D) -> void:
 		Phase.GRAB_REACHING:
 			if _hitboxes_active and not _grab_made_contact:
 				var player := _get_player()
-				if player and player.is_grab:
+				if player and "is_grab" in player and player.is_grab:
 					print("[StateAttack] Grab blocked — player already grabbed")
 					_finish()
 					return
@@ -618,3 +618,9 @@ func _dismiss_qte() -> void:
 	if _qte_hud and is_instance_valid(_qte_hud):
 		_qte_hud.queue_free()
 	_qte_hud = null
+	
+	var player := _get_player()
+	if player:
+		var sm = player.get_node_or_null("Statemachine")
+		if sm and sm.current_state and sm.current_state.name == "Grab":
+			sm._change_state("Aim" if player.is_aimming else "Idle")

@@ -86,6 +86,8 @@ func _ready() -> void:
 	set_collision_layer_value(5, true)
 	set_collision_mask_value(1, true)
 	set_collision_mask_value(3, true)
+	# Set Mask 4 (value 8) so she is blocked by invisible walls
+	set_collision_mask_value(4, true)
 	
 
 

@@ -3,15 +3,16 @@ class_name EnemyBase
 extends CharacterBody3D
 
 # ─── Signals ───────────────────────────────────────────────────────────────
-signal health_changed(current_hp: int, max_hp: int)
+signal health_changed(current_hp: float, max_hp: float)
 signal enemy_defeated()
 signal enemy_hit(hit_data: Dictionary)
 
 # ─── HP ────────────────────────────────────────────────────────────────────
-const MAX_HP: int = 25
-var current_hp: int = MAX_HP
+var MAX_HP: float = 25.0
+var current_hp: float = MAX_HP
 var _second_chance_used: bool = false
 var is_defeated: bool = false
+var is_takedown_defeat: bool = false
 var attack_blocked: bool = false  # Set true to prevent this zombie from entering attack state
 var last_attack_time: float = -100.0
 
@@ -26,6 +27,7 @@ var last_attack_time: float = -100.0
 var anim_player: AnimationPlayer = null
 var anim_tree: AnimationTree = null
 var debug_label: Label3D = null
+@export var show_debug_label: bool = false
 
 var next_idle_offset: float = -1.0
 var guaranteed_grab_next_attack: bool = false
@@ -101,7 +103,9 @@ func _find_anim_player() -> AnimationPlayer:
 # ─── Ready ─────────────────────────────────────────────────────────────────
 func _ready() -> void:
 	add_to_group("enemies")
+	MAX_HP = float(randi_range(8, 10))
 	current_hp = MAX_HP
+	is_takedown_defeat = false
 	if not anim_set:
 		anim_set = ZombieAnimSet.new()
 		push_warning("[EnemyBase] anim_set not assigned in Inspector — using defaults")
@@ -198,16 +202,17 @@ func _ready() -> void:
 		skel.add_child(hit_react)
 	
 	# Create debug label for state display
-	debug_label = Label3D.new()
-	debug_label.name = "DebugStateLabel"
-	debug_label.position = Vector3(0, 2.3, 0) # Adjust height above the head
-	debug_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	debug_label.no_depth_test = true # Visible through walls for debugging
-	debug_label.font_size = 40
-	debug_label.outline_size = 10
-	debug_label.modulate = Color.YELLOW
-	debug_label.outline_modulate = Color.BLACK
-	add_child(debug_label)
+	if show_debug_label:
+		debug_label = Label3D.new()
+		debug_label.name = "DebugStateLabel"
+		debug_label.position = Vector3(0, 2.3, 0) # Adjust height above the head
+		debug_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		debug_label.no_depth_test = true # Visible through walls for debugging
+		debug_label.font_size = 40
+		debug_label.outline_size = 10
+		debug_label.modulate = Color.YELLOW
+		debug_label.outline_modulate = Color.BLACK
+		add_child(debug_label)
 	
 	state_machine.initialize("StateIdle")
 	state_machine.state_changed.connect(_on_state_changed)
@@ -231,7 +236,7 @@ func _disable_attack_hitboxes() -> void:
 
 # ─── HP / Damage ───────────────────────────────────────────────────────────
 func take_hit(hit_data: Dictionary) -> void:
-	if is_defeated:
+	if is_defeated or is_takedown_defeat:
 		return
 	print("[EnemyBase] take_hit — zone:'%s' dmg:%d state:%s hp:%d" % [
 		hit_data.get("hit_zone", "?"),
@@ -258,21 +263,34 @@ func take_hit(hit_data: Dictionary) -> void:
 		if "parameters/hit/hit_takedown/conditions/hit_getup" in anim_tree:
 			anim_tree.set("parameters/hit/hit_takedown/conditions/hit_getup", true)
 
-	var dmg: int = hit_data.get("damage", 1)
-	var new_hp: int = current_hp - dmg
+	var dmg: float = float(hit_data.get("damage", 1.0))
+	var zone: String = hit_data.get("hit_zone", "body")
+	var hit_type: String = hit_data.get("hit_type", "")
+
+	# Apply zone multiplier only for gunshots
+	if hit_type != "takedown" and hit_type != "takedown_splash" and hit_type != "push":
+		if zone == "head":
+			dmg *= 1.2
+		else:
+			dmg *= 1.0
+
+	var new_hp: float = current_hp - dmg
 
 	if new_hp <= 0 and not _second_chance_used:
-		new_hp = 1
+		new_hp = 1.0
 		_second_chance_used = true
 		_on_second_chance_triggered()
 
-	current_hp = clampi(new_hp, 0, MAX_HP)
+	current_hp = clampf(new_hp, 0.0, MAX_HP)
 	health_changed.emit(current_hp, MAX_HP)
 	enemy_hit.emit(hit_data)
 	state_machine.handle_hit(hit_data)
 
 	if current_hp <= 0:
-		_trigger_defeat()
+		if hit_type == "takedown" or hit_type == "takedown_splash":
+			is_takedown_defeat = true
+		else:
+			_trigger_defeat()
 
 func _on_second_chance_triggered() -> void:
 	print("[EnemyBase] Second chance triggered!")
@@ -282,6 +300,9 @@ func _trigger_defeat() -> void:
 	state_machine.transition_to("StateDefeated")
 	enemy_defeated.emit()
 	_spawn_drops()
+	_check_stop_combat_music()
+	if is_inside_tree() and get_tree().root.has_node("GameManager"):
+		get_tree().root.get_node("GameManager").register_kill()
 
 # --- Animation Event Hooks ---
 # Call these from AnimationPlayer Method Tracks on the root node
@@ -302,6 +323,10 @@ func _spawn_drops() -> void:
 		var count: int = randi_range(entry.get("count_min", 1), entry.get("count_max", 1))
 		for i in count:
 			ItemPickup.instantiate_drop(parent, global_position, item_type, value)
+
+	# Randomly drop a bottle (30% chance)
+	if randf() < 0.30:
+		ItemPickup.instantiate_drop(parent, global_position, "bottle", 1)
 
 func is_takedownable() -> bool:
 	if is_defeated:
@@ -449,3 +474,27 @@ func _update_target() -> void:
 			return
 			
 	current_target = player
+
+func _exit_tree() -> void:
+	_check_stop_combat_music()
+
+func _check_stop_combat_music() -> void:
+	if not is_inside_tree():
+		return
+	var any_in_combat = false
+	var enemies = get_tree().get_nodes_in_group("enemies")
+	for other in enemies:
+		if is_instance_valid(other) and other != self and not other.is_defeated and other.is_inside_tree():
+			var sm = other.get_node_or_null("EnemyStateMachine")
+			if sm and sm.current_state:
+				var state_name = sm.current_state.name
+				if state_name != "StateIdle" and state_name != "StateDefeated":
+					any_in_combat = true
+					break
+	if not any_in_combat:
+		var music = get_tree().current_scene.get_node_or_null("MusicPlayer2D")
+		if not music:
+			music = get_tree().current_scene.get_node_or_null("AudioStreamPlayer2D")
+		if music and music is AudioStreamPlayer2D and music.playing:
+			music.stop()
+			print("No enemies left in combat. Stopping combat music.")

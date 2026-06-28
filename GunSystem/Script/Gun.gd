@@ -36,7 +36,7 @@ var shoot_timer: float = 0.0
 # Super shot
 var is_super_ready: bool = false
 var is_super_active: bool = false
-var super_shot_time: float = 2.0
+var super_shot_time: float = 5.0
 var super_timer: float = 0.0
 
 # Accuracy
@@ -62,34 +62,24 @@ func get_gun_name() -> String:
 	return gun_name
 
 func on_super_end():
-	air = max_air # Default behavior
+	pass
 
 func can_shoot() -> bool:
 	var has_water = water_tank.current_water >= water_consumption if water_tank else false
 	var has_air = air >= air_consumption
-	return shoot_timer <= 0.0 and (is_super_active or (has_water and has_air))
+	return shoot_timer <= 0.0 and has_water and has_air
 
 func shoot():
 	if not can_shoot():
 		return
 
-	# Activate Super Shot if ready
-	if is_super_ready and not is_super_active:
-		is_super_active = true
-		is_super_ready = false
-		super_timer = super_shot_time
-		print("SUPER ACTIVATED BY SHOT!")
-
-	if is_super_active:
-		print("SUPER SHOOT! (Infinite Water/Air)")
-	else:
-		# Consume resources
-		if water_tank:
-			water_tank.current_water -= water_consumption
-			water_tank.current_water = max(water_tank.current_water, 0.0)
-		
-		air -= air_consumption
-		air = max(air, 0.0)
+	# Consume resources normally (super pump unlimited air/water time removed)
+	if water_tank:
+		water_tank.current_water -= water_consumption
+		water_tank.current_water = max(water_tank.current_water, 0.0)
+	
+	air -= air_consumption
+	air = max(air, 0.0)
 
 	fire_projectiles()
 	shoot_timer = shoot_interval
@@ -233,7 +223,7 @@ func _apply_damage_to_result(result: Dictionary) -> void:
 			
 			if target:
 				target.take_hit({
-					"damage": int(damage),
+					"damage": damage,
 					"hit_zone": hitbox_zone.zone_name,
 					"position": result.position
 				})
@@ -246,7 +236,7 @@ func _apply_damage_to_result(result: Dictionary) -> void:
 
 	if node:
 		node.take_hit({
-			"damage": int(damage),
+			"damage": damage,
 			"hit_zone": "body",
 			"position": result.position
 		})
@@ -256,6 +246,7 @@ func pump_air():
 		return
 
 	var _old_air = air
+	pump_air_gain = max_air / 5.0 # 5 pumps must fill to 100% air
 	
 	if air < max_air:
 		air += pump_air_gain
@@ -266,8 +257,10 @@ func pump_air():
 		air += pump_air_gain
 		if air >= super_threshold:
 			air = super_threshold
-			is_super_ready = true
-			print("SUPER READY")
+			is_super_ready = false
+			is_super_active = true
+			super_timer = 5.0 # Super pump last for 5.0 sec
+			print("SUPER PUMP ACTIVATED IMMEDIATELY")
 
 	update_accuracy()
 

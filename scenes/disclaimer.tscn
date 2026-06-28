@@ -1,0 +1,55 @@
+[gd_scene load_steps=4 format=3 uid="uid://disclaimer1"]
+
+[ext_resource type="Script" uid="uid://exwxxs2lx1y8" path="res://scripts/ui/disclaimer_screen.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://c4mm3of2mc8o5" path="res://addons/phantom_camera/fonts/Nunito-Black.ttf" id="2_font_black"]
+[ext_resource type="Texture2D" uid="uid://dj7h4brmltuxo" path="res://scenes/Songkran_Hazard4Lom_Pitch_1.png" id="3_pitch_image"]
+
+[node name="DisclaimerScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.02, 0.03, 1)
+
+[node name="ContentContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 60
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 60
+theme_override_constants/margin_bottom = 40
+
+[node name="VBox" type="VBoxContainer" parent="ContentContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="TextureRect" type="TextureRect" parent="ContentContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("3_pitch_image")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Prompt" type="Label" parent="ContentContainer/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.7, 1)
+theme_override_fonts/font = ExtResource("2_font_black")
+theme_override_font_sizes/font_size = 24
+text = "[ Press E to continue ]"
+horizontal_alignment = 1

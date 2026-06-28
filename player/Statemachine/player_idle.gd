@@ -4,6 +4,13 @@ var _is_first_time: bool = true
 
 func _enter() -> void:
 	owner.aim_bone_on(true)
+	if Input.is_action_pressed("aim") and not owner.aim_blocked_until_release:
+		owner.is_aimming = true
+		finished.emit("Aim")
+		return
+	elif not Input.is_action_pressed("aim"):
+		owner.aim_blocked_until_release = false
+		
 	if owner.is_aimming:
 		finished.emit("Aim")
 	print(name)
@@ -21,6 +28,9 @@ func _enter() -> void:
 
 
 func _update(_delta:float) -> void:
+	if not Input.is_action_pressed("aim"):
+		owner.aim_blocked_until_release = false
+		
 	set_direction()
 	calculate_velocity(SPEED,direction,_delta)
 	if owner.HP <= 0:
@@ -31,7 +41,7 @@ func _update(_delta:float) -> void:
 func _state_input(_event: InputEvent) -> void:
 	if Input.is_action_just_pressed("quick_turn") and not owner.is_quick_turn and owner.quick_turn_cooldown <= 0.0:
 		finished.emit("Quick_turn")
-	if Input.is_action_pressed("aim") :
+	if Input.is_action_pressed("aim") and not owner.aim_blocked_until_release:
 		finished.emit("Aim")
 	if Input.is_action_pressed("Reload") :
 		finished.emit("Reload")

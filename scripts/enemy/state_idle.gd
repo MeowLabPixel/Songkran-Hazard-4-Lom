@@ -9,7 +9,7 @@ var _idle_interval: float = 3.0
 var _is_first_enter: bool = true
 
 func enter() -> void:
-	combat_initiated = false
+	combat_initiated = _is_any_other_zombie_in_combat()
 	_idle_timer = 0.0
 	if enemy:
 		enemy.velocity = Vector3.ZERO
@@ -34,6 +34,7 @@ func physics_update(delta: float) -> void:
 		return
 	var dist: float = enemy.global_position.distance_to(player.global_position)
 	if dist <= detection_radius or combat_initiated:
+		_alert_all_zombies()
 		state_machine.transition_to("StateHunt")
 		return
 	_idle_timer += delta
@@ -44,6 +45,7 @@ func physics_update(delta: float) -> void:
 
 func handle_hit(_hit_data: Dictionary) -> String:
 	combat_initiated = true
+	_alert_all_zombies()
 	var zone: String = _hit_data.get("hit_zone", "body")
 	match zone:
 		"head", "foot", "left_foot", "right_foot":
@@ -54,3 +56,37 @@ func handle_hit(_hit_data: Dictionary) -> String:
 func _get_player() -> Node3D:
 	var players = enemy.get_tree().get_nodes_in_group("player")
 	return players[0] if players.size() > 0 else null
+
+func _alert_all_zombies() -> void:
+	if not enemy or not enemy.is_inside_tree():
+		return
+		
+	# Play combat music
+	var music = enemy.get_tree().current_scene.get_node_or_null("MusicPlayer2D")
+	if not music:
+		music = enemy.get_tree().current_scene.get_node_or_null("AudioStreamPlayer2D")
+	if music and music is AudioStreamPlayer2D and not music.playing:
+		music.play()
+		print("Combat music started.")
+
+	var enemies = enemy.get_tree().get_nodes_in_group("enemies")
+	for other_enemy in enemies:
+		if is_instance_valid(other_enemy) and other_enemy != enemy:
+			var sm = other_enemy.get_node_or_null("EnemyStateMachine")
+			if sm:
+				var idle_state = sm.get_node_or_null("StateIdle")
+				if idle_state and "combat_initiated" in idle_state:
+					idle_state.combat_initiated = true
+
+func _is_any_other_zombie_in_combat() -> bool:
+	if not enemy or not enemy.is_inside_tree():
+		return false
+	var enemies = enemy.get_tree().get_nodes_in_group("enemies")
+	for other_enemy in enemies:
+		if is_instance_valid(other_enemy) and other_enemy != enemy:
+			var sm = other_enemy.get_node_or_null("EnemyStateMachine")
+			if sm and sm.current_state:
+				var state_name = sm.current_state.name
+				if state_name != "StateIdle" and state_name != "StateDefeated":
+					return true
+	return false

@@ -75,6 +75,18 @@ func _process_splash_hit(area: Area3D) -> void:
 						var td = sm.get_node_or_null("StateTakedownable")
 						if td:
 							td.trigger_takedown()
+				
+				var hit_dir = (enemy.global_position - owner.global_position).normalized()
+				hit_dir.y = 0.0
+				hit_dir = hit_dir.normalized()
+				if enemy.has_method("take_hit"):
+					enemy.take_hit({
+						"damage": 1.33,
+						"hit_zone": "body",
+						"hit_type": "takedown",
+						"hit_direction": hit_dir,
+						"source": owner
+					})
 				_hit_primary = true
 			return
 			
@@ -97,7 +109,7 @@ func _process_splash_hit(area: Area3D) -> void:
 		hit_dir = hit_dir.normalized()
 		
 		enemy.take_hit({
-			"damage": 5,
+			"damage": 1.33,
 			"hit_zone": zone_name,
 			"hit_type": "takedown_splash",
 			"hit_direction": hit_dir,
