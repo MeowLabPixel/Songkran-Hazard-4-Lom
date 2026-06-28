@@ -636,7 +636,7 @@ loop_mode = 0
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_yvrxc"]
 animation = &"HIT Body"
 use_custom_timeline = true
-timeline_length = 1.6999999999999997
+timeline_length = 1.6999999999999995
 stretch_time_scale = false
 start_offset = 1.0
 loop_mode = 0

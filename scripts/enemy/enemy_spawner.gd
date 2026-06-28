@@ -64,8 +64,8 @@ func _process(delta: float) -> void:
 		stop_spawning()
 		return
 		
-	# Check cooldown and concurrent limits
-	if _current_active_enemies < max_concurrent_enemies:
+	# Check cooldown and concurrent limits (counting all active/undefeated enemies in the scene)
+	if _get_active_enemies_count_in_scene() < max_concurrent_enemies:
 		_cooldown_timer -= delta
 		if _cooldown_timer <= 0.0:
 			_spawn_enemy()
@@ -138,7 +138,7 @@ func _spawn_enemy() -> void:
 		# Fallback if it's not EnemyBase
 		enemy.connect("tree_exited", _on_enemy_died, CONNECT_ONE_SHOT)
 		
-	print("[EnemySpawner] Spawned enemy (%d/%d). Active: %d" % [_enemies_spawned_so_far, total_enemies_to_spawn, _current_active_enemies])
+	print("[EnemySpawner] Spawned enemy (%d/%d). Spawner Active: %d, Total Scene Active: %d" % [_enemies_spawned_so_far, total_enemies_to_spawn, _current_active_enemies, _get_active_enemies_count_in_scene()])
 
 func _on_enemy_died() -> void:
 	_current_active_enemies -= 1
@@ -154,3 +154,13 @@ func _on_trigger_area_body_exited(body: Node3D) -> void:
 	if stop_spawning_on_trigger_exit:
 		if body.is_in_group("player") or body.name == "Player":
 			stop_spawning()
+
+func _get_active_enemies_count_in_scene() -> int:
+	if not is_inside_tree():
+		return 0
+	var count = 0
+	var enemies = get_tree().get_nodes_in_group("enemies")
+	for enemy in enemies:
+		if is_instance_valid(enemy) and not enemy.get("is_defeated"):
+			count += 1
+	return count
