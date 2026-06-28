@@ -32,6 +32,9 @@ var guaranteed_grab_next_attack: bool = false
 var selected_attack_type: String = ""
 var last_normal_attack: String = ""
 
+var current_target: Node3D = null
+var target_update_timer: float = 0.0
+
 # ─── Procedural Animation Properties ───────────────────────────────────────
 var last_y_rotation: float = 0.0
 var _smoothed_turn_speed: float = 0.0
@@ -358,6 +361,11 @@ func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
 # ─── Procedural Animation ──────────────────────────────────────────────────
 func _physics_process(delta: float) -> void:
 	_update_skeleton_tilt(delta)
+	
+	target_update_timer -= delta
+	if target_update_timer <= 0.0:
+		target_update_timer = randf_range(1.0, 2.0)
+		_update_target()
 
 func _update_skeleton_tilt(delta: float) -> void:
 	if not rig: return
@@ -397,3 +405,47 @@ func trigger_impact_sway(is_takedown: bool) -> void:
 		var lean = skeleton.get_node_or_null("EnemyLeanModifier")
 		if lean and lean.has_method("trigger_impact_sway"):
 			lean.trigger_impact_sway(is_takedown)
+
+func get_current_target() -> Node3D:
+	if current_target == null:
+		_update_target()
+	return current_target
+
+func _update_target() -> void:
+	var player = null
+	var players = get_tree().get_nodes_in_group("player")
+	if players.size() > 0:
+		player = players[0]
+		
+	var follower = get_tree().get_first_node_in_group("Anchalee")
+	
+	if player == null:
+		current_target = null
+		return
+		
+	if follower == null or follower.get("is_dead") == true or player.HP <= 0:
+		current_target = player
+		return
+		
+	var dist_to_follower = global_position.distance_to(follower.global_position)
+	var follower_to_player = follower.global_position.distance_to(player.global_position)
+	
+	# If currently targeting follower, check if we should keep targeting her
+	if current_target == follower:
+		# Keep targeting follower only if she is still within 2.5m and NOT close to player (within 1.5m)
+		if dist_to_follower <= 2.5 and follower_to_player > 1.5:
+			# Keep targeting follower
+			return
+		else:
+			# Revert to player
+			current_target = player
+			return
+			
+	# If targeting player, check if we should switch to follower (10% chance)
+	if dist_to_follower <= 2.5 and follower_to_player > 1.5:
+		if randf() < 0.10:
+			current_target = follower
+			print("[EnemyBase] %s switched target to follower (Anchalee)!" % name)
+			return
+			
+	current_target = player

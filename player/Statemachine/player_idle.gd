@@ -1,12 +1,22 @@
 extends Motion
 
+var _is_first_time: bool = true
+
 func _enter() -> void:
 	owner.aim_bone_on(true)
 	if owner.is_aimming:
 		finished.emit("Aim")
 	print(name)
+	
+	var pb = owner.anim.get(owner.anim_playback)
+	if pb:
+		if _is_first_time:
+			_is_first_time = false
+			pb.start("Idle")
+		else:
+			pb.travel("Idle")
+	
 	set_gun_anim()
-	owner.anim.get(owner.anim_playback).travel("Idle")	
 
 
 
@@ -47,14 +57,26 @@ func switch_gun(num:int):
 func set_gun_anim():
 	if not owner.gun_controller or not owner.gun_controller.current_gun:
 		return
-	if owner.gun_controller.current_gun.get_gun_name() == "Water pistol":
-		owner.anim.set("parameters/Main/Idle/conditions/pis",true)
-		owner.anim.set("parameters/Main/Idle/conditions/shot",false)
-		if owner.anim.get("parameters/Main/Idle/playback").get_current_node() != "Pis":
-			owner.anim.get("parameters/Main/Idle/playback").travel("Pis")
-	elif owner.gun_controller.current_gun.get_gun_name() == "Water shotgun" or owner.gun_controller.current_gun.get_gun_name() == "Water sniper":
-		owner.anim.set("parameters/Main/Idle/conditions/pis",false)
-		owner.anim.set("parameters/Main/Idle/conditions/shot",true)
-		if owner.anim.get("parameters/Main/Idle/playback").get_current_node() != "Shot":
-			owner.anim.get("parameters/Main/Idle/playback").travel("Shot")
+	var gun_name = owner.gun_controller.current_gun.get_gun_name()
+	if gun_name == "Water pistol":
+		owner.anim.set("parameters/Main/Idle/conditions/pis", true)
+		owner.anim.set("parameters/Main/Idle/conditions/shot", false)
+		owner.anim.set("parameters/Main/Idle/conditions/rifle", false)
+		var pb = owner.anim.get("parameters/Main/Idle/playback")
+		if pb and pb.get_current_node() != "Pis":
+			pb.travel("Pis")
+	elif gun_name == "Water shotgun":
+		owner.anim.set("parameters/Main/Idle/conditions/pis", false)
+		owner.anim.set("parameters/Main/Idle/conditions/shot", true)
+		owner.anim.set("parameters/Main/Idle/conditions/rifle", false)
+		var pb = owner.anim.get("parameters/Main/Idle/playback")
+		if pb and pb.get_current_node() != "Shot":
+			pb.travel("Shot")
+	elif gun_name == "Water sniper":
+		owner.anim.set("parameters/Main/Idle/conditions/pis", false)
+		owner.anim.set("parameters/Main/Idle/conditions/shot", false)
+		owner.anim.set("parameters/Main/Idle/conditions/rifle", true)
+		var pb = owner.anim.get("parameters/Main/Idle/playback")
+		if pb and pb.get_current_node() != "Rifle":
+			pb.travel("Rifle")
 	print(owner.anim.get("parameters/Main/Idle/playback").get_current_node())

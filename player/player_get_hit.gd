@@ -7,6 +7,7 @@ extends State
 @export_group("Camera Adjustments")
 @export var hit_cam_offset: float = -1.5
 @export var hit_cam_pitch: float = -15.0
+@export var hit_cam_spring_offset: float = 1.5
 @export var hit_cam_duration_down: float = 0.5
 @export var hit_cam_duration_up: float = 0.5
 
@@ -58,6 +59,8 @@ func _enter() -> void:
 			cam.set_action_offset_y(hit_cam_offset, hit_cam_duration_down)
 		if cam.has_method("set_action_pitch"):
 			cam.set_action_pitch(hit_cam_pitch, hit_cam_duration_down)
+		if cam.has_method("set_action_spring_length"):
+			cam.set_action_spring_length(hit_cam_spring_offset, hit_cam_duration_down)
 
 func _exit() -> void:
 	owner.Hit_info.location = null
@@ -72,6 +75,8 @@ func _exit() -> void:
 			cam.set_action_offset_y(0.0, 0.2)
 		if cam.has_method("set_action_pitch"):
 			cam.set_action_pitch(0.0, 0.2)
+		if cam.has_method("set_action_spring_length"):
+			cam.set_action_spring_length(0.0, 0.2)
 
 func _update(delta: float) -> void:
 	elapsed_time += delta
@@ -95,6 +100,8 @@ func _update(delta: float) -> void:
 					cam.set_action_offset_y(0.0, hit_cam_duration_up)
 				if cam.has_method("set_action_pitch"):
 					cam.set_action_pitch(0.0, hit_cam_duration_up)
+				if cam.has_method("set_action_spring_length"):
+					cam.set_action_spring_length(0.0, hit_cam_duration_up)
 		
 	# Apply gravity if not on floor
 	if not owner.is_on_floor():

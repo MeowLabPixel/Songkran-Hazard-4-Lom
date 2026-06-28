@@ -56,9 +56,10 @@ func _splash() -> void:
 		splash_particles.emitting = true
 		get_tree().create_timer(splash_particles.lifetime).timeout.connect(splash_particles.queue_free)
 
-	for player in get_tree().get_nodes_in_group("player"):
-		if player.global_position.distance_to(global_position) <= _radius:
-			player.take_damage(int(_damage))
-			print("[WaterBalloon] Splash hit player for %d" % int(_damage))
+	if _damage > 0.0:
+		for player in get_tree().get_nodes_in_group("player"):
+			if player.global_position.distance_to(global_position) <= _radius:
+				player.take_damage(int(_damage))
+				print("[WaterBalloon] Splash hit player for %d" % int(_damage))
 
 	queue_free()

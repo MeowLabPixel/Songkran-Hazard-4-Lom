@@ -265,12 +265,11 @@ func physics_update(_delta: float) -> void:
 			_has_token = true
 			
 			var attack_choice: String = ""
-			if enemy and enemy.guaranteed_grab_next_attack:
-				attack_choice = "attack_grab"
-				enemy.guaranteed_grab_next_attack = false
-			elif randf() < 0.25:
-				attack_choice = "attack_grab"
-			else:
+			var target = _get_player()
+			var is_target_follower = target is CharacterBody3D and target.is_in_group("Anchalee")
+			
+			if is_target_follower:
+				# Follower cannot be grabbed, only hit!
 				var last_attack = enemy.last_normal_attack if enemy else ""
 				if last_attack == "attack_1":
 					attack_choice = "attack_2"
@@ -278,9 +277,26 @@ func physics_update(_delta: float) -> void:
 					attack_choice = "attack_1"
 				else:
 					attack_choice = "attack_1" if randf() < 0.5 else "attack_2"
-				
 				if enemy:
 					enemy.last_normal_attack = attack_choice
+			else:
+				# Normal player selection
+				if enemy and enemy.guaranteed_grab_next_attack:
+					attack_choice = "attack_grab"
+					enemy.guaranteed_grab_next_attack = false
+				elif randf() < 0.25:
+					attack_choice = "attack_grab"
+				else:
+					var last_attack = enemy.last_normal_attack if enemy else ""
+					if last_attack == "attack_1":
+						attack_choice = "attack_2"
+					elif last_attack == "attack_2":
+						attack_choice = "attack_1"
+					else:
+						attack_choice = "attack_1" if randf() < 0.5 else "attack_2"
+					
+					if enemy:
+						enemy.last_normal_attack = attack_choice
 			
 			_selected_attack = attack_choice
 			if enemy:
@@ -525,6 +541,8 @@ func _get_target_position() -> Vector3:
 	return player.global_position
 
 func _get_player() -> Node3D:
+	if enemy and enemy.has_method("get_current_target"):
+		return enemy.get_current_target()
 	var players = enemy.get_tree().get_nodes_in_group("player")
 	return players[0] if players.size() > 0 else null
 

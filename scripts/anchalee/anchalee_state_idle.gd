@@ -11,7 +11,9 @@ func enter() -> void:
 		if pb: pb.travel("Idle")
 
 func physics_update(delta: float) -> void:
-	if Anchalee.is_player_aiming_or_takedown() or Anchalee.get_threat_count() >= 2:
+	var aim_duck = Anchalee.is_player_aiming_or_takedown()
+	var threat_duck = Anchalee.get_threat_count() >= 2
+	if aim_duck or (threat_duck and Anchalee.roll_threat_duck()):
 		state_machine.transition_to("AnchaleeStateDuck")
 		return
 		

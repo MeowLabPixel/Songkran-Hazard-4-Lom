@@ -505,12 +505,28 @@ func _cache_hand_hitboxes() -> void:
 			hand.area_entered.connect(_on_hand_area_entered)
 
 func _on_hand_area_entered(area: Area3D) -> void:
-	if not area.is_in_group("player_hitbox"):
-		return
+	var target = _get_player()
+	var is_player = target is CharacterBody3D and target.is_in_group("player")
+	
+	if is_player:
+		if not area.is_in_group("player_hitbox"):
+			return
+	else:
+		# Target is follower! Check if hit area is child of follower
+		var target_matched = false
+		var node = area
+		while node != null:
+			if node == target:
+				target_matched = true
+				break
+			node = node.get_parent()
+		if not target_matched:
+			return
+			
 	match _phase:
 		Phase.ATTACK:
 			if _hitboxes_active and not _damage_dealt:
-				print("[StateAttack] Signal hit — player attacked!")
+				print("[StateAttack] Signal hit — target attacked!")
 				_damage_dealt = true
 				_deal_damage(attack_damage, "attack")
 		Phase.GRAB_REACHING:
@@ -546,12 +562,22 @@ func _set_active_hitboxes(enabled: bool) -> void:
 			_hand_right.monitorable = true
 
 func _hand_touches_player() -> bool:
+	var target = _get_player()
+	var is_player = target is CharacterBody3D and target.is_in_group("player")
+	
 	for hitbox in [_hand_left, _hand_right]:
 		if not (hitbox and hitbox.monitoring):
 			continue
 		for area in hitbox.get_overlapping_areas():
-			if area.is_in_group("player_hitbox"):
-				return true
+			if is_player:
+				if area.is_in_group("player_hitbox"):
+					return true
+			else:
+				var node = area
+				while node != null:
+					if node == target:
+						return true
+					node = node.get_parent()
 	return false
 
 func _deal_damage(amount: int, source: String) -> void:
@@ -583,6 +609,8 @@ func _anim_length(anim_name: String, sub_machine: String = "") -> float:
 	return 1.5
 
 func _get_player() -> Node3D:
+	if enemy and enemy.has_method("get_current_target"):
+		return enemy.get_current_target()
 	var players: Array = enemy.get_tree().get_nodes_in_group("player")
 	return players[0] as Node3D if players.size() > 0 else null
 

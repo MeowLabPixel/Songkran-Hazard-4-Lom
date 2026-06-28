@@ -1,0 +1,5 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://d1ek4iqlqrgur"]
+
+[resource]
+resource_name = "openPBR_shader1"
+vertex_color_use_as_albedo = true

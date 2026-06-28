@@ -139,7 +139,22 @@ const SPEED = 5.0
 const JUMP_VELOCITY = 4.5
 
 func _ready() -> void:
+	if anim:
+		anim.active = true
 	add_to_group("player")
+	
+	# Defer animation start to allow Godot to finish skeleton bone binding
+	get_tree().create_timer(0.1).timeout.connect(func():
+		if is_instance_valid(self) and anim:
+			var pb = anim.get(anim_playback)
+			if pb:
+				pb.start("Idle")
+				
+				# Call set_gun_anim to update sub-state conditions after snapping to Idle
+				var idle_state = get_node_or_null("Statemachine/Idle")
+				if idle_state and idle_state.has_method("set_gun_anim"):
+					idle_state.set_gun_anim()
+	)
 	
 	# Enable collision mask for Layer 3 (Enemies) so the player physically collides with enemies
 	set_collision_mask_value(3, true)
@@ -484,10 +499,7 @@ func take_damage(amount: int) -> void:
 	print("[Player] Took %d damage — HP: %d/%d" % [amount, HP, MaxHP])
 
 	if HP <= 0:
-		print("[Player] Dead")
-		var sm = get_node_or_null("Statemachine")
-		if sm:
-			sm._change_state("Die")
+		force_die()
 		return
 
 	# Transition to Get_hit state for melee hit
@@ -523,6 +535,20 @@ func lost_HP(amount):
 		HP = 0
 	else:
 		HP -=amount
+
+func force_die() -> void:
+	var already_dead = (HP <= 0)
+	HP = 0
+	if not already_dead:
+		print("[Player] Force Dead")
+		var sm = get_node_or_null("Statemachine")
+		if sm and sm.current_state and sm.current_state.name != "Die":
+			sm._change_state("Die")
+		
+		# Kill follower
+		var follower = get_tree().get_first_node_in_group("Anchalee")
+		if follower and follower.has_method("kill_anchalee"):
+			follower.kill_anchalee()
 		
 func Heal(amount):
 	if HP +amount >= MaxHP:

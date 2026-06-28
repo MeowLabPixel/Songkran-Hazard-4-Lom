@@ -5,11 +5,13 @@ extends State
 @export_group("Camera Adjustments")
 @export var qte_lose_cam_offset: float = -1.2
 @export var qte_lose_cam_pitch: float = -10.0
+@export var qte_lose_cam_spring_offset: float = 2.0
 @export var qte_lose_cam_duration_down: float = 0.5
 @export var qte_lose_cam_duration_up: float = 1.0
 
 @export var qte_win_cam_offset: float = 1.2
 @export var qte_win_cam_pitch: float = 10.0
+@export var qte_win_cam_spring_offset: float = 2.0
 @export var qte_win_cam_duration_up: float = 0.5
 @export var qte_win_cam_duration_down: float = 1.0
 
@@ -37,6 +39,8 @@ func _process(_delta: float) -> void:
 								cam.set_action_offset_y(qte_lose_cam_offset, qte_lose_cam_duration_down)
 							if cam.has_method("set_action_pitch"):
 								cam.set_action_pitch(qte_lose_cam_pitch, qte_lose_cam_duration_down)
+							if cam.has_method("set_action_spring_length"):
+								cam.set_action_spring_length(qte_lose_cam_spring_offset, qte_lose_cam_duration_down)
 					elif current_node == "Getup" and _camera_state == 1:
 						_camera_state = 2
 						var cam = owner.get_node_or_null("Camera")
@@ -45,6 +49,8 @@ func _process(_delta: float) -> void:
 								cam.set_action_offset_y(0.0, qte_lose_cam_duration_up)
 							if cam.has_method("set_action_pitch"):
 								cam.set_action_pitch(0.0, qte_lose_cam_duration_up)
+							if cam.has_method("set_action_spring_length"):
+								cam.set_action_spring_length(0.0, qte_lose_cam_duration_up)
 		elif last_anim == win_anim:
 			if owner and owner.anim:
 				var pb = owner.anim.get("parameters/Grab/playback")
@@ -58,6 +64,8 @@ func _process(_delta: float) -> void:
 								cam.set_action_offset_y(qte_win_cam_offset, qte_win_cam_duration_up)
 							if cam.has_method("set_action_pitch"):
 								cam.set_action_pitch(qte_win_cam_pitch, qte_win_cam_duration_up)
+							if cam.has_method("set_action_spring_length"):
+								cam.set_action_spring_length(qte_win_cam_spring_offset, qte_win_cam_duration_up)
 					elif current_node != "Win" and _camera_state == 1:
 						_camera_state = 2
 						var cam = owner.get_node_or_null("Camera")
@@ -66,6 +74,8 @@ func _process(_delta: float) -> void:
 								cam.set_action_offset_y(0.0, qte_win_cam_duration_down)
 							if cam.has_method("set_action_pitch"):
 								cam.set_action_pitch(0.0, qte_win_cam_duration_down)
+							if cam.has_method("set_action_spring_length"):
+								cam.set_action_spring_length(0.0, qte_win_cam_duration_down)
 
 
 func _enter() -> void:
@@ -109,6 +119,8 @@ func _exit() -> void:
 			cam.set_action_offset_y(0.0, 0.5) # Failsafe reset
 		if cam.has_method("set_action_pitch"):
 			cam.set_action_pitch(0.0, 0.5) # Failsafe reset
+		if cam.has_method("set_action_spring_length"):
+			cam.set_action_spring_length(0.0, 0.5) # Failsafe reset
 	
 	owner.hitboxF.monitoring = true
 	owner.hitboxB.monitoring = true

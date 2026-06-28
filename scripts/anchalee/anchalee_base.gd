@@ -51,6 +51,21 @@ var is_walking_backward: bool = false
 var player_is_sprinting: bool = false
 var smoothed_target_pos: Vector3 = Vector3.ZERO
 
+var _has_rolled_takedown_duck: bool = false
+var _takedown_duck_roll: bool = false
+var _threat_duck_roll: bool = false
+var _last_threat_state: bool = false
+
+func roll_threat_duck() -> bool:
+	var current_threat_state = get_threat_count() >= 2
+	if current_threat_state != _last_threat_state:
+		_last_threat_state = current_threat_state
+		if current_threat_state:
+			_threat_duck_roll = randf() < 0.5
+		else:
+			_threat_duck_roll = false
+	return _threat_duck_roll
+
 ## Set by states when Anchalee is stuck.
 var is_cornered: bool = false:
 	set(value):
@@ -124,6 +139,19 @@ func _setup_collision_exceptions() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	pass # Wait behavior replaced by dynamic Idle/Walk
 
+func kill_anchalee() -> void:
+	if is_dead:
+		return
+	health = 0
+	is_dead = true
+	print("[Anchalee] Force Dead.")
+	state_machine.transition_to("AnchaleeStateDie")
+	
+	# Kill player
+	var player = get_player()
+	if player and player.has_method("force_die"):
+		player.force_die()
+
 ## Called by enemy attack hitboxes to damage Anchalee.
 func take_damage(amount: int, _hit_data: Dictionary = {}) -> void:
 	if is_dead:
@@ -137,10 +165,7 @@ func take_damage(amount: int, _hit_data: Dictionary = {}) -> void:
 	health -= amount
 	print("[Anchalee] Took %d damage -- HP: %d/%d" % [amount, health, max_health])
 	if health <= 0:
-		health = 0
-		is_dead = true
-		print("[Anchalee] Dead.")
-		state_machine.transition_to("AnchaleeStateDie")
+		kill_anchalee()
 		return
 	state_machine.transition_to("AnchaleeStateHit")
 
@@ -151,10 +176,7 @@ func take_hit(hit_data: Dictionary) -> void:
 	health -= amount
 	print("[Anchalee] Friendly Fire! Took %d damage -- HP: %d/%d" % [amount, health, max_health])
 	if health <= 0:
-		health = 0
-		is_dead = true
-		print("[Anchalee] Dead to Friendly Fire.")
-		state_machine.transition_to("AnchaleeStateDie")
+		kill_anchalee()
 		return
 	state_machine.transition_to("AnchaleeStateHit")
 
@@ -193,6 +215,19 @@ func get_player() -> Node3D:
 func get_friend_target_pos() -> Vector3:
 	var player = get_player()
 	if not player: return global_position
+	
+	# If player is in grab or get hit states, flee from them!
+	var player_sm = player.get_node_or_null("Statemachine")
+	if player_sm and player_sm.get("current_state"):
+		var state_name = player_sm.current_state.name
+		if state_name in ["Grab", "Get_hit"]:
+			var to_self = global_position - player.global_position
+			to_self.y = 0.0
+			var dist = to_self.length()
+			var flee_dir = to_self.normalized() if dist > 0.1 else -player.global_transform.basis.z
+			# Target a point 5.0 meters away from the threat (player/zombie)
+			return player.global_position + flee_dir * 2.5
+
 	# Look for the FriendArea node on the player scene
 	var friend_area_node = player.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/FriendArea")
 	if friend_area_node:
@@ -344,16 +379,20 @@ func is_player_aiming_or_takedown() -> bool:
 				var distance_to_ray = anchalee_center.distance_to(closest_point)
 				
 				if distance_to_ray <= aim_detect_radius:
-					return true
+					return true # Guaranteed duck for Aim
 			
-	# 2. Takedown duck detection: only when player is in takedown states AND she is within 1.5m
+	# 2. Takedown duck detection: only when player is in Takedown state AND she is within 1.5m
 	var sm = player.get_node_or_null("Statemachine")
 	if sm and sm.get("current_state"):
-		if sm.current_state.name in ["Takedown", "Grab", "Get_hit", "Die"]:
+		if sm.current_state.name == "Takedown":
 			var dist = global_position.distance_to(player.global_position)
 			if dist <= 1.5:
-				return true
-			
+				if not _has_rolled_takedown_duck:
+					_has_rolled_takedown_duck = true
+					_takedown_duck_roll = randf() < 0.5
+				return _takedown_duck_roll
+				
+	_has_rolled_takedown_duck = false
 	return false
 
 # ─── Debug ─────────────────────────────────────────────────────────────────
