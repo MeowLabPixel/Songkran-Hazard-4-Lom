@@ -79,7 +79,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.736355, 0.47146058, 0.189
 material = SubResource("StandardMaterial3D_8tv4d")
 
 [node name="player" parent="." unique_id=324464419 instance=ExtResource("2_1da4k")]
-transform = Transform3D(-0.99983305, 0, -0.018272487, 0, 1, 0, 0.018272487, 0, -0.99983305, 10.067429, 0.056225806, -12.954782)
+transform = Transform3D(-0.99983305, 0, -0.018272487, 0, 1, 0, 0.018272487, 0, -0.99983305, 10.067, 0, -12.955)
 collision_layer = 14
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=831039779]

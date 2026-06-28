@@ -1421,6 +1421,17 @@ height = 1.6091537
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_32hag"]
 height = 1.6091537
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_b2wkv"]
+size = Vector3(0.2, 1.1, 1.3)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_7crtr"]
+radius = 0.2904663
+height = 0.5809326
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_ntd1s"]
+height = 1.7087402
+radius = 0.91015625
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j55il"]
 render_priority = 1
 transparency = 1
@@ -1480,30 +1491,19 @@ stencil_reference = 5
 stencil_color = Color(0, 0, 0, 0.5882353)
 stencil_outline_thickness = 0.004
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_b2wkv"]
-size = Vector3(0.2, 1.1, 1.3)
-
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_7crtr"]
-radius = 0.2904663
-height = 0.5809326
-
-[sub_resource type="CylinderShape3D" id="CylinderShape3D_ntd1s"]
-height = 1.7087402
-radius = 0.91015625
-
 [sub_resource type="Animation" id="Animation_pnw6m"]
 resource_name = "RESET"
 length = 0.001
 tracks/0/type = "position_3d"
 tracks/0/imported = false
-tracks/0/enabled = true
+tracks/0/enabled = false
 tracks/0/path = NodePath("rig/Skeleton3D:ORG-shoulder.L")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = PackedFloat32Array(0, 1, 0.16849858, 0.05579039, 0.0031467846)
 tracks/1/type = "rotation_3d"
 tracks/1/imported = false
-tracks/1/enabled = true
+tracks/1/enabled = false
 tracks/1/path = NodePath("rig/Skeleton3D:ORG-shoulder.R")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
@@ -1515,6 +1515,18 @@ tracks/2/path = NodePath("rig/Skeleton3D:rotation")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, 0)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("rig/Skeleton3D:position")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
@@ -2246,7 +2258,7 @@ states/Start/position = Vector2(67.2, 55.2)
 states/Takedown/node = SubResource("AnimationNodeStateMachine_a1u5o")
 states/Takedown/position = Vector2(675.2, 130.064)
 transitions = ["Start", "Idle", SubResource("AnimationNodeStateMachineTransition_35wys"), "Idle", "Run", SubResource("AnimationNodeStateMachineTransition_pjwc4"), "Run", "Idle", SubResource("AnimationNodeStateMachineTransition_or4qq"), "Idle", "Aim", SubResource("AnimationNodeStateMachineTransition_hggc2"), "Aim", "Idle", SubResource("AnimationNodeStateMachineTransition_b2j0d"), "QT", "Idle", SubResource("AnimationNodeStateMachineTransition_55jnj"), "Idle", "QT", SubResource("AnimationNodeStateMachineTransition_xcnuv"), "Aim", "Reload", SubResource("AnimationNodeStateMachineTransition_s3g0c"), "Run", "Reload", SubResource("AnimationNodeStateMachineTransition_7l6ig"), "Idle", "Reload", SubResource("AnimationNodeStateMachineTransition_utr5e"), "Reload", "Idle", SubResource("AnimationNodeStateMachineTransition_kewli"), "Idle", "Takedown", SubResource("AnimationNodeStateMachineTransition_kcq4v"), "Run", "Takedown", SubResource("AnimationNodeStateMachineTransition_qavcc"), "Takedown", "Idle", SubResource("AnimationNodeStateMachineTransition_bd26m"), "Run", "Aim", SubResource("AnimationNodeStateMachineTransition_237xx"), "Aim", "QT", SubResource("AnimationNodeStateMachineTransition_gswnw"), "Run", "QT", SubResource("AnimationNodeStateMachineTransition_j55il"), "QT", "Run", SubResource("AnimationNodeStateMachineTransition_wpyo2"), "QT", "Aim", SubResource("AnimationNodeStateMachineTransition_a1u5o")]
-graph_offset = Vector2(86.86243, 34.96353)
+graph_offset = Vector2(9.862427, 9.9635315)
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_j3r50"]
 advance_mode = 2
@@ -2280,7 +2292,7 @@ states/Main/node = SubResource("AnimationNodeStateMachine_7l6ig")
 states/Main/position = Vector2(333.20343, 94.52592)
 states/Start/position = Vector2(202.4, 100)
 transitions = ["Start", "Main", SubResource("AnimationNodeStateMachineTransition_j3r50"), "Main", "Hit", SubResource("AnimationNodeStateMachineTransition_do7qw"), "Hit", "Main", SubResource("AnimationNodeStateMachineTransition_2h6tc"), "Main", "Die", SubResource("AnimationNodeStateMachineTransition_8rogd"), "Grab", "Main", SubResource("AnimationNodeStateMachineTransition_48p26"), "Main", "Grab", SubResource("AnimationNodeStateMachineTransition_anp34")]
-graph_offset = Vector2(-8.911728, -8.842514)
+graph_offset = Vector2(-4.911728, -44.842514)
 
 [node name="player" type="CharacterBody3D" unique_id=324464419 node_paths=PackedStringArray("aim_bone", "aim_bone2", "anim", "hitboxF", "hitboxB", "stun_detect", "pickup_detect", "gun_controller")]
 collision_layer = 10
@@ -2351,12 +2363,11 @@ push_duration = 0.25
 script = ExtResource("16_32hag")
 
 [node name="Re4Lom Base Rig" type="Node3D" parent="." unique_id=449863350]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0.075, 0)
 
 [node name="rig" type="Node3D" parent="Re4Lom Base Rig" unique_id=39875493]
 
 [node name="Skeleton3D" type="Skeleton3D" parent="Re4Lom Base Rig/rig" unique_id=1846738179]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.041568726, 0)
 bones/0/name = "root"
 bones/0/parent = -1
 bones/0/rest = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0, 0)
@@ -3166,7 +3177,7 @@ bones/115/name = "ORG-shoulder.L"
 bones/115/parent = 114
 bones/115/rest = Transform3D(0.19813997, 0.9217903, 0.33323124, -0.06454767, -0.32696265, 0.94283026, 0.97804594, -0.20832168, -0.005284949, 0.16870818, 0.04988533, -0.0028369378)
 bones/115/enabled = true
-bones/115/position = Vector3(0.16849858, 0.05579039, 0.0031467846)
+bones/115/position = Vector3(0.16870818, 0.04988533, -0.0028369378)
 bones/115/rotation = Quaternion(0.61854416, 0.34647596, 0.52998537, -0.4652667)
 bones/115/scale = Vector3(0.9999998, 0.9999999, 0.99999994)
 bones/116/name = "ORG-upper_arm.L"
@@ -3377,7 +3388,7 @@ bones/145/parent = 114
 bones/145/rest = Transform3D(0.19814059, -0.92179006, -0.3332314, 0.06454762, -0.32696283, 0.94283015, -0.97804576, -0.20832226, -0.005285256, -0.16870818, 0.04988533, -0.0028370183)
 bones/145/enabled = true
 bones/145/position = Vector3(-0.16870818, 0.04988533, -0.0028370183)
-bones/145/rotation = Quaternion(0, 0, 0, -1)
+bones/145/rotation = Quaternion(0.6185444, -0.34647575, -0.5299852, -0.46526676)
 bones/145/scale = Vector3(0.99999976, 0.9999999, 0.9999999)
 bones/146/name = "ORG-upper_arm.R"
 bones/146/parent = 145
@@ -4216,6 +4227,37 @@ transform = Transform3D(1, -3.7252947e-09, 0, 0, -4.371139e-08, -1, 3.7252947e-0
 shape = SubResource("CylinderShape3D_32hag")
 debug_color = Color(0.70196074, 0.6928641, 0, 0.41960785)
 
+[node name="PlayerTakedownHitBox" type="BoneAttachment3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=1389016659]
+transform = Transform3D(1, -1.4182504e-09, 2.3816983e-07, -4.7877432e-08, 0.9783728, 0.2068483, -2.3331239e-07, -0.20684828, 0.97837275, -4.1678633e-10, 1.270934, -0.0057899826)
+bone_name = "DEF-spine.003"
+bone_idx = 4
+
+[node name="TakedownHitbox" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox" unique_id=958867971]
+
+[node name="TakedownAttackBox" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=221015335]
+transform = Transform3D(-4.371139e-08, 1, 0, -0.97553456, -4.264198e-08, -0.2198462, -0.2198462, -9.609806e-09, 0.97553456, 0.0013047464, 0.0047934055, -0.7377733)
+shape = SubResource("BoxShape3D_b2wkv")
+debug_color = Color(0.70196074, 0, 0.504468, 0.41960785)
+
+[node name="FriendArea" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=936767060]
+transform = Transform3D(0.52, 0, 0, 0, 0.52, 0, 0, 0, 0.52, 0.2506887, 0.060598373, -0.4006246)
+collision_layer = 0
+collision_mask = 15
+
+[node name="FriendShape" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/FriendArea" unique_id=289154140]
+transform = Transform3D(1, 0, 4.2632564e-14, 0, 1, 0, -4.2632564e-14, 0, 1, 0, 0, 0)
+shape = SubResource("CapsuleShape3D_7crtr")
+debug_color = Color(0, 0.7019608, 0.03529412, 0.8509804)
+
+[node name="FriendNearArea" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=577899937]
+transform = Transform3D(-1, 0, 8.742277e-08, 0, 1, 0, -8.742277e-08, 0, -1, 6.108629e-08, 0.84679115, -0.6987457)
+collision_layer = 0
+collision_mask = 15
+
+[node name="NearShape" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/FriendNearArea" unique_id=2018011598]
+shape = SubResource("CylinderShape3D_ntd1s")
+debug_color = Color(0, 0.70196074, 0.00544658, 0.41960785)
+
 [node name="ArmLookAt" type="LookAtModifier3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=1249922509]
 target_node = NodePath("../../../../Aim_target")
 bone_name = "ORG-spine.003"
@@ -4256,7 +4298,7 @@ primary_negative_limit_angle = 0.08726646
 primary_negative_damp_threshold = 1.0
 
 [node name="Gun" type="BoneAttachment3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=622329853]
-transform = Transform3D(-0.47705904, -0.80947816, 0.3422849, 0.66560304, -0.5870943, -0.4607516, 0.57392204, 0.008020118, 0.8188703, -0.6198709, 1.1213245, -0.038133603)
+transform = Transform3D(-0.47705904, -0.80947816, 0.34228486, 0.54501855, -0.5780115, -0.6073357, 0.68946993, -0.10318343, 0.71692675, -0.6198709, 1.1303079, -0.06584087)
 bone_name = "ORG-hand.R"
 bone_idx = 148
 
@@ -4293,37 +4335,6 @@ transform = Transform3D(-1, 0, 9.8894816e-08, 0, 1, -2.0023435e-08, -1.8056016e-
 
 [node name="shotty optimized" parent="Re4Lom Base Rig/rig/Skeleton3D/Gun/GunController/Shotgun" parent_id_path=PackedInt32Array(870463544, 1222397405) index="0" unique_id=1270350009]
 visible = false
-
-[node name="PlayerTakedownHitBox" type="BoneAttachment3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=1389016659]
-transform = Transform3D(1, -2.1316282e-14, 2.3841842e-07, -4.7906795e-08, 0.97960424, 0.20093592, -2.3355582e-07, -0.20093593, 0.9796041, -2.1086638e-10, 1.270964, -0.0049268054)
-bone_name = "DEF-spine.003"
-bone_idx = 4
-
-[node name="TakedownHitbox" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox" unique_id=958867971]
-
-[node name="TakedownAttackBox" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=221015335]
-transform = Transform3D(-4.371139e-08, 1, 0, -0.97553456, -4.264198e-08, -0.2198462, -0.2198462, -9.609806e-09, 0.97553456, 0.0013047464, 0.0047934055, -0.7377733)
-shape = SubResource("BoxShape3D_b2wkv")
-debug_color = Color(0.70196074, 0, 0.504468, 0.41960785)
-
-[node name="FriendArea" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=936767060]
-transform = Transform3D(0.52, 0, 0, 0, 0.52, 0, 0, 0, 0.52, 0.2506887, 0.060598373, -0.4006246)
-collision_layer = 0
-collision_mask = 15
-
-[node name="FriendShape" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/FriendArea" unique_id=289154140]
-transform = Transform3D(1, 0, 4.2632564e-14, 0, 1, 0, -4.2632564e-14, 0, 1, 0, 0, 0)
-shape = SubResource("CapsuleShape3D_7crtr")
-debug_color = Color(0, 0.7019608, 0.03529412, 0.8509804)
-
-[node name="FriendNearArea" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=577899937]
-transform = Transform3D(-1, 0, 8.742277e-08, 0, 1, 0, -8.742277e-08, 0, -1, 6.108629e-08, 0.84679115, -0.6987457)
-collision_layer = 0
-collision_mask = 15
-
-[node name="NearShape" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/FriendNearArea" unique_id=2018011598]
-shape = SubResource("CylinderShape3D_ntd1s")
-debug_color = Color(0, 0.70196074, 0.00544658, 0.41960785)
 
 [node name="AnimationPlayer2" type="AnimationPlayer" parent="Re4Lom Base Rig" unique_id=675223807]
 deterministic = true
