@@ -9,10 +9,7 @@ func _enter() -> void:
 		owner.anim.get(owner.anim_playback).travel("Aim")
 	owner.cross_hair.visible = true
 	owner.aim_bone_on(true)
-	if not owner.hitboxF.body_entered.is_connected(hitfront):
-		owner.hitboxF.body_entered.connect(hitfront)
-	if not owner.hitboxB.body_entered.is_connected(hitback):
-		owner.hitboxB.body_entered.connect(hitback)
+
 	if not Input.is_action_pressed("aim") :
 		owner.is_aimming = false
 		finished.emit("Idle")
@@ -25,16 +22,7 @@ func _exit() -> void:
 	#owner.is_aimming = false
 	owner.cross_hair.visible = false
 	
-func hitfront(body: Area3D):
-	if body.is_in_group("attack"):
-		owner.Hit_info.bullet = body
-		owner.Hit_info.location = "front"
-		finished.emit("Get_hit")
-func hitback(body: Area3D):
-	if body.is_in_group("attack"):
-		owner.Hit_info.bullet = body
-		owner.Hit_info.location = "back"
-		finished.emit("Get_hit")
+
 
 func _state_input(_event: InputEvent) -> void:
 	if Input.is_action_just_pressed("quick_turn") and not owner.is_quick_turn and owner.quick_turn_cooldown <= 0.0:

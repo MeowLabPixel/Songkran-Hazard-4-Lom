@@ -17,7 +17,7 @@ extends Node
 
 
 signal Grabbed(area: Area3D)
-signal Attacked
+signal Attacked(zone: PlayerHitboxZone, attack_area: Area3D)
 
 var _player: Player = null
 
@@ -68,7 +68,7 @@ func _on_area_entered(area: Area3D) -> void:
 			Grabbed.emit(area)
 		"attack":
 			print("Player attacked!")
-			Attacked.emit()
+			Attacked.emit(self, area)
 			# DO NOT call _player.take_damage here! 
 			# The enemy's state_attack.gd script already detects the hit and calls _player.take_damage(attack_damage)
 			# If we call it here too, the player takes double damage (or 1 extra damage per hitbox touched)!

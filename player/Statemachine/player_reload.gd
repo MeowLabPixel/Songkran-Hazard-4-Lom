@@ -9,10 +9,7 @@ func _enter() -> void:
 	stop_moving()
 	owner.aim_bone_on(false)
 
-	if not owner.hitboxF.body_entered.is_connected(hitfront):
-		owner.hitboxF.body_entered.connect(hitfront)
-	if not owner.hitboxB.body_entered.is_connected(hitback):
-		owner.hitboxB.body_entered.connect(hitback)
+
 
 	# If already fully charged on entry, just leave immediately
 	if not owner.gun_controller or owner.gun_controller.current_gun.is_super_ready:
@@ -84,17 +81,7 @@ func reload_timeout() -> void:
 		return
 	finished.emit("Aim" if owner.is_aimming else "Idle")
 
-func hitfront(body: Area3D) -> void:
-	if body.is_in_group("attack"):
-		owner.Hit_info.bullet = body
-		owner.Hit_info.location = "front"
-		finished.emit("Get_hit")
 
-func hitback(body: Area3D) -> void:
-	if body.is_in_group("attack"):
-		owner.Hit_info.bullet = body
-		owner.Hit_info.location = "back"
-		finished.emit("Get_hit")
 
 func stop_moving() -> void:
 	owner.set_velocity_from_motion(Vector3.ZERO)

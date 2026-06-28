@@ -24,10 +24,7 @@ func _enter() -> void:
 	owner.aim_bone_on(false)
 	if not owner.anim.animation_finished.is_connected(anim_done):
 		owner.anim.animation_finished.connect(anim_done)
-	if not owner.hitboxF.body_entered.is_connected(hitfront):
-		owner.hitboxF.body_entered.connect(hitfront)
-	if not owner.hitboxB.body_entered.is_connected(hitback):
-		owner.hitboxB.body_entered.connect(hitback)
+
 
 func _exit() -> void:
 	_exited = true
@@ -84,16 +81,7 @@ func _state_input(event: InputEvent) -> void:
 	if Input.is_action_pressed("Gun3"):
 		switch_gun(2)
 
-func hitfront(body: Area3D):
-	if body.is_in_group("attack"):
-		owner.Hit_info.bullet = body
-		owner.Hit_info.location = "front"
-		finished.emit("Get_hit")
-func hitback(body: Area3D):
-	if body.is_in_group("attack"):
-		owner.Hit_info.bullet = body
-		owner.Hit_info.location = "back"
-		finished.emit("Get_hit")
+
 
 func switch_gun(num:int):
 	if owner.gun_controller:
@@ -102,6 +90,8 @@ func switch_gun(num:int):
 		#one shot anim
 
 func set_gun_anim():
+	if not owner.gun_controller or not owner.gun_controller.current_gun:
+		return
 	if owner.gun_controller.current_gun.get_gun_name() == "Water pistol":
 		owner.anim.set(anim_node + "conditions/pis",true)
 		owner.anim.set(anim_node + "conditions/shot",false)

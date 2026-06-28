@@ -7,10 +7,7 @@ func _enter() -> void:
 	print(name)
 	set_gun_anim()
 	owner.anim.get(owner.anim_playback).travel("Idle")	
-	if not owner.hitboxF.body_entered.is_connected(hitfront):
-		owner.hitboxF.body_entered.connect(hitfront)
-	if not owner.hitboxB.body_entered.is_connected(hitback):
-		owner.hitboxB.body_entered.connect(hitback)
+
 
 
 func _update(_delta:float) -> void:
@@ -39,15 +36,7 @@ func _state_input(_event: InputEvent) -> void:
 		if owner.attempt_takedown():
 			finished.emit("Takedown")
 
-func hitfront(body: Area3D):
-		owner.Hit_info.bullet = body
-		owner.Hit_info.location = "front"
-		finished.emit("Get_hit")
-func hitback(body: Area3D):
 
-		owner.Hit_info.bullet = body
-		owner.Hit_info.location = "back"
-		finished.emit("Get_hit")
 
 func switch_gun(num:int):
 	if owner.gun_controller:
@@ -56,6 +45,8 @@ func switch_gun(num:int):
 		#one shot anim
 	
 func set_gun_anim():
+	if not owner.gun_controller or not owner.gun_controller.current_gun:
+		return
 	if owner.gun_controller.current_gun.get_gun_name() == "Water pistol":
 		owner.anim.set("parameters/Main/Idle/conditions/pis",true)
 		owner.anim.set("parameters/Main/Idle/conditions/shot",false)

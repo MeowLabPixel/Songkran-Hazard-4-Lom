@@ -144,6 +144,11 @@ func exit() -> void:
 		_has_token = false
 		_selected_attack = ""
 		
+	if not state_machine or state_machine.next_state_name != "StateAttack":
+		if enemy and enemy.anim_tree and enemy.anim_tree.active:
+			if "parameters/Walk Zombie/Transition/transition_request" in enemy.anim_tree:
+				enemy.anim_tree.set("parameters/Walk Zombie/Transition/transition_request", "default")
+				
 	_end_sprint()
 
 func physics_update(_delta: float) -> void:
@@ -258,13 +263,33 @@ func physics_update(_delta: float) -> void:
 		if manager_has_token:
 			# Just gained the token!
 			_has_token = true
-			_selected_attack = ["attack_1", "attack_2", "attack_grab"].pick_random()
+			
+			var attack_choice: String = ""
+			if enemy and enemy.guaranteed_grab_next_attack:
+				attack_choice = "attack_grab"
+				enemy.guaranteed_grab_next_attack = false
+			elif randf() < 0.25:
+				attack_choice = "attack_grab"
+			else:
+				var last_attack = enemy.last_normal_attack if enemy else ""
+				if last_attack == "attack_1":
+					attack_choice = "attack_2"
+				elif last_attack == "attack_2":
+					attack_choice = "attack_1"
+				else:
+					attack_choice = "attack_1" if randf() < 0.5 else "attack_2"
+				
+				if enemy:
+					enemy.last_normal_attack = attack_choice
+			
+			_selected_attack = attack_choice
 			if enemy:
 				enemy.selected_attack_type = _selected_attack
 			
 			# Set the animation tree Transition parameter
 			if enemy.anim_tree and enemy.anim_tree.active:
 				if "parameters/Walk Zombie/Transition/transition_request" in enemy.anim_tree:
+					enemy.anim_tree.set("parameters/Walk Zombie/Transition/transition_request", "default")
 					enemy.anim_tree.set("parameters/Walk Zombie/Transition/transition_request", _selected_attack)
 					print("[StateHunt] Set Walk transition request to: ", _selected_attack)
 					

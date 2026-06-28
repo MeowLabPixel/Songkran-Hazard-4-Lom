@@ -45,6 +45,9 @@ var _hand_left:  Area3D          = null
 var _hand_right: Area3D          = null
 var _grab_hitbox: Area3D         = null
 var _attack_index: int           = 0
+var _anim_started: bool          = false
+var _current_target_anim: String = ""
+
 
 func enter() -> void:
 	_timer             = 0.0
@@ -88,14 +91,50 @@ func enter() -> void:
 			if token_manager.request_grab_token(enemy):
 				_start_grab_reach()
 			else:
-				_start_attack_with_index(0)
+				var index := 0
+				var last_attack = enemy.last_normal_attack if enemy else ""
+				if last_attack == "attack_1":
+					index = 1
+				elif last_attack == "attack_2":
+					index = 0
+				else:
+					index = randi() % 2
+				
+				var attack_name = "attack_1" if index == 0 else "attack_2"
+				if enemy:
+					enemy.last_normal_attack = attack_name
+				_start_attack_with_index(index)
 		elif randf() < grab_chance:
 			if token_manager.request_grab_token(enemy):
 				_start_grab_reach()
 			else:
-				_start_attack_with_index(0)
+				var index := 0
+				var last_attack = enemy.last_normal_attack if enemy else ""
+				if last_attack == "attack_1":
+					index = 1
+				elif last_attack == "attack_2":
+					index = 0
+				else:
+					index = randi() % 2
+				
+				var attack_name = "attack_1" if index == 0 else "attack_2"
+				if enemy:
+					enemy.last_normal_attack = attack_name
+				_start_attack_with_index(index)
 		else:
-			_start_attack_with_index(randi() % 2)
+			var index := 0
+			var last_attack = enemy.last_normal_attack if enemy else ""
+			if last_attack == "attack_1":
+				index = 1
+			elif last_attack == "attack_2":
+				index = 0
+			else:
+				index = randi() % 2
+			
+			var attack_name = "attack_1" if index == 0 else "attack_2"
+			if enemy:
+				enemy.last_normal_attack = attack_name
+			_start_attack_with_index(index)
 
 func exit() -> void:
 	var nav_agent = enemy.get_node_or_null("NavigationAgent3D") as NavigationAgent3D
@@ -113,13 +152,18 @@ func exit() -> void:
 	if enemy:
 		var token_manager = enemy.get_node("/root/AttackTokenManager")
 		token_manager.release_token(enemy)
+		if enemy.anim_tree and enemy.anim_tree.active:
+			if "parameters/Walk Zombie/Transition/transition_request" in enemy.anim_tree:
+				enemy.anim_tree.set("parameters/Walk Zombie/Transition/transition_request", "default")
 
 func _start_attack_with_index(index: int) -> void:
 	_phase = Phase.ATTACK
+	_anim_started = false
 	for hand in [_hand_left, _hand_right]:
 		if hand and hand is AttackHitbox:
 			hand.attack_type = "attack"
 	var anim: String = enemy.anim_set.attack_1 if index == 0 else enemy.anim_set.attack_2
+	_current_target_anim = anim
 	_current_attack_is_1 = (index == 0)
 	_force_anim(anim, "attack")
 	_anim_duration = _anim_length(anim, "attack")
@@ -154,10 +198,12 @@ func handle_hit(hit_data: Dictionary) -> String:
 
 func _start_attack() -> void:
 	_phase = Phase.ATTACK
+	_anim_started = false
 	for hand in [_hand_left, _hand_right]:
 		if hand and hand is AttackHitbox:
 			hand.attack_type = "attack"
 	var anim: String = enemy.anim_set.get_attack_anim(_attack_index)
+	_current_target_anim = anim
 	_current_attack_is_1 = (anim == enemy.anim_set.attack_1)
 	_attack_index += 1
 	_force_anim(anim, "attack")
@@ -181,16 +227,16 @@ func _tick_attack() -> void:
 	
 	_apply_movement_and_rotation()
 		
-	if _timer > 0.1 and enemy and enemy.anim_tree:
-		var pb = enemy.anim_tree.get("parameters/attack/playback")
-		if pb and pb.get_current_node() == "End":
-			_finish()
+	if _timer > 0.1 and _is_anim_finished():
+		_finish()
 
 
 # ── Grab ──────────────────────────────────────────────────────────────────
 
 func _start_grab_reach() -> void:
 	_phase = Phase.GRAB_REACHING
+	_anim_started = false
+	_current_target_anim = "grab"
 	if _grab_hitbox and _grab_hitbox is AttackHitbox:
 		_grab_hitbox.attack_type = "grab"
 	var anim = enemy.anim_set.grab_reach
@@ -212,11 +258,9 @@ func _tick_grab_reach() -> void:
 	
 	_apply_movement_and_rotation()
 		
-	if _timer > 0.1 and enemy and enemy.anim_tree and not _grab_made_contact:
-		var pb = enemy.anim_tree.get("parameters/attack/playback")
-		if pb and pb.get_current_node() == "End":
-			print("[StateAttack] Grab: whiffed")
-			_finish()
+	if _timer > 0.1 and not _grab_made_contact and _is_anim_finished():
+		print("[StateAttack] Grab: whiffed")
+		_finish()
 
 func _start_grab_hold() -> void:
 	_phase = Phase.GRAB_HOLDING
@@ -289,6 +333,8 @@ func _on_qte_escaped() -> void:
 func _on_qte_caught() -> void:
 	print("[StateAttack] Grab: player CAUGHT (Zombie succeeds)")
 	_go_knockdown_after_anim = false
+	_anim_started = false
+	_current_target_anim = "grab"
 	var player := _get_player()
 	var sm = player.get_node_or_null("Statemachine")
 	if sm:
@@ -308,18 +354,31 @@ func _on_qte_caught() -> void:
 	_timer = 0.0
 
 func _tick_grab_resolving() -> void:
-	if _timer > 0.1 and enemy and enemy.anim_tree:
-		var pb = enemy.anim_tree.get("parameters/attack/playback")
-		if pb and pb.get_current_node() == "End":
-			if _go_knockdown_after_anim:
-				var knockdown = state_machine._states.get("StateKnockdown")
-				if knockdown:
-					knockdown.skip_act3 = true
-				state_machine.transition_to("StateKnockdown")
-			else:
-				_finish()
+	if _timer > 0.1 and _is_anim_finished():
+		if _go_knockdown_after_anim:
+			var knockdown = state_machine._states.get("StateKnockdown")
+			if knockdown:
+				knockdown.skip_act3 = true
+			state_machine.transition_to("StateKnockdown")
+		else:
+			_finish()
 
 # ── Shared helpers ────────────────────────────────────────────────────────
+
+func _is_anim_finished() -> bool:
+	if _timer >= _anim_duration:
+		return true
+	if enemy and enemy.anim_tree:
+		var root_playback = enemy.anim_tree.get("parameters/playback") as AnimationNodeStateMachinePlayback
+		if root_playback:
+			var pb = enemy.anim_tree.get("parameters/attack/playback") as AnimationNodeStateMachinePlayback
+			if pb:
+				var cur_node = pb.get_current_node()
+				if cur_node == _current_target_anim:
+					_anim_started = true
+				if cur_node == "End" and _anim_started:
+					return true
+	return false
 
 func _finish() -> void:
 	if enemy:

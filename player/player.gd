@@ -64,6 +64,8 @@ var start_qte = false
 
 const GRAVITY = -9.81
 var is_quick_turn: bool = false
+var is_stunned: bool = false
+var hit_damage_already_applied: bool = false
 var quick_turn_cooldown: float = 0.0
 var is_aimming:bool = false
 var is_reload:bool = false
@@ -476,11 +478,45 @@ func _physics_process(_delta: float) -> void:
 #		curr_gun = gun_list[curr_gun_index]
 
 func take_damage(amount: int) -> void:
+	if is_stunned:
+		return
 	lost_HP(amount)
 	print("[Player] Took %d damage — HP: %d/%d" % [amount, HP, MaxHP])
 
 	if HP <= 0:
 		print("[Player] Dead")
+		var sm = get_node_or_null("Statemachine")
+		if sm:
+			sm._change_state("Die")
+		return
+
+	# Transition to Get_hit state for melee hit
+	var sm = get_node_or_null("Statemachine")
+	if sm and sm.current_state and sm.current_state.name != "Get_hit" and sm.current_state.name != "Grab" and sm.current_state.name != "Die" and sm.current_state.name != "Knockdown" and sm.current_state.name != "Takedown":
+		hit_damage_already_applied = true
+		
+		# Determine hit direction from currently overlapping enemy attacks
+		var location = null
+		if hitboxF:
+			for area in hitboxF.get_overlapping_areas():
+				if area.is_in_group("enemy_attack"):
+					location = "front"
+					break
+		if location == null and hitboxB:
+			for area in hitboxB.get_overlapping_areas():
+				if area.is_in_group("enemy_attack"):
+					location = "back"
+					break
+		
+		if location == null:
+			# Fallback: check if Hit_info already has a location (e.g. from bullet body_entered)
+			if Hit_info.location != null:
+				location = Hit_info.location
+			else:
+				location = "front"
+				
+		Hit_info.location = location
+		sm._change_state("Get_hit")
 
 func lost_HP(amount):
 	if HP -amount <= 0:
@@ -543,6 +579,33 @@ func _connect_player_hitboxes() -> void:
 				# Connect with argument (the area that triggered the grab)
 				if not child.Grabbed.is_connected(on_hitbox_grabbed_with_area):
 					child.Grabbed.connect(on_hitbox_grabbed_with_area)
+	if hitboxF and not hitboxF.body_entered.is_connected(_on_hitbox_body_entered_front):
+		hitboxF.body_entered.connect(_on_hitbox_body_entered_front)
+	if hitboxB and not hitboxB.body_entered.is_connected(_on_hitbox_body_entered_back):
+		hitboxB.body_entered.connect(_on_hitbox_body_entered_back)
+
+func _on_hitbox_body_entered_front(body: Node3D) -> void:
+	_on_hitbox_body_entered(body, "front")
+
+func _on_hitbox_body_entered_back(body: Node3D) -> void:
+	_on_hitbox_body_entered(body, "back")
+
+func _on_hitbox_body_entered(body: Node3D, location: String) -> void:
+	if is_stunned:
+		return
+	
+	# Only count actual bullets/projectiles
+	if not (body.is_in_group("bullet") or body.is_in_group("enemy_projectile") or body.is_in_group("projectile")):
+		return
+	
+	# Bullet hit
+	Hit_info.bullet = body
+	Hit_info.location = location
+	hit_damage_already_applied = false
+	
+	var sm = get_node_or_null("Statemachine")
+	if sm and sm.current_state and sm.current_state.name != "Get_hit" and sm.current_state.name != "Grab" and sm.current_state.name != "Die" and sm.current_state.name != "Knockdown" and sm.current_state.name != "Takedown":
+		sm._change_state("Get_hit")
 
 func on_hitbox_grabbed_with_area(area: Area3D) -> void:
 	# Store the last grab source so player_grab can reference enemy UI
