@@ -201,18 +201,20 @@ func fire_pellet():
 
 
 func update_accuracy():
-	var t: float = clamp(air / max_air, 0.0, 1.0)
-	current_spread = lerp(max_spread, min_spread, t)	
+	pass
 
 func _apply_damage_to_result(result: Dictionary) -> void:
 	var collider = result.get("collider")
 	if collider == null:
 		return
 
+	var final_damage = damage
+	var player = get_tree().get_first_node_in_group("player")
+	if player and player.has_method("get_damage_multiplier"):
+		final_damage = damage * player.get_damage_multiplier()
+
 	# ✅ Case 1: Hit an Area3D (hitbox)
 	if collider is Area3D and not collider.is_in_group("player_hitbox"):
-		var _hitbox_script = collider.get_child(0) if collider.get_child_count() > 0 else null
-		
 		# Better: search for HitboxZone
 		var hitbox_zone: HitboxZone = collider.get_node_or_null("HitboxZone")
 		
@@ -223,7 +225,7 @@ func _apply_damage_to_result(result: Dictionary) -> void:
 			
 			if target:
 				target.take_hit({
-					"damage": damage,
+					"damage": final_damage,
 					"hit_zone": hitbox_zone.zone_name,
 					"position": result.position
 				})
@@ -236,7 +238,7 @@ func _apply_damage_to_result(result: Dictionary) -> void:
 
 	if node:
 		node.take_hit({
-			"damage": damage,
+			"damage": final_damage,
 			"hit_zone": "body",
 			"position": result.position
 		})

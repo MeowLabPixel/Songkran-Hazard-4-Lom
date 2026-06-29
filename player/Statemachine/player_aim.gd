@@ -27,6 +27,7 @@ func _update(_delta:float) -> void:
 				if gun.can_shoot():
 					gun.shoot()
 					owner.anim.set("parameters/Main/Aim/BlendTree/OneShot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
+					owner.notify_shot_fired()
 	
 func _exit() -> void:
 	#owner.is_aimming = false
@@ -55,6 +56,7 @@ func _state_input(_event: InputEvent) -> void:
 				if gun.can_shoot():
 					gun.shoot()
 					owner.anim.set("parameters/Main/Aim/BlendTree/OneShot/request",AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
+					owner.notify_shot_fired()
 
 
 func switch_gun(num:int):

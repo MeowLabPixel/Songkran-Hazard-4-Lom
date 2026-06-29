@@ -17,15 +17,15 @@ warnings/check_invalid_track_paths=false
 config/name="Songkran Hazard 4-Lom"
 run/main_scene="res://scenes/disclaimer.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="uid://bvhvlnw1hbiv6"
 
 [autoload]
 
 PhantomCameraManager="*uid://duq6jhf6unyis"
 ItemManager="*res://scripts/items/item_manager.gd"
 AttackTokenManager="*res://scripts/enemy/attack_token_manager.gd"
-_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 GameManager="*res://scripts/game_manager.gd"
+_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 
 [debug]
 
@@ -35,7 +35,9 @@ settings/physics_interpolation/enable_warnings=false
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
-window/size/borderless=true
+window/size/mode=2
+window/size/window_width_override=960
+window/size/window_height_override=540
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
@@ -180,7 +182,6 @@ jolt_physics_3d/collisions/report_unsupported_scales=false
 
 [rendering]
 
-environment/defaults/default_clear_color=Color(0.02, 0.02, 0.03, 1)
 rendering_device/driver.windows="d3d12"
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=5
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality.mobile=5
@@ -188,4 +189,5 @@ lights_and_shadows/positional_shadow/soft_shadow_filter_quality=5
 lights_and_shadows/positional_shadow/soft_shadow_filter_quality.mobile=5
 anti_aliasing/quality/msaa_2d=3
 anti_aliasing/quality/msaa_3d=3
+environment/defaults/default_clear_color=Color(0.02, 0.02, 0.03, 1)
 anti_aliasing/quality/screen_space_aa=2

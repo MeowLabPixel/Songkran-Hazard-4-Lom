@@ -68,6 +68,7 @@ var is_stunned: bool = false
 var hit_damage_already_applied: bool = false
 var quick_turn_cooldown: float = 0.0
 var is_aimming:bool = false
+var focus_progress: float = 0.0
 var aim_blocked_until_release: bool = false
 var is_reload:bool = false
 var is_grab:bool = false
@@ -130,7 +131,7 @@ var _anim_time: float = 0.53
 var _is_returning_to_neutral: bool = false
 var _stop_timer: float = 0.0
 var _peak_blend: float = 0.0
-@onready var cross_hair: TextureRect = $Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/Die/TextureRect
+@onready var cross_hair: Control = $Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/Die/TextureRect
 @onready var reload_timer: Timer = $Reload_timer
 
 #const BULLET = preload("uid://csdtdj7sci5vk")
@@ -229,9 +230,7 @@ func _ready() -> void:
 
 	if cross_hair:
 		cross_hair.visible = false
-		cross_hair.texture = crosshair_texture
-		cross_hair.modulate = crosshair_color
-		# Ensure size matches the image to maintain quality
+		cross_hair.scale = Vector2.ONE
 		cross_hair.size = Vector2(512, 512)
 		cross_hair.pivot_offset = Vector2(256, 256)
 		cross_hair.set_anchors_and_offsets_preset(Control.PRESET_CENTER, Control.PRESET_MODE_KEEP_SIZE)
@@ -473,15 +472,82 @@ func update_crosshair_accuracy(delta: float) -> void:
 
 	cross_hair.visible = is_aimming
 	if not cross_hair.visible:
+		focus_progress = 0.0
 		return
 
+	# Determine focus time based on air percentage
+	var focus_time = 0.5
 	if gun_controller and gun_controller.current_gun:
-		var gun: Gun = gun_controller.current_gun
-		# Normalize spread based on the gun's min/max spread
-		var spread_factor = clamp((gun.current_spread - gun.min_spread) / (gun.max_spread - gun.min_spread), 0.0, 1.0)
-		var target_scale_val = lerp(min_scale, max_scale, spread_factor)
+		var gun = gun_controller.current_gun
+		var air_pct = gun.air / gun.max_air
+		if air_pct < 0.5:
+			focus_time = 1.0
+			
+	# Update focus progress
+	var old_focus = focus_progress
+	focus_progress += delta / focus_time
+	focus_progress = clamp(focus_progress, 0.0, 1.0)
+	
+	# If just became fully focused, play a subtle pop animation
+	if old_focus < 1.0 and focus_progress >= 1.0:
+		var tween = create_tween()
+		tween.tween_property(cross_hair, "scale", Vector2(1.15, 1.15), 0.07).set_ease(Tween.EASE_OUT)
+		tween.tween_property(cross_hair, "scale", Vector2(1.0, 1.0), 0.07).set_ease(Tween.EASE_IN)
+	
+	# Update gun current_spread based on focus progress
+	if gun_controller and gun_controller.current_gun:
+		var gun = gun_controller.current_gun
+		gun.current_spread = lerp(gun.max_spread, gun.min_spread, focus_progress)
 
-		cross_hair.scale = cross_hair.scale.lerp(Vector2(target_scale_val, target_scale_val), delta * 20.0)
+func get_damage_multiplier() -> float:
+	var mult = 1.0
+	
+	# 1. Focus bonus (50% increase)
+	if focus_progress >= 1.0:
+		mult *= 1.5
+		
+	# 2. Air-based reduction: discrete -10% for air < 50%, -15% for air <= 30%
+	if gun_controller and gun_controller.current_gun:
+		var gun = gun_controller.current_gun
+		var air_pct = gun.air / gun.max_air
+		if air_pct < 0.5:
+			var reduction = 0.15 if air_pct <= 0.3 else 0.10
+			mult *= (1.0 - reduction)
+			
+	return mult
+
+func notify_shot_fired() -> void:
+	# Reset focus on shooting
+	focus_progress = 0.0
+
+func spawn_damage_popup(text_content: String, color: Color) -> void:
+	if not cross_hair:
+		return
+		
+	var label = Label.new()
+	label.text = text_content
+	label.set_script(preload("res://scripts/ui/popup_label.gd"))
+	
+	# Style the label
+	label.add_theme_font_size_override("font_size", 22)
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 6)
+	
+	# Position: randomly left or right of the crosshair center
+	var offset_x = randf_range(45.0, 75.0)
+	if randf() > 0.5:
+		offset_x = -offset_x
+	var offset_y = randf_range(-15.0, 15.0)
+	
+	label.position = (cross_hair.size / 2.0) + Vector2(offset_x, offset_y) - Vector2(50, 10)
+	
+	# Give it a physics trajectory
+	label.set("velocity", Vector2(offset_x * 1.5, randf_range(-150.0, -100.0)))
+	label.set("gravity", 500.0)
+	label.set("life_time", 1.2)
+	
+	cross_hair.add_child(label)
 		
 func set_velocity_from_motion(vel: Vector3)-> void:
 	velocity = vel
