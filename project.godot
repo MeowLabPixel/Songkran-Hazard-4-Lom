@@ -21,11 +21,11 @@ config/icon="uid://bvhvlnw1hbiv6"
 
 [autoload]
 
-PhantomCameraManager="*uid://duq6jhf6unyis"
+_mcp_game_helper="<null>"
+PhantomCameraManager="uid://duq6jhf6unyis"
 ItemManager="*res://scripts/items/item_manager.gd"
 AttackTokenManager="*res://scripts/enemy/attack_token_manager.gd"
 GameManager="*res://scripts/game_manager.gd"
-_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 
 [debug]
 
@@ -40,10 +40,6 @@ window/size/window_width_override=960
 window/size/window_height_override=540
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/godot_ai/plugin.cfg")
 
 [global_group]
 

@@ -103,7 +103,7 @@ func _find_anim_player() -> AnimationPlayer:
 # ─── Ready ─────────────────────────────────────────────────────────────────
 func _ready() -> void:
 	add_to_group("enemies")
-	MAX_HP = float(randi_range(8, 10))
+	MAX_HP = float(randi_range(10, 12))
 	current_hp = MAX_HP
 	is_takedown_defeat = false
 	if not anim_set:
