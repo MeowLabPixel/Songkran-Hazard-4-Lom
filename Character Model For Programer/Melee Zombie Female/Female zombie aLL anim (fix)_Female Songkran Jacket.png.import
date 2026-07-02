@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://diy1qkd761un7"
 path.s3tc="res://.godot/imported/Female zombie aLL anim (fix)_Female Songkran Jacket.png-28c0fad2262db668d161f9371e8b9c7f.s3tc.ctex"
+path.etc2="res://.godot/imported/Female zombie aLL anim (fix)_Female Songkran Jacket.png-28c0fad2262db668d161f9371e8b9c7f.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Melee Zombie Female/Female zombie aLL anim (fix)_Female Songkran Jacket.png"
-dest_files=["res://.godot/imported/Female zombie aLL anim (fix)_Female Songkran Jacket.png-28c0fad2262db668d161f9371e8b9c7f.s3tc.ctex"]
+dest_files=["res://.godot/imported/Female zombie aLL anim (fix)_Female Songkran Jacket.png-28c0fad2262db668d161f9371e8b9c7f.s3tc.ctex", "res://.godot/imported/Female zombie aLL anim (fix)_Female Songkran Jacket.png-28c0fad2262db668d161f9371e8b9c7f.etc2.ctex"]
 
 [params]
 

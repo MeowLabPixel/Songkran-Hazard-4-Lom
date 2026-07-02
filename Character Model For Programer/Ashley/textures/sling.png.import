@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dac0xiapgheju"
 path.s3tc="res://.godot/imported/sling.png-5684eecbc21ff77dafbc6787876bce49.s3tc.ctex"
+path.etc2="res://.godot/imported/sling.png-5684eecbc21ff77dafbc6787876bce49.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Ashley/textures/sling.png"
-dest_files=["res://.godot/imported/sling.png-5684eecbc21ff77dafbc6787876bce49.s3tc.ctex"]
+dest_files=["res://.godot/imported/sling.png-5684eecbc21ff77dafbc6787876bce49.s3tc.ctex", "res://.godot/imported/sling.png-5684eecbc21ff77dafbc6787876bce49.etc2.ctex"]
 
 [params]
 

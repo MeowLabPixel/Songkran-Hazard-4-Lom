@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dmuyas6lt2gpa"
 path.s3tc="res://.godot/imported/Re4Lom Base Rig_Base_Leon_Hair.png-d7f9315b821d82fdd981e969a51b48c5.s3tc.ctex"
+path.etc2="res://.godot/imported/Re4Lom Base Rig_Base_Leon_Hair.png-d7f9315b821d82fdd981e969a51b48c5.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://player/Re4Lom Base Rig_Base_Leon_Hair.png"
-dest_files=["res://.godot/imported/Re4Lom Base Rig_Base_Leon_Hair.png-d7f9315b821d82fdd981e969a51b48c5.s3tc.ctex"]
+dest_files=["res://.godot/imported/Re4Lom Base Rig_Base_Leon_Hair.png-d7f9315b821d82fdd981e969a51b48c5.s3tc.ctex", "res://.godot/imported/Re4Lom Base Rig_Base_Leon_Hair.png-d7f9315b821d82fdd981e969a51b48c5.etc2.ctex"]
 
 [params]
 

@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dsnaoxnk0271u"
 path.s3tc="res://.godot/imported/Re4Lom Base Rig_Base_Pant_ Gradiant.png-f7fa682b5269be956e4afa258379993d.s3tc.ctex"
+path.etc2="res://.godot/imported/Re4Lom Base Rig_Base_Pant_ Gradiant.png-f7fa682b5269be956e4afa258379993d.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://player/Re4Lom Base Rig_Base_Pant_ Gradiant.png"
-dest_files=["res://.godot/imported/Re4Lom Base Rig_Base_Pant_ Gradiant.png-f7fa682b5269be956e4afa258379993d.s3tc.ctex"]
+dest_files=["res://.godot/imported/Re4Lom Base Rig_Base_Pant_ Gradiant.png-f7fa682b5269be956e4afa258379993d.s3tc.ctex", "res://.godot/imported/Re4Lom Base Rig_Base_Pant_ Gradiant.png-f7fa682b5269be956e4afa258379993d.etc2.ctex"]
 
 [params]
 

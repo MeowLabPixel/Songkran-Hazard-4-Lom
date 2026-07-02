@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://q7dvhiuqtp88"
 path.s3tc="res://.godot/imported/water merchant Face Shadow Fix_Fabric.png-33d7d6cf8618a116c6b2695687a92f12.s3tc.ctex"
+path.etc2="res://.godot/imported/water merchant Face Shadow Fix_Fabric.png-33d7d6cf8618a116c6b2695687a92f12.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Merchant/water merchant Face Shadow Fix_Fabric.png"
-dest_files=["res://.godot/imported/water merchant Face Shadow Fix_Fabric.png-33d7d6cf8618a116c6b2695687a92f12.s3tc.ctex"]
+dest_files=["res://.godot/imported/water merchant Face Shadow Fix_Fabric.png-33d7d6cf8618a116c6b2695687a92f12.s3tc.ctex", "res://.godot/imported/water merchant Face Shadow Fix_Fabric.png-33d7d6cf8618a116c6b2695687a92f12.etc2.ctex"]
 
 [params]
 

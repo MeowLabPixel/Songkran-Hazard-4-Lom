@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://ccrjm2i6qt7aw"
 path.s3tc="res://.godot/imported/Base_Leon_Hair.png-d30da388eb35679d801167b8b3cbc68b.s3tc.ctex"
+path.etc2="res://.godot/imported/Base_Leon_Hair.png-d30da388eb35679d801167b8b3cbc68b.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={}
@@ -13,7 +14,7 @@ generator_parameters={}
 [deps]
 
 source_file="res://Base Model/Base Hair/textures/Base_Leon_Hair.png"
-dest_files=["res://.godot/imported/Base_Leon_Hair.png-d30da388eb35679d801167b8b3cbc68b.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base_Leon_Hair.png-d30da388eb35679d801167b8b3cbc68b.s3tc.ctex", "res://.godot/imported/Base_Leon_Hair.png-d30da388eb35679d801167b8b3cbc68b.etc2.ctex"]
 
 [params]
 

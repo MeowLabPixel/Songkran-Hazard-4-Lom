@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://p5ka7gw3gtce"
 path.s3tc="res://.godot/imported/Base_Cloth_Body.png-aac400e0b9c8a0a240428c97ffda881c.s3tc.ctex"
+path.etc2="res://.godot/imported/Base_Cloth_Body.png-aac400e0b9c8a0a240428c97ffda881c.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Range Zombie 2/textures/Base_Cloth_Body.png"
-dest_files=["res://.godot/imported/Base_Cloth_Body.png-aac400e0b9c8a0a240428c97ffda881c.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base_Cloth_Body.png-aac400e0b9c8a0a240428c97ffda881c.s3tc.ctex", "res://.godot/imported/Base_Cloth_Body.png-aac400e0b9c8a0a240428c97ffda881c.etc2.ctex"]
 
 [params]
 

@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bqr8hx1x14dis"
 path.s3tc="res://.godot/imported/Range zombie (balloon) (6)_bag.png-7857a05d67aa2f5eb0bad88533f5bf41.s3tc.ctex"
+path.etc2="res://.godot/imported/Range zombie (balloon) (6)_bag.png-7857a05d67aa2f5eb0bad88533f5bf41.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://models/enemies/Range zombie (balloon) (6)_bag.png"
-dest_files=["res://.godot/imported/Range zombie (balloon) (6)_bag.png-7857a05d67aa2f5eb0bad88533f5bf41.s3tc.ctex"]
+dest_files=["res://.godot/imported/Range zombie (balloon) (6)_bag.png-7857a05d67aa2f5eb0bad88533f5bf41.s3tc.ctex", "res://.godot/imported/Range zombie (balloon) (6)_bag.png-7857a05d67aa2f5eb0bad88533f5bf41.etc2.ctex"]
 
 [params]
 

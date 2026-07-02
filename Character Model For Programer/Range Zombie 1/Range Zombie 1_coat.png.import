@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://b45e08tbd2ach"
 path.s3tc="res://.godot/imported/Range Zombie 1_coat.png-ae6c7598bb0fa4fc33f157bc8fc0340b.s3tc.ctex"
+path.etc2="res://.godot/imported/Range Zombie 1_coat.png-ae6c7598bb0fa4fc33f157bc8fc0340b.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Range Zombie 1/Range Zombie 1_coat.png"
-dest_files=["res://.godot/imported/Range Zombie 1_coat.png-ae6c7598bb0fa4fc33f157bc8fc0340b.s3tc.ctex"]
+dest_files=["res://.godot/imported/Range Zombie 1_coat.png-ae6c7598bb0fa4fc33f157bc8fc0340b.s3tc.ctex", "res://.godot/imported/Range Zombie 1_coat.png-ae6c7598bb0fa4fc33f157bc8fc0340b.etc2.ctex"]
 
 [params]
 

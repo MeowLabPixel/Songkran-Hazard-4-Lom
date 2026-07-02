@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cor3i265m6xhi"
 path.s3tc="res://.godot/imported/Base Songkran Jacket Solid.png-b13689faf610186f0dc475bfa6da08d2.s3tc.ctex"
+path.etc2="res://.godot/imported/Base Songkran Jacket Solid.png-b13689faf610186f0dc475bfa6da08d2.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Merchant/textures/Base Songkran Jacket Solid.png"
-dest_files=["res://.godot/imported/Base Songkran Jacket Solid.png-b13689faf610186f0dc475bfa6da08d2.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base Songkran Jacket Solid.png-b13689faf610186f0dc475bfa6da08d2.s3tc.ctex", "res://.godot/imported/Base Songkran Jacket Solid.png-b13689faf610186f0dc475bfa6da08d2.etc2.ctex"]
 
 [params]
 

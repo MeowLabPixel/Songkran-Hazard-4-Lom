@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bywrn6vjbkuwt"
 path.s3tc="res://.godot/imported/Range Zombie 1 Face Shadow Fix_coat.png-eb1c275f47d21170b462e972da1a82d2.s3tc.ctex"
+path.etc2="res://.godot/imported/Range Zombie 1 Face Shadow Fix_coat.png-eb1c275f47d21170b462e972da1a82d2.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Range Zombie 1/Range Zombie 1 Face Shadow Fix_coat.png"
-dest_files=["res://.godot/imported/Range Zombie 1 Face Shadow Fix_coat.png-eb1c275f47d21170b462e972da1a82d2.s3tc.ctex"]
+dest_files=["res://.godot/imported/Range Zombie 1 Face Shadow Fix_coat.png-eb1c275f47d21170b462e972da1a82d2.s3tc.ctex", "res://.godot/imported/Range Zombie 1 Face Shadow Fix_coat.png-eb1c275f47d21170b462e972da1a82d2.etc2.ctex"]
 
 [params]
 

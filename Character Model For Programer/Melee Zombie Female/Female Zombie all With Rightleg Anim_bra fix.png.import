@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://du4y5sk57h5k1"
 path.s3tc="res://.godot/imported/Female Zombie all With Rightleg Anim_bra fix.png-da26d1c7129805567a3a557fd9fa2971.s3tc.ctex"
+path.etc2="res://.godot/imported/Female Zombie all With Rightleg Anim_bra fix.png-da26d1c7129805567a3a557fd9fa2971.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Melee Zombie Female/Female Zombie all With Rightleg Anim_bra fix.png"
-dest_files=["res://.godot/imported/Female Zombie all With Rightleg Anim_bra fix.png-da26d1c7129805567a3a557fd9fa2971.s3tc.ctex"]
+dest_files=["res://.godot/imported/Female Zombie all With Rightleg Anim_bra fix.png-da26d1c7129805567a3a557fd9fa2971.s3tc.ctex", "res://.godot/imported/Female Zombie all With Rightleg Anim_bra fix.png-da26d1c7129805567a3a557fd9fa2971.etc2.ctex"]
 
 [params]
 

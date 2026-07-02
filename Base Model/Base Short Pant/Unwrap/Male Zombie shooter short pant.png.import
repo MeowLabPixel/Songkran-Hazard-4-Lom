@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://b116b22mwq03u"
 path.s3tc="res://.godot/imported/Male Zombie shooter short pant.png-7450c4666ddc3665ddd47a6bb293eb8d.s3tc.ctex"
+path.etc2="res://.godot/imported/Male Zombie shooter short pant.png-7450c4666ddc3665ddd47a6bb293eb8d.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Base Model/Base Short Pant/Unwrap/Male Zombie shooter short pant.png"
-dest_files=["res://.godot/imported/Male Zombie shooter short pant.png-7450c4666ddc3665ddd47a6bb293eb8d.s3tc.ctex"]
+dest_files=["res://.godot/imported/Male Zombie shooter short pant.png-7450c4666ddc3665ddd47a6bb293eb8d.s3tc.ctex", "res://.godot/imported/Male Zombie shooter short pant.png-7450c4666ddc3665ddd47a6bb293eb8d.etc2.ctex"]
 
 [params]
 

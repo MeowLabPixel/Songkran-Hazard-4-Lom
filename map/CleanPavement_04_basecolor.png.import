@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cejwsppa0vxa0"
 path.s3tc="res://.godot/imported/CleanPavement_04_basecolor.png-7e28a69a10985c447c73e6abd2f2be74.s3tc.ctex"
+path.etc2="res://.godot/imported/CleanPavement_04_basecolor.png-7e28a69a10985c447c73e6abd2f2be74.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://map/CleanPavement_04_basecolor.png"
-dest_files=["res://.godot/imported/CleanPavement_04_basecolor.png-7e28a69a10985c447c73e6abd2f2be74.s3tc.ctex"]
+dest_files=["res://.godot/imported/CleanPavement_04_basecolor.png-7e28a69a10985c447c73e6abd2f2be74.s3tc.ctex", "res://.godot/imported/CleanPavement_04_basecolor.png-7e28a69a10985c447c73e6abd2f2be74.etc2.ctex"]
 
 [params]
 

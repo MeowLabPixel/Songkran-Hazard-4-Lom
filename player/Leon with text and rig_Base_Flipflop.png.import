@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://b6lk4dsbsfl4m"
 path.s3tc="res://.godot/imported/Leon with text and rig_Base_Flipflop.png-025563f525f2d2c612b064a223276378.s3tc.ctex"
+path.etc2="res://.godot/imported/Leon with text and rig_Base_Flipflop.png-025563f525f2d2c612b064a223276378.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://player/Leon with text and rig_Base_Flipflop.png"
-dest_files=["res://.godot/imported/Leon with text and rig_Base_Flipflop.png-025563f525f2d2c612b064a223276378.s3tc.ctex"]
+dest_files=["res://.godot/imported/Leon with text and rig_Base_Flipflop.png-025563f525f2d2c612b064a223276378.s3tc.ctex", "res://.godot/imported/Leon with text and rig_Base_Flipflop.png-025563f525f2d2c612b064a223276378.etc2.ctex"]
 
 [params]
 

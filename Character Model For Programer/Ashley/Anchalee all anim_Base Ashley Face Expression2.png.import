@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dtvl2hxto8jl7"
 path.s3tc="res://.godot/imported/Anchalee all anim_Base Ashley Face Expression2.png-768301dd8fa17d038d8445779380800d.s3tc.ctex"
+path.etc2="res://.godot/imported/Anchalee all anim_Base Ashley Face Expression2.png-768301dd8fa17d038d8445779380800d.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Ashley/Anchalee all anim_Base Ashley Face Expression2.png"
-dest_files=["res://.godot/imported/Anchalee all anim_Base Ashley Face Expression2.png-768301dd8fa17d038d8445779380800d.s3tc.ctex"]
+dest_files=["res://.godot/imported/Anchalee all anim_Base Ashley Face Expression2.png-768301dd8fa17d038d8445779380800d.s3tc.ctex", "res://.godot/imported/Anchalee all anim_Base Ashley Face Expression2.png-768301dd8fa17d038d8445779380800d.etc2.ctex"]
 
 [params]
 

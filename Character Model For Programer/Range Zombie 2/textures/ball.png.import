@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dmcq55v5reilw"
 path.s3tc="res://.godot/imported/ball.png-e8ad01dd383700ac480e8372551f308a.s3tc.ctex"
+path.etc2="res://.godot/imported/ball.png-e8ad01dd383700ac480e8372551f308a.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Range Zombie 2/textures/ball.png"
-dest_files=["res://.godot/imported/ball.png-e8ad01dd383700ac480e8372551f308a.s3tc.ctex"]
+dest_files=["res://.godot/imported/ball.png-e8ad01dd383700ac480e8372551f308a.s3tc.ctex", "res://.godot/imported/ball.png-e8ad01dd383700ac480e8372551f308a.etc2.ctex"]
 
 [params]
 

@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://p61dv7ot7dkx"
 path.s3tc="res://.godot/imported/Female Zombie all anim2_Base Female Zombie-1 Face.png-5196ecbe953ea938a5ac3597c07a80aa.s3tc.ctex"
+path.etc2="res://.godot/imported/Female Zombie all anim2_Base Female Zombie-1 Face.png-5196ecbe953ea938a5ac3597c07a80aa.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Melee Zombie Female/Female Zombie all anim2_Base Female Zombie-1 Face.png"
-dest_files=["res://.godot/imported/Female Zombie all anim2_Base Female Zombie-1 Face.png-5196ecbe953ea938a5ac3597c07a80aa.s3tc.ctex"]
+dest_files=["res://.godot/imported/Female Zombie all anim2_Base Female Zombie-1 Face.png-5196ecbe953ea938a5ac3597c07a80aa.s3tc.ctex", "res://.godot/imported/Female Zombie all anim2_Base Female Zombie-1 Face.png-5196ecbe953ea938a5ac3597c07a80aa.etc2.ctex"]
 
 [params]
 

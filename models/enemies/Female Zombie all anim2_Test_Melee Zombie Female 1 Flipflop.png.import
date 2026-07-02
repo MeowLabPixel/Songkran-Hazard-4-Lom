@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://c57w43o10fnlw"
 path.s3tc="res://.godot/imported/Female Zombie all anim2_Test_Melee Zombie Female 1 Flipflop.png-bc7577d1f8cdde7c05a1729a13012a4f.s3tc.ctex"
+path.etc2="res://.godot/imported/Female Zombie all anim2_Test_Melee Zombie Female 1 Flipflop.png-bc7577d1f8cdde7c05a1729a13012a4f.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://models/enemies/Female Zombie all anim2_Test_Melee Zombie Female 1 Flipflop.png"
-dest_files=["res://.godot/imported/Female Zombie all anim2_Test_Melee Zombie Female 1 Flipflop.png-bc7577d1f8cdde7c05a1729a13012a4f.s3tc.ctex"]
+dest_files=["res://.godot/imported/Female Zombie all anim2_Test_Melee Zombie Female 1 Flipflop.png-bc7577d1f8cdde7c05a1729a13012a4f.s3tc.ctex", "res://.godot/imported/Female Zombie all anim2_Test_Melee Zombie Female 1 Flipflop.png-bc7577d1f8cdde7c05a1729a13012a4f.etc2.ctex"]
 
 [params]
 

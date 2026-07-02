@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://clnvrh31jwlfm"
 path.s3tc="res://.godot/imported/Re4Lom Base Rig_Base_Cloth_Body.png-56bd31a14fe52e3cde9157137c6ddafe.s3tc.ctex"
+path.etc2="res://.godot/imported/Re4Lom Base Rig_Base_Cloth_Body.png-56bd31a14fe52e3cde9157137c6ddafe.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://player/Re4Lom Base Rig_Base_Cloth_Body.png"
-dest_files=["res://.godot/imported/Re4Lom Base Rig_Base_Cloth_Body.png-56bd31a14fe52e3cde9157137c6ddafe.s3tc.ctex"]
+dest_files=["res://.godot/imported/Re4Lom Base Rig_Base_Cloth_Body.png-56bd31a14fe52e3cde9157137c6ddafe.s3tc.ctex", "res://.godot/imported/Re4Lom Base Rig_Base_Cloth_Body.png-56bd31a14fe52e3cde9157137c6ddafe.etc2.ctex"]
 
 [params]
 

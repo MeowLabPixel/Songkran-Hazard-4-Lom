@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cwocbli0rfe18"
 path.s3tc="res://.godot/imported/Flower Farment.png-fe461e267ec6c86b5fabed937b929a18.s3tc.ctex"
+path.etc2="res://.godot/imported/Flower Farment.png-fe461e267ec6c86b5fabed937b929a18.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Base Model/Base Flower Garment/Flower Farment.png"
-dest_files=["res://.godot/imported/Flower Farment.png-fe461e267ec6c86b5fabed937b929a18.s3tc.ctex"]
+dest_files=["res://.godot/imported/Flower Farment.png-fe461e267ec6c86b5fabed937b929a18.s3tc.ctex", "res://.godot/imported/Flower Farment.png-fe461e267ec6c86b5fabed937b929a18.etc2.ctex"]
 
 [params]
 

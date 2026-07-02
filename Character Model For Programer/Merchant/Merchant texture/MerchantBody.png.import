@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://ute1ugrrubmr"
 path.s3tc="res://.godot/imported/MerchantBody.png-e165031ed8647c262f874a2272b13deb.s3tc.ctex"
+path.etc2="res://.godot/imported/MerchantBody.png-e165031ed8647c262f874a2272b13deb.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Merchant/Merchant texture/MerchantBody.png"
-dest_files=["res://.godot/imported/MerchantBody.png-e165031ed8647c262f874a2272b13deb.s3tc.ctex"]
+dest_files=["res://.godot/imported/MerchantBody.png-e165031ed8647c262f874a2272b13deb.s3tc.ctex", "res://.godot/imported/MerchantBody.png-e165031ed8647c262f874a2272b13deb.etc2.ctex"]
 
 [params]
 

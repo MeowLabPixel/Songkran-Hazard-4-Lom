@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://ceu0k86jx5eoq"
 path.s3tc="res://.godot/imported/belt.png-3b8ab2cbc9a1738f3a71b545ec580c38.s3tc.ctex"
+path.etc2="res://.godot/imported/belt.png-3b8ab2cbc9a1738f3a71b545ec580c38.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Ashley/textures/belt.png"
-dest_files=["res://.godot/imported/belt.png-3b8ab2cbc9a1738f3a71b545ec580c38.s3tc.ctex"]
+dest_files=["res://.godot/imported/belt.png-3b8ab2cbc9a1738f3a71b545ec580c38.s3tc.ctex", "res://.godot/imported/belt.png-3b8ab2cbc9a1738f3a71b545ec580c38.etc2.ctex"]
 
 [params]
 

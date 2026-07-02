@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cpjqr68c8pqeb"
 path.s3tc="res://.godot/imported/Range zombie (balloon) (6)_Megaman_Mask1-1.png-f1af5362b8d8ccb641e5154ab7fa7940.s3tc.ctex"
+path.etc2="res://.godot/imported/Range zombie (balloon) (6)_Megaman_Mask1-1.png-f1af5362b8d8ccb641e5154ab7fa7940.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://models/enemies/Range zombie (balloon) (6)_Megaman_Mask1-1.png"
-dest_files=["res://.godot/imported/Range zombie (balloon) (6)_Megaman_Mask1-1.png-f1af5362b8d8ccb641e5154ab7fa7940.s3tc.ctex"]
+dest_files=["res://.godot/imported/Range zombie (balloon) (6)_Megaman_Mask1-1.png-f1af5362b8d8ccb641e5154ab7fa7940.s3tc.ctex", "res://.godot/imported/Range zombie (balloon) (6)_Megaman_Mask1-1.png-f1af5362b8d8ccb641e5154ab7fa7940.etc2.ctex"]
 
 [params]
 

@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://ba0ga1pgr2dxy"
 path.s3tc="res://.godot/imported/Base Male Body 2.png-b903f853a472985b0b38e0cfe7ae11c5.s3tc.ctex"
+path.etc2="res://.godot/imported/Base Male Body 2.png-b903f853a472985b0b38e0cfe7ae11c5.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Albert Wesker/Textures/Base Male Body 2.png"
-dest_files=["res://.godot/imported/Base Male Body 2.png-b903f853a472985b0b38e0cfe7ae11c5.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base Male Body 2.png-b903f853a472985b0b38e0cfe7ae11c5.s3tc.ctex", "res://.godot/imported/Base Male Body 2.png-b903f853a472985b0b38e0cfe7ae11c5.etc2.ctex"]
 
 [params]
 

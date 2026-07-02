@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://d0tanklq46uso"
 path.s3tc="res://.godot/imported/RoughPavement_02_basecolor.png-0e0e1b7176735b6b00eb0f272804b056.s3tc.ctex"
+path.etc2="res://.godot/imported/RoughPavement_02_basecolor.png-0e0e1b7176735b6b00eb0f272804b056.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://map/RoughPavement_02_basecolor.png"
-dest_files=["res://.godot/imported/RoughPavement_02_basecolor.png-0e0e1b7176735b6b00eb0f272804b056.s3tc.ctex"]
+dest_files=["res://.godot/imported/RoughPavement_02_basecolor.png-0e0e1b7176735b6b00eb0f272804b056.s3tc.ctex", "res://.godot/imported/RoughPavement_02_basecolor.png-0e0e1b7176735b6b00eb0f272804b056.etc2.ctex"]
 
 [params]
 

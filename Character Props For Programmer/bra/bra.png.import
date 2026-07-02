@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://biy1e1oolrp5o"
 path.s3tc="res://.godot/imported/bra.png-643d4983ea779a4bc0e1f468e5df8eca.s3tc.ctex"
+path.etc2="res://.godot/imported/bra.png-643d4983ea779a4bc0e1f468e5df8eca.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Props For Programmer/bra/bra.png"
-dest_files=["res://.godot/imported/bra.png-643d4983ea779a4bc0e1f468e5df8eca.s3tc.ctex"]
+dest_files=["res://.godot/imported/bra.png-643d4983ea779a4bc0e1f468e5df8eca.s3tc.ctex", "res://.godot/imported/bra.png-643d4983ea779a4bc0e1f468e5df8eca.etc2.ctex"]
 
 [params]
 

@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cu8bebd3v0hn3"
 path.s3tc="res://.godot/imported/water merchant Open_Base Songkran Jacket Solid.png-6d79f2064631f0ac1b899cbd88b2c26f.s3tc.ctex"
+path.etc2="res://.godot/imported/water merchant Open_Base Songkran Jacket Solid.png-6d79f2064631f0ac1b899cbd88b2c26f.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://3drigandanimation/Water merchant/water merchant Open_Base Songkran Jacket Solid.png"
-dest_files=["res://.godot/imported/water merchant Open_Base Songkran Jacket Solid.png-6d79f2064631f0ac1b899cbd88b2c26f.s3tc.ctex"]
+dest_files=["res://.godot/imported/water merchant Open_Base Songkran Jacket Solid.png-6d79f2064631f0ac1b899cbd88b2c26f.s3tc.ctex", "res://.godot/imported/water merchant Open_Base Songkran Jacket Solid.png-6d79f2064631f0ac1b899cbd88b2c26f.etc2.ctex"]
 
 [params]
 

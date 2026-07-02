@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://17hquwl42b7t"
 path.s3tc="res://.godot/imported/Base Male Body 2.png-f7f3490fa1d3a256ac6cacd1f49d3538.s3tc.ctex"
+path.etc2="res://.godot/imported/Base Male Body 2.png-f7f3490fa1d3a256ac6cacd1f49d3538.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={}
@@ -13,7 +14,7 @@ generator_parameters={}
 [deps]
 
 source_file="res://Character Model For Programer/Melee Zombie Male/textures/Base Male Body 2.png"
-dest_files=["res://.godot/imported/Base Male Body 2.png-f7f3490fa1d3a256ac6cacd1f49d3538.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base Male Body 2.png-f7f3490fa1d3a256ac6cacd1f49d3538.s3tc.ctex", "res://.godot/imported/Base Male Body 2.png-f7f3490fa1d3a256ac6cacd1f49d3538.etc2.ctex"]
 
 [params]
 

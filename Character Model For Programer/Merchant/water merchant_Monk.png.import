@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://71obqb1xi23x"
 path.s3tc="res://.godot/imported/water merchant_Monk.png-2d73ddfe765eef2ea7fc2b6e0b0b1609.s3tc.ctex"
+path.etc2="res://.godot/imported/water merchant_Monk.png-2d73ddfe765eef2ea7fc2b6e0b0b1609.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Merchant/water merchant_Monk.png"
-dest_files=["res://.godot/imported/water merchant_Monk.png-2d73ddfe765eef2ea7fc2b6e0b0b1609.s3tc.ctex"]
+dest_files=["res://.godot/imported/water merchant_Monk.png-2d73ddfe765eef2ea7fc2b6e0b0b1609.s3tc.ctex", "res://.godot/imported/water merchant_Monk.png-2d73ddfe765eef2ea7fc2b6e0b0b1609.etc2.ctex"]
 
 [params]
 

@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cetl07gxn0iok"
 path.s3tc="res://.godot/imported/Base Female Zombie Face Expression.png-df327a008830356ae45d26674297c832.s3tc.ctex"
+path.etc2="res://.godot/imported/Base Female Zombie Face Expression.png-df327a008830356ae45d26674297c832.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://3drigandanimation/All Zombie animation/textures/Base Female Zombie Face Expression.png"
-dest_files=["res://.godot/imported/Base Female Zombie Face Expression.png-df327a008830356ae45d26674297c832.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base Female Zombie Face Expression.png-df327a008830356ae45d26674297c832.s3tc.ctex", "res://.godot/imported/Base Female Zombie Face Expression.png-df327a008830356ae45d26674297c832.etc2.ctex"]
 
 [params]
 

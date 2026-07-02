@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dug16ugsd22ic"
 path.s3tc="res://.godot/imported/Melee Zombie Female 1 Flipflop.png-9590a86d508f9907150427ae8fe58b3e.s3tc.ctex"
+path.etc2="res://.godot/imported/Melee Zombie Female 1 Flipflop.png-9590a86d508f9907150427ae8fe58b3e.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={}
@@ -13,7 +14,7 @@ generator_parameters={}
 [deps]
 
 source_file="res://Character Model For Programer/Melee Zombie Female/textures/Melee Zombie Female 1 Flipflop.png"
-dest_files=["res://.godot/imported/Melee Zombie Female 1 Flipflop.png-9590a86d508f9907150427ae8fe58b3e.s3tc.ctex"]
+dest_files=["res://.godot/imported/Melee Zombie Female 1 Flipflop.png-9590a86d508f9907150427ae8fe58b3e.s3tc.ctex", "res://.godot/imported/Melee Zombie Female 1 Flipflop.png-9590a86d508f9907150427ae8fe58b3e.etc2.ctex"]
 
 [params]
 

@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cuofwvj62dshb"
 path.s3tc="res://.godot/imported/Base Zombie Balloon Face.png-38d952b16f581ccb3c2e204d4d4e8868.s3tc.ctex"
+path.etc2="res://.godot/imported/Base Zombie Balloon Face.png-38d952b16f581ccb3c2e204d4d4e8868.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={}
@@ -13,7 +14,7 @@ generator_parameters={}
 [deps]
 
 source_file="res://Character Model For Programer/Range Zombie 2/textures/Base Zombie Balloon Face.png"
-dest_files=["res://.godot/imported/Base Zombie Balloon Face.png-38d952b16f581ccb3c2e204d4d4e8868.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base Zombie Balloon Face.png-38d952b16f581ccb3c2e204d4d4e8868.s3tc.ctex", "res://.godot/imported/Base Zombie Balloon Face.png-38d952b16f581ccb3c2e204d4d4e8868.etc2.ctex"]
 
 [params]
 

@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dtka52e7usckb"
 path.s3tc="res://.godot/imported/water merchant_Merchant short pant paint.png-47ec48ccc1ef334817f6a1c0943ad4f8.s3tc.ctex"
+path.etc2="res://.godot/imported/water merchant_Merchant short pant paint.png-47ec48ccc1ef334817f6a1c0943ad4f8.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Merchant/water merchant_Merchant short pant paint.png"
-dest_files=["res://.godot/imported/water merchant_Merchant short pant paint.png-47ec48ccc1ef334817f6a1c0943ad4f8.s3tc.ctex"]
+dest_files=["res://.godot/imported/water merchant_Merchant short pant paint.png-47ec48ccc1ef334817f6a1c0943ad4f8.s3tc.ctex", "res://.godot/imported/water merchant_Merchant short pant paint.png-47ec48ccc1ef334817f6a1c0943ad4f8.etc2.ctex"]
 
 [params]
 

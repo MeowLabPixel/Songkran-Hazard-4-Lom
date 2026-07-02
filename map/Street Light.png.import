@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dj83ptet2bx6f"
 path.s3tc="res://.godot/imported/Street Light.png-3c70c8167ea08ce2d27d79568c53c179.s3tc.ctex"
+path.etc2="res://.godot/imported/Street Light.png-3c70c8167ea08ce2d27d79568c53c179.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://map/Street Light.png"
-dest_files=["res://.godot/imported/Street Light.png-3c70c8167ea08ce2d27d79568c53c179.s3tc.ctex"]
+dest_files=["res://.godot/imported/Street Light.png-3c70c8167ea08ce2d27d79568c53c179.s3tc.ctex", "res://.godot/imported/Street Light.png-3c70c8167ea08ce2d27d79568c53c179.etc2.ctex"]
 
 [params]
 

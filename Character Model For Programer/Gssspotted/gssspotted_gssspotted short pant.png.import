@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://xs5ku3qbj87i"
 path.s3tc="res://.godot/imported/gssspotted_gssspotted short pant.png-cc3022696ef44b808cf8065ea90d79ca.s3tc.ctex"
+path.etc2="res://.godot/imported/gssspotted_gssspotted short pant.png-cc3022696ef44b808cf8065ea90d79ca.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Gssspotted/gssspotted_gssspotted short pant.png"
-dest_files=["res://.godot/imported/gssspotted_gssspotted short pant.png-cc3022696ef44b808cf8065ea90d79ca.s3tc.ctex"]
+dest_files=["res://.godot/imported/gssspotted_gssspotted short pant.png-cc3022696ef44b808cf8065ea90d79ca.s3tc.ctex", "res://.godot/imported/gssspotted_gssspotted short pant.png-cc3022696ef44b808cf8065ea90d79ca.etc2.ctex"]
 
 [params]
 

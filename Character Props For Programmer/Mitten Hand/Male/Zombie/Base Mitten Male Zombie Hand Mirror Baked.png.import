@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://oyvlplkcwkua"
 path.s3tc="res://.godot/imported/Base Mitten Male Zombie Hand Mirror Baked.png-dd65cfc51f9404c06489b47572ce7622.s3tc.ctex"
+path.etc2="res://.godot/imported/Base Mitten Male Zombie Hand Mirror Baked.png-dd65cfc51f9404c06489b47572ce7622.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Props For Programmer/Mitten Hand/Male/Zombie/Base Mitten Male Zombie Hand Mirror Baked.png"
-dest_files=["res://.godot/imported/Base Mitten Male Zombie Hand Mirror Baked.png-dd65cfc51f9404c06489b47572ce7622.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base Mitten Male Zombie Hand Mirror Baked.png-dd65cfc51f9404c06489b47572ce7622.s3tc.ctex", "res://.godot/imported/Base Mitten Male Zombie Hand Mirror Baked.png-dd65cfc51f9404c06489b47572ce7622.etc2.ctex"]
 
 [params]
 

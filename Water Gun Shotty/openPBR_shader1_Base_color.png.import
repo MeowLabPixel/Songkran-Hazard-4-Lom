@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://t50h4u1pmy1b"
 path.s3tc="res://.godot/imported/openPBR_shader1_Base_color.png-77c8bd7482dbdde3f21ba4a49921debe.s3tc.ctex"
+path.etc2="res://.godot/imported/openPBR_shader1_Base_color.png-77c8bd7482dbdde3f21ba4a49921debe.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Water Gun Shotty/openPBR_shader1_Base_color.png"
-dest_files=["res://.godot/imported/openPBR_shader1_Base_color.png-77c8bd7482dbdde3f21ba4a49921debe.s3tc.ctex"]
+dest_files=["res://.godot/imported/openPBR_shader1_Base_color.png-77c8bd7482dbdde3f21ba4a49921debe.s3tc.ctex", "res://.godot/imported/openPBR_shader1_Base_color.png-77c8bd7482dbdde3f21ba4a49921debe.etc2.ctex"]
 
 [params]
 

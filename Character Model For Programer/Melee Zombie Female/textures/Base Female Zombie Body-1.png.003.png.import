@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dvu721dyg56q4"
 path.s3tc="res://.godot/imported/Base Female Zombie Body-1.png.003.png-546c299b6993202d879e59f459eeabca.s3tc.ctex"
+path.etc2="res://.godot/imported/Base Female Zombie Body-1.png.003.png-546c299b6993202d879e59f459eeabca.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Melee Zombie Female/textures/Base Female Zombie Body-1.png.003.png"
-dest_files=["res://.godot/imported/Base Female Zombie Body-1.png.003.png-546c299b6993202d879e59f459eeabca.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base Female Zombie Body-1.png.003.png-546c299b6993202d879e59f459eeabca.s3tc.ctex", "res://.godot/imported/Base Female Zombie Body-1.png.003.png-546c299b6993202d879e59f459eeabca.etc2.ctex"]
 
 [params]
 

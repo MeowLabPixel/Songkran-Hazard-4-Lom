@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://wtydn7q57sx5"
 path.s3tc="res://.godot/imported/hair.png-fad7a51e8b23f04da9907515432701e4.s3tc.ctex"
+path.etc2="res://.godot/imported/hair.png-fad7a51e8b23f04da9907515432701e4.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Range Zombie 2/hair.png"
-dest_files=["res://.godot/imported/hair.png-fad7a51e8b23f04da9907515432701e4.s3tc.ctex"]
+dest_files=["res://.godot/imported/hair.png-fad7a51e8b23f04da9907515432701e4.s3tc.ctex", "res://.godot/imported/hair.png-fad7a51e8b23f04da9907515432701e4.etc2.ctex"]
 
 [params]
 

@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dcgj1t1lbvkff"
 path.s3tc="res://.godot/imported/laptop.png-130b0a2b95eaabab6ebd72cc4d4a9e28.s3tc.ctex"
+path.etc2="res://.godot/imported/laptop.png-130b0a2b95eaabab6ebd72cc4d4a9e28.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Ashley/textures/laptop.png"
-dest_files=["res://.godot/imported/laptop.png-130b0a2b95eaabab6ebd72cc4d4a9e28.s3tc.ctex"]
+dest_files=["res://.godot/imported/laptop.png-130b0a2b95eaabab6ebd72cc4d4a9e28.s3tc.ctex", "res://.godot/imported/laptop.png-130b0a2b95eaabab6ebd72cc4d4a9e28.etc2.ctex"]
 
 [params]
 

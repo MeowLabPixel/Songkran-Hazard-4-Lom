@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dibx80fulo0h4"
 path.s3tc="res://.godot/imported/Base_Cloth_Body.png-d4400348a501e6f828e56dc8d89d5cb8.s3tc.ctex"
+path.etc2="res://.godot/imported/Base_Cloth_Body.png-d4400348a501e6f828e56dc8d89d5cb8.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Leon/textures/Base_Cloth_Body.png"
-dest_files=["res://.godot/imported/Base_Cloth_Body.png-d4400348a501e6f828e56dc8d89d5cb8.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base_Cloth_Body.png-d4400348a501e6f828e56dc8d89d5cb8.s3tc.ctex", "res://.godot/imported/Base_Cloth_Body.png-d4400348a501e6f828e56dc8d89d5cb8.etc2.ctex"]
 
 [params]
 

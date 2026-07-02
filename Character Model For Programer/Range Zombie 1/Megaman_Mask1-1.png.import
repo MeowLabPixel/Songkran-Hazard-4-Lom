@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bfvxwrplvf3m5"
 path.s3tc="res://.godot/imported/Megaman_Mask1-1.png-4dc909bdc5bc2d302b82d0bc95e153bb.s3tc.ctex"
+path.etc2="res://.godot/imported/Megaman_Mask1-1.png-4dc909bdc5bc2d302b82d0bc95e153bb.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Range Zombie 1/Megaman_Mask1-1.png"
-dest_files=["res://.godot/imported/Megaman_Mask1-1.png-4dc909bdc5bc2d302b82d0bc95e153bb.s3tc.ctex"]
+dest_files=["res://.godot/imported/Megaman_Mask1-1.png-4dc909bdc5bc2d302b82d0bc95e153bb.s3tc.ctex", "res://.godot/imported/Megaman_Mask1-1.png-4dc909bdc5bc2d302b82d0bc95e153bb.etc2.ctex"]
 
 [params]
 

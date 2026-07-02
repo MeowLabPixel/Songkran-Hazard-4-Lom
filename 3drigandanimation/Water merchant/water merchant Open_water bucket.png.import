@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://ci2eib1px5fec"
 path.s3tc="res://.godot/imported/water merchant Open_water bucket.png-fce576bf906cec0f305947c3209ec017.s3tc.ctex"
+path.etc2="res://.godot/imported/water merchant Open_water bucket.png-fce576bf906cec0f305947c3209ec017.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://3drigandanimation/Water merchant/water merchant Open_water bucket.png"
-dest_files=["res://.godot/imported/water merchant Open_water bucket.png-fce576bf906cec0f305947c3209ec017.s3tc.ctex"]
+dest_files=["res://.godot/imported/water merchant Open_water bucket.png-fce576bf906cec0f305947c3209ec017.s3tc.ctex", "res://.godot/imported/water merchant Open_water bucket.png-fce576bf906cec0f305947c3209ec017.etc2.ctex"]
 
 [params]
 

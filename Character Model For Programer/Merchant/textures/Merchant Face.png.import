@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bhmn8huwy3of"
 path.s3tc="res://.godot/imported/Merchant Face.png-ece4b22aeb524fad3c7ff14f47705771.s3tc.ctex"
+path.etc2="res://.godot/imported/Merchant Face.png-ece4b22aeb524fad3c7ff14f47705771.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Merchant/textures/Merchant Face.png"
-dest_files=["res://.godot/imported/Merchant Face.png-ece4b22aeb524fad3c7ff14f47705771.s3tc.ctex"]
+dest_files=["res://.godot/imported/Merchant Face.png-ece4b22aeb524fad3c7ff14f47705771.s3tc.ctex", "res://.godot/imported/Merchant Face.png-ece4b22aeb524fad3c7ff14f47705771.etc2.ctex"]
 
 [params]
 

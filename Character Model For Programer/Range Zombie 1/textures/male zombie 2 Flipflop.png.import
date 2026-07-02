@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dfk2s2ad0ph5l"
 path.s3tc="res://.godot/imported/male zombie 2 Flipflop.png-bef7ce99dece443c56c77d3c3d17d7b5.s3tc.ctex"
+path.etc2="res://.godot/imported/male zombie 2 Flipflop.png-bef7ce99dece443c56c77d3c3d17d7b5.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Range Zombie 1/textures/male zombie 2 Flipflop.png"
-dest_files=["res://.godot/imported/male zombie 2 Flipflop.png-bef7ce99dece443c56c77d3c3d17d7b5.s3tc.ctex"]
+dest_files=["res://.godot/imported/male zombie 2 Flipflop.png-bef7ce99dece443c56c77d3c3d17d7b5.s3tc.ctex", "res://.godot/imported/male zombie 2 Flipflop.png-bef7ce99dece443c56c77d3c3d17d7b5.etc2.ctex"]
 
 [params]
 

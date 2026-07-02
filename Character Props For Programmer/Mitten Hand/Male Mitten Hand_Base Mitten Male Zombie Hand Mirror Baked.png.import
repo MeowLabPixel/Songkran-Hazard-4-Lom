@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bpuwo2llll67y"
 path.s3tc="res://.godot/imported/Male Mitten Hand_Base Mitten Male Zombie Hand Mirror Baked.png-3862e935a72ef7e2d7fbc4c7673bfe85.s3tc.ctex"
+path.etc2="res://.godot/imported/Male Mitten Hand_Base Mitten Male Zombie Hand Mirror Baked.png-3862e935a72ef7e2d7fbc4c7673bfe85.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Props For Programmer/Mitten Hand/Male Mitten Hand_Base Mitten Male Zombie Hand Mirror Baked.png"
-dest_files=["res://.godot/imported/Male Mitten Hand_Base Mitten Male Zombie Hand Mirror Baked.png-3862e935a72ef7e2d7fbc4c7673bfe85.s3tc.ctex"]
+dest_files=["res://.godot/imported/Male Mitten Hand_Base Mitten Male Zombie Hand Mirror Baked.png-3862e935a72ef7e2d7fbc4c7673bfe85.s3tc.ctex", "res://.godot/imported/Male Mitten Hand_Base Mitten Male Zombie Hand Mirror Baked.png-3862e935a72ef7e2d7fbc4c7673bfe85.etc2.ctex"]
 
 [params]
 

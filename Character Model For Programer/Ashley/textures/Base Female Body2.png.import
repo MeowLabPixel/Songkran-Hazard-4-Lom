@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dtqbm4ou4c5o8"
 path.s3tc="res://.godot/imported/Base Female Body2.png-e330c24f2a94b6d0a1d8535af977ecde.s3tc.ctex"
+path.etc2="res://.godot/imported/Base Female Body2.png-e330c24f2a94b6d0a1d8535af977ecde.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Ashley/textures/Base Female Body2.png"
-dest_files=["res://.godot/imported/Base Female Body2.png-e330c24f2a94b6d0a1d8535af977ecde.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base Female Body2.png-e330c24f2a94b6d0a1d8535af977ecde.s3tc.ctex", "res://.godot/imported/Base Female Body2.png-e330c24f2a94b6d0a1d8535af977ecde.etc2.ctex"]
 
 [params]
 

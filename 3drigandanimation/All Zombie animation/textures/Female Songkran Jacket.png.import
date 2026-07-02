@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dep3bcwp115qn"
 path.s3tc="res://.godot/imported/Female Songkran Jacket.png-6557039d564fb5d975ba3c289f3326eb.s3tc.ctex"
+path.etc2="res://.godot/imported/Female Songkran Jacket.png-6557039d564fb5d975ba3c289f3326eb.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://3drigandanimation/All Zombie animation/textures/Female Songkran Jacket.png"
-dest_files=["res://.godot/imported/Female Songkran Jacket.png-6557039d564fb5d975ba3c289f3326eb.s3tc.ctex"]
+dest_files=["res://.godot/imported/Female Songkran Jacket.png-6557039d564fb5d975ba3c289f3326eb.s3tc.ctex", "res://.godot/imported/Female Songkran Jacket.png-6557039d564fb5d975ba3c289f3326eb.etc2.ctex"]
 
 [params]
 

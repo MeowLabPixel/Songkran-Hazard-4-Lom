@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dkwnb3midnibh"
 path.s3tc="res://.godot/imported/glasses.png-065c06e1d0e83f3159f39be6da4fa08f.s3tc.ctex"
+path.etc2="res://.godot/imported/glasses.png-065c06e1d0e83f3159f39be6da4fa08f.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Grace/textures/glasses.png"
-dest_files=["res://.godot/imported/glasses.png-065c06e1d0e83f3159f39be6da4fa08f.s3tc.ctex"]
+dest_files=["res://.godot/imported/glasses.png-065c06e1d0e83f3159f39be6da4fa08f.s3tc.ctex", "res://.godot/imported/glasses.png-065c06e1d0e83f3159f39be6da4fa08f.etc2.ctex"]
 
 [params]
 

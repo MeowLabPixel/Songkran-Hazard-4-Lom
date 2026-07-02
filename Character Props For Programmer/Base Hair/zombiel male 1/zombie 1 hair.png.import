@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://ytqu41opy7tn"
 path.s3tc="res://.godot/imported/zombie 1 hair.png-767f6646471c038e4d9d144652d8ce8d.s3tc.ctex"
+path.etc2="res://.godot/imported/zombie 1 hair.png-767f6646471c038e4d9d144652d8ce8d.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Props For Programmer/Base Hair/zombiel male 1/zombie 1 hair.png"
-dest_files=["res://.godot/imported/zombie 1 hair.png-767f6646471c038e4d9d144652d8ce8d.s3tc.ctex"]
+dest_files=["res://.godot/imported/zombie 1 hair.png-767f6646471c038e4d9d144652d8ce8d.s3tc.ctex", "res://.godot/imported/zombie 1 hair.png-767f6646471c038e4d9d144652d8ce8d.etc2.ctex"]
 
 [params]
 

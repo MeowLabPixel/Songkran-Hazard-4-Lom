@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bspigkpr0uwm1"
 path.s3tc="res://.godot/imported/sweater.png-0cc39cb68e7ba5b4ee31a6c3e50b48ad.s3tc.ctex"
+path.etc2="res://.godot/imported/sweater.png-0cc39cb68e7ba5b4ee31a6c3e50b48ad.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Ashley/textures/sweater.png"
-dest_files=["res://.godot/imported/sweater.png-0cc39cb68e7ba5b4ee31a6c3e50b48ad.s3tc.ctex"]
+dest_files=["res://.godot/imported/sweater.png-0cc39cb68e7ba5b4ee31a6c3e50b48ad.s3tc.ctex", "res://.godot/imported/sweater.png-0cc39cb68e7ba5b4ee31a6c3e50b48ad.etc2.ctex"]
 
 [params]
 

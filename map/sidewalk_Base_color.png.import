@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bah0gly8m63ja"
 path.s3tc="res://.godot/imported/sidewalk_Base_color.png-3817474e047d230fd1801a156df437bf.s3tc.ctex"
+path.etc2="res://.godot/imported/sidewalk_Base_color.png-3817474e047d230fd1801a156df437bf.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://map/sidewalk_Base_color.png"
-dest_files=["res://.godot/imported/sidewalk_Base_color.png-3817474e047d230fd1801a156df437bf.s3tc.ctex"]
+dest_files=["res://.godot/imported/sidewalk_Base_color.png-3817474e047d230fd1801a156df437bf.s3tc.ctex", "res://.godot/imported/sidewalk_Base_color.png-3817474e047d230fd1801a156df437bf.etc2.ctex"]
 
 [params]
 

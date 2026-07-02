@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://b1h5uxr35ow5r"
 path.s3tc="res://.godot/imported/water merchant IDLE_Flipflop Merchant.png-eafa630a6a3e8a744257ad1539fa4cb6.s3tc.ctex"
+path.etc2="res://.godot/imported/water merchant IDLE_Flipflop Merchant.png-eafa630a6a3e8a744257ad1539fa4cb6.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://3drigandanimation/Water merchant/water merchant IDLE_Flipflop Merchant.png"
-dest_files=["res://.godot/imported/water merchant IDLE_Flipflop Merchant.png-eafa630a6a3e8a744257ad1539fa4cb6.s3tc.ctex"]
+dest_files=["res://.godot/imported/water merchant IDLE_Flipflop Merchant.png-eafa630a6a3e8a744257ad1539fa4cb6.s3tc.ctex", "res://.godot/imported/water merchant IDLE_Flipflop Merchant.png-eafa630a6a3e8a744257ad1539fa4cb6.etc2.ctex"]
 
 [params]
 

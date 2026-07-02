@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dw6w7bwrdtwdy"
 path.s3tc="res://.godot/imported/Flower Farment.png-6cb8814a32896b0799cf3d5d6a94c67e.s3tc.ctex"
+path.etc2="res://.godot/imported/Flower Farment.png-6cb8814a32896b0799cf3d5d6a94c67e.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Leon/textures/Flower Farment.png"
-dest_files=["res://.godot/imported/Flower Farment.png-6cb8814a32896b0799cf3d5d6a94c67e.s3tc.ctex"]
+dest_files=["res://.godot/imported/Flower Farment.png-6cb8814a32896b0799cf3d5d6a94c67e.s3tc.ctex", "res://.godot/imported/Flower Farment.png-6cb8814a32896b0799cf3d5d6a94c67e.etc2.ctex"]
 
 [params]
 

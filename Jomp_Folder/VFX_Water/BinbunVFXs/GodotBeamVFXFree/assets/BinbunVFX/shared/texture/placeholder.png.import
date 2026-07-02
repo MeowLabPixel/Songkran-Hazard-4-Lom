@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://i7q857rngdhr"
 path.s3tc="res://.godot/imported/placeholder.png-a3bf7272ae413666f0b7303f056903d1.s3tc.ctex"
+path.etc2="res://.godot/imported/placeholder.png-a3bf7272ae413666f0b7303f056903d1.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Jomp_Folder/VFX_Water/BinbunVFXs/GodotBeamVFXFree/assets/BinbunVFX/shared/texture/placeholder.png"
-dest_files=["res://.godot/imported/placeholder.png-a3bf7272ae413666f0b7303f056903d1.s3tc.ctex"]
+dest_files=["res://.godot/imported/placeholder.png-a3bf7272ae413666f0b7303f056903d1.s3tc.ctex", "res://.godot/imported/placeholder.png-a3bf7272ae413666f0b7303f056903d1.etc2.ctex"]
 
 [params]
 

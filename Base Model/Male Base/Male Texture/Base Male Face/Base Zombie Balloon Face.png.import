@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://7yx3rrw0cyjf"
 path.s3tc="res://.godot/imported/Base Zombie Balloon Face.png-0126adfb5a24c1ae23980a2e11b00187.s3tc.ctex"
+path.etc2="res://.godot/imported/Base Zombie Balloon Face.png-0126adfb5a24c1ae23980a2e11b00187.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Base Model/Male Base/Male Texture/Base Male Face/Base Zombie Balloon Face.png"
-dest_files=["res://.godot/imported/Base Zombie Balloon Face.png-0126adfb5a24c1ae23980a2e11b00187.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base Zombie Balloon Face.png-0126adfb5a24c1ae23980a2e11b00187.s3tc.ctex", "res://.godot/imported/Base Zombie Balloon Face.png-0126adfb5a24c1ae23980a2e11b00187.etc2.ctex"]
 
 [params]
 

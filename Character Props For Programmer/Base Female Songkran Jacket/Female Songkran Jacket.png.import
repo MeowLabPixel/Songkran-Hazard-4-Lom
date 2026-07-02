@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bl57063fknh2s"
 path.s3tc="res://.godot/imported/Female Songkran Jacket.png-9f33d0e304175e01fa0f508a6989b9c5.s3tc.ctex"
+path.etc2="res://.godot/imported/Female Songkran Jacket.png-9f33d0e304175e01fa0f508a6989b9c5.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Props For Programmer/Base Female Songkran Jacket/Female Songkran Jacket.png"
-dest_files=["res://.godot/imported/Female Songkran Jacket.png-9f33d0e304175e01fa0f508a6989b9c5.s3tc.ctex"]
+dest_files=["res://.godot/imported/Female Songkran Jacket.png-9f33d0e304175e01fa0f508a6989b9c5.s3tc.ctex", "res://.godot/imported/Female Songkran Jacket.png-9f33d0e304175e01fa0f508a6989b9c5.etc2.ctex"]
 
 [params]
 

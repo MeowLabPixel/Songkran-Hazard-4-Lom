@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://drrruxc4ykot8"
 path.s3tc="res://.godot/imported/Base_Flipflop.png-c0bddbcf4382c9179a490df3c88d9675.s3tc.ctex"
+path.etc2="res://.godot/imported/Base_Flipflop.png-c0bddbcf4382c9179a490df3c88d9675.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Props For Programmer/Base Flipflop/Base_Flipflop.png"
-dest_files=["res://.godot/imported/Base_Flipflop.png-c0bddbcf4382c9179a490df3c88d9675.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base_Flipflop.png-c0bddbcf4382c9179a490df3c88d9675.s3tc.ctex", "res://.godot/imported/Base_Flipflop.png-c0bddbcf4382c9179a490df3c88d9675.etc2.ctex"]
 
 [params]
 

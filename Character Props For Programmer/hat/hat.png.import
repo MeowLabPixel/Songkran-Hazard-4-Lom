@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://byb00rjyurinp"
 path.s3tc="res://.godot/imported/hat.png-5b3f7203c1e53e51dc1a2cdc15ccefc6.s3tc.ctex"
+path.etc2="res://.godot/imported/hat.png-5b3f7203c1e53e51dc1a2cdc15ccefc6.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Props For Programmer/hat/hat.png"
-dest_files=["res://.godot/imported/hat.png-5b3f7203c1e53e51dc1a2cdc15ccefc6.s3tc.ctex"]
+dest_files=["res://.godot/imported/hat.png-5b3f7203c1e53e51dc1a2cdc15ccefc6.s3tc.ctex", "res://.godot/imported/hat.png-5b3f7203c1e53e51dc1a2cdc15ccefc6.etc2.ctex"]
 
 [params]
 

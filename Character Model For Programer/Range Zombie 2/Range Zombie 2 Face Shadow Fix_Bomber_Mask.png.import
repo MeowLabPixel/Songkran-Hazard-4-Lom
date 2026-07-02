@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dei71ej8rdlt7"
 path.s3tc="res://.godot/imported/Range Zombie 2 Face Shadow Fix_Bomber_Mask.png-4bc9c9b2ce846c94ccf10e89236c8bfc.s3tc.ctex"
+path.etc2="res://.godot/imported/Range Zombie 2 Face Shadow Fix_Bomber_Mask.png-4bc9c9b2ce846c94ccf10e89236c8bfc.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Range Zombie 2/Range Zombie 2 Face Shadow Fix_Bomber_Mask.png"
-dest_files=["res://.godot/imported/Range Zombie 2 Face Shadow Fix_Bomber_Mask.png-4bc9c9b2ce846c94ccf10e89236c8bfc.s3tc.ctex"]
+dest_files=["res://.godot/imported/Range Zombie 2 Face Shadow Fix_Bomber_Mask.png-4bc9c9b2ce846c94ccf10e89236c8bfc.s3tc.ctex", "res://.godot/imported/Range Zombie 2 Face Shadow Fix_Bomber_Mask.png-4bc9c9b2ce846c94ccf10e89236c8bfc.etc2.ctex"]
 
 [params]
 

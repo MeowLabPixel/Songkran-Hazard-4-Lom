@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://8hkgl4qgct67"
 path.s3tc="res://.godot/imported/Range zombie (balloon) (6)_male zombie 2 Flipflop.png-aa7feb5542316a504dfca2ec8f86397f.s3tc.ctex"
+path.etc2="res://.godot/imported/Range zombie (balloon) (6)_male zombie 2 Flipflop.png-aa7feb5542316a504dfca2ec8f86397f.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://models/enemies/Range zombie (balloon) (6)_male zombie 2 Flipflop.png"
-dest_files=["res://.godot/imported/Range zombie (balloon) (6)_male zombie 2 Flipflop.png-aa7feb5542316a504dfca2ec8f86397f.s3tc.ctex"]
+dest_files=["res://.godot/imported/Range zombie (balloon) (6)_male zombie 2 Flipflop.png-aa7feb5542316a504dfca2ec8f86397f.s3tc.ctex", "res://.godot/imported/Range zombie (balloon) (6)_male zombie 2 Flipflop.png-aa7feb5542316a504dfca2ec8f86397f.etc2.ctex"]
 
 [params]
 

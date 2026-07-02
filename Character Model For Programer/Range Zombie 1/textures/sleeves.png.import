@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dc38rduy7g0c8"
 path.s3tc="res://.godot/imported/sleeves.png-300cc84020ab09197d0c92e99563270e.s3tc.ctex"
+path.etc2="res://.godot/imported/sleeves.png-300cc84020ab09197d0c92e99563270e.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Range Zombie 1/textures/sleeves.png"
-dest_files=["res://.godot/imported/sleeves.png-300cc84020ab09197d0c92e99563270e.s3tc.ctex"]
+dest_files=["res://.godot/imported/sleeves.png-300cc84020ab09197d0c92e99563270e.s3tc.ctex", "res://.godot/imported/sleeves.png-300cc84020ab09197d0c92e99563270e.etc2.ctex"]
 
 [params]
 

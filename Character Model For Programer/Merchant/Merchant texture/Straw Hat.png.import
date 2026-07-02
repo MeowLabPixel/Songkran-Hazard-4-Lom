@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bccmst45g5rur"
 path.s3tc="res://.godot/imported/Straw Hat.png-6536b2b1605a41f6b94634f534dc2e09.s3tc.ctex"
+path.etc2="res://.godot/imported/Straw Hat.png-6536b2b1605a41f6b94634f534dc2e09.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Merchant/Merchant texture/Straw Hat.png"
-dest_files=["res://.godot/imported/Straw Hat.png-6536b2b1605a41f6b94634f534dc2e09.s3tc.ctex"]
+dest_files=["res://.godot/imported/Straw Hat.png-6536b2b1605a41f6b94634f534dc2e09.s3tc.ctex", "res://.godot/imported/Straw Hat.png-6536b2b1605a41f6b94634f534dc2e09.etc2.ctex"]
 
 [params]
 

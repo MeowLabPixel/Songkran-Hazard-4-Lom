@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://hkenc4l4508k"
 path.s3tc="res://.godot/imported/water merchant Face Shadow Fix_Straw Hat.png-5392fd0e347a186e090d2c209fe08a92.s3tc.ctex"
+path.etc2="res://.godot/imported/water merchant Face Shadow Fix_Straw Hat.png-5392fd0e347a186e090d2c209fe08a92.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Merchant/water merchant Face Shadow Fix_Straw Hat.png"
-dest_files=["res://.godot/imported/water merchant Face Shadow Fix_Straw Hat.png-5392fd0e347a186e090d2c209fe08a92.s3tc.ctex"]
+dest_files=["res://.godot/imported/water merchant Face Shadow Fix_Straw Hat.png-5392fd0e347a186e090d2c209fe08a92.s3tc.ctex", "res://.godot/imported/water merchant Face Shadow Fix_Straw Hat.png-5392fd0e347a186e090d2c209fe08a92.etc2.ctex"]
 
 [params]
 

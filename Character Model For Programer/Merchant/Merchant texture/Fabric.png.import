@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://73y2s6s7map1"
 path.s3tc="res://.godot/imported/Fabric.png-831ae0f28bd3417b9adb27fbc5d83418.s3tc.ctex"
+path.etc2="res://.godot/imported/Fabric.png-831ae0f28bd3417b9adb27fbc5d83418.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Merchant/Merchant texture/Fabric.png"
-dest_files=["res://.godot/imported/Fabric.png-831ae0f28bd3417b9adb27fbc5d83418.s3tc.ctex"]
+dest_files=["res://.godot/imported/Fabric.png-831ae0f28bd3417b9adb27fbc5d83418.s3tc.ctex", "res://.godot/imported/Fabric.png-831ae0f28bd3417b9adb27fbc5d83418.etc2.ctex"]
 
 [params]
 

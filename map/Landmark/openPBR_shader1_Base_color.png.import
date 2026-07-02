@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://w71ux0oa0bi1"
 path.s3tc="res://.godot/imported/openPBR_shader1_Base_color.png-6fcc343f10d9067fa8778b2169f27523.s3tc.ctex"
+path.etc2="res://.godot/imported/openPBR_shader1_Base_color.png-6fcc343f10d9067fa8778b2169f27523.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://map/Landmark/openPBR_shader1_Base_color.png"
-dest_files=["res://.godot/imported/openPBR_shader1_Base_color.png-6fcc343f10d9067fa8778b2169f27523.s3tc.ctex"]
+dest_files=["res://.godot/imported/openPBR_shader1_Base_color.png-6fcc343f10d9067fa8778b2169f27523.s3tc.ctex", "res://.godot/imported/openPBR_shader1_Base_color.png-6fcc343f10d9067fa8778b2169f27523.etc2.ctex"]
 
 [params]
 

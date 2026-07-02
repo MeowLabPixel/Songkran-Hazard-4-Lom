@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://hdcabvjg5cuo"
 path.s3tc="res://.godot/imported/Skirt.png-9b235386162db339fcc1470af55c7d30.s3tc.ctex"
+path.etc2="res://.godot/imported/Skirt.png-9b235386162db339fcc1470af55c7d30.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Melee Zombie Female/textures/Skirt.png"
-dest_files=["res://.godot/imported/Skirt.png-9b235386162db339fcc1470af55c7d30.s3tc.ctex"]
+dest_files=["res://.godot/imported/Skirt.png-9b235386162db339fcc1470af55c7d30.s3tc.ctex", "res://.godot/imported/Skirt.png-9b235386162db339fcc1470af55c7d30.etc2.ctex"]
 
 [params]
 

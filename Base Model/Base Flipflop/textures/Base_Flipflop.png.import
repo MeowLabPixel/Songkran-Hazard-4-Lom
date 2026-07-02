@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cm27qoobkh1ne"
 path.s3tc="res://.godot/imported/Base_Flipflop.png-ef34488ca4c2a36ec3113d15089048fd.s3tc.ctex"
+path.etc2="res://.godot/imported/Base_Flipflop.png-ef34488ca4c2a36ec3113d15089048fd.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={}
@@ -13,7 +14,7 @@ generator_parameters={}
 [deps]
 
 source_file="res://Base Model/Base Flipflop/textures/Base_Flipflop.png"
-dest_files=["res://.godot/imported/Base_Flipflop.png-ef34488ca4c2a36ec3113d15089048fd.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base_Flipflop.png-ef34488ca4c2a36ec3113d15089048fd.s3tc.ctex", "res://.godot/imported/Base_Flipflop.png-ef34488ca4c2a36ec3113d15089048fd.etc2.ctex"]
 
 [params]
 

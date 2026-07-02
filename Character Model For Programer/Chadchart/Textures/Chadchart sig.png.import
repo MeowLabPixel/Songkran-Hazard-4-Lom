@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cocrna2de7fuy"
 path.s3tc="res://.godot/imported/Chadchart sig.png-cebd3fdf89a58f191d10e4565172b406.s3tc.ctex"
+path.etc2="res://.godot/imported/Chadchart sig.png-cebd3fdf89a58f191d10e4565172b406.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Chadchart/Textures/Chadchart sig.png"
-dest_files=["res://.godot/imported/Chadchart sig.png-cebd3fdf89a58f191d10e4565172b406.s3tc.ctex"]
+dest_files=["res://.godot/imported/Chadchart sig.png-cebd3fdf89a58f191d10e4565172b406.s3tc.ctex", "res://.godot/imported/Chadchart sig.png-cebd3fdf89a58f191d10e4565172b406.etc2.ctex"]
 
 [params]
 

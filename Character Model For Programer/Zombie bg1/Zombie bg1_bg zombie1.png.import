@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://d4eodayo2ot2"
 path.s3tc="res://.godot/imported/Zombie bg1_bg zombie1.png-0cb9086c40c1b943fd580912d0d3b8fa.s3tc.ctex"
+path.etc2="res://.godot/imported/Zombie bg1_bg zombie1.png-0cb9086c40c1b943fd580912d0d3b8fa.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Zombie bg1/Zombie bg1_bg zombie1.png"
-dest_files=["res://.godot/imported/Zombie bg1_bg zombie1.png-0cb9086c40c1b943fd580912d0d3b8fa.s3tc.ctex"]
+dest_files=["res://.godot/imported/Zombie bg1_bg zombie1.png-0cb9086c40c1b943fd580912d0d3b8fa.s3tc.ctex", "res://.godot/imported/Zombie bg1_bg zombie1.png-0cb9086c40c1b943fd580912d0d3b8fa.etc2.ctex"]
 
 [params]
 

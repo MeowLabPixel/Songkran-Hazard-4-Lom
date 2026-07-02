@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://c6yivf1nerrvl"
 path.s3tc="res://.godot/imported/zombie 1 hair.png-68ee81a17ca509527b95d2cb5a0a84e1.s3tc.ctex"
+path.etc2="res://.godot/imported/zombie 1 hair.png-68ee81a17ca509527b95d2cb5a0a84e1.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={}
@@ -13,7 +14,7 @@ generator_parameters={}
 [deps]
 
 source_file="res://Character Model For Programer/Melee Zombie Male/textures/zombie 1 hair.png"
-dest_files=["res://.godot/imported/zombie 1 hair.png-68ee81a17ca509527b95d2cb5a0a84e1.s3tc.ctex"]
+dest_files=["res://.godot/imported/zombie 1 hair.png-68ee81a17ca509527b95d2cb5a0a84e1.s3tc.ctex", "res://.godot/imported/zombie 1 hair.png-68ee81a17ca509527b95d2cb5a0a84e1.etc2.ctex"]
 
 [params]
 

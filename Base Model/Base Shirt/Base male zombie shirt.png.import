@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://c07otex06gtwe"
 path.s3tc="res://.godot/imported/Base male zombie shirt.png-9435fd035de428e6097f35b2b6612e01.s3tc.ctex"
+path.etc2="res://.godot/imported/Base male zombie shirt.png-9435fd035de428e6097f35b2b6612e01.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Base Model/Base Shirt/Base male zombie shirt.png"
-dest_files=["res://.godot/imported/Base male zombie shirt.png-9435fd035de428e6097f35b2b6612e01.s3tc.ctex"]
+dest_files=["res://.godot/imported/Base male zombie shirt.png-9435fd035de428e6097f35b2b6612e01.s3tc.ctex", "res://.godot/imported/Base male zombie shirt.png-9435fd035de428e6097f35b2b6612e01.etc2.ctex"]
 
 [params]
 

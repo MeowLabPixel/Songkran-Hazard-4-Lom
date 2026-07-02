@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://da54okqo2mqnq"
 path.s3tc="res://.godot/imported/Anchalee all anim_crocs.png-0eeb8be5f8ba23bf6e81eb303c86e8e2.s3tc.ctex"
+path.etc2="res://.godot/imported/Anchalee all anim_crocs.png-0eeb8be5f8ba23bf6e81eb303c86e8e2.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Ashley/Anchalee all anim_crocs.png"
-dest_files=["res://.godot/imported/Anchalee all anim_crocs.png-0eeb8be5f8ba23bf6e81eb303c86e8e2.s3tc.ctex"]
+dest_files=["res://.godot/imported/Anchalee all anim_crocs.png-0eeb8be5f8ba23bf6e81eb303c86e8e2.s3tc.ctex", "res://.godot/imported/Anchalee all anim_crocs.png-0eeb8be5f8ba23bf6e81eb303c86e8e2.etc2.ctex"]
 
 [params]
 
