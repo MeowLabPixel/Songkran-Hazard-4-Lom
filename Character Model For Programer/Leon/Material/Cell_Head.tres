@@ -26,7 +26,6 @@ rim_enabled = true
 rim = 0.5
 rim_texture = ExtResource("2_gdcpx")
 texture_filter = 5
-disable_receive_shadows = true
 stencil_mode = 1
 stencil_flags = 2
 stencil_reference = 4

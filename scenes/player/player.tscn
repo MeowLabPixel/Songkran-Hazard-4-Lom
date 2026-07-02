@@ -931,7 +931,7 @@ blend_shape_mode = 0
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_p5tca"]
 load_path = "res://.godot/imported/Leon Face Expression.png-7736d6cd8f652e2b64a495db092a6536.s3tc.ctex"
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jbx34"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ahqnk"]
 render_priority = 1
 transparency = 1
 shading_mode = 0
@@ -948,7 +948,7 @@ metadata/_stencil_owned = true
 load_path = "res://.godot/imported/Face Rim Light Texture.png-53adea7d818aa8d51c65c32620d73542.s3tc.ctex"
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_35wys"]
-next_pass = SubResource("StandardMaterial3D_jbx34")
+next_pass = SubResource("StandardMaterial3D_ahqnk")
 diffuse_mode = 3
 specular_mode = 2
 albedo_texture = SubResource("CompressedTexture2D_p5tca")
@@ -957,7 +957,6 @@ rim_enabled = true
 rim = 0.5
 rim_texture = SubResource("CompressedTexture2D_s3g0c")
 texture_filter = 5
-disable_receive_shadows = true
 stencil_mode = 1
 stencil_flags = 2
 stencil_reference = 4
@@ -967,7 +966,7 @@ stencil_outline_thickness = 0.003
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_pjwc4"]
 load_path = "res://.godot/imported/Leon Face Expression.png-7736d6cd8f652e2b64a495db092a6536.s3tc.ctex"
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_or4qq"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vb1ce"]
 render_priority = 1
 transparency = 1
 shading_mode = 0
@@ -984,7 +983,7 @@ metadata/_stencil_owned = true
 load_path = "res://.godot/imported/Face Rim Light Texture.png-53adea7d818aa8d51c65c32620d73542.s3tc.ctex"
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_b2j0d"]
-next_pass = SubResource("StandardMaterial3D_or4qq")
+next_pass = SubResource("StandardMaterial3D_vb1ce")
 diffuse_mode = 3
 specular_mode = 2
 albedo_texture = SubResource("CompressedTexture2D_pjwc4")
@@ -993,7 +992,6 @@ rim_enabled = true
 rim = 0.5
 rim_texture = SubResource("CompressedTexture2D_hggc2")
 texture_filter = 5
-disable_receive_shadows = true
 stencil_mode = 1
 stencil_flags = 2
 stencil_reference = 4
@@ -2388,7 +2386,9 @@ graph_offset = Vector2(-64.91173, -37.842514)
 [node name="player" type="CharacterBody3D" unique_id=324464419 node_paths=PackedStringArray("aim_bone", "aim_bone2", "anim", "hitboxF", "hitboxB", "stun_detect", "pickup_detect", "gun_controller")]
 collision_layer = 42
 collision_mask = 9
-floor_max_angle = 1.0471976
+wall_min_slide_angle = 0.5235988
+floor_stop_on_slope = false
+floor_max_angle = 1.2217305
 floor_snap_length = 0.5
 script = ExtResource("1_4eg07")
 walk_Back_speed = 2.0
@@ -2412,10 +2412,12 @@ aim_visual_offset = Vector3(0.4, 0.7, 0)
 path_desired_distance = 0.1
 target_desired_distance = 0.1
 avoidance_enabled = true
-radius = 0.2
+radius = 0.23
+avoidance_layers = 4
+avoidance_mask = 4
 
 [node name="Re4Lom Base Rig_rig_Skeleton3D_spine02_Hitbox_F#CollisionShape3D" type="CollisionShape3D" parent="." unique_id=912103734]
-transform = Transform3D(1.0000031, 0, 0, 0, 1.0000058, 0, 0, 0, 1.0000086, 0, 0.9, 0)
+transform = Transform3D(1.0000031, 0, 0, 0, 1.0000058, 0, 0, 0, 1.0000086, 0, 0.825, 0)
 shape = SubResource("CapsuleShape3D_jfgyi")
 
 [node name="Statemachine" type="Node" parent="." unique_id=474127841 node_paths=PackedStringArray("Start_state")]
@@ -4028,6 +4030,7 @@ bones/221/rotation = Quaternion(-0.019959828, 1.1725697e-10, -0.11792231, 0.9928
 bones/221/scale = Vector3(1, 0.99999994, 1)
 
 [node name="Cloth_Body" type="MeshInstance3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=775664311]
+transform = Transform3D(0.94, 0, 0, 0, 0.999, 0, 0, 0, 0.9, 0, 0, 0.01)
 mesh = SubResource("ArrayMesh_oncp1")
 skin = SubResource("Skin_a128k")
 skeleton = NodePath("..")
@@ -4037,6 +4040,7 @@ metadata/extras = {
 }
 
 [node name="Cloth_Body_001" type="MeshInstance3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=742768458]
+transform = Transform3D(1.06, 0, 0, 0, 1, 0, 0, 0, 1.05, 0, 0, 0)
 mesh = SubResource("ArrayMesh_23h16")
 skin = SubResource("Skin_a128k")
 skeleton = NodePath("..")
@@ -4055,6 +4059,7 @@ skeleton = NodePath("..")
 surface_material_override/0 = ExtResource("6_jfgyi")
 
 [node name="Legging" type="MeshInstance3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=1452993585]
+transform = Transform3D(0.95, 0, 0, 0, 1, 0, 0, 0, 0.95, 0, 0, 0)
 mesh = SubResource("ArrayMesh_5welk")
 skin = SubResource("Skin_a128k")
 skeleton = NodePath("..")
@@ -4064,12 +4069,14 @@ metadata/extras = {
 }
 
 [node name="Left_Legging" type="MeshInstance3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=1582828091]
+transform = Transform3D(0.95, 0, 0, 0, 1, 0, 0, 0, 0.95, 0, 0, 0)
 mesh = SubResource("ArrayMesh_kwqsp")
 skin = SubResource("Skin_a128k")
 skeleton = NodePath("..")
 surface_material_override/0 = ExtResource("8_wpyo2")
 
 [node name="Right_Legging" type="MeshInstance3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=209816645]
+transform = Transform3D(0.95, 0, 0, 0, 1, 0, 0, 0, 0.95, 0, 0, 0)
 mesh = SubResource("ArrayMesh_f74cs")
 skin = SubResource("Skin_a128k")
 skeleton = NodePath("..")
@@ -4344,7 +4351,7 @@ shape = SubResource("BoxShape3D_b2wkv")
 debug_color = Color(0.70196074, 0, 0.504468, 0.41960785)
 
 [node name="FriendArea" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=936767060]
-transform = Transform3D(0.52, 0, 0, 0, 0.52, 0, 0, 0, 0.52, 0.2506887, 0.060598373, -0.4006246)
+transform = Transform3D(0.52, 0, 0, 0, 0.52, 0, 0, 0, 0.52, 0.60655826, 0.060598373, -0.21424764)
 collision_layer = 0
 collision_mask = 15
 
@@ -4354,7 +4361,7 @@ shape = SubResource("CapsuleShape3D_7crtr")
 debug_color = Color(0, 0.7019608, 0.03529412, 0.8509804)
 
 [node name="FriendNearArea" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=577899937]
-transform = Transform3D(-1, 0, 8.742277e-08, 0, 1, 0, -8.742277e-08, 0, -1, 6.108629e-08, 0.84679115, -0.6987457)
+transform = Transform3D(-1, 0, 8.742277e-08, 0, 1, 0, -8.742277e-08, 0, -1, 0.52571636, 0.84679115, -0.69874567)
 collision_layer = 0
 collision_mask = 15
 

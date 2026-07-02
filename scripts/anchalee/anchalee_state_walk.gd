@@ -11,11 +11,29 @@ extends AnchaleeState
 @export var disable_avoidance_distance: float = 1.2
 @export var stuck_timeout: float = 1.0
 
+# ── Jink steering ──────────────────────────────────────────────────────────
+@export_group("Jink Steering")
+@export var jink_min_angle_deg: float = 45.0   ## Min deflection angle when stuck
+@export var jink_max_angle_deg: float = 135.0  ## Max deflection angle when stuck
+@export var jink_duration: float = 0.5         ## How long each jink lasts (s)
+@export var jink_cooldown: float = 0.6         ## Minimum time between jinks (s)
+@export var jink_stuck_threshold: float = 0.3  ## Stuck duration before jinking
+
 var stuck_timer: float = 0.0
+var _jink_cooldown_timer: float = 0.0
+var _jink_angle_rad: float = 0.0
+var _jink_active_timer: float = 0.0
+var _jink_dir_sign: int = 1     # alternates left/right each jink
+var _failed_jinks: int = 0
 
 func enter() -> void:
 	print("[Anchalee] Walk/Run")
 	stuck_timer = 0.0
+	_jink_cooldown_timer = 0.0
+	_jink_angle_rad = 0.0
+	_jink_active_timer = 0.0
+	_jink_dir_sign = 1
+	_failed_jinks = 0
 
 func exit() -> void:
 	if is_instance_valid(Anchalee):
@@ -115,17 +133,41 @@ func physics_update(delta: float) -> void:
 	if steer.length() < 0.01:
 		steer = move_dir
 
-	# If stuck against an obstacle/wall while trying to steer, transition back to Idle
+	# ── Jink / stuck detection ──────────────────────────────────────────────
+	if _jink_cooldown_timer > 0.0:
+		_jink_cooldown_timer -= delta
+
 	var cur_vel = Anchalee.velocity
 	cur_vel.y = 0.0
 	if cur_vel.length() < 0.2 and steer.length() > 0.01:
 		stuck_timer += delta
-		if stuck_timer >= stuck_timeout:
-			print("[Anchalee] Stuck detected against obstacle, transitioning to Idle")
-			state_machine.transition_to("AnchaleeStateIdle")
-			return
+		# Stage 2: trigger a jink if stuck long enough and cooldown elapsed
+		if stuck_timer >= jink_stuck_threshold and _jink_cooldown_timer <= 0.0:
+			var angle_deg = randf_range(jink_min_angle_deg, jink_max_angle_deg)
+			_jink_angle_rad = deg_to_rad(angle_deg) * float(_jink_dir_sign)
+			_jink_dir_sign *= -1
+			_jink_active_timer = jink_duration
+			_jink_cooldown_timer = jink_cooldown
+			stuck_timer = 0.0
+			_failed_jinks += 1
+			print("[Anchalee] Jink #%d (%.0f°)" % [_failed_jinks, angle_deg * sign(_jink_angle_rad)])
+			if _failed_jinks >= 3:
+				print("[Anchalee] 3 jinks failed — transitioning to Idle")
+				state_machine.transition_to("AnchaleeStateIdle")
+				return
 	else:
-		stuck_timer = 0.0
+		if cur_vel.length() >= 0.2:
+			stuck_timer = 0.0
+			_failed_jinks = 0
+
+	# Apply active jink rotation to steer
+	if _jink_active_timer > 0.0:
+		_jink_active_timer -= delta
+		var cos_a = cos(_jink_angle_rad)
+		var sin_a = sin(_jink_angle_rad)
+		var jx = steer.x * cos_a - steer.z * sin_a
+		var jz = steer.x * sin_a + steer.z * cos_a
+		steer = Vector3(jx, 0.0, jz).normalized()
 		
 	# (walking backward state maintained at the top of physics_update)
 
@@ -161,20 +203,34 @@ func physics_update(delta: float) -> void:
 		if Anchalee.nav_agent.avoidance_enabled:
 			Anchalee.nav_agent.max_speed = current_speed
 			Anchalee.nav_agent.set_velocity(target_vel)
-			cur_vel = Anchalee.velocity
-			cur_vel.y = 0.0
 			if rotate_to_player and player:
 				var target_y = player.global_rotation.y
 				Anchalee.global_rotation.y = lerp_angle(Anchalee.global_rotation.y, target_y, walk_back_rotation_speed * delta)
-			elif cur_vel.length() > 0.1:
-				var target_y = atan2(-cur_vel.x, -cur_vel.z)
+			else:
+				var target_y = atan2(-steer.x, -steer.z)
 				Anchalee.rotation.y = lerp_angle(Anchalee.rotation.y, target_y, rotation_speed * delta)
 		else:
-			# Non-avoidance: lerp velocity to add smooth inertia
+			# Non-avoidance: move toward destination, but scale speed by alignment to avoid strafing
 			var current_y = Anchalee.velocity.y
-			Anchalee.velocity = Anchalee.velocity.move_toward(target_vel, 10.0 * delta)
+			var forward = -Anchalee.global_transform.basis.z
+			if rotate_to_player:
+				forward = Anchalee.global_transform.basis.z
+			forward.y = 0.0
+			forward = forward.normalized()
+			
+			var speed = target_vel.length()
+			var speed_factor = 1.0
+			if speed > 0.01:
+				var target_dir = target_vel.normalized()
+				var dot = forward.dot(target_dir)
+				speed_factor = clampf(dot, 0.1, 1.0)
+				if rotate_to_player:
+					speed_factor = 1.0
+			
+			var desired_vel = target_vel * speed_factor
+			Anchalee.velocity = Anchalee.velocity.move_toward(desired_vel, 15.0 * delta)
 			Anchalee.velocity.y = current_y
-			Anchalee.move_and_slide()
+			_apply_clamp_and_slide_collisions(steer)
 			if rotate_to_player and player:
 				var target_y = player.global_rotation.y
 				Anchalee.global_rotation.y = lerp_angle(Anchalee.global_rotation.y, target_y, walk_back_rotation_speed * delta)
@@ -203,3 +259,40 @@ func physics_update(delta: float) -> void:
 			var tree = Anchalee.get_node("AnchaleeModel/AnimationTree")
 			var pb = tree.get("parameters/playback")
 			if pb: pb.travel("Idle")
+
+# ─── Helpers ───────────────────────────────────────────────────────────────
+## Runs move_and_slide(), then inspects slide collisions to:
+##   • Player collision  → apply small friend nudge + reset to small jink angle
+##   • Zombie collision  → bump jink angle toward large end
+## Also strips any velocity component pointing at the player (can't push player).
+func _apply_clamp_and_slide_collisions(steer: Vector3) -> void:
+	Anchalee._clamp_velocity_toward_player()
+	Anchalee.move_and_slide()
+
+	for i in Anchalee.get_slide_collision_count():
+		var col = Anchalee.get_slide_collision(i)
+		var collider = col.get_collider()
+		if not is_instance_valid(collider): continue
+
+		if collider.is_in_group("player"):
+			# Only apply nudge if she is within the player's FriendNearArea
+			var is_in_near_area = false
+			var near_area = collider.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/FriendNearArea")
+			if near_area and near_area is Area3D:
+				is_in_near_area = near_area.overlaps_body(Anchalee)
+				
+			if is_in_near_area:
+				var away = (Anchalee.global_position - collider.global_position)
+				away.y = 0.0
+				if away.length() > 0.01:
+					# Add velocity value between 0.1 and 0.5 as requested
+					var strength = randf_range(0.1, 0.5)
+					Anchalee.apply_friend_nudge(away, strength)
+			# Use a small jink angle near the player
+			jink_min_angle_deg = 15.0
+			jink_max_angle_deg = 30.0
+
+		elif collider.is_in_group("enemies"):
+			# Zombie contact — use larger jink angles
+			jink_min_angle_deg = 45.0
+			jink_max_angle_deg = 135.0

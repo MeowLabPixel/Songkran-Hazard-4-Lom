@@ -584,6 +584,15 @@ func _deal_damage(amount: int, source: String) -> void:
 	var player := _get_player()
 	if player and player.has_method("take_damage"):
 		player.take_damage(amount)
+
+	# Also damage Anchalee if she is within melee reach of this zombie
+	var anchaleees = enemy.get_tree().get_nodes_in_group("Anchalee")
+	for a in anchaleees:
+		if not is_instance_valid(a): continue
+		var dist = enemy.global_position.distance_to(a.global_position)
+		if dist <= 1.8:
+			a.take_damage(amount)
+			print("[StateAttack] %s hit Anchalee for %d damage" % [source, amount])
 	print("[StateAttack] %s dealt %d damage" % [source, amount])
 
 func _anim_length(anim_name: String, sub_machine: String = "") -> float:

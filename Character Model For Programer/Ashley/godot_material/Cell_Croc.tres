@@ -1,0 +1,31 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://b84e1t7l0xjno"]
+
+[ext_resource type="Texture2D" uid="uid://b1ynww3whjb2d" path="res://Character Model For Programer/Ashley/textures/crocs.png" id="1_b3p05"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_imf0h"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.5882353)
+grow = true
+grow_amount = 0.003
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+stencil_reference = 3
+metadata/_stencil_owned = true
+
+[resource]
+next_pass = SubResource("StandardMaterial3D_imf0h")
+diffuse_mode = 3
+specular_mode = 2
+albedo_texture = ExtResource("1_b3p05")
+roughness = 0.0
+rim_enabled = true
+rim = 0.5
+texture_filter = 5
+stencil_mode = 1
+stencil_flags = 2
+stencil_reference = 2
+stencil_color = Color(0, 0, 0, 0.5882353)
+stencil_outline_thickness = 0.003

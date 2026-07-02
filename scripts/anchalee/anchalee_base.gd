@@ -13,8 +13,8 @@ signal player_exited_friend_area()
 @onready var state_machine: AnchaleeStateMachine = $AnchaleeStateMachine
 @onready var nav_agent: NavigationAgent3D = $NavigationAgent3D
 @onready var threat_area: Area3D = $ThreatArea
-@onready var friend_area: Area3D = $FriendArea
-@onready var help_label: Label3D = $HelpLabel
+@onready var friend_area: Area3D = get_node_or_null("FriendArea")
+@onready var help_label: Label3D = get_node_or_null("HelpLabel")
 @onready var rig: Node3D = $AnchaleeModel/rig_002
 var anim_player: AnimationPlayer = null  # assigned at runtime once model is finalized
 
@@ -56,6 +56,10 @@ var _takedown_duck_roll: bool = false
 var _threat_duck_roll: bool = false
 var _last_threat_state: bool = false
 
+## Gentle push velocity added when the player bumps Anchalee inside FriendArea.
+## Decays to zero on its own so she drifts clear without launching.
+var _friend_nudge_vel: Vector3 = Vector3.ZERO
+
 func roll_threat_duck() -> bool:
 	var current_threat_state = get_threat_count() >= 2
 	if current_threat_state != _last_threat_state:
@@ -79,17 +83,16 @@ func _ready() -> void:
 	if has_node("AnchaleeModel/AnimationPlayer"):
 		anim_player = $AnchaleeModel/AnimationPlayer
 	health = max_health
-	help_label.visible = false
 	add_to_group("Anchalee")
 	
 	# Set Layer 5 (value 16) and Mask 1 (value 1) + Mask 3 (value 4) so she collides with world and zombies
 	set_collision_layer_value(5, true)
 	set_collision_mask_value(1, true)
+	set_collision_mask_value(2, true)  # Detect player so physics resolves contact (player can push her)
 	set_collision_mask_value(3, true)
 	# Set Mask 4 (value 8) so she is blocked by invisible walls
 	set_collision_mask_value(4, true)
 	
-
 
 	# Configure threat_area and friend_area collision settings programmatically
 	# to prevent them from colliding with player weapon raycasts and projectiles (layer = 0)
@@ -113,9 +116,6 @@ func _ready() -> void:
 		nav_agent.target_desired_distance = follow_stop_distance
 		nav_agent.velocity_computed.connect(_on_nav_velocity_computed)
 	
-	# Prevent physically pushing the player
-	call_deferred("_setup_collision_exceptions")
-	
 	# Initial check for player in friend area
 	if friend_area:
 		for body in friend_area.get_overlapping_bodies():
@@ -133,10 +133,10 @@ func _ready() -> void:
 		lean.name = "AnchaleeLeanModifier"
 		skel.add_child(lean)
 
-func _setup_collision_exceptions() -> void:
-	var player = get_player()
-	if player:
-		add_collision_exception_with(player)
+## Adds a small outward velocity to Anchalee when the player bumps her inside FriendArea.
+## Strength is clamped to 0.1–0.5 m/s and decays naturally each frame.
+func apply_friend_nudge(push_dir: Vector3, strength: float = 0.3) -> void:
+	_friend_nudge_vel = push_dir.normalized() * clampf(strength, 0.1, 0.5)
 
 func _unhandled_input(event: InputEvent) -> void:
 	pass # Wait behavior replaced by dynamic Idle/Walk
@@ -254,12 +254,40 @@ func get_friend_target_pos() -> Vector3:
 		return pos
 	return player.global_position
 
+## Zero out any velocity component that would push the player away.
+## This lets the player push Anchalee, but not the reverse.
+func _clamp_velocity_toward_player() -> void:
+	var player = get_player()
+	if not player: return
+	var to_player = (player.global_position - global_position)
+	to_player.y = 0.0
+	var dist = to_player.length()
+	if dist < 0.85 and dist > 0.01:
+		var dir = to_player / dist
+		var proj = velocity.dot(dir)
+		if proj > 0.0:
+			velocity -= dir * proj  # strip the component pointing at the player
+
 func _physics_process(delta: float) -> void:
 	if is_dead: return
 	var target_pos = get_friend_target_pos()
 	if smoothed_target_pos == Vector3.ZERO:
 		smoothed_target_pos = global_position
 	smoothed_target_pos = smoothed_target_pos.lerp(target_pos, delta * 6.0)
+
+	# Decay nudge velocity and apply it to keep Anchalee from merging with player mesh
+	_friend_nudge_vel = _friend_nudge_vel.move_toward(Vector3.ZERO, 4.0 * delta)
+	
+	# If we leave the player's FriendNearArea, immediately lose any added nudge velocity
+	if _friend_nudge_vel.length() > 0.01:
+		var player = get_player()
+		if player:
+			var near_area = player.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/FriendNearArea")
+			if near_area and not near_area.overlaps_body(self):
+				_friend_nudge_vel = Vector3.ZERO
+				
+	if _friend_nudge_vel.length() > 0.01:
+		velocity += _friend_nudge_vel
 
 	# Turn tilt calculation (root tilt when rotating)
 	var current_y_rot = global_rotation.y
@@ -397,6 +425,23 @@ func is_player_aiming_or_takedown() -> bool:
 	_has_rolled_takedown_duck = false
 	return false
 
+## Sets immunity/invincibility for Anchalee by disabling her head and body hurtboxes.
+func set_immune(is_immune: bool) -> void:
+	# Head hurtbox Area3D
+	var head_hurtbox = get_node_or_null("AnchaleeModel/rig_002/GeneralSkeleton/RetargetModifier3D/OriginalSkeleton/HitboxAttachHead/HitboxHead")
+	if head_hurtbox and head_hurtbox is Area3D:
+		head_hurtbox.set_deferred("monitorable", not is_immune)
+		head_hurtbox.set_deferred("monitoring", not is_immune)
+		
+	# Body hurtbox Area3D
+	var body_hurtbox = get_node_or_null("AnchaleeModel/rig_002/GeneralSkeleton/RetargetModifier3D/OriginalSkeleton/BoneAttachment3D/HurtboxBody")
+	if body_hurtbox and body_hurtbox is Area3D:
+		body_hurtbox.set_deferred("monitorable", not is_immune)
+		body_hurtbox.set_deferred("monitoring", not is_immune)
+
+	# Toggle player collision layer
+	set_collision_layer_value(2, not is_immune)
+
 # ─── Debug ─────────────────────────────────────────────────────────────────
 func _on_state_changed(old_state: String, new_state: String) -> void:
 	print("[Anchalee] State: %s → %s" % [old_state, new_state])
@@ -411,6 +456,25 @@ func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
 		return
 	
 	var current_y = velocity.y
-	velocity = velocity.move_toward(safe_velocity, 10.0 * get_physics_process_delta_time())
+	var speed = safe_velocity.length()
+	
+	# Project movement toward safe_velocity, scaling speed by alignment to avoid strafing
+	var forward = -global_transform.basis.z
+	if is_walking_backward:
+		forward = global_transform.basis.z
+	forward.y = 0.0
+	forward = forward.normalized()
+	
+	var speed_factor = 1.0
+	if speed > 0.01:
+		var target_dir = safe_velocity.normalized()
+		var dot = forward.dot(target_dir)
+		speed_factor = clampf(dot, 0.1, 1.0)
+		if is_walking_backward:
+			speed_factor = 1.0
+			
+	var desired_vel = safe_velocity * speed_factor
+	velocity = velocity.move_toward(desired_vel, 15.0 * get_physics_process_delta_time())
 	velocity.y = current_y
+	_clamp_velocity_toward_player()  # Never push the player
 	move_and_slide()

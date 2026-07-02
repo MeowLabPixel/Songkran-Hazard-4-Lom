@@ -13,7 +13,7 @@ grow_amount = 0.003
 stencil_mode = 3
 stencil_flags = 1
 stencil_compare = 5
-stencil_reference = 5
+stencil_reference = 6
 metadata/_stencil_owned = true
 
 [resource]
@@ -38,6 +38,6 @@ backlight = Color(0.510034, 0.510034, 0.510034, 1)
 texture_filter = 5
 stencil_mode = 1
 stencil_flags = 2
-stencil_reference = 5
+stencil_reference = 6
 stencil_color = Color(0, 0, 0, 0.5882353)
 stencil_outline_thickness = 0.003

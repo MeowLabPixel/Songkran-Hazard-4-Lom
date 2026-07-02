@@ -40,6 +40,14 @@ const LogViewerScript := preload("res://addons/godot_ai/dock_panels/log_viewer.g
 const PortPickerPanelScript := preload("res://addons/godot_ai/dock_panels/port_picker_panel.gd")
 
 const DEV_MODE_SETTING := "godot_ai/dev_mode"
+## "Change the port + reconfigure your clients" guide. Surfaced from the crash
+## panel when a foreign process holds the HTTP port — the one piece of recovery
+## (per-client config rewrite) that doesn't fit in the inline crash body.
+## Resolved against the installed plugin version at click time (see
+## `_port_conflict_docs_url`) so a shipped build opens the guide as it shipped,
+## not tip-of-main, which may have drifted from that build's UI.
+const PORT_CONFLICT_DOCS_PATH := "docs/port-conflicts.md"
+const REPO_BLOB_BASE := "https://github.com/hi-godot/godot-ai/blob"
 const CLIENT_STATUS_REFRESH_COOLDOWN_MSEC := 15 * 1000
 const CLIENT_STATUS_REFRESH_TIMEOUT_MSEC := 30 * 1000
 const CLIENT_ACTION_TIMEOUT_MSEC := 30 * 1000
@@ -61,6 +69,7 @@ var _status_icon: ColorRect
 var _status_label: Label
 var _client_grid: VBoxContainer
 var _client_configure_all_btn: Button
+var _client_empty_cta_btn: Button
 var _clients_summary_label: Label
 var _clients_window: Window
 var _dev_mode_toggle: CheckButton
@@ -195,6 +204,11 @@ var _crash_panel: VBoxContainer
 var _crash_output: RichTextLabel
 var _crash_restart_btn: Button
 var _crash_reload_btn: Button
+## Help link — visible only for the genuinely-foreign-occupant INCOMPATIBLE
+## case (no `can_recover_incompatible` proof). The inline body names a free
+## port; this button carries the per-client reconfigure steps that don't fit
+## inline. See `PORT_CONFLICT_DOCS` and `_update_crash_panel`.
+var _crash_docs_btn: Button
 ## Port-picker escape hatch — visible inside the crash panel when the root
 ## cause is port contention (PORT_EXCLUDED or FOREIGN_PORT). The dock writes
 ## the EditorSetting and reloads the plugin in response to the panel's
@@ -548,6 +562,13 @@ func _build_ui() -> void:
 	_crash_reload_btn.pressed.connect(_on_reload_plugin)
 	_crash_panel.add_child(_crash_reload_btn)
 
+	_crash_docs_btn = Button.new()
+	_crash_docs_btn.text = "How to change the port"
+	_crash_docs_btn.tooltip_text = "Open the guide: change godot_ai/http_port and reconfigure your MCP clients"
+	_crash_docs_btn.visible = false
+	_crash_docs_btn.pressed.connect(func(): OS.shell_open(_port_conflict_docs_url()))
+	_crash_panel.add_child(_crash_docs_btn)
+
 	_crash_panel.add_child(HSeparator.new())
 	add_child(_crash_panel)
 
@@ -664,6 +685,14 @@ func _build_ui() -> void:
 
 	add_child(clients_header_row)
 	add_child(clients_actions)
+
+	_client_empty_cta_btn = Button.new()
+	_client_empty_cta_btn.text = "Configure an AI client ->"
+	_client_empty_cta_btn.tooltip_text = "Open the Clients tab to configure an AI coding client for this Godot AI server."
+	_client_empty_cta_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_client_empty_cta_btn.visible = false
+	_client_empty_cta_btn.pressed.connect(_on_open_clients_window)
+	add_child(_client_empty_cta_btn)
 
 	# Drift banner — hidden until a sweep finds at least one mismatched client.
 	_drift_banner = VBoxContainer.new()
@@ -840,7 +869,7 @@ func _build_client_row(client_id: String) -> void:
 # --- Status updates ---
 
 func _update_status() -> void:
-	var connected: bool = _connection.is_connected
+	var connected: bool = _connection != null and _connection.is_connected
 	## During plugin self-update there's a brief window where this dock
 	## script is already the new version (Godot hot-reloads scripts on
 	## file change) but `_plugin` is still the old `EditorPlugin` instance
@@ -867,7 +896,7 @@ func _update_status() -> void:
 		status_text = "Restarting server..."
 		status_color = COLOR_AMBER
 	elif connected:
-		status_text = "Connected"
+		status_text = _connected_status_text()
 		status_color = Color.GREEN
 	elif state == ServerStateScript.CRASHED:
 		var exit_ms: int = server_status.get("exit_ms", 0)
@@ -940,6 +969,15 @@ func _update_crash_panel(server_status: Dictionary) -> void:
 			not show_recovery_restart
 			and state != ServerStateScript.INCOMPATIBLE
 		)
+	## Docs link only for the genuinely-foreign occupant: a recoverable
+	## (older godot-ai) server gets Restart Server instead, and the inline
+	## body already names a free port — the link carries the per-client
+	## reconfigure steps that don't fit inline.
+	if _crash_docs_btn != null:
+		_crash_docs_btn.visible = (
+			state == ServerStateScript.INCOMPATIBLE
+			and not bool(server_status.get("can_recover_incompatible", false))
+		)
 
 	var port_picker_visible := (
 		state == ServerStateScript.PORT_EXCLUDED
@@ -969,9 +1007,16 @@ static func _crash_body_for_state(state: int, server_status: Dictionary = {}) ->
 				if not message.is_empty():
 					return "%s Click Restart Server below to replace it with godot-ai v%s." % [message, expected]
 				return "Port %d is occupied by an older godot-ai server. Click Restart Server below to replace it with godot-ai v%s." % [port, expected]
+			## Genuinely foreign occupant (no recovery proof). Name a concrete
+			## free port so the user doesn't have to hunt for one, and let the
+			## crash panel's "How to change the port" link carry the per-client
+			## reconfigure steps. `suggest_free_port` already routes through the
+			## Windows reservation table, so the named port won't itself fail
+			## with WinError 10013.
+			var hint := _free_port_hint(port)
 			if not message.is_empty():
-				return message
-			return "Port %d is occupied by an incompatible server. Stop it or change both HTTP and WS ports." % port
+				return "%s %s" % [message, hint]
+			return "Port %d is occupied by an incompatible server. %s" % [port, hint]
 		ServerStateScript.FOREIGN_PORT:
 			return "Another process is already bound to port %d. Pick a free port or stop the other process." % port
 		ServerStateScript.CRASHED:
@@ -987,6 +1032,31 @@ static func _crash_body_for_state(state: int, server_status: Dictionary = {}) ->
 			return "No godot-ai server found. Install `uv` via the Setup panel above, or run `pip install godot-ai`."
 		_:
 			return ""
+
+
+## One sentence naming concrete free ports for the user to switch to. Names
+## BOTH http and ws: this branch also fires for an incompatible godot-ai
+## server we can't prove we own, which commonly holds both ports — moving only
+## http would then leave the new server unable to bind ws. Both suggestions are
+## routed through `suggest_free_port` so they clear Windows' winnat reservation
+## table (no point suggesting a port that 10013s on bind). Only the http port
+## reaches client configs; the ws port is server↔plugin, hence the wording.
+## The per-client reconfigure steps live behind the crash panel's docs link.
+static func _free_port_hint(port: int) -> String:
+	var free_http := ClientConfigurator.suggest_free_port(port + 1)
+	var free_ws := ClientConfigurator.suggest_free_port(ClientConfigurator.ws_port() + 1)
+	return "Ports %d (HTTP) and %d (WS) are free — set `godot_ai/http_port` and `godot_ai/ws_port` in Editor Settings, then update your client config with the new HTTP port (How to change the port, below)." % [free_http, free_ws]
+
+
+## URL for the port-conflict guide, pinned to the release tag that matches the
+## installed plugin version (releases are tagged `v<version>`). The crash-panel
+## button only exists in builds that ship `docs/port-conflicts.md`, so the
+## versioned ref always resolves — and a shipped build never points users at a
+## tip-of-main guide that has drifted from its own UI.
+static func _port_conflict_docs_url() -> String:
+	var version := ClientConfigurator.get_plugin_version()
+	var git_ref := ("v%s" % version) if not version.is_empty() else "main"
+	return "%s/%s/%s" % [REPO_BLOB_BASE, git_ref, PORT_CONFLICT_DOCS_PATH]
 
 
 ## Build the mixed-state banner. Hidden until `_refresh_mixed_state_banner`
@@ -1562,6 +1632,30 @@ func _update_dev_section_buttons() -> void:
 		_dev_stop_btn.tooltip_text = stop_state["tooltip"]
 
 
+func _configured_client_count() -> int:
+	var configured := 0
+	for client_id in _client_rows:
+		var status: Client.Status = _client_rows[client_id].get("status", Client.Status.NOT_CONFIGURED)
+		if status == Client.Status.CONFIGURED:
+			configured += 1
+	return configured
+
+
+func _client_status_refresh_has_completed() -> bool:
+	return _last_client_status_refresh_completed_msec > 0
+
+
+func _connected_status_text() -> String:
+	var configured := _configured_client_count()
+	if configured == 0:
+		if not _client_status_refresh_has_completed():
+			return "Server connected · checking AI client configuration"
+		return "Server connected · no AI client configured"
+	if configured == 1:
+		return "Server connected · 1 AI client configured"
+	return "Server connected · %d AI clients configured" % configured
+
+
 func _on_install_uv() -> void:
 	match OS.get_name():
 		"Windows":
@@ -2098,7 +2192,10 @@ func _refresh_clients_summary() -> void:
 	_clients_summary_label.text = text
 	if _client_configure_all_btn != null:
 		_client_configure_all_btn.disabled = ClientRefreshStateScript.should_disable_client_actions(_refresh_state)
+	if _client_empty_cta_btn != null:
+		_client_empty_cta_btn.visible = configured == 0 and _client_status_refresh_has_completed()
 	_refresh_drift_banner(mismatched_ids)
+	_update_status()
 
 
 func _show_manual_command_for(client_id: String) -> void:

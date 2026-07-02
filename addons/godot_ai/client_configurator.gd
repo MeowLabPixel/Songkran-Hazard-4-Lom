@@ -24,6 +24,7 @@ const CliStrategy := preload("res://addons/godot_ai/clients/_cli_strategy.gd")
 const ManualCommand := preload("res://addons/godot_ai/clients/_manual_command.gd")
 const CliFinder := preload("res://addons/godot_ai/clients/_cli_finder.gd")
 const WindowsPortReservation := preload("res://addons/godot_ai/utils/windows_port_reservation.gd")
+const PortResolver := preload("res://addons/godot_ai/utils/port_resolver.gd")
 
 const SERVER_NAME := "godot-ai"
 
@@ -37,6 +38,11 @@ const DEFAULT_WS_PORT := 9500
 const STARTUP_TRACE_ENV := "GODOT_AI_STARTUP_TRACE"
 const MIN_PORT := 1024
 const MAX_PORT := 65535
+## Cap on `can_bind_local_port` probes per `suggest_free_port` call so a
+## pathological run of occupied ports can't stall the (cold-path) caller.
+## 64 localhost binds are sub-millisecond; finding a free port realistically
+## takes one or two probes, so this only bounds the worst case.
+const SUGGEST_PORT_MAX_PROBES := 64
 const SETTING_WS_PORT := "godot_ai/ws_port"
 const SETTING_STARTUP_TRACE := "godot_ai/log_startup_timing"
 const _DISCOVERY_TIMEOUT_MS := 3000
@@ -132,15 +138,39 @@ static func excluded_domains() -> String:
 	return ",".join(parts)
 
 
-## Clamp `start` into the legal port range, then walk
-## `candidate`..`candidate+span-1` and return the first port that is NOT
-## currently excluded by Windows' winnat reservation table. Falls back to the
-## clamped candidate if nothing clears (caller can apply anyway — user may
-## just retry). On non-Windows this is a no-op: all ports pass, returns the
-## clamped candidate.
+## Suggest a port the caller can actually switch to. Walks
+## `candidate`..`candidate+span-1` and returns the first port that is both
+## (a) NOT inside a Windows winnat reservation range (Hyper-V / WSL2 / Docker
+## grab these; bind fails with WinError 10013 and netstat shows nothing) and
+## (b) actually bindable right now on 127.0.0.1. The bind probe is what makes
+## "free" honest on macOS/Linux, where the reservation table is empty but the
+## next port up may still be occupied — the same suggestion feeds the dock
+## crash body, the port-picker spinbox, and the non-recoverable INCOMPATIBLE
+## log line. Falls back to the clamped candidate if nothing in the window
+## clears both checks (caller surfaces it as a best-effort hint; the user can
+## retry or pick another). Best-effort by nature: a TOCTOU window remains
+## between the probe and the caller actually binding the port. The bind probe
+## is bounded to `SUGGEST_PORT_MAX_PROBES` attempts so this cold path can't
+## stall on a pathological run of occupied ports.
 static func suggest_free_port(start: int, span: int = 2048) -> int:
 	var candidate := clampi(start, MIN_PORT, MAX_PORT - span + 1)
-	return WindowsPortReservation.suggest_non_excluded_port(candidate, span, MAX_PORT)
+	var limit := mini(candidate + span - 1, MAX_PORT)
+	var p := candidate
+	var probes := 0
+	while p <= limit and probes < SUGGEST_PORT_MAX_PROBES:
+		## Jump past a whole Windows-reserved range in one step (no-op on
+		## POSIX: returns `p` unchanged), so we don't probe port-by-port
+		## through the large adjacent ranges those services reserve. The
+		## jump itself runs no bind probes, so it doesn't count against the cap.
+		var not_reserved := WindowsPortReservation.suggest_non_excluded_port(p, limit - p + 1, MAX_PORT)
+		if not_reserved < p or not_reserved > limit:
+			break
+		p = not_reserved
+		probes += 1
+		if PortResolver.can_bind_local_port(p):
+			return p
+		p += 1
+	return candidate
 
 
 # --- Client operations (string id) ---------------------------------------

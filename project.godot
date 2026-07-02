@@ -21,11 +21,11 @@ config/icon="uid://bvhvlnw1hbiv6"
 
 [autoload]
 
-_mcp_game_helper="<null>"
 PhantomCameraManager="uid://duq6jhf6unyis"
 ItemManager="*res://scripts/items/item_manager.gd"
 AttackTokenManager="*res://scripts/enemy/attack_token_manager.gd"
 GameManager="*res://scripts/game_manager.gd"
+_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 
 [debug]
 
@@ -40,6 +40,10 @@ window/size/window_width_override=960
 window/size/window_height_override=540
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_ai/plugin.cfg")
 
 [global_group]
 
@@ -182,8 +186,10 @@ textures/canvas_textures/default_texture_filter=2
 rendering_device/driver.windows="d3d12"
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=5
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality.mobile=5
+lights_and_shadows/directional_shadow/16_bits=false
 lights_and_shadows/positional_shadow/soft_shadow_filter_quality=5
 lights_and_shadows/positional_shadow/soft_shadow_filter_quality.mobile=5
+lights_and_shadows/positional_shadow/atlas_16_bits=false
 textures/default_filters/anisotropic_filtering_level=4
 anti_aliasing/quality/msaa_2d=3
 anti_aliasing/quality/msaa_3d=3

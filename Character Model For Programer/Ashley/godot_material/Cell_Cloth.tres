@@ -1,0 +1,28 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://dv0iwpmg8x2o4"]
+
+[ext_resource type="Texture2D" uid="uid://bspigkpr0uwm1" path="res://Character Model For Programer/Ashley/textures/sweater.png" id="1_ye4x1"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ye4x1"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 1)
+grow = true
+grow_amount = 0.003
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+stencil_reference = 4
+metadata/_stencil_owned = true
+
+[resource]
+next_pass = SubResource("StandardMaterial3D_ye4x1")
+diffuse_mode = 3
+albedo_texture = ExtResource("1_ye4x1")
+roughness = 0.0
+rim_enabled = true
+rim = 0.5
+stencil_mode = 1
+stencil_flags = 2
+stencil_reference = 4
+stencil_outline_thickness = 0.003

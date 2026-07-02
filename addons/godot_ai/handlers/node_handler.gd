@@ -239,16 +239,10 @@ func set_property(params: Dictionary) -> Dictionary:
 		# properties. Mirrors resource_create's inline-assign path but
 		# avoids a separate tool call for the common case.
 		var type_str: String = value.get("__class__", "")
-		var class_err := ResourceHandler._validate_resource_class(type_str)
-		if class_err != null:
-			return class_err
-		var instance := ClassDB.instantiate(type_str)
-		if instance == null or not (instance is Resource):
-			return ErrorCodes.make(
-				ErrorCodes.INTERNAL_ERROR,
-				"Failed to instantiate %s as a Resource" % type_str
-			)
-		var res: Resource = instance
+		var made := ResourceHandler._instantiate_resource(type_str)
+		if made is Dictionary:
+			return made
+		var res: Resource = made
 		var remaining: Dictionary = (value as Dictionary).duplicate()
 		remaining.erase("__class__")
 		if not remaining.is_empty():
@@ -712,7 +706,15 @@ static func _coerce_value(value: Variant, target_type: int) -> Variant:
 			if value is Dictionary and value.has_all(COLOR_KEYS):
 				return Color(value["r"], value["g"], value["b"], value.get("a", 1.0))
 			if value is String:
-				return Color(value)
+				# Color(String) silently returns black for an unparseable string
+				# (e.g. "Color(1,1,1,1)" or a typo). Validate with the two-sentinel
+				# from_string idiom (see theme_handler/material_values); on failure
+				# fall through so the value stays a String and _check_coerced flags
+				# it as an error instead of writing black.
+				var col_a := Color.from_string(value, Color(0, 0, 0, 0))
+				var col_b := Color.from_string(value, Color(1, 1, 1, 1))
+				if col_a == col_b:
+					return col_a
 		TYPE_BOOL:
 			if value is float or value is int:
 				return bool(value)

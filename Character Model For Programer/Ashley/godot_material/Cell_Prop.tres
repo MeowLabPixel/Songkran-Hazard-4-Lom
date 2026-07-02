@@ -1,0 +1,25 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://biptwms4esgw8"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vpdnp"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.5882353)
+grow = true
+grow_amount = 0.03
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+stencil_reference = 6
+metadata/_stencil_owned = true
+
+[resource]
+next_pass = SubResource("StandardMaterial3D_vpdnp")
+diffuse_mode = 3
+specular_mode = 1
+roughness = 0.0
+stencil_mode = 1
+stencil_flags = 2
+stencil_reference = 6
+stencil_color = Color(0, 0, 0, 0.5882353)
+stencil_outline_thickness = 0.03

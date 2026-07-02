@@ -1,0 +1,30 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://g6i7ucqstqmk"]
+
+[ext_resource type="Texture2D" uid="uid://bmmt6igb7r7fv" path="res://Character Model For Programer/Ashley/textures/Ashley hair.png" id="1_upxpe"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_p0j1u"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.5882353)
+grow = true
+grow_amount = 0.003
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+stencil_reference = 6
+metadata/_stencil_owned = true
+
+[resource]
+next_pass = SubResource("StandardMaterial3D_p0j1u")
+diffuse_mode = 3
+specular_mode = 2
+albedo_texture = ExtResource("1_upxpe")
+roughness = 0.5
+rim_enabled = true
+texture_filter = 5
+stencil_mode = 1
+stencil_flags = 2
+stencil_reference = 6
+stencil_color = Color(0, 0, 0, 0.5882353)
+stencil_outline_thickness = 0.003

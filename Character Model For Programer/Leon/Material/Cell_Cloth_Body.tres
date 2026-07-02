@@ -2,30 +2,29 @@
 
 [ext_resource type="Texture2D" uid="uid://dibx80fulo0h4" path="res://Character Model For Programer/Leon/textures/Base_Cloth_Body.png" id="1_gbvdt"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vgvch"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gbvdt"]
 render_priority = 1
 transparency = 1
 shading_mode = 0
-albedo_color = Color(0, 0, 0, 0)
+albedo_color = Color(0, 0, 0, 0.5882353)
 grow = true
 grow_amount = 0.003
 stencil_mode = 3
 stencil_flags = 1
 stencil_compare = 5
-stencil_reference = 4
+stencil_reference = 3
 metadata/_stencil_owned = true
 
 [resource]
-next_pass = SubResource("StandardMaterial3D_vgvch")
+next_pass = SubResource("StandardMaterial3D_gbvdt")
 diffuse_mode = 3
 specular_mode = 2
 albedo_texture = ExtResource("1_gbvdt")
 roughness = 0.0
 rim_enabled = true
 texture_filter = 5
-disable_receive_shadows = true
 stencil_mode = 1
 stencil_flags = 2
-stencil_reference = 4
-stencil_color = Color(0, 0, 0, 0)
+stencil_reference = 3
+stencil_color = Color(0, 0, 0, 0.5882353)
 stencil_outline_thickness = 0.003

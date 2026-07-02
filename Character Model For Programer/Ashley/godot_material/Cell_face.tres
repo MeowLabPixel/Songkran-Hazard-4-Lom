@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://b3524pelmm881"]
+
+[ext_resource type="Texture2D" uid="uid://hdp67qcr584q" path="res://Character Model For Programer/Ashley/textures/Base Ashley Face Expression2.png" id="1_uu66k"]
+
+[resource]
+resource_name = "Eyes.002"
+cull_mode = 2
+albedo_texture = ExtResource("1_uu66k")
+roughness = 0.5
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

@@ -2,7 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://cr5wlck56i158" path="res://Character Model For Programer/Leon/textures/Base Male Body 2.png" id="1_8vyve"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mmwog"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8vyve"]
 render_priority = 1
 transparency = 1
 shading_mode = 0
@@ -11,12 +11,12 @@ grow = true
 grow_amount = 0.003
 stencil_mode = 3
 stencil_flags = 1
-stencil_compare = 5
+stencil_compare = 4
 stencil_reference = 4
 metadata/_stencil_owned = true
 
 [resource]
-next_pass = SubResource("StandardMaterial3D_mmwog")
+next_pass = SubResource("StandardMaterial3D_8vyve")
 diffuse_mode = 3
 specular_mode = 2
 albedo_texture = ExtResource("1_8vyve")
@@ -24,7 +24,6 @@ roughness = 0.0
 rim_enabled = true
 rim = 0.5
 texture_filter = 5
-disable_receive_shadows = true
 stencil_mode = 1
 stencil_flags = 2
 stencil_reference = 4

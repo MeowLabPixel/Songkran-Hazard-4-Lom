@@ -31,15 +31,5 @@ func physics_update(delta: float) -> void:
 		state_machine.transition_to("AnchaleeStateGetUp")
 
 func _set_immune(is_immune: bool) -> void:
-	# Assuming Anchalee's hurtbox is either her main collision layer or a specific Hurtbox Area3D
-	# Usually Layer 1 is world, Layer 2 is player/friend, Layer 3 is enemies, etc.
-	# Setting collision mask/layer so enemies can't hit her.
-	# You can tweak this depending on how enemy hitboxes are set up.
-	var hurtbox = Anchalee.get_node_or_null("HurtBox")
-	if hurtbox and hurtbox is Area3D:
-		hurtbox.set_deferred("monitorable", not is_immune)
-		hurtbox.set_deferred("monitoring", not is_immune)
-		
-	# Also disable her main body collision layer matching enemies if needed
-	# e.g., layer 2 is usually Player/Friend
-	Anchalee.set_collision_layer_value(2, not is_immune)
+	if is_instance_valid(Anchalee):
+		Anchalee.set_immune(is_immune)
