@@ -39,7 +39,8 @@ var _walk_anim: String = ""
 var _is_fleeing: bool = false
 var trigger_stun_recovery: bool = false
 var trigger_attack_recovery: bool = false
-var _recovery_pause_timer: float = 0.0
+var _stun_recovery_timer: float = 0.0
+var _attack_recovery_timer: float = 0.0
 var _path_update_timer: float = 0.0
 var _getup_block_timer: float = 0.0
 
@@ -103,7 +104,7 @@ func enter() -> void:
 	
 	if trigger_stun_recovery:
 		trigger_stun_recovery = false
-		_recovery_pause_timer = stun_recovery_pause * 0.5
+		_stun_recovery_timer = stun_recovery_pause * 0.5
 		# Don't force-play idle here — let the AnimationTree's own
 		# blend transitions (hit_stun → End → hit → End) handle the smooth exit.
 		# The recovery pause timer keeps the zombie still while the blend plays.
@@ -111,7 +112,7 @@ func enter() -> void:
 		
 	if trigger_attack_recovery:
 		trigger_attack_recovery = false
-		_recovery_pause_timer = 0.5 # Pause to allow attack recovery crossfade to play
+		_attack_recovery_timer = 0.5 # Pause to allow attack recovery crossfade to play
 		_play_anim(enemy.anim_set.idle)
 	elif apply_offset >= 0.0:
 		_play_anim(enemy.anim_set.idle)
@@ -193,8 +194,9 @@ func physics_update(_delta: float) -> void:
 		enemy.move_and_slide()
 		return
 		
-	if _recovery_pause_timer > 0.0:
-		_recovery_pause_timer -= _delta
+	if _stun_recovery_timer > 0.0 or _attack_recovery_timer > 0.0:
+		_stun_recovery_timer -= _delta
+		_attack_recovery_timer -= _delta
 		if nav_agent and nav_agent.avoidance_enabled:
 			nav_agent.set_velocity(Vector3.ZERO)
 		enemy.velocity = Vector3.ZERO
@@ -485,7 +487,7 @@ func _walk_back(dir_to_player: Vector3, delta: float) -> void:
 
 func handle_hit(hit_data: Dictionary) -> String:
 	# Ignore hits during stun recovery pause to prevent animation tree freeze / lock
-	if _recovery_pause_timer > 0.0:
+	if _stun_recovery_timer > 0.0:
 		return ""
 
 	var zone: String = hit_data.get("hit_zone", "body")
@@ -559,4 +561,4 @@ func _get_player() -> Node3D:
 	return players[0] if players.size() > 0 else null
 
 func is_movement_blocked() -> bool:
-	return _getup_block_timer > 0.0 or _recovery_pause_timer > 0.0
+	return _getup_block_timer > 0.0 or _stun_recovery_timer > 0.0 or _attack_recovery_timer > 0.0
