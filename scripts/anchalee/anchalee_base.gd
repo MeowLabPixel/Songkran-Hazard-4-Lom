@@ -25,8 +25,8 @@ var is_dead: bool = false
 
 # ─── Following ─────────────────────────────────────────────────────────────
 @export_group("Following")
-@export var follow_start_distance: float = 1.5
-@export var follow_stop_distance: float = 0.5
+@export var follow_start_distance: float = 1.3
+@export var follow_stop_distance: float = 0.85
 @export var friend_area_push_back_offset: float = 0.8
 
 @export_group("Aim Detection")
@@ -49,16 +49,13 @@ var nearby_threats: Array = []
 var is_player_in_friend_area: bool = false
 var is_walking_backward: bool = false
 var player_is_sprinting: bool = false
+var is_touching_player: bool = false
 var smoothed_target_pos: Vector3 = Vector3.ZERO
 
 var _has_rolled_takedown_duck: bool = false
 var _takedown_duck_roll: bool = false
 var _threat_duck_roll: bool = false
 var _last_threat_state: bool = false
-
-## Gentle push velocity added when the player bumps Anchalee inside FriendArea.
-## Decays to zero on its own so she drifts clear without launching.
-var _friend_nudge_vel: Vector3 = Vector3.ZERO
 
 func roll_threat_duck() -> bool:
 	var current_threat_state = get_threat_count() >= 2
@@ -132,11 +129,6 @@ func _ready() -> void:
 		lean.anchalee = self
 		lean.name = "AnchaleeLeanModifier"
 		skel.add_child(lean)
-
-## Adds a small outward velocity to Anchalee when the player bumps her inside FriendArea.
-## Strength is clamped to 0.1–0.5 m/s and decays naturally each frame.
-func apply_friend_nudge(push_dir: Vector3, strength: float = 0.3) -> void:
-	_friend_nudge_vel = push_dir.normalized() * clampf(strength, 0.1, 0.5)
 
 func _unhandled_input(event: InputEvent) -> void:
 	pass # Wait behavior replaced by dynamic Idle/Walk
@@ -273,21 +265,31 @@ func _physics_process(delta: float) -> void:
 	var target_pos = get_friend_target_pos()
 	if smoothed_target_pos == Vector3.ZERO:
 		smoothed_target_pos = global_position
-	smoothed_target_pos = smoothed_target_pos.lerp(target_pos, delta * 6.0)
-
-	# Decay nudge velocity and apply it to keep Anchalee from merging with player mesh
-	_friend_nudge_vel = _friend_nudge_vel.move_toward(Vector3.ZERO, 4.0 * delta)
+		
+	var player = get_player()
+	var is_player_moving = player and player.velocity.length_squared() > 0.05
+	var is_player_rotating = player and abs(player.get("angular_velocity")) > 0.1
 	
-	# If we leave the player's FriendNearArea, immediately lose any added nudge velocity
-	if _friend_nudge_vel.length() > 0.01:
-		var player = get_player()
-		if player:
-			var near_area = player.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/FriendNearArea")
-			if near_area and not near_area.overlaps_body(self):
-				_friend_nudge_vel = Vector3.ZERO
+	if is_player_moving or is_player_rotating:
+		smoothed_target_pos = smoothed_target_pos.lerp(target_pos, delta * 6.0)
+	else:
+		smoothed_target_pos = target_pos # Instantly snap target to stop drifting past player
+
+	# Update near-area tracking
+	if player:
+		var near_area = player.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/FriendNearArea")
+		var is_near = false
+		if near_area and near_area is Area3D:
+			is_near = near_area.overlaps_body(self)
+			
+		if is_near != is_player_in_friend_area:
+			is_player_in_friend_area = is_near
+			if is_near:
+				player_entered_friend_area.emit()
+			else:
+				player_exited_friend_area.emit()
 				
-	if _friend_nudge_vel.length() > 0.01:
-		velocity += _friend_nudge_vel
+
 
 	# Turn tilt calculation (root tilt when rotating)
 	var current_y_rot = global_rotation.y
@@ -443,6 +445,14 @@ func set_immune(is_immune: bool) -> void:
 	set_collision_layer_value(2, not is_immune)
 
 # ─── Debug ─────────────────────────────────────────────────────────────────
+func set_player_collision(enabled: bool) -> void:
+	var player = get_player()
+	if not player: return
+	if enabled:
+		remove_collision_exception_with(player)
+	else:
+		add_collision_exception_with(player)
+
 func _on_state_changed(old_state: String, new_state: String) -> void:
 	print("[Anchalee] State: %s → %s" % [old_state, new_state])
 
@@ -478,3 +488,13 @@ func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
 	velocity.y = current_y
 	_clamp_velocity_toward_player()  # Never push the player
 	move_and_slide()
+	
+	# Track if we are touching the player during navigation movement
+	var touching = false
+	for i in get_slide_collision_count():
+		var col = get_slide_collision(i)
+		var collider = col.get_collider()
+		if is_instance_valid(collider) and collider.is_in_group("player"):
+			touching = true
+			break
+	is_touching_player = touching

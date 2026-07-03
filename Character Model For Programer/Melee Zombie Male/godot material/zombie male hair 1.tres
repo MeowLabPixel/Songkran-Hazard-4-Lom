@@ -26,7 +26,6 @@ specular_mode = 2
 albedo_texture = ExtResource("1_dxeqs")
 roughness = 0.5
 rim_enabled = true
-rim_tint = 0.8
 clearcoat = 0.43
 clearcoat_roughness = 1.0
 heightmap_scale = -5.703

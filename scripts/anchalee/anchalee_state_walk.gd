@@ -28,6 +28,9 @@ var _failed_jinks: int = 0
 
 func enter() -> void:
 	print("[Anchalee] Walk/Run")
+	if is_instance_valid(Anchalee):
+		Anchalee.set_player_collision(true)
+		
 	stuck_timer = 0.0
 	_jink_cooldown_timer = 0.0
 	_jink_angle_rad = 0.0
@@ -109,8 +112,9 @@ func physics_update(delta: float) -> void:
 	# Stop if we are close enough to the target destination (FriendArea) or if player is in friend area.
 	# However, if the player is actively moving, stay in Walk state to follow smoothly.
 	var is_player_moving = player and player.velocity.length_squared() > 0.1
-	if not is_player_moving:
-		if (dist_to_target <= Anchalee.follow_stop_distance or Anchalee.is_player_in_friend_area) and repulsion_vec.length() < 0.1:
+	var is_player_rotating = player and abs(player.get("angular_velocity")) > 0.1
+	if not is_player_moving and not is_player_rotating:
+		if (dist_to_target <= Anchalee.follow_stop_distance or Anchalee.is_player_in_friend_area or Anchalee.is_touching_player) and repulsion_vec.length() < 0.1:
 			state_machine.transition_to("AnchaleeStateIdle")
 			return
 
@@ -269,25 +273,14 @@ func _apply_clamp_and_slide_collisions(steer: Vector3) -> void:
 	Anchalee._clamp_velocity_toward_player()
 	Anchalee.move_and_slide()
 
+	var touching = false
 	for i in Anchalee.get_slide_collision_count():
 		var col = Anchalee.get_slide_collision(i)
 		var collider = col.get_collider()
 		if not is_instance_valid(collider): continue
 
 		if collider.is_in_group("player"):
-			# Only apply nudge if she is within the player's FriendNearArea
-			var is_in_near_area = false
-			var near_area = collider.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/FriendNearArea")
-			if near_area and near_area is Area3D:
-				is_in_near_area = near_area.overlaps_body(Anchalee)
-				
-			if is_in_near_area:
-				var away = (Anchalee.global_position - collider.global_position)
-				away.y = 0.0
-				if away.length() > 0.01:
-					# Add velocity value between 0.1 and 0.5 as requested
-					var strength = randf_range(0.1, 0.5)
-					Anchalee.apply_friend_nudge(away, strength)
+			touching = true
 			# Use a small jink angle near the player
 			jink_min_angle_deg = 15.0
 			jink_max_angle_deg = 30.0
@@ -296,3 +289,4 @@ func _apply_clamp_and_slide_collisions(steer: Vector3) -> void:
 			# Zombie contact — use larger jink angles
 			jink_min_angle_deg = 45.0
 			jink_max_angle_deg = 135.0
+	Anchalee.is_touching_player = touching

@@ -12,7 +12,7 @@ grow_amount = 0.003
 stencil_mode = 3
 stencil_flags = 1
 stencil_compare = 5
-stencil_reference = 3
+stencil_reference = 2
 metadata/_stencil_owned = true
 
 [resource]

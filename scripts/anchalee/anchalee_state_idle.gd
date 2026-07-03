@@ -4,6 +4,8 @@ extends AnchaleeState
 func enter() -> void:
 	print("[Anchalee] Idle")
 	Anchalee.velocity = Vector3.ZERO
+	Anchalee.set_player_collision(false)
+	
 	# Use the AnimationTree if it's set up
 	if Anchalee.has_node("AnchaleeModel/AnimationTree"):
 		var tree = Anchalee.get_node("AnchaleeModel/AnimationTree")
@@ -52,6 +54,7 @@ func physics_update(delta: float) -> void:
 		state_machine.transition_to("AnchaleeStateWalk")
 		return
 
+	# Maintain zero velocity in Idle
 	Anchalee.velocity = Vector3.ZERO
 	Anchalee.move_and_slide()
 	

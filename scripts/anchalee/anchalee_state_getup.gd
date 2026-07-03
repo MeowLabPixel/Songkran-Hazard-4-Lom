@@ -23,7 +23,9 @@ func exit() -> void:
 
 func physics_update(delta: float) -> void:
 	Anchalee.velocity = Vector3.ZERO
-	Anchalee.move_and_slide()
+	var player = Anchalee.get_player()
+	if player and player.velocity.length_squared() > 0.01:
+		Anchalee.move_and_slide()
 	
 	_timer += delta
 	if _timer > 4.0: # Fallback

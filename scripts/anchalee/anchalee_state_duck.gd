@@ -21,7 +21,9 @@ func exit() -> void:
 
 func physics_update(delta: float) -> void:
 	Anchalee.velocity = Vector3.ZERO
-	Anchalee.move_and_slide()
+	var player = Anchalee.get_player()
+	if player and player.velocity.length_squared() > 0.01:
+		Anchalee.move_and_slide()
 	
 	var should_duck = Anchalee.is_player_aiming_or_takedown() or (Anchalee.get_threat_count() >= 2 and Anchalee.roll_threat_duck())
 	if not should_duck:

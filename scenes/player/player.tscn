@@ -1427,7 +1427,7 @@ height = 0.5809326
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_ntd1s"]
 height = 1.7087402
-radius = 0.91015625
+radius = 0.6
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j55il"]
 render_priority = 1
@@ -1625,8 +1625,8 @@ margin = 0.01
 radius = 0.3
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_kb6p2"]
-margin = 0.01
-radius = 0.1
+margin = 0.001
+radius = 0.01
 
 [sub_resource type="Animation" id="Animation_kb6p2"]
 length = 0.001
@@ -2412,7 +2412,7 @@ aim_visual_offset = Vector3(0.4, 0.7, 0)
 path_desired_distance = 0.1
 target_desired_distance = 0.1
 avoidance_enabled = true
-radius = 0.23
+radius = 0.25
 avoidance_layers = 4
 avoidance_mask = 4
 
@@ -4298,7 +4298,7 @@ collision_layer = 0
 collision_mask = 4
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/spine02/Hitbox_F2" unique_id=1515902247]
-transform = Transform3D(1.0000031, 9.872019e-08, -4.172325e-07, 4.1723254e-07, 8.940866e-08, 1.0000086, 1.17346644e-07, -1.0000058, -5.364418e-07, -0.019491445, -0.10688407, -0.06766713)
+transform = Transform3D(1.0000031, 9.872019e-08, -4.172325e-07, 4.1723254e-07, 8.940866e-08, 1.0000086, 1.17346644e-07, -1.0000058, -5.364418e-07, 0, -0.107, -0.068)
 shape = SubResource("BoxShape3D_n0b8q")
 
 [node name="HitboxZone" type="Node" parent="Re4Lom Base Rig/rig/Skeleton3D/spine02/Hitbox_F2" unique_id=1312700213]
@@ -4311,7 +4311,7 @@ collision_layer = 0
 collision_mask = 4
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/spine02/Hitbox_B2" unique_id=1913926803]
-transform = Transform3D(1.0000031, 9.872019e-08, -4.172325e-07, 4.1723254e-07, 8.940939e-08, 1.0000086, 1.17346644e-07, -1.0000058, -5.364418e-07, -0.017873991, 0.10313402, -0.06766707)
+transform = Transform3D(1.0000031, 9.872019e-08, -4.172325e-07, 4.1723254e-07, 8.940939e-08, 1.0000086, 1.17346644e-07, -1.0000058, -5.364418e-07, 0, 0.103, -0.068)
 shape = SubResource("BoxShape3D_tqiix")
 
 [node name="HitboxZone" type="Node" parent="Re4Lom Base Rig/rig/Skeleton3D/spine02/Hitbox_B2" unique_id=1576455249]
@@ -4351,21 +4351,22 @@ shape = SubResource("BoxShape3D_b2wkv")
 debug_color = Color(0.70196074, 0, 0.504468, 0.41960785)
 
 [node name="FriendArea" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=936767060]
-transform = Transform3D(0.52, 0, 0, 0, 0.52, 0, 0, 0, 0.52, 0.60655826, 0.060598373, -0.21424764)
+transform = Transform3D(0.52, 0, 0, 0, 0.52, 0, 0, 0, 0.52, 0.6065583, 0.060598373, -0.49513417)
 collision_layer = 0
 collision_mask = 15
 
 [node name="FriendShape" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/FriendArea" unique_id=289154140]
-transform = Transform3D(1, 0, 4.2632564e-14, 0, 1, 0, -4.2632564e-14, 0, 1, 0, 0, 0)
+transform = Transform3D(1, 0, 4.2632564e-14, 0, 1, 0, -4.2632564e-14, 0, 1, -0.32348573, 0, 0.75712526)
 shape = SubResource("CapsuleShape3D_7crtr")
 debug_color = Color(0, 0.7019608, 0.03529412, 0.8509804)
 
 [node name="FriendNearArea" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=577899937]
-transform = Transform3D(-1, 0, 8.742277e-08, 0, 1, 0, -8.742277e-08, 0, -1, 0.52571636, 0.84679115, -0.69874567)
+transform = Transform3D(-1, 0, 8.742277e-08, 0, 1, 0, -8.742277e-08, 0, -1, 0.62884516, 0.84679115, -0.48134)
 collision_layer = 0
 collision_mask = 15
 
 [node name="NearShape" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/FriendNearArea" unique_id=2018011598]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.26574594, 0, -0.06098044)
 shape = SubResource("CylinderShape3D_ntd1s")
 debug_color = Color(0, 0.70196074, 0.00544658, 0.41960785)
 
@@ -4474,11 +4475,16 @@ rear_spring_arm = NodePath("edgeSpringArm3D/rearSpringArm3D")
 camera = NodePath("edgeSpringArm3D/rearSpringArm3D/Camera3D")
 aim_rear_spring_arm_length = 1.05
 aim_edge_spring_arm_length = 1.05
+aim_edge_spring_arm_length_left = -0.23
 aim_speed = 0.4
 aim_fov = 65.0
 sprint_fov = 65.0
 target = NodePath("../Aim_target")
 targetref = NodePath("Aim_target_ref")
+rear_collision_radius_center = 0.01
+rear_collision_radius_left = 0.01
+min_collision_distance = 0.5
+max_collision_distance = 0.8
 max_look_up = 0.5
 max_look_down = 0.5
 look_up_lift_amount = 1.0
@@ -4488,12 +4494,14 @@ aim_deadzone_down = 0.25
 
 [node name="edgeSpringArm3D" type="SpringArm3D" parent="Camera" unique_id=1838177617]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
+collision_mask = 0
 shape = SubResource("SphereShape3D_wodsf")
 
 [node name="rearSpringArm3D" type="SpringArm3D" parent="Camera/edgeSpringArm3D" unique_id=1020542489]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0.5, 0, 0)
 shape = SubResource("SphereShape3D_kb6p2")
 spring_length = 1.5
+margin = 0.001
 
 [node name="Camera3D" type="Camera3D" parent="Camera/edgeSpringArm3D/rearSpringArm3D" unique_id=1294684476]
 fov = 65.0

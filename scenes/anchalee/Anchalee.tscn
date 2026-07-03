@@ -9132,7 +9132,7 @@ floor_snap_length = 0.5
 script = ExtResource("1_ak0x7")
 max_health = 90
 follow_start_distance = 0.3
-follow_stop_distance = 0.2
+follow_stop_distance = 0.3
 aim_detect_radius = 1.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=982274225]
@@ -9141,7 +9141,7 @@ shape = SubResource("CapsuleShape3D_ak0x7")
 
 [node name="NavigationAgent3D" type="NavigationAgent3D" parent="." unique_id=1256189685]
 avoidance_enabled = true
-radius = 0.23
+radius = 0.25
 avoidance_layers = 7
 avoidance_mask = 7
 

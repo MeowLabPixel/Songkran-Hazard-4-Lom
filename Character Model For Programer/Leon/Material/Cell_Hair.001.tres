@@ -29,6 +29,7 @@ rim_tint = 1.0
 rim_texture = ExtResource("2_k2nih")
 clearcoat = 0.43
 clearcoat_roughness = 1.0
+anisotropy_flowmap = ExtResource("1_4j3dl")
 heightmap_scale = -5.703
 subsurf_scatter_strength = 1.0
 subsurf_scatter_texture = ExtResource("2_k2nih")
