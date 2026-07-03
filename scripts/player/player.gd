@@ -28,7 +28,7 @@ class_name Player extends CharacterBody3D
 var anim_playback = "parameters/Main/playback"
 
 @export_group("Data setting")
-@export var MaxHP = 100
+@export var MaxHP = 1000
 @export var hitboxF: Area3D
 @export var hitboxB: Area3D
 @export var stun_detect: Area3D

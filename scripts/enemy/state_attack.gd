@@ -36,7 +36,7 @@ var _swing_phase: SwingPhase     = SwingPhase.WINDUP
 var _current_attack_is_1: bool   = false
 var _timer: float                = 0.0
 var _anim_duration: float        = 1.85
-var _damage_dealt: bool          = false
+var _hit_entities: Array         = []
 var _hitboxes_active: bool       = false
 var _grab_made_contact: bool     = false
 var _go_knockdown_after_anim     = false
@@ -51,7 +51,7 @@ var _current_target_anim: String = ""
 
 func enter() -> void:
 	_timer             = 0.0
-	_damage_dealt      = false
+	_hit_entities.clear()
 	_hitboxes_active   = false
 	_grab_made_contact = false
 	_qte_hud           = null
@@ -342,7 +342,8 @@ func _on_qte_caught() -> void:
 		if grab_state:
 			grab_state.resolve_grab(true)
 	_qte_hud = null
-	_deal_damage(grab_damage, "grab")
+	if player:
+		_deal_damage(player, grab_damage, "grab")
 	_phase = Phase.GRAB_RESOLVING
 	
 	if enemy.anim_tree:
@@ -505,41 +506,48 @@ func _cache_hand_hitboxes() -> void:
 			hand.area_entered.connect(_on_hand_area_entered)
 
 func _on_hand_area_entered(area: Area3D) -> void:
-	var target = _get_player()
-	var is_player = target is CharacterBody3D and target.is_in_group("player")
-	
-	if is_player:
-		if not area.is_in_group("player_hitbox"):
-			return
+	if not _hitboxes_active:
+		return
+		
+	var hit_entity: Node3D = null
+	if area.is_in_group("player_hitbox"):
+		var players = enemy.get_tree().get_nodes_in_group("player")
+		if players.size() > 0: hit_entity = players[0]
 	else:
-		# Target is follower! Check if hit area is child of follower
-		var target_matched = false
 		var node = area
 		while node != null:
-			if node == target:
-				target_matched = true
+			if node.is_in_group("Anchalee"):
+				hit_entity = node
 				break
 			node = node.get_parent()
-		if not target_matched:
-			return
 			
+	if not hit_entity or _hit_entities.has(hit_entity):
+		return
+		
 	match _phase:
 		Phase.ATTACK:
-			if _hitboxes_active and not _damage_dealt:
-				print("[StateAttack] Signal hit — target attacked!")
-				_damage_dealt = true
-				_deal_damage(attack_damage, "attack")
+			print("[StateAttack] Signal hit — target attacked!")
+			_hit_entities.append(hit_entity)
+			_deal_damage(hit_entity, attack_damage, "attack")
 		Phase.GRAB_REACHING:
-			if _hitboxes_active and not _grab_made_contact:
-				var player := _get_player()
-				if player and "is_grab" in player and player.is_grab:
-					print("[StateAttack] Grab blocked — player already grabbed")
+			if not _grab_made_contact:
+				if hit_entity.is_in_group("player"):
+					if "is_grab" in hit_entity and hit_entity.is_grab:
+						print("[StateAttack] Grab blocked — player already grabbed")
+						_finish()
+						return
+					print("[StateAttack] Signal hit — grab contact on player!")
+					_grab_made_contact = true
+					_hit_entities.append(hit_entity)
+					_set_active_hitboxes(false)
+					_start_grab_hold()
+				elif hit_entity.is_in_group("Anchalee"):
+					print("[StateAttack] Signal hit — grab intercepted by Anchalee!")
+					_grab_made_contact = true
+					_hit_entities.append(hit_entity)
+					_deal_damage(hit_entity, grab_damage, "grab_intercept")
+					_set_active_hitboxes(false)
 					_finish()
-					return
-				print("[StateAttack] Signal hit — grab contact!")
-				_grab_made_contact = true
-				_set_active_hitboxes(false)
-				_start_grab_hold()
 
 func _set_active_hitboxes(enabled: bool) -> void:
 	if not enabled:
@@ -575,25 +583,15 @@ func _hand_touches_player() -> bool:
 			else:
 				var node = area
 				while node != null:
-					if node == target:
+					if node == target or node.is_in_group("Anchalee"):
 						return true
 					node = node.get_parent()
 	return false
 
-func _deal_damage(amount: int, source: String) -> void:
-	var player := _get_player()
-	if player and player.has_method("take_damage"):
-		player.take_damage(amount)
-
-	# Also damage Anchalee if she is within melee reach of this zombie
-	var anchaleees = enemy.get_tree().get_nodes_in_group("Anchalee")
-	for a in anchaleees:
-		if not is_instance_valid(a): continue
-		var dist = enemy.global_position.distance_to(a.global_position)
-		if dist <= 1.8:
-			a.take_damage(amount)
-			print("[StateAttack] %s hit Anchalee for %d damage" % [source, amount])
-	print("[StateAttack] %s dealt %d damage" % [source, amount])
+func _deal_damage(entity: Node3D, amount: int, source: String) -> void:
+	if entity and entity.has_method("take_damage"):
+		entity.take_damage(amount)
+		print("[StateAttack] %s hit %s for %d damage" % [source, entity.name, amount])
 
 func _anim_length(anim_name: String, sub_machine: String = "") -> float:
 	if enemy and enemy.anim_player and enemy.anim_player.has_animation(anim_name):

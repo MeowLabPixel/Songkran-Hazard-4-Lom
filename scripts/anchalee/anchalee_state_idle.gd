@@ -13,10 +13,23 @@ func enter() -> void:
 		if pb: pb.travel("Idle")
 
 func physics_update(delta: float) -> void:
+	if Anchalee.zombie_reaction_state == "none" and Anchalee.get_threat_count() >= 1:
+		var roll = randf()
+		if roll <= Anchalee.reaction_chance_duck:
+			Anchalee.zombie_reaction_state = "duck"
+		elif roll <= Anchalee.reaction_chance_duck + Anchalee.reaction_chance_evade:
+			Anchalee.zombie_reaction_state = "evade"
+		else:
+			Anchalee.zombie_reaction_state = "back_up"
+		Anchalee.zombie_reaction_timer = Anchalee.zombie_reaction_cooldown
+			
 	var aim_duck = Anchalee.is_player_aiming_or_takedown()
-	var threat_duck = Anchalee.get_threat_count() >= 2
-	if aim_duck or (threat_duck and Anchalee.roll_threat_duck()):
+	if aim_duck or Anchalee.zombie_reaction_state == "duck":
 		state_machine.transition_to("AnchaleeStateDuck")
+		return
+		
+	if Anchalee.zombie_reaction_state == "evade" or Anchalee.zombie_reaction_state == "back_up":
+		state_machine.transition_to("AnchaleeStateWalk")
 		return
 		
 	var target_pos = Anchalee.get_friend_target_pos()

@@ -27,6 +27,7 @@ var is_dead: bool = false
 @export_group("Following")
 @export var follow_start_distance: float = 1.3
 @export var follow_stop_distance: float = 0.85
+@export var camera_collision_avoidance_distance: float = 0.2
 @export var friend_area_push_back_offset: float = 0.8
 
 @export_group("Aim Detection")
@@ -54,18 +55,13 @@ var smoothed_target_pos: Vector3 = Vector3.ZERO
 
 var _has_rolled_takedown_duck: bool = false
 var _takedown_duck_roll: bool = false
-var _threat_duck_roll: bool = false
-var _last_threat_state: bool = false
 
-func roll_threat_duck() -> bool:
-	var current_threat_state = get_threat_count() >= 2
-	if current_threat_state != _last_threat_state:
-		_last_threat_state = current_threat_state
-		if current_threat_state:
-			_threat_duck_roll = randf() < 0.5
-		else:
-			_threat_duck_roll = false
-	return _threat_duck_roll
+var zombie_reaction_state: String = "none"
+var zombie_reaction_timer: float = 0.0
+@export var zombie_reaction_cooldown: float = 2.5
+@export var reaction_chance_duck: float = 0.30
+@export var reaction_chance_evade: float = 0.40
+# The remaining percentage will be used for "back_up"
 
 ## Set by states when Anchalee is stuck.
 var is_cornered: bool = false:
@@ -95,7 +91,7 @@ func _ready() -> void:
 	# to prevent them from colliding with player weapon raycasts and projectiles (layer = 0)
 	if threat_area:
 		threat_area.collision_layer = 0
-		threat_area.collision_mask = 1 | 8192 # Detect enemies on layer 1 & layer 14
+		threat_area.collision_mask = 1 | 4 | 8192 # Detect enemies on layer 1, layer 3 (Enemies), & layer 14
 		threat_area.body_entered.connect(_on_threat_entered)
 		threat_area.body_exited.connect(_on_threat_exited)
 	
@@ -151,10 +147,8 @@ func take_damage(amount: int, _hit_data: Dictionary = {}) -> void:
 	if is_dead:
 		return
 		
-	# Ignore damage if we are ducking or getting up
-	var current = state_machine.get_current_state_name()
-	if current in ["AnchaleeStateDuck", "AnchaleeStateGetUp"]:
-		return
+	# Immunity is now fully handled by physics layers via set_immune().
+	# If the hitboxes are hit, she takes damage.
 		
 	health -= amount
 	print("[Anchalee] Took %d damage -- HP: %d/%d" % [amount, health, max_health])
@@ -205,6 +199,13 @@ func get_player() -> Node3D:
 	if players.size() > 0:
 		return players[0]
 	return null
+
+func get_effective_follow_stop_distance() -> float:
+	var dist = follow_stop_distance
+	var player = get_player()
+	if player and player.get("camera") and player.camera.get("is_hitting_wall"):
+		dist += camera_collision_avoidance_distance
+	return dist
 
 func get_friend_target_pos() -> Vector3:
 	var player = get_player()
@@ -261,7 +262,15 @@ func _clamp_velocity_toward_player() -> void:
 			velocity -= dir * proj  # strip the component pointing at the player
 
 func _physics_process(delta: float) -> void:
+	if zombie_reaction_timer > 0.0:
+		zombie_reaction_timer -= delta
+		if zombie_reaction_timer <= 0.0:
+			zombie_reaction_state = "none"
+			
 	if is_dead: return
+	
+	if nav_agent:
+		nav_agent.target_desired_distance = get_effective_follow_stop_distance()
 	var target_pos = get_friend_target_pos()
 	if smoothed_target_pos == Vector3.ZERO:
 		smoothed_target_pos = global_position

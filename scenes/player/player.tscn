@@ -4351,22 +4351,21 @@ shape = SubResource("BoxShape3D_b2wkv")
 debug_color = Color(0.70196074, 0, 0.504468, 0.41960785)
 
 [node name="FriendArea" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=936767060]
-transform = Transform3D(0.52, 0, 0, 0, 0.52, 0, 0, 0, 0.52, 0.6065583, 0.060598373, -0.49513417)
+transform = Transform3D(0.52, 0, 0, 0, 0.52, 0, 0, 0, 0.52, 0.7956033, 0.060598373, -0.19547392)
 collision_layer = 0
 collision_mask = 15
 
 [node name="FriendShape" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/FriendArea" unique_id=289154140]
-transform = Transform3D(1, 0, 4.2632564e-14, 0, 1, 0, -4.2632564e-14, 0, 1, -0.32348573, 0, 0.75712526)
+transform = Transform3D(1, 0, 4.2632564e-14, 0, 1, 0, -4.2632564e-14, 0, 1, 0, 0, 0)
 shape = SubResource("CapsuleShape3D_7crtr")
 debug_color = Color(0, 0.7019608, 0.03529412, 0.8509804)
 
 [node name="FriendNearArea" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=577899937]
-transform = Transform3D(-1, 0, 8.742277e-08, 0, 1, 0, -8.742277e-08, 0, -1, 0.62884516, 0.84679115, -0.48134)
+transform = Transform3D(-1, 0, 8.742277e-08, 0, 1, 0, -8.742277e-08, 0, -1, 0.6288451, 0.84679115, -0.26123112)
 collision_layer = 0
 collision_mask = 15
 
 [node name="NearShape" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/FriendNearArea" unique_id=2018011598]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.26574594, 0, -0.06098044)
 shape = SubResource("CylinderShape3D_ntd1s")
 debug_color = Color(0, 0.70196074, 0.00544658, 0.41960785)
 
@@ -4481,8 +4480,9 @@ aim_fov = 65.0
 sprint_fov = 65.0
 target = NodePath("../Aim_target")
 targetref = NodePath("Aim_target_ref")
-rear_collision_radius_center = 0.01
-rear_collision_radius_left = 0.01
+rear_collision_radius_center = 0.03
+rear_collision_radius_right = 0.0
+rear_collision_radius_left = 0.0
 min_collision_distance = 0.5
 max_collision_distance = 0.8
 max_look_up = 0.5

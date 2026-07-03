@@ -38,6 +38,7 @@ var original_rear_collision_mask: int = 0
 var current_local_transform: Transform3D
 var ideal_camera_marker: Marker3D
 var auto_swapped_to_left: bool = false
+var is_hitting_wall: bool = false
 
 var camera_rotation: Vector2= Vector2.ZERO
 var target_camera_rotation: Vector2 = Vector2.ZERO
@@ -131,22 +132,27 @@ func check_auto_shoulder_swap() -> void:
 	if not character:
 		return
 		
+	var is_sprinting = false
+	var sm = character.get_node_or_null("Statemachine")
+	if sm and sm.get("current_state") and sm.current_state.name == "Sprint":
+		is_sprinting = true
+		
 	var space_state = get_world_3d().direct_space_state
 	var right_dir = character.global_transform.basis.x
 	var origin = character.global_position + Vector3(0, 1.0, 0) # Chest height
 	var target_pos = origin + right_dir * auto_swap_wall_distance
 	
 	var query = PhysicsRayQueryParameters3D.create(origin, target_pos, 1) # Layer 1
-	query.exclude = [character.get_rid()]
+	query.exclude = get_camera_exclusion_rids()
 	var result = space_state.intersect_ray(query)
 	
-	if result:
-		# Wall detected on the right
+	if result and not is_sprinting:
+		# Wall detected on the right and not sprinting
 		if current_camera_align == cameraalign.RIGHT:
 			auto_swapped_to_left = true
 			swap_camera_align()
 	else:
-		# No wall on the right
+		# No wall on the right (or player is sprinting)
 		if auto_swapped_to_left and current_camera_align == cameraalign.LEFT:
 			auto_swapped_to_left = false
 			swap_camera_align()
@@ -172,7 +178,7 @@ func _process(delta: float) -> void:
 		var desired_rear_length = base_spring_length + action_spring_length
 		var raw_hit_length = desired_rear_length
 		
-		var hit_wall = false
+		is_hitting_wall = false
 		if original_rear_collision_mask != 0 and rear_spring_arm.shape:
 			var space_state = get_world_3d().direct_space_state
 			var origin = global_transform.origin
@@ -184,17 +190,16 @@ func _process(delta: float) -> void:
 			shape_query.transform = Transform3D(global_transform.basis, origin)
 			shape_query.motion = global_transform.basis.z * desired_rear_length
 			shape_query.collision_mask = original_rear_collision_mask
-			if character:
-				shape_query.exclude = [character.get_rid()]
+			shape_query.exclude = get_camera_exclusion_rids()
 				
 			var result = space_state.cast_motion(shape_query)
 			if result.size() > 0 and result[0] < 1.0:
 				raw_hit_length = desired_rear_length * result[0]
-				hit_wall = true
+				is_hitting_wall = true
 				
 		# Only apply max limit if we are actively hitting a wall. 
 		# This prevents the max zoom limit from capping normal gameplay distance.
-		if hit_wall:
+		if is_hitting_wall:
 			collision_target_length = clamp(raw_hit_length, min_collision_distance, max_collision_distance)
 		else:
 			collision_target_length = max(raw_hit_length, min_collision_distance)
@@ -330,7 +335,19 @@ func update_collision_radius() -> void:
 					rear_spring_arm.shape.radius = rear_collision_radius_right
 				cameraalign.LEFT:
 					rear_spring_arm.shape.radius = rear_collision_radius_left
-	
+
+func get_camera_exclusion_rids() -> Array[RID]:
+	var excludes: Array[RID] = []
+	if character:
+		excludes.append(character.get_rid())
+		
+	var anchalees = get_tree().get_nodes_in_group("Anchalee")
+	for anchalee in anchalees:
+		if anchalee is CollisionObject3D:
+			excludes.append(anchalee.get_rid())
+			
+	return excludes
+
 func set_rear_spring_pos(pos: float, speed: float)-> void:
 	if camera_tween:
 		camera_tween.kill()

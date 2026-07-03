@@ -16,6 +16,12 @@ func enter() -> void:
 
 func physics_update(delta: float) -> void:
 	_timer += delta
+	
+	# Ensure she cannot move or slide while playing hit animation
+	var current_y = Anchalee.velocity.y
+	Anchalee.velocity = Vector3(0, current_y, 0)
+	Anchalee.move_and_slide()
+	
 	# Fallback timer in case AnimationTree state tracking is tricky.
 	if _timer > 1.5:
 		state_machine.transition_to("AnchaleeStateIdle")

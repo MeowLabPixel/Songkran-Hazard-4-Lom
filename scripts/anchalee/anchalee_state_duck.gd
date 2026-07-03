@@ -25,7 +25,8 @@ func physics_update(delta: float) -> void:
 	if player and player.velocity.length_squared() > 0.01:
 		Anchalee.move_and_slide()
 	
-	var should_duck = Anchalee.is_player_aiming_or_takedown() or (Anchalee.get_threat_count() >= 2 and Anchalee.roll_threat_duck())
+	var is_zombie_near = Anchalee.zombie_reaction_state == "duck" or Anchalee.get_threat_count() > 0
+	var should_duck = Anchalee.is_player_aiming_or_takedown() or is_zombie_near
 	if not should_duck:
 		if Anchalee.has_node("AnchaleeModel/AnimationTree"):
 			var tree = Anchalee.get_node("AnchaleeModel/AnimationTree")
