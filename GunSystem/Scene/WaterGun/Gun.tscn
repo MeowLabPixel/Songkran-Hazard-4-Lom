@@ -845,6 +845,7 @@ max_water = 200.0
 current_water = 200.0
 
 [node name="Pistol" type="Node3D" parent="." unique_id=1327767996 node_paths=PackedStringArray("spawn_point")]
+visible = false
 script = ExtResource("1_nbubd")
 spawn_point = NodePath("Gunfix/SpawnPoint")
 shot_vfx_scene = ExtResource("2_n8a5k")
@@ -950,7 +951,6 @@ transform = Transform3D(-0.8, 0, 1.9079806e-08, 0, 0.8, 0, -1.9079806e-08, 0, -0
 
 [node name="Sniper" type="Node3D" parent="." unique_id=1877853685 node_paths=PackedStringArray("spawn_point")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.40737915, 0)
-visible = false
 script = ExtResource("6_8ckxr")
 gun_name = "Water sniper"
 spawn_point = NodePath("SpawnPoint")
@@ -974,7 +974,7 @@ max_spread = 1.0
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0.24847764, 0.12537766)
 
 [node name="Reload Handle" type="MeshInstance3D" parent="Sniper/RifleGunfix" unique_id=1427744831]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.14637032, 0.025673544)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.021835344, 0.14637032, 0.21580091)
 mesh = SubResource("ArrayMesh_glx17")
 surface_material_override/0 = SubResource("StandardMaterial3D_vauwm")
 
@@ -987,6 +987,7 @@ mesh = SubResource("ArrayMesh_q8m8p")
 surface_material_override/0 = SubResource("StandardMaterial3D_vauwm")
 
 [node name="Scope" type="MeshInstance3D" parent="Sniper/RifleGunfix" unique_id=918022664]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.9638047e-08, 0, 0.33901978)
 mesh = SubResource("ArrayMesh_h72pr")
 surface_material_override/0 = SubResource("StandardMaterial3D_vauwm")
 
