@@ -128,6 +128,8 @@ func _ready() -> void:
 	set_collision_mask_value(2, true)
 	# Set Mask 5 (value 16) to ensure zombies collide with Anchalee (Follower)
 	set_collision_mask_value(5, true)
+	# Set Mask 1 (value 1) to ensure zombies collide with the environment/floor
+	set_collision_mask_value(1, true)
 
 
 	# ── Navigation Avoidance Setup ─────────────────────────────────────────────

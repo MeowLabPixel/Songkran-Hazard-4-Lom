@@ -50,6 +50,7 @@ var _current_target_anim: String = ""
 
 
 func enter() -> void:
+	print("[StateAttack] Enter called for: ", enemy.name if enemy else "null")
 	_timer             = 0.0
 	_hit_entities.clear()
 	_hitboxes_active   = false
@@ -72,10 +73,20 @@ func enter() -> void:
 
 	var token_manager = enemy.get_node("/root/AttackTokenManager")
 	var player := _get_player()
+	
+	# Reset QTE anim tree conditions from previous grabs
+	if enemy and enemy.anim_tree and enemy.anim_tree.active:
+		if "parameters/attack/grab/conditions/Fail" in enemy.anim_tree:
+			enemy.anim_tree.set("parameters/attack/grab/conditions/Fail", false)
+		if "parameters/attack/grab/conditions/Success" in enemy.anim_tree:
+			enemy.anim_tree.set("parameters/attack/grab/conditions/Success", false)
+	print("[StateAttack] Grab check for ", enemy.name, " | player: ", player, " | player.is_grab: ", player.is_grab if player else "null", " | attack_to_run: ", attack_to_run)
 	if player and "is_grab" in player and player.is_grab:
 		_start_attack_with_index(0)
 	elif attack_to_run == "attack_grab":
-		if token_manager.request_grab_token(enemy):
+		var can_grab = token_manager.request_grab_token(enemy)
+		print("[StateAttack] Grab token request for ", enemy.name, ": ", can_grab, " | active_grabbers: ", token_manager._active_grabbers.map(func(e): return e.name if is_instance_valid(e) else "null"))
+		if can_grab:
 			_start_grab_reach()
 		else:
 			# Fallback if grab token denied
@@ -137,6 +148,7 @@ func enter() -> void:
 			_start_attack_with_index(index)
 
 func exit() -> void:
+	print("[StateAttack] Exit called for: ", enemy.name if enemy else "null")
 	var nav_agent = enemy.get_node_or_null("NavigationAgent3D") as NavigationAgent3D
 	if nav_agent:
 		nav_agent.avoidance_enabled = true
@@ -179,6 +191,10 @@ func physics_update(delta: float) -> void:
 		Phase.DONE:           pass
 
 func handle_hit(hit_data: Dictionary) -> String:
+	# Ignore all stagger/hit reactions if currently grabbing the player!
+	if _phase == Phase.GRAB_HOLDING or _phase == Phase.GRAB_RESOLVING:
+		return ""
+		
 	var zone: String = hit_data.get("hit_zone", "body")
 	match zone:
 		"head", "foot", "left_foot", "right_foot":
@@ -573,6 +589,9 @@ func _hand_touches_player() -> bool:
 	var target = _get_player()
 	var is_player = target is CharacterBody3D and target.is_in_group("player")
 	
+	if is_player and "is_grab" in target and target.is_grab:
+		return false
+	
 	for hitbox in [_hand_left, _hand_right]:
 		if not (hitbox and hitbox.monitoring):
 			continue
@@ -630,4 +649,7 @@ func _dismiss_qte() -> void:
 	if player:
 		var sm = player.get_node_or_null("Statemachine")
 		if sm and sm.current_state and sm.current_state.name == "Grab":
-			sm._change_state("Aim" if player.is_aimming else "Idle")
+			# Only abort the player's Grab state if they are still stuck in the QTE loop.
+			# If is_exiting is true, they are playing the Win or Fail animation, so let them finish it.
+			if not sm.current_state.get("is_exiting"):
+				sm._change_state("Aim" if player.is_aimming else "Idle")

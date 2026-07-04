@@ -49,10 +49,12 @@ func exit() -> void:
 
 func physics_update(delta: float) -> void:
 	if Anchalee.zombie_reaction_state == "none" and Anchalee.get_threat_count() >= 1:
+		var threats = Anchalee.get_threat_count()
+		var duck_chance = Anchalee.reaction_chance_duck if threats >= 2 else 0.0
 		var roll = randf()
-		if roll <= Anchalee.reaction_chance_duck:
+		if roll <= duck_chance:
 			Anchalee.zombie_reaction_state = "duck"
-		elif roll <= Anchalee.reaction_chance_duck + Anchalee.reaction_chance_evade:
+		elif roll <= duck_chance + Anchalee.reaction_chance_evade:
 			Anchalee.zombie_reaction_state = "evade"
 		else:
 			Anchalee.zombie_reaction_state = "back_up"

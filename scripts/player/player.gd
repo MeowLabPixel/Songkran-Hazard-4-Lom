@@ -550,8 +550,8 @@ func _physics_process(_delta: float) -> void:
 		quick_turn_cooldown -= _delta
 		
 	var sm = get_node_or_null("Statemachine")
-	if sm and sm.current_state and sm.current_state.name == "Reload":
-		# Completely disable WASD sliding/movement during reload (keep gravity)
+	if sm and sm.current_state and sm.current_state.name in ["Reload", "Grab"]:
+		# Completely disable WASD sliding/movement during reload and grab (keep gravity)
 		velocity.x = 0.0
 		velocity.z = 0.0
 		

@@ -11,14 +11,14 @@ extends EnemyState
 @export var walk_back_speed_multiplier: float = 0.8
 
 @export_group("Animation Timescales")
-@export var walk_timescale: float = 2.0
+@export var walk_timescale: float = 1.0
 @export var walk_back_timescale: float = -2.0
 
 @export var stun_recovery_pause: float = 0.5
 
 @export_group("Hunt Sprint")
 @export var sprint_speed: float = 4.0
-@export var sprint_timescale: float = 4.0
+@export var sprint_timescale: float = 2.0
 @export var sprint_duration_min: float = 1.5
 @export var sprint_duration_max: float = 2.5
 @export var sprint_cooldown_min: float = 3.0
@@ -317,11 +317,20 @@ func physics_update(_delta: float) -> void:
 				enemy.selected_attack_type = _selected_attack
 			
 			# Set the animation tree Transition parameter
+			# Always use attack_1 or attack_2 walk variant (never attack_grab)
+			var walk_transition = _selected_attack
+			if walk_transition == "attack_grab":
+				# Use a normal attack walk animation for grab prep
+				var last_attack = enemy.last_normal_attack if enemy else ""
+				if last_attack == "attack_1":
+					walk_transition = "attack_2"
+				else:
+					walk_transition = "attack_1"
 			if enemy.anim_tree and enemy.anim_tree.active:
 				if "parameters/Walk Zombie/Transition/transition_request" in enemy.anim_tree:
 					enemy.anim_tree.set("parameters/Walk Zombie/Transition/transition_request", "default")
-					enemy.anim_tree.set("parameters/Walk Zombie/Transition/transition_request", _selected_attack)
-					print("[StateHunt] Set Walk transition request to: ", _selected_attack)
+					enemy.anim_tree.set("parameters/Walk Zombie/Transition/transition_request", walk_transition)
+					print("[StateHunt] Set Walk transition request to: ", walk_transition, " (attack: ", _selected_attack, ")")
 					
 			_token_hold_elapsed = 0.0
 			print("[StateHunt] %s received token. Selected: %s." % [enemy.name, _selected_attack])
@@ -431,17 +440,14 @@ func _play_anim(anim_name: String, sub_machine: String = "") -> void:
 	
 	var pb = enemy.anim_tree.get("parameters/playback")
 	if pb and pb.get_current_node() == anim_name:
-		# Keep AnimationPlayer speed_scale updated even if we are already in the same state
-		if enemy.anim_player and not _is_fleeing:
-			var speed_scale = sprint_timescale if is_sprinting else walk_timescale
-			enemy.anim_player.speed_scale = speed_scale
+		# Keep TimeScale_Output updated even if we are already in the same state
+		if not _is_fleeing:
+			_apply_timescale()
 		return
 	
-	if enemy and enemy.anim_player:
-		# Always reset speed_scale to normal forward speed unless fleeing/walking back
-		if not _is_fleeing:
-			var speed_scale = sprint_timescale if is_sprinting else walk_timescale
-			enemy.anim_player.speed_scale = speed_scale
+	# Apply timescale via AnimationTree parameter
+	if not _is_fleeing:
+		_apply_timescale()
 	
 	super._play_anim(anim_name, sub_machine)
 
@@ -526,10 +532,17 @@ func _end_sprint() -> void:
 	_update_walk_timescale()
 
 func _update_walk_timescale() -> void:
+	if not _is_fleeing:
+		_apply_timescale()
+
+func _apply_timescale() -> void:
+	if enemy and enemy.anim_tree and enemy.anim_tree.active:
+		var scale = sprint_timescale if is_sprinting else walk_timescale
+		if "parameters/Walk Zombie/TimeScale_Output/scale" in enemy.anim_tree:
+			enemy.anim_tree.set("parameters/Walk Zombie/TimeScale_Output/scale", scale)
+	# Keep anim_player speed_scale at 1.0 since TimeScale_Output handles it
 	if enemy and enemy.anim_player:
-		if not _is_fleeing:
-			var speed_scale = sprint_timescale if is_sprinting else walk_timescale
-			enemy.anim_player.speed_scale = speed_scale
+		enemy.anim_player.speed_scale = 1.0
 
 func _get_target_position() -> Vector3:
 	var player := _get_player()

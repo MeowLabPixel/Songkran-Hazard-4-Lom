@@ -372,7 +372,7 @@ func get_threat_count() -> int:
 				if sm and sm.current_state:
 					var state_name = sm.current_state.name.to_lower()
 					# Exclude defeated, hit, push, stun, takedown, knockdown, and getup states
-					if "defeated" in state_name or "stun" in state_name or "push" in state_name or "takedown" in state_name or "knockdown" in state_name or "getup" in state_name or "get_up" in state_name:
+					if "hit" in state_name or "defeated" in state_name or "stun" in state_name or "push" in state_name or "takedown" in state_name or "knockdown" in state_name or "getup" in state_name or "get_up" in state_name:
 						is_active_threat = false
 			
 			if is_active_threat:

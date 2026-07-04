@@ -2,7 +2,6 @@ extends State
 
 @export var push_speed: float = 4.0
 @export var push_duration: float = 0.5
-@export var stun_duration: float = 1.0
 
 @export_group("Camera Adjustments")
 @export var hit_cam_offset: float = -1.5
@@ -15,6 +14,7 @@ var elapsed_time: float = 0.0
 var direction: Vector3 = Vector3.ZERO
 var velocity: Vector3 = Vector3.ZERO
 var camera_raised: bool = false
+var _anim_finished: bool = false
 
 func _enter() -> void:
 	print(name)
@@ -25,6 +25,7 @@ func _enter() -> void:
 	owner.is_stunned = true
 	elapsed_time = 0.0
 	camera_raised = false
+	_anim_finished = false
 	
 	# Apply damage if not already done by take_damage
 	if not owner.hit_damage_already_applied:
@@ -61,12 +62,23 @@ func _enter() -> void:
 			cam.set_action_pitch(hit_cam_pitch, hit_cam_duration_down)
 		if cam.has_method("set_action_spring_length"):
 			cam.set_action_spring_length(hit_cam_spring_offset, hit_cam_duration_down)
+	
+	# Listen for animation end to transition immediately
+	if not owner.anim.animation_finished.is_connected(_on_hit_anim_finished):
+		owner.anim.animation_finished.connect(_on_hit_anim_finished)
+
+func _on_hit_anim_finished(_anim_name: String) -> void:
+	_anim_finished = true
 
 func _exit() -> void:
 	owner.Hit_info.location = null
 	owner.Hit_info.bullet = null
 	owner.hit_damage_already_applied = false
 	owner.is_stunned = false
+	
+	# Disconnect animation callback
+	if owner.anim and owner.anim.animation_finished.is_connected(_on_hit_anim_finished):
+		owner.anim.animation_finished.disconnect(_on_hit_anim_finished)
 	
 	# Failsafe camera reset
 	var cam = owner.camera
@@ -111,8 +123,8 @@ func _update(delta: float) -> void:
 		
 	owner.velocity = velocity
 	
-	# Transition back to Idle after stun_duration is reached
-	if elapsed_time >= stun_duration:
+	# Transition back to Idle when animation finishes
+	if _anim_finished:
 		finished.emit("Idle")
 
 func stop_moving() -> void:

@@ -35,6 +35,7 @@ func enter() -> void:
 		enemy.velocity = Vector3.ZERO
 		enemy.move_and_slide()
 		enemy.show() # Ensure the enemy is visible when re-pooling/starting
+		enemy.set_collision_mask_value(1, false)
 		
 	print("[StateDefeated] Enemy defeated!")
 	

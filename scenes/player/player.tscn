@@ -1735,6 +1735,7 @@ loop_mode = 0
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_3dxkp"]
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_6wior"]
+graph_offset = Vector2(69.6, 58.4)
 nodes/output/position = Vector2(592, 192)
 nodes/Animation/node = SubResource("AnimationNodeAnimation_a1u5o")
 nodes/Animation/position = Vector2(167.2, 159.6)
@@ -1745,7 +1746,7 @@ node_connections = [&"output", 0, &"TimeScale", &"TimeScale", 0, &"Animation"]
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_gswnw"]
 animation = &"Grab/HIT Rightleg act 5 (get_up )"
 use_custom_timeline = true
-timeline_length = 0.8
+timeline_length = 0.55
 stretch_time_scale = false
 start_offset = 0.45
 loop_mode = 0
@@ -1761,7 +1762,7 @@ advance_mode = 2
 "states/Grab_getup - 1/node" = SubResource("AnimationNodeAnimation_gswnw")
 "states/Grab_getup - 1/position" = Vector2(466, 90.4)
 transitions = ["Start", "Grab_getup - 1", SubResource("AnimationNodeStateMachineTransition_jfgyi"), "Grab_getup - 1", "End", SubResource("AnimationNodeStateMachineTransition_n0b8q")]
-graph_offset = Vector2(33.15973, -56)
+graph_offset = Vector2(153.15973, -44)
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_vgvch"]
 animation = &"Grab/Grab loop"
@@ -1774,6 +1775,8 @@ advance_mode = 2
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_onxu2"]
 xfade_time = 0.2
+break_loop_at_end = true
+advance_mode = 0
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_gci7n"]
 xfade_time = 0.2
@@ -1785,11 +1788,10 @@ xfade_time = 0.3
 switch_mode = 2
 advance_mode = 2
 
-[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_jfgxe"]
-xfade_time = 0.2
-
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_nxclr"]
 xfade_time = 0.2
+break_loop_at_end = true
+advance_mode = 0
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_tcwf7"]
 xfade_time = 0.5
@@ -1798,18 +1800,18 @@ advance_mode = 2
 
 [sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_1s1yo"]
 states/Fail/node = SubResource("AnimationNodeBlendTree_6wior")
-states/Fail/position = Vector2(427.8678, -53.982414)
+states/Fail/position = Vector2(427.8678, -54.782413)
 "states/Fail og/node" = SubResource("AnimationNodeAnimation_art4l")
 "states/Fail og/position" = Vector2(710.5333, -74.40001)
 states/Getup/node = SubResource("AnimationNodeStateMachine_wpyo2")
-states/Getup/position = Vector2(638.8, 42.399994)
+states/Getup/position = Vector2(638.8, 41.599995)
 states/Grab/node = SubResource("AnimationNodeAnimation_vgvch")
 states/Grab/position = Vector2(325.2, 86.4)
 states/Start/position = Vector2(199.2, 99.968)
 states/Win/node = SubResource("AnimationNodeAnimation_3dxkp")
 states/Win/position = Vector2(497.19998, 192.79999)
-transitions = ["Start", "Grab", SubResource("AnimationNodeStateMachineTransition_lufic"), "Grab", "Win", SubResource("AnimationNodeStateMachineTransition_onxu2"), "Win", "End", SubResource("AnimationNodeStateMachineTransition_gci7n"), "Getup", "End", SubResource("AnimationNodeStateMachineTransition_20bc7"), "Grab", "End", SubResource("AnimationNodeStateMachineTransition_jfgxe"), "Grab", "Fail", SubResource("AnimationNodeStateMachineTransition_nxclr"), "Fail", "Getup", SubResource("AnimationNodeStateMachineTransition_tcwf7")]
-graph_offset = Vector2(221.4678, -110.382416)
+transitions = ["Start", "Grab", SubResource("AnimationNodeStateMachineTransition_lufic"), "Grab", "Win", SubResource("AnimationNodeStateMachineTransition_onxu2"), "Win", "End", SubResource("AnimationNodeStateMachineTransition_gci7n"), "Getup", "End", SubResource("AnimationNodeStateMachineTransition_20bc7"), "Grab", "Fail", SubResource("AnimationNodeStateMachineTransition_nxclr"), "Fail", "Getup", SubResource("AnimationNodeStateMachineTransition_tcwf7")]
+graph_offset = Vector2(115.467804, -6.382416)
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_p5tca"]
 animation = &"Dead/Ded"
@@ -1850,7 +1852,7 @@ states/Hit_Back/position = Vector2(499.88968, 150)
 states/Hit_Front/node = SubResource("AnimationNodeAnimation_jfgxe")
 states/Hit_Front/position = Vector2(512.08966, 73.399994)
 transitions = ["Start", "Hit_Front", SubResource("AnimationNodeStateMachineTransition_yg0n1"), "Hit_Front", "End", SubResource("AnimationNodeStateMachineTransition_qjt2w"), "Start", "Hit_Back", SubResource("AnimationNodeStateMachineTransition_2lfai"), "Hit_Back", "End", SubResource("AnimationNodeStateMachineTransition_j3o0i")]
-graph_offset = Vector2(185.08966, -14)
+graph_offset = Vector2(149.08966, -56)
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_dx5ib"]
 animation = &"gun_aim/shot"
@@ -2346,7 +2348,7 @@ states/Start/position = Vector2(67.2, 55.2)
 states/Takedown/node = SubResource("AnimationNodeStateMachine_a1u5o")
 states/Takedown/position = Vector2(675.2, 130.064)
 transitions = ["Start", "Idle", SubResource("AnimationNodeStateMachineTransition_35wys"), "Idle", "Run", SubResource("AnimationNodeStateMachineTransition_pjwc4"), "Run", "Idle", SubResource("AnimationNodeStateMachineTransition_or4qq"), "Idle", "Aim", SubResource("AnimationNodeStateMachineTransition_hggc2"), "Aim", "Idle", SubResource("AnimationNodeStateMachineTransition_b2j0d"), "QT", "Idle", SubResource("AnimationNodeStateMachineTransition_55jnj"), "Idle", "QT", SubResource("AnimationNodeStateMachineTransition_xcnuv"), "Aim", "Reload", SubResource("AnimationNodeStateMachineTransition_s3g0c"), "Run", "Reload", SubResource("AnimationNodeStateMachineTransition_7l6ig"), "Idle", "Reload", SubResource("AnimationNodeStateMachineTransition_utr5e"), "Reload", "Idle", SubResource("AnimationNodeStateMachineTransition_kewli"), "Idle", "Takedown", SubResource("AnimationNodeStateMachineTransition_kcq4v"), "Run", "Takedown", SubResource("AnimationNodeStateMachineTransition_qavcc"), "Takedown", "Idle", SubResource("AnimationNodeStateMachineTransition_bd26m"), "Run", "Aim", SubResource("AnimationNodeStateMachineTransition_237xx"), "Aim", "QT", SubResource("AnimationNodeStateMachineTransition_gswnw"), "Run", "QT", SubResource("AnimationNodeStateMachineTransition_j55il"), "QT", "Run", SubResource("AnimationNodeStateMachineTransition_wpyo2"), "QT", "Aim", SubResource("AnimationNodeStateMachineTransition_a1u5o"), "Reload", "Aim", SubResource("AnimationNodeStateMachineTransition_2s0vo"), "Start", "Aim", SubResource("AnimationNodeStateMachineTransition_hgm8h")]
-graph_offset = Vector2(-78.13757, -45.03647)
+graph_offset = Vector2(2.8624268, -6.0364685)
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_j3r50"]
 priority = 0
@@ -2374,14 +2376,14 @@ advance_mode = 2
 states/Die/node = SubResource("AnimationNodeAnimation_2uvqg")
 states/Die/position = Vector2(559, 76.12591)
 states/Grab/node = SubResource("AnimationNodeStateMachine_1s1yo")
-states/Grab/position = Vector2(333.24115, 230.32591)
+states/Grab/position = Vector2(333.41266, 230.32591)
 states/Hit/node = SubResource("AnimationNodeStateMachine_7crtr")
 states/Hit/position = Vector2(333.25552, -3.0740929)
 states/Main/node = SubResource("AnimationNodeStateMachine_7l6ig")
 states/Main/position = Vector2(333.20343, 94.52592)
 states/Start/position = Vector2(202.4, 100)
 transitions = ["Start", "Main", SubResource("AnimationNodeStateMachineTransition_j3r50"), "Main", "Hit", SubResource("AnimationNodeStateMachineTransition_do7qw"), "Hit", "Main", SubResource("AnimationNodeStateMachineTransition_2h6tc"), "Main", "Die", SubResource("AnimationNodeStateMachineTransition_8rogd"), "Grab", "Main", SubResource("AnimationNodeStateMachineTransition_48p26"), "Main", "Grab", SubResource("AnimationNodeStateMachineTransition_anp34")]
-graph_offset = Vector2(-64.91173, -37.842514)
+graph_offset = Vector2(-24.911728, -8.842514)
 
 [node name="player" type="CharacterBody3D" unique_id=324464419 node_paths=PackedStringArray("aim_bone", "aim_bone2", "anim", "hitboxF", "hitboxB", "stun_detect", "pickup_detect", "gun_controller")]
 collision_layer = 42
@@ -2444,7 +2446,6 @@ script = ExtResource("9_wodsf")
 
 [node name="Grab" type="Node" parent="Statemachine" unique_id=1256774596]
 script = ExtResource("10_32hag")
-post_grab_delay = 0.2
 qte_lose_cam_pitch = 5.0
 qte_lose_cam_spring_offset = 0.5
 qte_lose_cam_duration_up = 0.3
@@ -4030,7 +4031,7 @@ bones/221/rotation = Quaternion(-0.019959828, 1.1725697e-10, -0.11792231, 0.9928
 bones/221/scale = Vector3(1, 0.99999994, 1)
 
 [node name="Cloth_Body" type="MeshInstance3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=775664311]
-transform = Transform3D(0.94, 0, 0, 0, 0.999, 0, 0, 0, 0.9, 0, 0, 0.01)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.01)
 mesh = SubResource("ArrayMesh_oncp1")
 skin = SubResource("Skin_a128k")
 skeleton = NodePath("..")
@@ -4040,7 +4041,6 @@ metadata/extras = {
 }
 
 [node name="Cloth_Body_001" type="MeshInstance3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=742768458]
-transform = Transform3D(1.06, 0, 0, 0, 1, 0, 0, 0, 1.05, 0, 0, 0)
 mesh = SubResource("ArrayMesh_23h16")
 skin = SubResource("Skin_a128k")
 skeleton = NodePath("..")

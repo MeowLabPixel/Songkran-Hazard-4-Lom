@@ -121,11 +121,25 @@ func _update_token_assignments() -> void:
 	_assigned_tokens = new_assignments
 	
 	# Prune grabbers
-	_active_grabbers = _active_grabbers.filter(func(e): return is_instance_valid(e) and not e.is_defeated and e.state_machine and e.state_machine.current_state and e.state_machine.current_state.name == "StateAttack")
+	_active_grabbers = _active_grabbers.filter(_is_grabber_active)
+
+func _is_grabber_active(e: Node) -> bool:
+	if not is_instance_valid(e) or e.is_defeated:
+		return false
+	var sm = e.state_machine
+	if not sm or not sm.current_state or sm.current_state.name != "StateAttack":
+		return false
+	var attack_state = sm.current_state
+	if "_phase" in attack_state:
+		# Phase.ATTACK = 0, Phase.DONE = 4. We only keep if GRAB_REACHING (1), GRAB_HOLDING (2), or GRAB_RESOLVING (3)
+		var phase = attack_state._phase
+		if phase == 0 or phase == 4:
+			return false
+	return true
 
 ## Requests a grab token specifically (1 concurrent grab max).
 func request_grab_token(enemy: EnemyBase) -> bool:
-	_active_grabbers = _active_grabbers.filter(func(e): return is_instance_valid(e) and not e.is_defeated)
+	_active_grabbers = _active_grabbers.filter(_is_grabber_active)
 	
 	if not is_instance_valid(enemy) or enemy.is_defeated:
 		return false
@@ -135,9 +149,21 @@ func request_grab_token(enemy: EnemyBase) -> bool:
 		
 	if _active_grabbers.size() < MAX_GRAB_TOKENS:
 		_active_grabbers.append(enemy)
-		print("[AttackTokenManager] Granted grab token to: ", enemy.name)
+		print("[AttackTokenManager] Granted grab token to: ", enemy.name, " | Active grabbers count: ", _active_grabbers.size())
 		return true
 		
+	print("[AttackTokenManager] Denied grab token to: ", enemy.name)
+	for g in _active_grabbers:
+		if is_instance_valid(g):
+			var state_name = "null"
+			var phase_val = "null"
+			var sm = g.state_machine
+			if sm and sm.current_state:
+				state_name = sm.current_state.name
+				var cur_state = sm.current_state
+				if "_phase" in cur_state:
+					phase_val = str(cur_state._phase)
+			print("  Active grabber: ", g.name, " | State: ", state_name, " | Phase: ", phase_val)
 	return false
 
 ## Explicit release helper
@@ -149,4 +175,4 @@ func release_token(enemy: EnemyBase) -> void:
 		
 	if _active_grabbers.has(enemy):
 		_active_grabbers.erase(enemy)
-		print("[AttackTokenManager] Explicitly released grab token from: ", enemy.name)
+		print("[AttackTokenManager] Explicitly released grab token from: ", enemy.name, " | Active grabbers count: ", _active_grabbers.size())
