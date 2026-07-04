@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://ccsuw6xsbxf1o"
-path="res://.godot/imported/Gun_Optimized.fbx-0ee6ca17db4b82e0ea511d1f501a5972.scn"
+uid="uid://c2u0vwgvfbvxx"
+path="res://.godot/imported/RifleGunfix.glb-5c141bc3ad7806fb811f6b3459acfba8.scn"
 
 [deps]
 
-source_file="res://Water Gun Glock/Gun_Optimized.fbx"
-dest_files=["res://.godot/imported/Gun_Optimized.fbx-0ee6ca17db4b82e0ea511d1f501a5972.scn"]
+source_file="res://Water Gun Rifle/RifleGunfix.glb"
+dest_files=["res://.godot/imported/RifleGunfix.glb-5c141bc3ad7806fb811f6b3459acfba8.scn"]
 
 [params]
 
@@ -19,11 +19,11 @@ nodes/root_script=null
 mesh_library/use_node_names_as_mesh_names=false
 array_mesh/deduplicate_surfaces=true
 nodes/apply_root_scale=true
-nodes/root_scale=0.1
+nodes/root_scale=1.0
 nodes/import_as_skeleton_bones=false
 nodes/use_name_suffixes=true
 nodes/use_node_type_suffixes=true
-meshes/ensure_tangents=false
+meshes/ensure_tangents=true
 meshes/generate_lods=true
 meshes/create_shadow_meshes=true
 meshes/light_baking=1
@@ -32,23 +32,14 @@ meshes/force_disable_compression=false
 skins/use_named_skins=true
 animation/import=true
 animation/fps=30
-animation/trimming=true
+animation/trimming=false
 animation/remove_immutable_tracks=true
 animation/import_rest_as_RESET=false
 import_script/path=""
 materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
-_subresources={
-"materials": {
-"WaterGun": {
-"use_external/enabled": true,
-"use_external/fallback_path": "res://Water Gun Glock/Pistol.tres",
-"use_external/path": "uid://c0iywywg2ojw3"
-}
-}
-}
-fbx/importer=0
-fbx/allow_geometry_helper_nodes=false
-fbx/embedded_image_handling=1
-fbx/naming_version=2
+_subresources={}
+gltf/naming_version=2
+gltf/embedded_image_handling=1
+gltf/texture_map_mode=1

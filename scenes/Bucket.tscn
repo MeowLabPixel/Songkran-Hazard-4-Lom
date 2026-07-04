@@ -5,6 +5,21 @@
 [ext_resource type="PackedScene" uid="uid://cwgdfnitjjkj3" path="res://Water Gun Shotty/shotty optimized.fbx" id="3_po8qe"]
 [ext_resource type="Script" uid="uid://c7mda0yfgwyj5" path="res://scripts/GunShop.gd" id="4_iucn1"]
 [ext_resource type="PackedScene" uid="uid://lgnndwwo3bkc" path="res://Water Gun Rifle/rifle_optimized.fbx" id="4_viw6p"]
+[ext_resource type="Texture2D" uid="uid://t50h4u1pmy1b" path="res://Water Gun Shotty/openPBR_shader1_Base_color.png" id="5_dtv1k"]
+[ext_resource type="Texture2D" uid="uid://dhdko6m4jh7t0" path="res://Water Gun Rifle/openPBR_shader1_Base_color.png" id="7_b4luq"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_viw6p"]
+sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+
+[sub_resource type="Sky" id="Sky_iucn1"]
+sky_material = SubResource("ProceduralSkyMaterial_viw6p")
+
+[sub_resource type="Environment" id="Environment_dtv1k"]
+background_mode = 2
+sky = SubResource("Sky_iucn1")
+tonemap_mode = 2
+glow_enabled = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jdeer"]
 resource_name = "water bucket"
@@ -77,33 +92,55 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_hef8h")
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_aw1xa"]
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_iucn1"]
+noise_type = 3
+fractal_octaves = 1
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_viw6p"]
+noise = SubResource("FastNoiseLite_iucn1")
+seamless = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5y8qt"]
 render_priority = 0
 shader = ExtResource("2_fy2sx")
-shader_parameter/wave_0 = Vector4(0.1, 0.1, 2, 0)
-shader_parameter/wave_1 = Vector4(0.1, 0.1, 2, 2.5)
-shader_parameter/wave_2 = Vector4(0.1, 0.1, 2, 5)
-shader_parameter/wave_3 = Vector4(0.1, 0.1, 2, 8)
-shader_parameter/noise_scale = 6.2230002955925
-shader_parameter/noise_strength = 0.39200001862
-shader_parameter/albedo = Color(0.22745098, 0.5568628, 0.92941177, 0.8)
-shader_parameter/metallic = 0.0
-shader_parameter/roughness = 0.0
-shader_parameter/water_level = 0.0
-shader_parameter/edge_threshold = 0.1
-shader_parameter/edge_softness = 0.5
-shader_parameter/foam_color = Color(0.33525032, 0.56957483, 1, 1)
+shader_parameter/time_speed = 0.1
+shader_parameter/surface_speed = 1.0
+shader_parameter/spin = 0.0
+shader_parameter/brightness = 0.6
+shader_parameter/color_intensity = 0.0
+shader_parameter/horizontal_frequency = 5.0
+shader_parameter/vertical_frequency = 2.0
+shader_parameter/size = 1.5350000000000001
+shader_parameter/banding_bias = 0.52
+shader_parameter/wave_texture = SubResource("NoiseTexture2D_viw6p")
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_viw6p")
+shader_parameter/wave_height = 0.5
+shader_parameter/texture_height = 0.0
+shader_parameter/color1 = Color(1, 1, 1, 1)
+shader_parameter/color2 = Color(0, 0.28029957, 0.9892927, 1)
+shader_parameter/color3 = Color(0.059, 0.389, 0.85, 1)
+shader_parameter/color4 = Color(0, 0.267, 1, 1)
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_1owed"]
-material = SubResource("ShaderMaterial_aw1xa")
-top_radius = 0.36
-bottom_radius = 0.36
-height = 0.1
-radial_segments = 8
+[sub_resource type="PlaneMesh" id="PlaneMesh_b4luq"]
+material = SubResource("ShaderMaterial_5y8qt")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iucn1"]
+diffuse_mode = 3
+albedo_texture = ExtResource("5_dtv1k")
+roughness = 0.0
+rim_enabled = true
+stencil_flags = 2
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_po8qe"]
 radius = 0.21044922
 height = 1.9765625
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dtv1k"]
+diffuse_mode = 3
+albedo_texture = ExtResource("7_b4luq")
+roughness = 0.0
+rim_enabled = true
+stencil_flags = 2
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_viw6p"]
 height = 2.685
@@ -117,6 +154,13 @@ gun2_cost = 80
 trigger_area = NodePath("Area3D")
 shop_camera = NodePath("Camera3D")
 
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=881584329]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, -7.33152)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1114421615]
+environment = SubResource("Environment_dtv1k")
+
 [node name="Bucket" type="MeshInstance3D" parent="." unique_id=935839168]
 transform = Transform3D(0.35856026, 0, 0, 0, 0.544051, 0, 0, 0, 0.35856026, 0, 0.7830868, -0.6858629)
 mesh = SubResource("ArrayMesh_fy2sx")
@@ -125,21 +169,66 @@ mesh = SubResource("ArrayMesh_fy2sx")
 transform = Transform3D(0.031383418, 0, 0, 0, 0, -0.031383425, 0, 0.031383425, 0, 0, 0.34674263, -1.1956552)
 mesh = SubResource("ArrayMesh_aw1xa")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=333203753]
-transform = Transform3D(1, 0, 0, 0, 0.093039036, 0, 0, 0, 1, 0, 1.0769994, -0.6774544)
-mesh = SubResource("CylinderMesh_1owed")
+[node name="Water" type="MeshInstance3D" parent="." unique_id=333203753]
+transform = Transform3D(0.6042014, 0, 0.0060633523, 0, 0.09303905, 0, -0.006383642, 0, 0.5738865, 0.029433906, 1.0648534, -0.54778475)
+mesh = SubResource("PlaneMesh_b4luq")
 
 [node name="shotty optimized" parent="." unique_id=228239781 instance=ExtResource("3_po8qe")]
-transform = Transform3D(-0.16023168, -0.74775624, -0.23491737, -0.66090214, -2.4620523e-08, 0.45078605, -0.42134768, 0.28435954, -0.61774224, -0.15404943, 1.0769994, -0.8866493)
+transform = Transform3D(0.10609095, 0.1218814, -0.37853584, 0.48754948, 0.0055578174, 0.08859722, 0.03225561, -0.48488575, -0.09413371, 0.037734553, 1.0868955, -0.76093805)
+
+[node name="Body" parent="shotty optimized" index="0" unique_id=2111673744]
+surface_material_override/0 = SubResource("StandardMaterial3D_iucn1")
+
+[node name="Bottle" parent="shotty optimized" index="1" unique_id=229486462]
+surface_material_override/0 = SubResource("StandardMaterial3D_iucn1")
+
+[node name="Connector" parent="shotty optimized" index="2" unique_id=44782316]
+surface_material_override/0 = SubResource("StandardMaterial3D_iucn1")
+
+[node name="Muzzle" parent="shotty optimized" index="3" unique_id=661982542]
+surface_material_override/0 = SubResource("StandardMaterial3D_iucn1")
+
+[node name="Pump" parent="shotty optimized" index="4" unique_id=940667125]
+surface_material_override/0 = SubResource("StandardMaterial3D_iucn1")
+
+[node name="Pump2" parent="shotty optimized" index="5" unique_id=1599761853]
+surface_material_override/0 = SubResource("StandardMaterial3D_iucn1")
+
+[node name="Trigger" parent="shotty optimized" index="6" unique_id=1303141051]
+surface_material_override/0 = SubResource("StandardMaterial3D_iucn1")
+
+[node name="Tube" parent="shotty optimized" index="7" unique_id=866299812]
+surface_material_override/0 = SubResource("StandardMaterial3D_iucn1")
 
 [node name="Area3D" type="Area3D" parent="shotty optimized" unique_id=1315999944]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="shotty optimized/Area3D" unique_id=1088404019]
-transform = Transform3D(0.4792675, 0.04198593, 0.8766639, -0.876281, -0.033274144, 0.4806524, 0.049348652, -0.9985641, 0.020844057, -0.19701403, 0.06544186, 0.17425919)
+transform = Transform3D(0.47926754, 0.04198492, 0.8766645, -0.87628096, -0.033272255, 0.4806512, 0.049348705, -0.9985642, 0.020844271, -0.19701403, 0.06544186, 0.17425919)
 shape = SubResource("CapsuleShape3D_po8qe")
 
 [node name="rifle_optimized" parent="." unique_id=1288562503 instance=ExtResource("4_viw6p")]
-transform = Transform3D(-0.2882936, 0.90703976, 0.30686468, 0.7686878, 0.028135091, 0.63900524, 0.57096934, 0.4201041, -0.7053414, 0.21929827, 1.2097532, -0.8337697)
+transform = Transform3D(0.08225419, -0.044571362, 0.4420527, -0.49318758, -0.006865002, 0.07377222, -0.00056321174, -0.49796218, -0.040584087, -0.014853686, 1.0916538, -0.62345994)
+
+[node name="Barrel" parent="rifle_optimized" index="0" unique_id=947462900]
+surface_material_override/0 = SubResource("StandardMaterial3D_dtv1k")
+
+[node name="Body_001" parent="rifle_optimized" index="1" unique_id=971831188]
+surface_material_override/0 = SubResource("StandardMaterial3D_dtv1k")
+
+[node name="Muzzle_001" parent="rifle_optimized" index="2" unique_id=1307110652]
+surface_material_override/0 = SubResource("StandardMaterial3D_dtv1k")
+
+[node name="Scope" parent="rifle_optimized" index="3" unique_id=415676494]
+surface_material_override/0 = SubResource("StandardMaterial3D_dtv1k")
+
+[node name="Thing_001" parent="rifle_optimized" index="4" unique_id=915507666]
+surface_material_override/0 = SubResource("StandardMaterial3D_dtv1k")
+
+[node name="Thing2" parent="rifle_optimized" index="5" unique_id=1319138559]
+surface_material_override/0 = SubResource("StandardMaterial3D_dtv1k")
+
+[node name="Trigger_001" parent="rifle_optimized" index="6" unique_id=286590209]
+surface_material_override/0 = SubResource("StandardMaterial3D_dtv1k")
 
 [node name="Area3D2" type="Area3D" parent="rifle_optimized" unique_id=1873467566]
 transform = Transform3D(0.99999994, 0, 2.9802322e-08, 1.4901161e-08, 1, 0, -5.9604645e-08, 0, 0.99999994, 0, 0, 0)
@@ -149,11 +238,14 @@ transform = Transform3D(0.47926754, 0.04198584, 0.8766639, -0.876281, -0.0332740
 shape = SubResource("CapsuleShape3D_po8qe")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1221007559]
-transform = Transform3D(1, 0, 0, 0, 0.8803533, 0.47431865, 0, -0.47431865, 0.8803533, 0, 1.7529881, -0.21804392)
-fov = 74.6
+transform = Transform3D(1, 0, 0, 0, 0.6763548, 0.73657596, 0, -0.73657596, 0.6763548, 0, 1.4764645, -0.29511333)
+fov = 65.0
 
 [node name="Area3D" type="Area3D" parent="." unique_id=112701950]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.01673913, 0.6689817, -0.72440505)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=523240243]
 shape = SubResource("CylinderShape3D_viw6p")
+
+[editable path="shotty optimized"]
+[editable path="rifle_optimized"]

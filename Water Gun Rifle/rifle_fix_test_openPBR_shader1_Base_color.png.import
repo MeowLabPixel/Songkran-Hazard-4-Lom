@@ -2,17 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dhdko6m4jh7t0"
-path.s3tc="res://.godot/imported/openPBR_shader1_Base_color.png-43dad6313c4df125e4483af712e95982.s3tc.ctex"
+uid="uid://crv2vimjrw5ym"
+path.s3tc="res://.godot/imported/rifle_fix_test_openPBR_shader1_Base_color.png-6d49f6c55e63510fb476b0eedbca46fb.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
+generator_parameters={
+"md5": "a264ce1d0c5e24a1d872f419ce460390"
+}
 
 [deps]
 
-source_file="res://Water Gun Rifle/openPBR_shader1_Base_color.png"
-dest_files=["res://.godot/imported/openPBR_shader1_Base_color.png-43dad6313c4df125e4483af712e95982.s3tc.ctex"]
+source_file="res://Water Gun Rifle/rifle_fix_test_openPBR_shader1_Base_color.png"
+dest_files=["res://.godot/imported/rifle_fix_test_openPBR_shader1_Base_color.png-6d49f6c55e63510fb476b0eedbca46fb.s3tc.ctex"]
 
 [params]
 
