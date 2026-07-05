@@ -2,6 +2,11 @@ extends State
 
 @export var post_grab_delay: float = 1.35
 
+@export_group("QTE Pushback")
+@export var player_push_speed: float = 4.0
+@export var player_push_decay: float = 4.0
+@export var enemy_push_radius: float = 1.5
+
 @export_group("Camera Adjustments")
 @export var qte_lose_cam_offset: float = -1.2
 @export var qte_lose_cam_pitch: float = -10.0
@@ -26,6 +31,8 @@ var _camera_state: int = 0
 var _transition_emitted: bool = false
 var _pushed_enemies: Array[Node] = []
 var _time_in_grab: float = 0.0
+var _push_velocity: float = 0.0
+var _current_grabber: Node = null
 var max_grab_duration: float = 8.0
 
 func _ready() -> void:
@@ -164,9 +171,9 @@ func _enter() -> void:
 	# Reset the grab timer and calculate max duration dynamically
 	_time_in_grab = 0.0
 	var qte_len = 1.5
-	var grabber = owner._last_grabber
-	if is_instance_valid(grabber):
-		var sm = grabber.get_node_or_null("EnemyStateMachine")
+	_current_grabber = owner._last_grabber
+	if is_instance_valid(_current_grabber):
+		var sm = _current_grabber.get_node_or_null("EnemyStateMachine")
 		if sm and sm.has_node("StateAttack"):
 			var sa = sm.get_node("StateAttack")
 			if "qte_duration" in sa:
@@ -189,6 +196,7 @@ func _exit() -> void:
 	mini_done = false
 	owner.is_grab = false
 	owner.is_stunned = false
+	_current_grabber = null
 	_camera_state = 0
 	_transition_emitted = false
 
@@ -235,6 +243,9 @@ func resolve_grab(success: bool) -> void:
 	_time_in_grab = 0.0
 	max_grab_duration = 5.0 # 5 seconds is plenty for win/fail/getup animation paths
 	
+	# Start decaying pushback for the player
+	_push_velocity = player_push_speed
+	
 
 	if success:
 		# Player LOST QTE (grab success)
@@ -252,8 +263,19 @@ func _update(_delta: float) -> void:
 	Motion.input_dir = Vector2.ZERO
 	Motion.direction = Vector3.ZERO
 	Motion.velocity = Vector3.ZERO
-	owner.velocity.x = 0.0
-	owner.velocity.z = 0.0
+	
+	if is_exiting and _push_velocity > 0.0:
+		# Decay the push speed toward zero (similar to zombie StateHitPush)
+		_push_velocity = move_toward(_push_velocity, 0.0, player_push_decay * _delta)
+		# Push backward relative to player's facing direction (+Z = backward in Godot)
+		var push_dir = owner.global_transform.basis.z
+		push_dir.y = 0.0
+		push_dir = push_dir.normalized()
+		owner.velocity.x = push_dir.x * _push_velocity
+		owner.velocity.z = push_dir.z * _push_velocity
+	else:
+		owner.velocity.x = 0.0
+		owner.velocity.z = 0.0
 
 func stop_moving():
 	var dire = Vector3.ZERO
@@ -278,12 +300,12 @@ func _push_nearby_enemies() -> void:
 		
 	var enemies = get_tree().get_nodes_in_group("enemies")
 	for enemy in enemies:
-		if not is_instance_valid(enemy) or enemy.is_defeated or enemy in _pushed_enemies:
+		if not is_instance_valid(enemy) or enemy.is_defeated or enemy in _pushed_enemies or enemy == _current_grabber:
 			continue
 			
 		var dist = owner.global_position.distance_to(enemy.global_position)
-		print("[PlayerGrab debug] Checking enemy: ", enemy.name, " at dist: ", dist, " (limit: 2.0)")
-		if dist <= 2.0:
+		print("[PlayerGrab debug] Checking enemy: ", enemy.name, " at dist: ", dist, " (limit: ", enemy_push_radius, ")")
+		if dist <= enemy_push_radius:
 			_pushed_enemies.append(enemy)
 			var push_dir = (enemy.global_position - owner.global_position).normalized()
 			push_dir.y = 0.0
