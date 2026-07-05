@@ -47,6 +47,9 @@ var _getup_block_timer: float = 0.0
 var _has_token: bool = false
 var _selected_attack: String = ""
 var _token_hold_elapsed: float = 0.0
+var _my_circling_radius: float = 2.5
+var _my_circling_angle: float = 0.0
+var _my_circling_dir: float = 1.0
 
 @export_group("Attack Token Settings")
 @export var attack_prep_range: float = 4.0
@@ -55,6 +58,9 @@ var _token_hold_elapsed: float = 0.0
 @export_group("Circling / Pacing")
 @export var circling_radius: float = 2.5
 @export var circling_speed: float = 0.3
+@export var circling_move_speed: float = 1.5
+@export var circling_radius_variance: float = 0.5
+@export var circling_front_arc: float = 210.0
 
 static func can_start_sprint() -> bool:
 	var active_sprinters = []
@@ -91,6 +97,16 @@ func enter() -> void:
 	_has_token = false
 	_selected_attack = ""
 	_token_hold_elapsed = 0.0
+	_my_circling_radius = circling_radius + randf_range(-circling_radius_variance, circling_radius_variance)
+	
+	var player = _get_player()
+	if player:
+		var offset = enemy.global_position - player.global_position
+		offset.y = 0.0
+		_my_circling_angle = atan2(offset.z, offset.x)
+	else:
+		_my_circling_angle = 0.0
+	_my_circling_dir = 1.0 if randf() < 0.5 else -1.0
 	
 	if enemy and enemy.is_inside_tree() and enemy.get_tree().root.has_node("GameManager"):
 		enemy.get_tree().root.get_node("GameManager").start_timer()
@@ -224,6 +240,33 @@ func physics_update(_delta: float) -> void:
 	to_player.y = 0.0
 	var dist_to_player: float = to_player.length()
 
+	# Update circling angle if currently within circling radius
+	if player and not _has_token and dist_to_player <= _my_circling_radius:
+		_my_circling_angle += circling_speed * _my_circling_dir * _delta
+		
+		# Clamping to front arc and bounce
+		var player_forward = -player.global_transform.basis.z
+		player_forward.y = 0.0
+		var player_angle = atan2(player_forward.z, player_forward.x)
+		
+		var half_arc = deg_to_rad(circling_front_arc / 2.0)
+		var angle_diff = wrapf(_my_circling_angle - player_angle, -PI, PI)
+		
+		var zombie_offset = enemy.global_position - player.global_position
+		zombie_offset.y = 0.0
+		var zombie_angle = atan2(zombie_offset.z, zombie_offset.x)
+		var zombie_diff = wrapf(zombie_angle - player_angle, -PI, PI)
+		var is_already_behind = abs(zombie_diff) > half_arc
+		
+		if not is_already_behind:
+			# If it passes the boundary, clamp and reverse direction (bounce)
+			if angle_diff > half_arc:
+				_my_circling_angle = player_angle + half_arc
+				_my_circling_dir = -1.0
+			elif angle_diff < -half_arc:
+				_my_circling_angle = player_angle - half_arc
+				_my_circling_dir = 1.0
+
 	var target_pos: Vector3 = _get_target_position()
 	var to_target: Vector3 = (target_pos - enemy.global_position)
 	to_target.y = 0.0
@@ -244,10 +287,11 @@ func physics_update(_delta: float) -> void:
 		can_attack = (Time.get_ticks_msec() / 1000.0) - enemy.last_attack_time >= attack_cooldown
 		
 	var is_restricted: bool = not can_attack or enemy.attack_blocked
+	var is_player_grabbed: bool = player and player.get("is_grab")
 
 	# ─── Walk back check ───────────────────────────────────────────────────────
 	# Walk back if attack is on cooldown OR attacks are blocked (e.g. player grabbed)
-	if is_restricted and walk_back_range > 0.0 and dist_to_player < walk_back_range:
+	if is_restricted and not is_player_grabbed and walk_back_range > 0.0 and dist_to_player < walk_back_range:
 		_is_fleeing = true
 		_walk_back(dir_to_player, _delta)
 		return
@@ -274,8 +318,8 @@ func physics_update(_delta: float) -> void:
 		return
 
 	# ─── Global Cooldown Check ───────────────────────────────────────────────
-	if is_restricted:
-		# Stop the zombie completely during cooldown or grab blocks
+	if is_restricted and not is_player_grabbed:
+		# Stop the zombie completely during cooldown
 		_play_anim(enemy.anim_set.idle)
 		if nav_agent and nav_agent.avoidance_enabled:
 			nav_agent.set_velocity(Vector3.ZERO)
@@ -424,13 +468,29 @@ func physics_update(_delta: float) -> void:
 		move_dir = (move_dir + separation_force * 0.8).normalized()
 		move_dir.y = 0.0
 
-	var current_speed = sprint_speed if is_sprinting else move_speed
+	var is_circling = player and not _has_token and dist_to_player <= _my_circling_radius
+	var current_speed = move_speed
+	if is_sprinting:
+		current_speed = sprint_speed
+	elif is_circling:
+		current_speed = circling_move_speed
+	else:
+		current_speed = move_speed
+
 	if nav_agent:
 		nav_agent.max_speed = current_speed
 
 	if move_dir.length() > 0.01:
 		# First, calculate the target direction and snap it to 15-degree increments
 		var target_y = atan2(-move_dir.x, -move_dir.z)
+		
+		if is_circling:
+			# Limit rotation during circling to 75 degrees relative to facing the player
+			var face_player_angle = atan2(-dir_to_player.x, -dir_to_player.z)
+			var angle_diff = wrapf(target_y - face_player_angle, -PI, PI)
+			angle_diff = clampf(angle_diff, -deg_to_rad(75.0), deg_to_rad(75.0))
+			target_y = face_player_angle + angle_diff
+			
 		var step_rad = deg_to_rad(15.0)
 		target_y = round(target_y / step_rad) * step_rad
 		
@@ -450,6 +510,7 @@ func physics_update(_delta: float) -> void:
 			enemy.move_and_slide()
 			
 		_play_anim(_walk_anim)
+		_apply_timescale_for_speed(current_speed)
 	else:
 		if nav_agent and nav_agent.avoidance_enabled:
 			nav_agent.set_velocity(Vector3.ZERO)
@@ -473,12 +534,12 @@ func _play_anim(anim_name: String, sub_machine: String = "") -> void:
 	if pb and pb.get_current_node() == anim_name:
 		# Keep TimeScale_Output updated even if we are already in the same state
 		if not _is_fleeing:
-			_apply_timescale()
+			_apply_walk_timescale_for_current_state()
 		return
 	
 	# Apply timescale via AnimationTree parameter
 	if not _is_fleeing:
-		_apply_timescale()
+		_apply_walk_timescale_for_current_state()
 	
 	super._play_anim(anim_name, sub_machine)
 
@@ -566,12 +627,25 @@ func _end_sprint() -> void:
 	_update_walk_timescale()
 
 func _update_walk_timescale() -> void:
-	if not _is_fleeing:
-		_apply_timescale()
+	_apply_walk_timescale_for_current_state()
 
-func _apply_timescale() -> void:
+func _apply_walk_timescale_for_current_state() -> void:
+	if not _is_fleeing:
+		var speed = move_speed
+		if is_sprinting:
+			speed = sprint_speed
+		else:
+			var player = _get_player()
+			if player and not _has_token:
+				var dist = enemy.global_position.distance_to(player.global_position)
+				if dist <= _my_circling_radius:
+					speed = circling_move_speed
+		_apply_timescale_for_speed(speed)
+
+func _apply_timescale_for_speed(speed: float) -> void:
 	if enemy and enemy.anim_tree and enemy.anim_tree.active:
-		var scale = sprint_timescale if is_sprinting else walk_timescale
+		# timescale is proportional to move_speed (2.0 maps to walk_timescale 1.0)
+		var scale = (speed / move_speed) * walk_timescale
 		if "parameters/Walk Zombie/TimeScale_Output/scale" in enemy.anim_tree:
 			enemy.anim_tree.set("parameters/Walk Zombie/TimeScale_Output/scale", scale)
 	# Keep anim_player speed_scale at 1.0 since TimeScale_Output handles it
@@ -587,16 +661,11 @@ func _get_target_position() -> Vector3:
 	to_player.y = 0.0
 	var dist = to_player.length()
 	
-	# If close to the player but without an attack token, circle/pace around them
-	var is_waiting = dist < circling_radius + 1.0 and not _has_token
+	# Only circle if already within our randomized circling radius (from the player)
+	var is_waiting = dist <= _my_circling_radius and not _has_token
 	
 	if is_waiting:
-		var dir = 1.0 if (enemy.get_instance_id() % 2 == 0) else -1.0
-		var time_sec = Time.get_ticks_msec() * 0.001
-		var angle_offset = deg_to_rad(enemy.get_instance_id() % 360)
-		var current_angle = time_sec * circling_speed * dir + angle_offset
-		
-		var offset = Vector3(cos(current_angle), 0.0, sin(current_angle)) * circling_radius
+		var offset = Vector3(cos(_my_circling_angle), 0.0, sin(_my_circling_angle)) * _my_circling_radius
 		return player.global_position + offset
 		
 	return player.global_position
