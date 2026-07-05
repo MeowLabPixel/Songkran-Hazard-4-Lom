@@ -24,6 +24,7 @@ var is_grab: bool = false
 var last_anim: String
 var _camera_state: int = 0
 var _transition_emitted: bool = false
+var _pushed_enemies: Array[Node] = []
 
 func _ready() -> void:
 	set_process(false)
@@ -42,6 +43,7 @@ func _process(_delta: float) -> void:
 		return
 
 	if is_exiting:
+		_push_nearby_enemies()
 		if last_anim == fail_anim:
 			if owner and owner.anim:
 				var pb = owner.anim.get("parameters/Grab/playback")
@@ -191,6 +193,7 @@ func resolve_grab(success: bool) -> void:
 
 	owner.is_grab = true
 	is_exiting = true
+	_pushed_enemies.clear()
 	
 
 	if success:
@@ -219,3 +222,40 @@ func stop_moving():
 
 func on_grabbed(success: bool) -> void:
 	is_grab = success
+
+func _push_nearby_enemies() -> void:
+	if not owner or not owner.anim:
+		return
+		
+	var pb = owner.anim.get("parameters/Grab/playback")
+	if not pb:
+		return
+		
+	var current_node = String(pb.get_current_node())
+	# Only push during Win or Fail animations (not Getup or End)
+	if current_node != "Win" and current_node != "Fail":
+		return
+		
+	var enemies = get_tree().get_nodes_in_group("enemies")
+	for enemy in enemies:
+		if not is_instance_valid(enemy) or enemy.is_defeated or enemy in _pushed_enemies:
+			continue
+			
+		var dist = owner.global_position.distance_to(enemy.global_position)
+		print("[PlayerGrab debug] Checking enemy: ", enemy.name, " at dist: ", dist, " (limit: 2.0)")
+		if dist <= 2.0:
+			_pushed_enemies.append(enemy)
+			var push_dir = (enemy.global_position - owner.global_position).normalized()
+			push_dir.y = 0.0
+			push_dir = push_dir.normalized()
+			
+			if enemy.has_method("take_hit"):
+				print("[PlayerGrab debug] Calling take_hit on ", enemy.name, " with push direction: ", push_dir)
+				enemy.take_hit({
+					"damage": 0.0,
+					"hit_zone": "body",
+					"hit_type": "push",
+					"hit_direction": push_dir,
+					"source": owner
+				})
+				print("[PlayerGrab] Pushed back enemy: ", enemy.name, " during animation: ", current_node)

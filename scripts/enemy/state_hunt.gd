@@ -427,8 +427,12 @@ func physics_update(_delta: float) -> void:
 		nav_agent.max_speed = current_speed
 
 	if move_dir.length() > 0.01:
-		# First, rotate the zombie to face the desired movement direction (move_dir)
+		# First, calculate the target direction and snap it to 15-degree increments
 		var target_y = atan2(-move_dir.x, -move_dir.z)
+		var step_rad = deg_to_rad(15.0)
+		target_y = round(target_y / step_rad) * step_rad
+		
+		# Smoothly lerp towards the snapped target to prevent visual pops/jitter
 		enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, 8.0 * enemy.get_physics_process_delta_time())
 
 		# Set the movement velocity to be exactly in the direction the zombie is currently facing
@@ -451,8 +455,11 @@ func physics_update(_delta: float) -> void:
 			enemy.velocity = Vector3.ZERO
 			enemy.move_and_slide()
 			
-		# Face the player when standing still
+		# Face the player when standing still, snapped to 15-degree increments
 		var target_y = atan2(-dir_to_player.x, -dir_to_player.z)
+		var step_rad = deg_to_rad(15.0)
+		target_y = round(target_y / step_rad) * step_rad
+		
 		enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, 8.0 * enemy.get_physics_process_delta_time())
 		
 		_play_anim(enemy.anim_set.idle)
@@ -496,9 +503,12 @@ func _walk_back(dir_to_player: Vector3, delta: float) -> void:
 			enemy.velocity = target_vel
 			enemy.move_and_slide()
 			
-		# Look AT the player, not away from the player!
-		var current_y = enemy.rotation.y
+		# Look AT the player, not away from the player! (snapped to 15-degree increments)
 		var target_y = atan2(-dir_to_player.x, -dir_to_player.z)
+		var step_rad = deg_to_rad(15.0)
+		target_y = round(target_y / step_rad) * step_rad
+		
+		var current_y = enemy.rotation.y
 		enemy.rotation.y = lerp_angle(current_y, target_y, 5.0 * enemy.get_physics_process_delta_time())
 		
 		_play_anim(_walk_anim)
