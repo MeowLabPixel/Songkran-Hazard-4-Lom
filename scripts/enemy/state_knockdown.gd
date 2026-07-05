@@ -200,16 +200,13 @@ func physics_update(delta: float) -> void:
 
 	match _phase:
 		Phase.ACT3:
-			if "Attack Swing Leg Shot" in current_node:
-				if enemy:
-					var forward_dir = -enemy.global_transform.basis.z
-					enemy.velocity = forward_dir * slip_forward_speed
-					enemy.move_and_slide()
-			
 			var is_flying_node = current_node in [
 				"Hit Leg act 3-take down for head",
 				"Hit Leg act 3 (Take_down)",
-				"Hit RightLeg act 3 (Take_down)"
+				"Hit RightLeg act 3 (Take_down)",
+				"HIT head act 3-take down Special_L",
+				"HIT head act 3-take down Special for Attack Swing Leg Shot",
+				"HIT RightLeg act 3-take down Special_R"
 			]
 			if is_flying_node:
 				_act3_timer += delta
@@ -221,8 +218,17 @@ func physics_update(delta: float) -> void:
 					if pct > 0.25:
 						var t_factor = (pct - 0.25) / 0.75
 						current_speed = act3_push_min_speed * max(0.0, 1.0 - t_factor)
+					
+					var dir = push_direction
+					if "Attack Swing Leg Shot" in current_node:
+						dir = -enemy.global_transform.basis.z
+						var base_speed = slip_forward_speed
+						current_speed = base_speed
+						if pct > 0.25:
+							var t_factor = (pct - 0.25) / 0.75
+							current_speed = act3_push_min_speed * max(0.0, 1.0 - t_factor)
 						
-					enemy.velocity = push_direction * current_speed
+					enemy.velocity = dir * current_speed
 					enemy.move_and_slide()
 					
 					# Detect and push other enemies
@@ -297,11 +303,11 @@ func _get_act3_anim_duration(node_name: String) -> float:
 		return 1.0
 	var anim_name = ""
 	match node_name:
-		"Hit Leg act 3-take down for head":
+		"Hit Leg act 3-take down for head", "HIT head act 3-take down Special for Attack Swing Leg Shot":
 			anim_name = "HIT head act 3-take down"
-		"Hit Leg act 3 (Take_down)":
+		"Hit Leg act 3 (Take_down)", "HIT head act 3-take down Special_L":
 			anim_name = "Hit Leg act 3 (Take_down)"
-		"Hit RightLeg act 3 (Take_down)":
+		"Hit RightLeg act 3 (Take_down)", "HIT RightLeg act 3-take down Special_R":
 			anim_name = "Hit RightLeg act 3 (Take_down)"
 			
 	if anim_name != "" and enemy.anim_player.has_animation(anim_name):
@@ -318,3 +324,22 @@ func _get_act3_state_node_name() -> String:
 		"left_foot", "foot": return "Hit Leg act 3 (Take_down)"
 		"right_foot":        return "Hit RightLeg act 3 (Take_down)"
 		_:                   return "Hit Leg act 3-take down for head"
+
+func is_playing_special_act3() -> bool:
+	if _phase != Phase.ACT3:
+		return false
+	
+	if knockdown_mode in ["SPECIAL_LEG_SHOT", "SWING_SHOT"]:
+		return true
+		
+	var current_node = ""
+	if enemy and enemy.anim_tree:
+		var pb = enemy.anim_tree.get("parameters/hit/hit_takedown/playback")
+		if pb:
+			var node = pb.get_current_node()
+			if node != null: current_node = String(node)
+	return current_node in [
+		"HIT head act 3-take down Special_L",
+		"HIT head act 3-take down Special for Attack Swing Leg Shot",
+		"HIT RightLeg act 3-take down Special_R"
+	]

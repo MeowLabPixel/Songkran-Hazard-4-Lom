@@ -289,7 +289,13 @@ func take_hit(hit_data: Dictionary) -> void:
 	state_machine.handle_hit(hit_data)
 
 	if current_hp <= 0:
-		if hit_type == "takedown" or hit_type == "takedown_splash":
+		var playing_special_takedown = false
+		if state_machine and state_machine.current_state:
+			var curr = state_machine.current_state
+			if curr.name == "StateKnockdown" and curr.has_method("is_playing_special_act3") and curr.is_playing_special_act3():
+				playing_special_takedown = true
+				
+		if hit_type == "takedown" or hit_type == "takedown_splash" or playing_special_takedown:
 			is_takedown_defeat = true
 		else:
 			_trigger_defeat()
