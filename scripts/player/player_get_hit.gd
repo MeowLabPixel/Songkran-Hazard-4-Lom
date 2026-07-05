@@ -23,6 +23,13 @@ func _enter() -> void:
 	
 	# Mark the player as stunned (this makes them invulnerable)
 	owner.is_stunned = true
+	
+	# Disable player bone hitbox areas so zombies can't detect overlap during flinch
+	_set_player_hitbox_areas_monitoring(false)
+	
+	# Disable all zombie attack/grab hitboxes during hit state
+	_set_all_enemy_hitboxes(false)
+	
 	elapsed_time = 0.0
 	camera_raised = false
 	_anim_finished = false
@@ -75,6 +82,12 @@ func _exit() -> void:
 	owner.Hit_info.bullet = null
 	owner.hit_damage_already_applied = false
 	owner.is_stunned = false
+	
+	# Re-enable player bone hitbox areas
+	_set_player_hitbox_areas_monitoring(true)
+	
+	# Re-enable all zombie attack/grab hitboxes
+	_set_all_enemy_hitboxes(true)
 	
 	# Disconnect animation callback
 	if owner.anim and owner.anim.animation_finished.is_connected(_on_hit_anim_finished):
@@ -145,3 +158,22 @@ func calculate_push_direction(location: String) -> void:
 		
 	direction = owner.global_transform.basis * Vector3(input_dir.x, 0, input_dir.y)
 	direction = direction.normalized()
+
+func _set_player_hitbox_areas_monitoring(enabled: bool) -> void:
+	if not owner:
+		return
+	var nodes = owner.get_tree().get_nodes_in_group("player_hitbox")
+	for area in nodes:
+		if area is Area3D:
+			# Modify both monitoring and monitorable so they neither scan nor are scanned
+			area.monitoring = enabled
+			area.monitorable = enabled
+
+func _set_all_enemy_hitboxes(enabled: bool) -> void:
+	if not owner or not owner.is_inside_tree():
+		return
+	var areas = owner.get_tree().get_nodes_in_group("enemy_attack")
+	for area in areas:
+		if area is Area3D:
+			area.monitoring = enabled
+			area.monitorable = enabled

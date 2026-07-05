@@ -843,15 +843,17 @@ mesh = SubResource("ArrayMesh_4qq07")
 surface_material_override/0 = ExtResource("9_66hm5")
 
 [node name="Pump_001" type="MeshInstance3D" parent="Shotgun/ShotGunfix" unique_id=1401926665]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.5342709)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1.18, 7.1013346e-09, 0, 0.45185816)
 mesh = SubResource("ArrayMesh_lvk23")
 surface_material_override/0 = ExtResource("9_66hm5")
 
 [node name="Pump2" type="MeshInstance3D" parent="Shotgun/ShotGunfix" unique_id=114798244]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.56, -5.4133125e-09, 0, 0.06111145)
 mesh = SubResource("ArrayMesh_a0giy")
 surface_material_override/0 = ExtResource("9_66hm5")
 
 [node name="Trigger_002" type="MeshInstance3D" parent="Shotgun/ShotGunfix" unique_id=1778864419]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.910383e-09, 0, 0.032836914)
 mesh = SubResource("ArrayMesh_b5cc3")
 surface_material_override/0 = ExtResource("9_66hm5")
 
@@ -897,6 +899,7 @@ mesh = SubResource("ArrayMesh_05p0b")
 surface_material_override/0 = ExtResource("13_6ffqx")
 
 [node name="Muzzle_001" type="MeshInstance3D" parent="Sniper/RifleGunfix" unique_id=1380349688]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.88, 0, 0, 0)
 mesh = SubResource("ArrayMesh_q8m8p")
 surface_material_override/0 = ExtResource("13_6ffqx")
 
@@ -906,14 +909,17 @@ mesh = SubResource("ArrayMesh_h72pr")
 surface_material_override/0 = ExtResource("13_6ffqx")
 
 [node name="Barrel" type="MeshInstance3D" parent="Sniper/RifleGunfix" unique_id=1107983096]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.1029969e-09, 0, 0.024055481)
 mesh = SubResource("ArrayMesh_d83um")
 surface_material_override/0 = ExtResource("14_vauwm")
 
 [node name="Body_001" type="MeshInstance3D" parent="Sniper/RifleGunfix" unique_id=1617315634]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.855, 0, 0, 0)
 mesh = SubResource("ArrayMesh_p540i")
 surface_material_override/0 = ExtResource("13_6ffqx")
 
 [node name="Trigger_001" type="MeshInstance3D" parent="Sniper/RifleGunfix" unique_id=2136687877]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.288611e-09, 0, 0.01473999)
 mesh = SubResource("ArrayMesh_xxtpo")
 surface_material_override/0 = ExtResource("13_6ffqx")
 

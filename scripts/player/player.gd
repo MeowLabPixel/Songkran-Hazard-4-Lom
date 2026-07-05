@@ -575,8 +575,26 @@ func _physics_process(_delta: float) -> void:
 #			curr_gun_index +=1
 #		curr_gun = gun_list[curr_gun_index]
 
+func is_invulnerable() -> bool:
+	# 1. Check StateMachine state
+	var sm = get_node_or_null("Statemachine")
+	if sm and sm.current_state:
+		var state_name = sm.current_state.name
+		if state_name in ["Grab", "Get_hit", "Knockdown", "Takedown", "Die"]:
+			return true
+			
+	# 2. Check AnimationTree active state (to prevent desyncs during animation transitions)
+	if anim:
+		var pb = anim.get("parameters/playback")
+		if pb:
+			var current_node = String(pb.get_current_node())
+			if current_node in ["Hit", "Grab", "Knockdown", "Takedown", "Die"]:
+				return true
+				
+	return false
+
 func take_damage(amount: int) -> void:
-	if is_stunned:
+	if is_stunned or is_invulnerable():
 		return
 	lost_HP(amount)
 	print("[Player] Took %d damage — HP: %d/%d" % [amount, HP, MaxHP])
@@ -710,7 +728,7 @@ func _on_hitbox_body_entered_back(body: Node3D) -> void:
 	_on_hitbox_body_entered(body, "back")
 
 func _on_hitbox_body_entered(body: Node3D, location: String) -> void:
-	if is_stunned:
+	if is_stunned or is_invulnerable():
 		return
 	
 	# Only count actual bullets/projectiles
@@ -727,6 +745,10 @@ func _on_hitbox_body_entered(body: Node3D, location: String) -> void:
 		sm._change_state("Get_hit")
 
 func on_hitbox_grabbed_with_area(area: Area3D) -> void:
+	if is_invulnerable():
+		print("[Player] Ignore grab because player is invulnerable")
+		return
+
 	# Store the last grab source so player_grab can reference enemy UI
 	self._last_grab_area = area
 	# Try to find an enemy node associated with the area

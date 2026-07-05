@@ -548,8 +548,8 @@ func _on_hand_area_entered(area: Area3D) -> void:
 		Phase.GRAB_REACHING:
 			if not _grab_made_contact:
 				if hit_entity.is_in_group("player"):
-					if "is_grab" in hit_entity and hit_entity.is_grab:
-						print("[StateAttack] Grab blocked — player already grabbed")
+					if ("is_grab" in hit_entity and hit_entity.is_grab) or (hit_entity.has_method("is_invulnerable") and hit_entity.is_invulnerable()):
+						print("[StateAttack] Grab blocked — player already grabbed or invulnerable")
 						_finish()
 						return
 					print("[StateAttack] Signal hit — grab contact on player!")
@@ -641,9 +641,13 @@ func _get_player() -> Node3D:
 	return players[0] as Node3D if players.size() > 0 else null
 
 func _dismiss_qte() -> void:
+	var was_grabber = _qte_hud != null
 	if _qte_hud and is_instance_valid(_qte_hud):
 		_qte_hud.queue_free()
 	_qte_hud = null
+	
+	if not was_grabber:
+		return
 	
 	var player := _get_player()
 	if player:

@@ -9,6 +9,21 @@ const MAX_GRAB_TOKENS: int = 1
 var _assigned_tokens: Array[EnemyBase] = []
 var _active_grabbers: Array[EnemyBase] = []
 
+# Staggered attack settings
+var last_attack_start_time: float = 0.0
+const ATTACK_STAGGER_DELAY: float = 0.5 # seconds
+
+## Checks if a zombie is allowed to transition to its attack state.
+## Enforces a stagger delay so that zombies don't attack simultaneously.
+func request_attack_transition(enemy: EnemyBase) -> bool:
+	var current_time = Time.get_ticks_msec() / 1000.0
+	if current_time - last_attack_start_time < ATTACK_STAGGER_DELAY:
+		return false
+		
+	last_attack_start_time = current_time
+	print("[AttackTokenManager] Granted attack transition to: ", enemy.name)
+	return true
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
@@ -39,6 +54,22 @@ func _update_token_assignments() -> void:
 		_clear_all_tokens()
 		return
 	var player = players[0] as Node3D
+	
+	# Check if the player is currently in a hit reaction, grab, or busy state
+	var player_in_busy_state = false
+	if player.has_method("is_invulnerable") and player.is_invulnerable():
+		player_in_busy_state = true
+		
+	if player_in_busy_state:
+		# Revoke all attack tokens immediately so zombies can't attack during player hit/grab states
+		for enemy in _assigned_tokens:
+			if is_instance_valid(enemy):
+				_reset_enemy_tree(enemy)
+		_assigned_tokens.clear()
+		
+		# Keep active grabber but clean up any invalid ones
+		_active_grabbers = _active_grabbers.filter(_is_grabber_active)
+		return
 	
 	# 2. Get all enemies
 	var enemies = get_tree().get_nodes_in_group("enemies")
@@ -143,6 +174,17 @@ func request_grab_token(enemy: EnemyBase) -> bool:
 	
 	if not is_instance_valid(enemy) or enemy.is_defeated:
 		return false
+		
+	# Check if player is invulnerable/busy before granting a new grab token
+	var players = get_tree().get_nodes_in_group("player")
+	if not players.is_empty():
+		var player = players[0]
+		if player.has_method("is_invulnerable") and player.is_invulnerable():
+			# Allow the current active grabber to keep its token
+			if _active_grabbers.has(enemy):
+				return true
+			print("[AttackTokenManager] Denied grab token to: ", enemy.name, " because player is busy/invulnerable")
+			return false
 		
 	if _active_grabbers.has(enemy):
 		return true

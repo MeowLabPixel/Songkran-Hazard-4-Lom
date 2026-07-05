@@ -25,12 +25,35 @@ var last_anim: String
 var _camera_state: int = 0
 var _transition_emitted: bool = false
 var _pushed_enemies: Array[Node] = []
+var _time_in_grab: float = 0.0
+var max_grab_duration: float = 8.0
 
 func _ready() -> void:
 	set_process(false)
 
 func _process(_delta: float) -> void:
+	# Tick the grab timer
+	_time_in_grab += _delta
+	if _time_in_grab >= max_grab_duration:
+		print("[PlayerGrab] Stuck grab fallback triggered. Forcing transition to Idle.")
+		finished.emit("Idle")
+		return
+
+
+
 	if not is_exiting:
+		# Guard the ROOT playback during QTE loop only.
+		# The root may auto-advance away from "Grab"; force it back
+		# so the sub-playback stays alive. We DON'T guard during
+		# is_exiting because we WANT End->Main to happen naturally.
+		if owner and owner.anim:
+			var root_pb = owner.anim.get("parameters/playback")
+			if root_pb:
+				var root_node = String(root_pb.get_current_node())
+				if root_node != "Grab":
+					print("[PlayerGrab] Root playback left 'Grab' (was: ", root_node, "). Forcing back during QTE loop.")
+					root_pb.travel("Grab")
+
 		# Failsafe: Prevent the AnimationTree from automatically transitioning to Win or Fail
 		# if the player hasn't actually won or failed the QTE yet.
 		if owner and owner.anim:
@@ -94,17 +117,17 @@ func _process(_delta: float) -> void:
 								cam.set_action_pitch(0.0, qte_win_cam_duration_down)
 							if cam.has_method("set_action_spring_length"):
 								cam.set_action_spring_length(0.0, qte_win_cam_duration_down)
-		# Detect when the final animation has finished (node reaches "End")
+		# Detect when the grab animation path completes naturally
+		# (Root leaves "Grab" -> entered "Main" = all animations finished)
 		if not _transition_emitted:
-			if owner and owner.anim:
-				var pb_check = owner.anim.get("parameters/Grab/playback")
-				if pb_check:
-					var node_now = String(pb_check.get_current_node())
-					if node_now == "End":
-						_transition_emitted = true
-						owner.is_grab = false
-						print("[PlayerGrab] Final animation done, transitioning to Idle")
-						finished.emit("Idle")
+			var root_pb = owner.anim.get("parameters/playback")
+			if root_pb:
+				var root_node = String(root_pb.get_current_node())
+				if root_node != "Grab":
+					_transition_emitted = true
+					owner.is_grab = false
+					print("[PlayerGrab] Grab animation path completed (root reached: ", root_node, ")")
+					finished.emit("Idle")
 
 
 func _enter() -> void:
@@ -122,6 +145,9 @@ func _enter() -> void:
 
 	# Block all other enemies from attacking while player is grabbed
 	get_tree().call_group("enemies", "set", "attack_blocked", true)
+	
+	# Disable all zombie attack/grab hitboxes
+	_set_all_enemy_hitboxes(false)
 
 	# Disable physical collision with enemies so rotating the player doesn't cause Godot's physics to push them across the floor
 	owner.set_collision_mask_value(3, false)
@@ -134,12 +160,19 @@ func _enter() -> void:
 	owner.hitboxB.monitorable = false
 	is_exiting = false
 	_transition_emitted = false
-	var timer := get_tree().create_timer(5.0)
-	timer.timeout.connect(_grab_fallback)
-
-func _grab_fallback() -> void:
-	print("[PlayerGrab] Stuck grab fallback triggered. Forcing transition to Idle.")
-	finished.emit("Idle")
+	
+	# Reset the grab timer and calculate max duration dynamically
+	_time_in_grab = 0.0
+	var qte_len = 1.5
+	var grabber = owner._last_grabber
+	if is_instance_valid(grabber):
+		var sm = grabber.get_node_or_null("EnemyStateMachine")
+		if sm and sm.has_node("StateAttack"):
+			var sa = sm.get_node("StateAttack")
+			if "qte_duration" in sa:
+				qte_len = sa.qte_duration
+	max_grab_duration = qte_len + 5.0 # QTE duration + 5.0 seconds for win/fail/getup animation paths
+	print("[PlayerGrab] Grab started. Max grab duration: ", max_grab_duration)
 
 func _exit() -> void:
 	set_process(false)
@@ -164,6 +197,9 @@ func _exit() -> void:
 		if is_instance_valid(get_tree()):
 			get_tree().call_group("enemies", "set", "attack_blocked", false)
 	)
+	
+	# Re-enable all zombie attack/grab hitboxes
+	_set_all_enemy_hitboxes(true)
 	
 	var cam = owner.get_node_or_null("Camera")
 	if cam:
@@ -195,14 +231,18 @@ func resolve_grab(success: bool) -> void:
 	is_exiting = true
 	_pushed_enemies.clear()
 	
+	# Reset the fallback timer so Win/Fail + Getup animations get their full duration
+	_time_in_grab = 0.0
+	max_grab_duration = 5.0 # 5 seconds is plenty for win/fail/getup animation paths
+	
 
 	if success:
 		# Player LOST QTE (grab success)
-		owner.anim.get("parameters/Grab/playback").travel("Fail")
+		owner.anim.get("parameters/Grab/playback").start("Fail")
 		last_anim = fail_anim
 	else:
 		# Player ESCAPED
-		owner.anim.get("parameters/Grab/playback").travel("Win")
+		owner.anim.get("parameters/Grab/playback").start("Win")
 		last_anim = win_anim
 
 
@@ -259,3 +299,10 @@ func _push_nearby_enemies() -> void:
 					"source": owner
 				})
 				print("[PlayerGrab] Pushed back enemy: ", enemy.name, " during animation: ", current_node)
+
+func _set_all_enemy_hitboxes(enabled: bool) -> void:
+	var areas = get_tree().get_nodes_in_group("enemy_attack")
+	for area in areas:
+		if area is Area3D:
+			area.monitoring = enabled
+			area.monitorable = enabled

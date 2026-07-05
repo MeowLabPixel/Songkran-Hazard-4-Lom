@@ -371,10 +371,12 @@ func physics_update(_delta: float) -> void:
 				if dist_to_player <= attack_range:
 					var angle_to_player: float = rad_to_deg(acos(clampf(dot_player, -1.0, 1.0)))
 					if angle_to_player <= attack_cone_half_angle and not enemy.attack_blocked:
-						# Attack range reached! Transition immediately
-						_has_token = false # Clear flag since StateAttack now owns the token life cycle
-						state_machine.transition_to(attack_state)
-						return
+						# Request transition permission to stagger attacks
+						if token_manager.request_attack_transition(enemy):
+							# Attack range reached! Transition immediately
+							_has_token = false # Clear flag since StateAttack now owns the token life cycle
+							state_machine.transition_to(attack_state)
+							return
 
 	# ─── Sprint Activation Check ─────────────────────────────────────────────
 	if not is_sprinting and _sprint_cooldown_timer <= 0.0 and flat_dist > 3.0:
