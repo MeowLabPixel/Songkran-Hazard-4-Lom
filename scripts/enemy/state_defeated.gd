@@ -17,6 +17,7 @@ var _defeat_timer: float   = 0.0
 var _override_meshes: Array[MeshInstance3D] = []
 var _hiding_spot: Vector3 = Vector3.ZERO
 var _use_hiding: bool = false
+var _last_steer_side: float = 0.0
 
 var nav_agent: NavigationAgent3D:
 	get: return enemy.get_node_or_null("NavigationAgent3D") if enemy else null
@@ -98,12 +99,38 @@ func physics_update(_delta: float) -> void:
 			var next_pos = nav_agent.get_next_path_position()
 			var diff = next_pos - enemy.global_position
 			diff.y = 0.0
-			var move_dir = diff.normalized()
+			var path_dir = diff.normalized()
+			var move_dir = _get_avoidance_direction(path_dir)
 			
-			# Rotate to face movement direction
+			# Add separation force from other active zombies
+			var separation_force = Vector3.ZERO
+			var close_count = 0
+			for other in enemy.get_tree().get_nodes_in_group("enemies"):
+				if other == enemy or not is_instance_valid(other) or other.is_defeated:
+					continue
+				var dist = enemy.global_position.distance_to(other.global_position)
+				if dist < 1.2 and dist > 0.01:
+					var push = (enemy.global_position - other.global_position).normalized()
+					var strength = (1.2 - dist) / 1.2
+					separation_force += push * strength
+					close_count += 1
+			if path_dir.length() > 0.01 and close_count > 0:
+				move_dir = (move_dir + separation_force * 0.8).normalized()
+				move_dir.y = 0.0
+			
+			# Rotate to face movement direction, snapped to 30-degree increments
 			if move_dir.length() > 0.01:
 				var target_y = atan2(-move_dir.x, -move_dir.z)
-				enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, 6.0 * _delta)
+				var step_rad = deg_to_rad(30.0)
+				target_y = round(target_y / step_rad) * step_rad
+
+				var rot_weight = 6.0
+				var actual_speed = enemy.get_real_velocity().slide(Vector3.UP).length()
+				if actual_speed < move_speed * 0.5:
+					var block_factor = 1.0 - (actual_speed / (move_speed * 0.5))
+					rot_weight = lerpf(6.0, 12.0, block_factor)
+
+				enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, rot_weight * _delta)
 			
 			# Restrict physical velocity strictly to current forward direction
 			var forward_dir = -enemy.global_transform.basis.z.normalized()
@@ -113,6 +140,8 @@ func physics_update(_delta: float) -> void:
 			enemy.move_and_slide()
 		else:
 			# If nav_agent finished but we didn't hit distance check (e.g. wall block), fade out
+			enemy.velocity = Vector3.ZERO
+			enemy.move_and_slide()
 			_fading = true
 			_fade_out_and_hide()
 	else:
@@ -143,7 +172,9 @@ func physics_update(_delta: float) -> void:
 		
 		if flee_dir.length() > 0.01:
 			var target_y = atan2(-flee_dir.x, -flee_dir.z)
-			enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, 8.0 * _delta)
+			var step_rad = deg_to_rad(30.0)
+			target_y = round(target_y / step_rad) * step_rad
+			enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, 6.0 * _delta)
 
 func handle_hit(_hit_data: Dictionary) -> String:
 	return ""
@@ -270,3 +301,82 @@ func _restore_materials() -> void:
 			for i in mesh.mesh.get_surface_count():
 				mesh.set_surface_override_material(i, null)
 	_override_meshes.clear()
+
+func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
+	if not enemy or not enemy.is_inside_tree() or base_dir.length() <= 0.01:
+		return base_dir
+		
+	var space_state = enemy.get_world_3d().direct_space_state
+	var start = enemy.global_position + Vector3(0, 1.0, 0) # Cast at chest height
+	
+	# Helper to check if a specific direction is blocked by wall or other zombies
+	var is_blocked = func(dir: Vector3) -> bool:
+		# 1. Physics raycast check (environment/static obstacles)
+		var end = start + dir * 1.5
+		var query = PhysicsRayQueryParameters3D.create(start, end)
+		query.exclude = [enemy.get_rid()]
+		var result = space_state.intersect_ray(query)
+		if not result.is_empty():
+			return true
+			
+		# 2. Check for other zombies blocking in that direction
+		for other in enemy.get_tree().get_nodes_in_group("enemies"):
+			if other == enemy or not is_instance_valid(other) or other.is_defeated:
+				continue
+			var dist = enemy.global_position.distance_to(other.global_position)
+			if dist < 1.5:
+				var to_other = (other.global_position - enemy.global_position).normalized()
+				if dir.dot(to_other) > 0.5: # Other zombie is in front of this direction (60 degrees)
+					return true
+		return false
+
+	# If the direct path is not blocked, proceed straight
+	if not is_blocked.call(base_dir):
+		return base_dir
+		
+	# Find closest blocking zombie to decide which way to turn first
+	var min_dist = 999.0
+	var closest_other = null
+	for other in enemy.get_tree().get_nodes_in_group("enemies"):
+		if other == enemy or not is_instance_valid(other) or other.is_defeated:
+			continue
+		var dist = enemy.global_position.distance_to(other.global_position)
+		if dist < 1.5:
+			var to_other = (other.global_position - enemy.global_position).normalized()
+			if base_dir.dot(to_other) > 0.5:
+				if dist < min_dist:
+					min_dist = dist
+					closest_other = other
+					
+	var steer_left_first = true
+	if closest_other:
+		var to_other = (closest_other.global_position - enemy.global_position).normalized()
+		var cross = base_dir.cross(to_other)
+		if abs(cross.y) < 0.1:
+			if _last_steer_side != 0.0:
+				steer_left_first = (_last_steer_side > 0.0)
+			else:
+				steer_left_first = true
+				_last_steer_side = 1.0
+		else:
+			if cross.y > 0:
+				steer_left_first = false # Steer right first
+				_last_steer_side = -1.0
+			else:
+				steer_left_first = true
+				_last_steer_side = 1.0
+	else:
+		_last_steer_side = 0.0
+
+	var angles = [30.0, -30.0, 60.0, -60.0, 90.0, -90.0]
+	if not steer_left_first:
+		angles = [-30.0, 30.0, -60.0, 60.0, -90.0, 90.0]
+		
+	for angle in angles:
+		var rad = deg_to_rad(angle)
+		var rotated_dir = base_dir.rotated(Vector3.UP, rad).normalized()
+		if not is_blocked.call(rotated_dir):
+			return rotated_dir
+			
+	# If everything is blocked, fallback to base direction
+	return base_dir

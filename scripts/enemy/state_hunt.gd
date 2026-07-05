@@ -44,6 +44,9 @@ var _stun_recovery_timer: float = 0.0
 var _attack_recovery_timer: float = 0.0
 var _path_update_timer: float = 0.0
 var _getup_block_timer: float = 0.0
+var _stuck_timer: float = 0.0
+var _stuck_pause_timer: float = 0.0
+var _last_steer_side: float = 0.0
 
 var _has_token: bool = false
 var _selected_attack: String = ""
@@ -174,6 +177,19 @@ func exit() -> void:
 	_end_sprint()
 
 func physics_update(_delta: float) -> void:
+	# ─── Stuck Pause ─────────────────────────────────────────────────────────
+	if _stuck_pause_timer > 0.0:
+		_stuck_pause_timer -= _delta
+		if _stuck_pause_timer <= 0.0:
+			_stuck_timer = 0.0
+		if nav_agent and nav_agent.avoidance_enabled:
+			nav_agent.set_velocity(Vector3.ZERO)
+		else:
+			enemy.velocity = Vector3.ZERO
+			enemy.move_and_slide()
+		_play_anim(enemy.anim_set.idle)
+		return
+
 	# ─── Sprint Cooldown ─────────────────────────────────────────────────────
 	if _sprint_cooldown_timer > 0.0:
 		_sprint_cooldown_timer -= _delta
@@ -510,7 +526,14 @@ func physics_update(_delta: float) -> void:
 		target_y = round(target_y / step_rad) * step_rad
 		
 		# Smoothly lerp towards the snapped target to prevent visual pops/jitter
-		enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, 6.0 * enemy.get_physics_process_delta_time())
+		# Increase rotation speed when blocked/colliding to turn away faster ("slippery" collision turn)
+		var rot_weight = 6.0
+		var actual_speed = enemy.get_real_velocity().slide(Vector3.UP).length()
+		if actual_speed < current_speed * 0.5:
+			var block_factor = 1.0 - (actual_speed / (current_speed * 0.5))
+			rot_weight = lerpf(6.0, 12.0, block_factor)
+
+		enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, rot_weight * enemy.get_physics_process_delta_time())
 
 		# Set the movement velocity to be exactly in the direction the zombie is currently facing
 		# This prevents any sliding walk look since they will always walk where they face.
@@ -526,7 +549,18 @@ func physics_update(_delta: float) -> void:
 			
 		_play_anim(_walk_anim)
 		_apply_timescale_for_speed(current_speed)
+
+		# Check if they are stuck (trying to move but actual speed is almost 0)
+		actual_speed = enemy.get_real_velocity().slide(Vector3.UP).length()
+		if actual_speed < 0.1:
+			_stuck_timer += _delta
+			if _stuck_timer >= 0.5: # stuck for 0.5 seconds
+				_stuck_pause_timer = 1.0 # pause for 1.0 second
+				_stuck_timer = 0.0
+		else:
+			_stuck_timer = 0.0
 	else:
+		_stuck_timer = 0.0
 		if nav_agent and nav_agent.avoidance_enabled:
 			nav_agent.set_velocity(Vector3.ZERO)
 		else:
@@ -721,9 +755,9 @@ func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 			if other == enemy or not is_instance_valid(other) or other.is_defeated:
 				continue
 			var dist = enemy.global_position.distance_to(other.global_position)
-			if dist < 1.3:
+			if dist < 1.5:
 				var to_other = (other.global_position - enemy.global_position).normalized()
-				if dir.dot(to_other) > 0.707: # Other zombie is in front of this direction
+				if dir.dot(to_other) > 0.5: # Other zombie is in front of this direction (60 degrees)
 					return true
 		return false
 
@@ -749,8 +783,21 @@ func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 	if closest_other:
 		var to_other = (closest_other.global_position - enemy.global_position).normalized()
 		var cross = base_dir.cross(to_other)
-		if cross.y > 0:
-			steer_left_first = false # Steer right first
+		if abs(cross.y) < 0.1:
+			if _last_steer_side != 0.0:
+				steer_left_first = (_last_steer_side > 0.0)
+			else:
+				steer_left_first = true
+				_last_steer_side = 1.0
+		else:
+			if cross.y > 0:
+				steer_left_first = false # Steer right first
+				_last_steer_side = -1.0
+			else:
+				steer_left_first = true
+				_last_steer_side = 1.0
+	else:
+		_last_steer_side = 0.0
 
 	var angles = [30.0, -30.0, 60.0, -60.0, 90.0, -90.0]
 	if not steer_left_first:

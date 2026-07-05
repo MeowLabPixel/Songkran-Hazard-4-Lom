@@ -32,6 +32,7 @@ func initialize(starting_state_name: String) -> void:
 		if state.has_method("initialize_state"):
 			state.initialize_state()
 			
+	_update_collision_for_state(starting_state_name)
 	current_state = _states[starting_state_name]
 	current_state.enter()
 
@@ -49,6 +50,7 @@ func transition_to(new_state_name: String) -> void:
 		current_state.exit()
 	next_state_name = ""
 	current_state = _states[new_state_name]
+	_update_collision_for_state(new_state_name)
 	current_state.enter()
 	state_changed.emit(old_name, new_state_name)
 
@@ -112,3 +114,21 @@ func handle_hit(hit_data: Dictionary) -> void:
 ## Returns the name of the current state, or "" if uninitialised.
 func get_current_state_name() -> String:
 	return current_state.name as String if current_state else ""
+
+func _update_collision_for_state(state_name: String) -> void:
+	var enemy_node = get_parent()
+	if not enemy_node:
+		return
+		
+	# Active states have collision with other enemies and enable navigation avoidance.
+	# Floor/disabled states disable these to avoid creating invisible walls.
+	var is_collidable = true
+	if state_name in ["StateTakedownable", "StateKnockdown", "StateGetUp"]:
+		is_collidable = false
+		
+	enemy_node.set_collision_layer_value(3, is_collidable)
+	enemy_node.set_collision_mask_value(3, is_collidable)
+	
+	var nav_agent = enemy_node.get_node_or_null("NavigationAgent3D") as NavigationAgent3D
+	if nav_agent:
+		nav_agent.avoidance_enabled = is_collidable
