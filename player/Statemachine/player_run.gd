@@ -20,7 +20,7 @@ func _update(_delta:float) -> void:
 	if not Input.is_action_pressed("aim"):
 		owner.aim_blocked_until_release = false
 
-	if owner.is_aimming and not owner.aim_blocked_until_release:
+	if owner.is_aimming and not owner.aim_blocked_until_release and owner.can_aim():
 		finished.emit("Aim")
 		return
 		
@@ -92,7 +92,7 @@ func _state_input(_event: InputEvent) -> void:
 	if Input.is_action_pressed("Takedown") and owner.is_near_stunt:
 		if owner.attempt_takedown():
 			finished.emit("Takedown")
-	if Input.is_action_pressed("aim") and not owner.aim_blocked_until_release:
+	if Input.is_action_pressed("aim") and not owner.aim_blocked_until_release and owner.can_aim():
 		finished.emit("Aim")
 
 

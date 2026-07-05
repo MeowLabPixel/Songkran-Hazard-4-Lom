@@ -141,7 +141,7 @@ func _enter() -> void:
 	set_process(true)
 	print(name)
 	stop_moving()
-	owner.aim_bone_on(false)
+	owner.cancel_aim()
 	owner.is_stunned = true
 	owner.is_grab = true
 	

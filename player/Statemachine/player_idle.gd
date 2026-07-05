@@ -4,14 +4,14 @@ var _is_first_time: bool = true
 
 func _enter() -> void:
 	owner.aim_bone_on(true)
-	if Input.is_action_pressed("aim") and not owner.aim_blocked_until_release:
+	if Input.is_action_pressed("aim") and not owner.aim_blocked_until_release and owner.can_aim():
 		owner.is_aimming = true
 		finished.emit("Aim")
 		return
 	elif not Input.is_action_pressed("aim"):
 		owner.aim_blocked_until_release = false
 		
-	if owner.is_aimming:
+	if owner.is_aimming and owner.can_aim():
 		finished.emit("Aim")
 	print(name)
 	
@@ -41,7 +41,7 @@ func _update(_delta:float) -> void:
 func _state_input(_event: InputEvent) -> void:
 	if Input.is_action_just_pressed("quick_turn") and not owner.is_quick_turn and owner.quick_turn_cooldown <= 0.0:
 		finished.emit("Quick_turn")
-	if Input.is_action_pressed("aim") and not owner.aim_blocked_until_release:
+	if Input.is_action_pressed("aim") and not owner.aim_blocked_until_release and owner.can_aim():
 		finished.emit("Aim")
 	if Input.is_action_pressed("Reload") :
 		finished.emit("Reload")

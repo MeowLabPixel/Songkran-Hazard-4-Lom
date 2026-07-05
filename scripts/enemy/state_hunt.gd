@@ -37,6 +37,7 @@ var nav_agent: NavigationAgent3D:
 
 var _walk_anim: String = ""
 var _is_fleeing: bool = false
+var _is_fleeing_grab: bool = false
 var trigger_stun_recovery: bool = false
 var trigger_attack_recovery: bool = false
 var _stun_recovery_timer: float = 0.0
@@ -145,6 +146,7 @@ func enter() -> void:
 
 func exit() -> void:
 	_getup_block_timer = 0.0
+	_is_fleeing_grab = false
 	if enemy:
 		enemy.attack_blocked = false
 		if enemy.anim_player:
@@ -239,9 +241,10 @@ func physics_update(_delta: float) -> void:
 	var to_player: Vector3 = (player_pos - enemy.global_position)
 	to_player.y = 0.0
 	var dist_to_player: float = to_player.length()
+	var is_player_grabbed: bool = player and player.get("is_grab")
 
-	# Update circling angle if currently within circling radius
-	if player and not _has_token and dist_to_player <= _my_circling_radius:
+	# Update circling angle if currently within circling radius and not fleeing
+	if player and not _has_token and dist_to_player <= _my_circling_radius and not _is_fleeing_grab:
 		_my_circling_angle += circling_speed * _my_circling_dir * _delta
 		
 		# Clamping to front arc and bounce
@@ -287,7 +290,19 @@ func physics_update(_delta: float) -> void:
 		can_attack = (Time.get_ticks_msec() / 1000.0) - enemy.last_attack_time >= attack_cooldown
 		
 	var is_restricted: bool = not can_attack or enemy.attack_blocked
-	var is_player_grabbed: bool = player and player.get("is_grab")
+	is_player_grabbed = player and player.get("is_grab")
+
+	# Walk back if too close during a grab struggle
+	if is_player_grabbed:
+		if dist_to_player < 1.5:
+			_is_fleeing_grab = true
+		elif dist_to_player >= 2.0:
+			_is_fleeing_grab = false
+			
+		if _is_fleeing_grab:
+			_is_fleeing = true
+			_walk_back(dir_to_player, _delta)
+			return
 
 	# ─── Walk back check ───────────────────────────────────────────────────────
 	# Walk back if attack is on cooldown OR attacks are blocked (e.g. player grabbed)
@@ -468,7 +483,7 @@ func physics_update(_delta: float) -> void:
 		move_dir = (move_dir + separation_force * 0.8).normalized()
 		move_dir.y = 0.0
 
-	var is_circling = player and not _has_token and dist_to_player <= _my_circling_radius
+	var is_circling = player and not _has_token and dist_to_player <= _my_circling_radius and not _is_fleeing_grab
 	var current_speed = move_speed
 	if is_sprinting:
 		current_speed = sprint_speed
@@ -495,7 +510,7 @@ func physics_update(_delta: float) -> void:
 		target_y = round(target_y / step_rad) * step_rad
 		
 		# Smoothly lerp towards the snapped target to prevent visual pops/jitter
-		enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, 8.0 * enemy.get_physics_process_delta_time())
+		enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, 6.0 * enemy.get_physics_process_delta_time())
 
 		# Set the movement velocity to be exactly in the direction the zombie is currently facing
 		# This prevents any sliding walk look since they will always walk where they face.
@@ -523,7 +538,7 @@ func physics_update(_delta: float) -> void:
 		var step_rad = deg_to_rad(15.0)
 		target_y = round(target_y / step_rad) * step_rad
 		
-		enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, 8.0 * enemy.get_physics_process_delta_time())
+		enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, 6.0 * enemy.get_physics_process_delta_time())
 		
 		_play_anim(enemy.anim_set.idle)
 
@@ -563,7 +578,9 @@ func _walk_back(dir_to_player: Vector3, delta: float) -> void:
 			nav_agent.max_speed = move_speed * walk_back_speed_multiplier
 			nav_agent.set_velocity(target_vel)
 		else:
-			enemy.velocity = target_vel
+			# Force it to walk directly backward relative to its facing direction to prevent sideways sliding
+			var backward_dir = enemy.global_transform.basis.z.normalized()
+			enemy.velocity = backward_dir * (move_speed * walk_back_speed_multiplier)
 			enemy.move_and_slide()
 			
 		# Look AT the player, not away from the player! (snapped to 15-degree increments)
@@ -572,10 +589,13 @@ func _walk_back(dir_to_player: Vector3, delta: float) -> void:
 		target_y = round(target_y / step_rad) * step_rad
 		
 		var current_y = enemy.rotation.y
-		enemy.rotation.y = lerp_angle(current_y, target_y, 5.0 * enemy.get_physics_process_delta_time())
+		enemy.rotation.y = lerp_angle(current_y, target_y, 4.0 * enemy.get_physics_process_delta_time())
 		
 		_play_anim(_walk_anim)
-		if enemy and enemy.anim_player:
+		if enemy and enemy.anim_tree and enemy.anim_tree.active:
+			if "parameters/Walk Zombie/TimeScale_Output/scale" in enemy.anim_tree:
+				enemy.anim_tree.set("parameters/Walk Zombie/TimeScale_Output/scale", walk_back_timescale)
+		elif enemy and enemy.anim_player:
 			# Set timescale for backwards walk on AnimationPlayer
 			enemy.anim_player.speed_scale = walk_back_timescale
 	else:
@@ -638,7 +658,7 @@ func _apply_walk_timescale_for_current_state() -> void:
 			var player = _get_player()
 			if player and not _has_token:
 				var dist = enemy.global_position.distance_to(player.global_position)
-				if dist <= _my_circling_radius:
+				if dist <= _my_circling_radius and not _is_fleeing_grab:
 					speed = circling_move_speed
 		_apply_timescale_for_speed(speed)
 
@@ -661,8 +681,8 @@ func _get_target_position() -> Vector3:
 	to_player.y = 0.0
 	var dist = to_player.length()
 	
-	# Only circle if already within our randomized circling radius (from the player)
-	var is_waiting = dist <= _my_circling_radius and not _has_token
+	# Only circle if already within our randomized circling radius (from the player) and not fleeing
+	var is_waiting = dist <= _my_circling_radius and not _has_token and not _is_fleeing_grab
 	
 	if is_waiting:
 		var offset = Vector3(cos(_my_circling_angle), 0.0, sin(_my_circling_angle)) * _my_circling_radius

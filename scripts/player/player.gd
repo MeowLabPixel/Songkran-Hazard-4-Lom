@@ -706,6 +706,34 @@ func aim_bone_on(value):
 	aim_bone.active = value
 	aim_bone2.active = value
 
+func cancel_aim() -> void:
+	is_aimming = false
+	aim_blocked_until_release = true
+	aim_bone_on(false)
+	if camera and camera.has_method("exit_aim"):
+		camera.exit_aim()
+
+func can_aim() -> bool:
+	if HP <= 0:
+		return false
+	if is_grab:
+		return false
+		
+	var sm = get_node_or_null("Statemachine")
+	if sm and sm.current_state:
+		var state_name = sm.current_state.name
+		if state_name in ["Grab", "Get_hit", "Knockdown", "Takedown", "Die", "Reload"]:
+			return false
+			
+	if anim:
+		var pb = anim.get("parameters/playback")
+		if pb:
+			var current_node = String(pb.get_current_node())
+			if current_node in ["Hit", "Grab", "Knockdown", "Takedown", "Die"]:
+				return false
+				
+	return true
+
 func pickup_detect_area(area: Area3D):
 	if area.is_in_group("object"):
 		area._collect()

@@ -99,15 +99,18 @@ func physics_update(_delta: float) -> void:
 			var diff = next_pos - enemy.global_position
 			diff.y = 0.0
 			var move_dir = diff.normalized()
-			var target_vel = move_dir * move_speed
-			
-			enemy.velocity = target_vel
-			enemy.move_and_slide()
 			
 			# Rotate to face movement direction
 			if move_dir.length() > 0.01:
 				var target_y = atan2(-move_dir.x, -move_dir.z)
-				enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, 8.0 * _delta)
+				enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, 6.0 * _delta)
+			
+			# Restrict physical velocity strictly to current forward direction
+			var forward_dir = -enemy.global_transform.basis.z.normalized()
+			var target_vel = forward_dir * move_speed
+			
+			enemy.velocity = target_vel
+			enemy.move_and_slide()
 		else:
 			# If nav_agent finished but we didn't hit distance check (e.g. wall block), fade out
 			_fading = true

@@ -238,6 +238,8 @@ func _input(event: InputEvent)-> void:
 	#if event.is_action_pressed("swap_camera_alignment"):
 		#swap_camera_align()
 	if event.is_action_pressed("aim"):
+		if character.has_method("can_aim") and not character.can_aim():
+			return
 		if not character.aim_blocked_until_release:
 			enter_aim()
 	if event.is_action_released("aim"):

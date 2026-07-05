@@ -18,7 +18,7 @@ var _anim_finished: bool = false
 
 func _enter() -> void:
 	print(name)
-	owner.aim_bone_on(false)
+	owner.cancel_aim()
 	stop_moving()
 	
 	# Mark the player as stunned (this makes them invulnerable)

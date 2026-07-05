@@ -5586,7 +5586,7 @@ avoidance_layers = 4
 avoidance_mask = 4
 
 [node name="Re4Lom Base Rig_rig_Skeleton3D_spine02_Hitbox_F#CollisionShape3D" type="CollisionShape3D" parent="." unique_id=912103734]
-transform = Transform3D(1.0000031, 0, 0, 0, 1.0000058, 0, 0, 0, 1.0000086, 0, 0.825, 0)
+transform = Transform3D(1.0000031, 0, 0, 0, 1.0000058, 0, 0, 0, 1.0000086, 0, 0.8833348, 0)
 shape = SubResource("CapsuleShape3D_jfgyi")
 
 [node name="Statemachine" type="Node" parent="." unique_id=474127841 node_paths=PackedStringArray("Start_state")]

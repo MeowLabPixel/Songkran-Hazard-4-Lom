@@ -3,7 +3,7 @@ extends State
 func _enter() -> void:
 	print(name)
 	stop_moving()
-	owner.aim_bone_on(false)
+	owner.cancel_aim()
 	owner.anim.get("parameters/playback").travel("Die")
 	if owner.has_method("force_die"):
 		owner.force_die()

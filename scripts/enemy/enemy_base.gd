@@ -381,7 +381,25 @@ func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
 		return
 	
 	var current_y = velocity.y
-	velocity = velocity.move_toward(safe_velocity, 0.25)
+	
+	# Restrict physical movement strictly to the forward/backward direction they are currently facing
+	var forward_dir = -global_transform.basis.z.normalized()
+	
+	# Determine if we are backing up/fleeing
+	var is_fleeing = false
+	var current_state = state_machine.current_state
+	if current_state.get("_is_fleeing") or current_state.get("_is_fleeing_grab"):
+		is_fleeing = true
+		
+	var move_vector = forward_dir
+	if is_fleeing:
+		move_vector = -forward_dir
+		
+	# Project safe_velocity onto the allowed movement vector
+	var move_speed = safe_velocity.dot(move_vector)
+	var target_vel = move_vector * max(0.0, move_speed)
+	
+	velocity = velocity.move_toward(target_vel, 8.0)
 	velocity.y = current_y
 	move_and_slide()
 

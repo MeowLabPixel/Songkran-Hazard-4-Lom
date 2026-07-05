@@ -80,7 +80,7 @@ func _process_modification() -> void:
 	
 	# local_vel.z is negative when moving forward
 	var target_tilt_x = deg_to_rad(-dir.z * max_tilt_angle * speed_factor * lean_multiplier)
-	var target_tilt_z = deg_to_rad(dir.x * max_tilt_angle * speed_factor * lean_multiplier)
+	var target_tilt_z = 0.0
 	
 	current_tilt_x = lerp_angle(current_tilt_x, target_tilt_x, delta * tilt_speed)
 	current_tilt_z = lerp_angle(current_tilt_z, target_tilt_z, delta * tilt_speed)

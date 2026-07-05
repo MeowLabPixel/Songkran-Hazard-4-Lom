@@ -6,7 +6,7 @@ var start_anim_name = "Knockdown/down"
 func _enter() -> void:
 	print(name)
 	stop_moving()
-	owner.aim_bone_on(false)
+	owner.cancel_aim()
 	owner.anim.get(owner.anim_playback).travel("Knockdown")
 	owner.hitboxF.monitoring = false
 	owner.hitboxB.monitoring = false
