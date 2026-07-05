@@ -77,6 +77,8 @@ func start_spawning() -> void:
 	_is_active = true
 	set_process(true)
 	print("[EnemySpawner] Started spawning.")
+	if is_inside_tree() and get_tree().root.has_node("GameManager"):
+		get_tree().root.get_node("GameManager").start_timer()
 
 func stop_spawning() -> void:
 	_is_active = false

@@ -1,0 +1,32 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://2d51ux46uptw"]
+
+[ext_resource type="Texture2D" uid="uid://t50h4u1pmy1b" path="res://Water Gun Shotty/openPBR_shader1_Base_color.png" id="1_0tg8n"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6ffqx"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.5882353)
+grow = true
+grow_amount = 0.003
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+stencil_reference = 11
+metadata/_stencil_owned = true
+
+[resource]
+next_pass = SubResource("StandardMaterial3D_6ffqx")
+diffuse_mode = 3
+specular_mode = 1
+albedo_texture = ExtResource("1_0tg8n")
+roughness = 0.0
+rim_enabled = true
+rim_tint = 0.0
+clearcoat_enabled = true
+clearcoat_roughness = 1.0
+stencil_mode = 1
+stencil_flags = 2
+stencil_reference = 11
+stencil_color = Color(0, 0, 0, 0.5882353)
+stencil_outline_thickness = 0.003

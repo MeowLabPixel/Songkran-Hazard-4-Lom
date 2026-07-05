@@ -11,7 +11,7 @@ class_name GunController
 @export var current_water: float = 100.0
 
 var guns: Array[Gun] = []
-var unlocked_guns: Array[bool] = [true, false, false] # Pistol unlocked by default, Shotgun/Sniper locked
+var unlocked_guns: Array[bool] = [true, true, true] # Pistol unlocked by default, Shotgun/Sniper locked
 var current_gun_index: int = 0
 var current_gun: Gun
 

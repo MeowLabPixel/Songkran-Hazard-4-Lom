@@ -8,9 +8,12 @@
 [ext_resource type="PackedScene" uid="uid://gjs0wjhh5kp8" path="res://GunSystem/Scene/WaterLineVFX/WaterMuzzle.tscn" id="5_xnxwk"]
 [ext_resource type="Script" uid="uid://c43b2dn4ajns1" path="res://GunSystem/Script/SniperWaterGun.gd" id="6_8ckxr"]
 [ext_resource type="Material" uid="uid://bqftme5b56mhk" path="res://Water Gun Glock/Cell_Vottle.tres" id="6_fimos"]
+[ext_resource type="Material" uid="uid://dypclgi7i7ecp" path="res://Water Gun Shotty/Cell_Shotgun.tres" id="9_66hm5"]
 [ext_resource type="Texture2D" uid="uid://db2pkqmf0ltqe" path="res://Water Gun Shotty/ShotGunfix_openPBR_shader1_Base_color.png" id="9_ce350"]
-[ext_resource type="Texture2D" uid="uid://t50h4u1pmy1b" path="res://Water Gun Shotty/openPBR_shader1_Base_color.png" id="9_ki7bh"]
+[ext_resource type="Material" uid="uid://2d51ux46uptw" path="res://Water Gun Shotty/Cell_Bottle_Shotgun.tres" id="10_g3y85"]
 [ext_resource type="Texture2D" uid="uid://c2xkgsanxgj2i" path="res://Water Gun Rifle/RifleGunfix_openPBR_shader1_Base_color.png" id="11_fimos"]
+[ext_resource type="Material" uid="uid://cx4oae3b8b1o" path="res://Water Gun Rifle/Cell_Rifle.tres" id="13_6ffqx"]
+[ext_resource type="Material" uid="uid://dsu2x88k8fjo8" path="res://Water Gun Rifle/Cell__Bottle_Rifle.tres" id="14_vauwm"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4s3ug"]
 resource_name = "WaterGun"
@@ -263,35 +266,6 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_cvcj1")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_66hm5"]
-render_priority = 1
-transparency = 1
-shading_mode = 0
-albedo_color = Color(0, 0, 0, 0.5882353)
-grow = true
-grow_amount = 0.003
-stencil_mode = 3
-stencil_flags = 1
-stencil_compare = 5
-stencil_reference = 10
-metadata/_stencil_owned = true
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ce350"]
-next_pass = SubResource("StandardMaterial3D_66hm5")
-diffuse_mode = 3
-specular_mode = 2
-albedo_texture = ExtResource("9_ce350")
-metallic_specular = 1.0
-roughness = 0.0
-rim_enabled = true
-rim = 0.5
-clearcoat = 0.0
-stencil_mode = 1
-stencil_flags = 2
-stencil_reference = 10
-stencil_color = Color(0, 0, 0, 0.5882353)
-stencil_outline_thickness = 0.003
-
 [sub_resource type="ArrayMesh" id="ArrayMesh_x4myh"]
 _surfaces = [{
 "aabb": AABB(-0.07318595, 0.09540713, -0.45236263, 0.14406139, 0.14825767, 0.3837065),
@@ -325,35 +299,6 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_x4myh")
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6ffqx"]
-render_priority = 1
-transparency = 1
-shading_mode = 0
-albedo_color = Color(0, 0, 0, 0.5882353)
-grow = true
-grow_amount = 0.003
-stencil_mode = 3
-stencil_flags = 1
-stencil_compare = 5
-stencil_reference = 11
-metadata/_stencil_owned = true
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g3y85"]
-next_pass = SubResource("StandardMaterial3D_6ffqx")
-diffuse_mode = 3
-specular_mode = 1
-albedo_texture = ExtResource("9_ki7bh")
-roughness = 0.0
-rim_enabled = true
-rim_tint = 0.0
-clearcoat_enabled = true
-clearcoat_roughness = 1.0
-stencil_mode = 1
-stencil_flags = 2
-stencil_reference = 11
-stencil_color = Color(0, 0, 0, 0.5882353)
-stencil_outline_thickness = 0.003
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_22xcu"]
 _surfaces = [{
@@ -600,22 +545,6 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_w8g27")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vauwm"]
-next_pass = SubResource("StandardMaterial3D_66hm5")
-diffuse_mode = 3
-specular_mode = 2
-albedo_texture = ExtResource("11_fimos")
-metallic_specular = 1.0
-roughness = 0.0
-rim_enabled = true
-rim = 0.5
-clearcoat = 0.0
-stencil_mode = 1
-stencil_flags = 2
-stencil_reference = 10
-stencil_color = Color(0, 0, 0, 0.5882353)
-stencil_outline_thickness = 0.003
-
 [sub_resource type="ArrayMesh" id="ArrayMesh_hs04g"]
 _surfaces = [{
 "aabb": AABB(-0.018277932, 0.15815553, -0.08956145, 0.040254544, 0.03653145, 0.019857883),
@@ -751,22 +680,6 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_61c0t")
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rgeqv"]
-next_pass = SubResource("StandardMaterial3D_6ffqx")
-diffuse_mode = 3
-specular_mode = 1
-albedo_texture = ExtResource("11_fimos")
-roughness = 0.0
-rim_enabled = true
-rim_tint = 0.0
-clearcoat_enabled = true
-clearcoat_roughness = 1.0
-stencil_mode = 1
-stencil_flags = 2
-stencil_reference = 11
-stencil_color = Color(0, 0, 0, 0.5882353)
-stencil_outline_thickness = 0.003
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_8lrpw"]
 _surfaces = [{
@@ -915,42 +828,43 @@ transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.0
 
 [node name="Body_002" type="MeshInstance3D" parent="Shotgun/ShotGunfix" unique_id=843032778]
 mesh = SubResource("ArrayMesh_ei05b")
-surface_material_override/0 = SubResource("StandardMaterial3D_ce350")
+surface_material_override/0 = ExtResource("9_66hm5")
 
 [node name="Bottle_001" type="MeshInstance3D" parent="Shotgun/ShotGunfix" unique_id=115204881]
 mesh = SubResource("ArrayMesh_4ovbp")
-surface_material_override/0 = SubResource("StandardMaterial3D_g3y85")
+surface_material_override/0 = ExtResource("10_g3y85")
 
 [node name="Connector" type="MeshInstance3D" parent="Shotgun/ShotGunfix" unique_id=510368993]
 mesh = SubResource("ArrayMesh_axmyh")
-surface_material_override/0 = SubResource("StandardMaterial3D_ce350")
+surface_material_override/0 = ExtResource("9_66hm5")
 
 [node name="Muzzle_002" type="MeshInstance3D" parent="Shotgun/ShotGunfix" unique_id=1443477881]
 mesh = SubResource("ArrayMesh_4qq07")
-surface_material_override/0 = SubResource("StandardMaterial3D_ce350")
+surface_material_override/0 = ExtResource("9_66hm5")
 
 [node name="Pump_001" type="MeshInstance3D" parent="Shotgun/ShotGunfix" unique_id=1401926665]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.5342709)
 mesh = SubResource("ArrayMesh_lvk23")
-surface_material_override/0 = SubResource("StandardMaterial3D_ce350")
+surface_material_override/0 = ExtResource("9_66hm5")
 
 [node name="Pump2" type="MeshInstance3D" parent="Shotgun/ShotGunfix" unique_id=114798244]
 mesh = SubResource("ArrayMesh_a0giy")
-surface_material_override/0 = SubResource("StandardMaterial3D_ce350")
+surface_material_override/0 = ExtResource("9_66hm5")
 
 [node name="Trigger_002" type="MeshInstance3D" parent="Shotgun/ShotGunfix" unique_id=1778864419]
 mesh = SubResource("ArrayMesh_b5cc3")
-surface_material_override/0 = SubResource("StandardMaterial3D_ce350")
+surface_material_override/0 = ExtResource("9_66hm5")
 
 [node name="Tube" type="MeshInstance3D" parent="Shotgun/ShotGunfix" unique_id=588048692]
 mesh = SubResource("ArrayMesh_rk267")
-surface_material_override/0 = SubResource("StandardMaterial3D_ce350")
+surface_material_override/0 = ExtResource("9_66hm5")
 
 [node name="SpawnPoint" type="Node3D" parent="Shotgun/ShotGunfix" unique_id=858527331]
 transform = Transform3D(-0.8, 0, 1.9079806e-08, 0, 0.8, 0, -1.9079806e-08, 0, -0.8, 0.0036200222, 0.15057194, 0.8411219)
 
 [node name="Sniper" type="Node3D" parent="." unique_id=1877853685 node_paths=PackedStringArray("spawn_point")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.40737915, 0)
+visible = false
 script = ExtResource("6_8ckxr")
 gun_name = "Water sniper"
 spawn_point = NodePath("SpawnPoint")
@@ -976,32 +890,32 @@ transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0
 [node name="Reload Handle" type="MeshInstance3D" parent="Sniper/RifleGunfix" unique_id=1427744831]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.021835344, 0.14637032, 0.21580091)
 mesh = SubResource("ArrayMesh_glx17")
-surface_material_override/0 = SubResource("StandardMaterial3D_vauwm")
+surface_material_override/0 = ExtResource("13_6ffqx")
 
 [node name="Thing_001" type="MeshInstance3D" parent="Sniper/RifleGunfix" unique_id=942940723]
 mesh = SubResource("ArrayMesh_05p0b")
-surface_material_override/0 = SubResource("StandardMaterial3D_vauwm")
+surface_material_override/0 = ExtResource("13_6ffqx")
 
 [node name="Muzzle_001" type="MeshInstance3D" parent="Sniper/RifleGunfix" unique_id=1380349688]
 mesh = SubResource("ArrayMesh_q8m8p")
-surface_material_override/0 = SubResource("StandardMaterial3D_vauwm")
+surface_material_override/0 = ExtResource("13_6ffqx")
 
 [node name="Scope" type="MeshInstance3D" parent="Sniper/RifleGunfix" unique_id=918022664]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.9638047e-08, 0, 0.33901978)
 mesh = SubResource("ArrayMesh_h72pr")
-surface_material_override/0 = SubResource("StandardMaterial3D_vauwm")
+surface_material_override/0 = ExtResource("13_6ffqx")
 
 [node name="Barrel" type="MeshInstance3D" parent="Sniper/RifleGunfix" unique_id=1107983096]
 mesh = SubResource("ArrayMesh_d83um")
-surface_material_override/0 = SubResource("StandardMaterial3D_rgeqv")
+surface_material_override/0 = ExtResource("14_vauwm")
 
 [node name="Body_001" type="MeshInstance3D" parent="Sniper/RifleGunfix" unique_id=1617315634]
 mesh = SubResource("ArrayMesh_p540i")
-surface_material_override/0 = SubResource("StandardMaterial3D_vauwm")
+surface_material_override/0 = ExtResource("13_6ffqx")
 
 [node name="Trigger_001" type="MeshInstance3D" parent="Sniper/RifleGunfix" unique_id=2136687877]
 mesh = SubResource("ArrayMesh_xxtpo")
-surface_material_override/0 = SubResource("StandardMaterial3D_vauwm")
+surface_material_override/0 = ExtResource("13_6ffqx")
 
 [node name="SpawnPoint" type="Node3D" parent="Sniper" unique_id=130137317]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.03310444, -0.01666484, -0.40025687)

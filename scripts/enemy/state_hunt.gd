@@ -92,6 +92,9 @@ func enter() -> void:
 	_selected_attack = ""
 	_token_hold_elapsed = 0.0
 	
+	if enemy and enemy.is_inside_tree() and enemy.get_tree().root.has_node("GameManager"):
+		enemy.get_tree().root.get_node("GameManager").start_timer()
+	
 	if enemy and enemy.anim_set:
 		_walk_anim = enemy.anim_set.get_walk_anim()
 		_update_walk_timescale()
