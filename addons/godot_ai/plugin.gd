@@ -6,13 +6,8 @@ const GAME_HELPER_AUTOLOAD_PATH := "res://addons/godot_ai/runtime/game_helper.gd
 
 ## Editor-process Logger subclass — captures parse errors, @tool runtime
 ## errors, and push_error/push_warning so the LLM can read them via
-## `logs_read(source="editor")`. Loaded dynamically because
-## `extends Logger` requires Godot 4.5+. The logger script lives in the
-## `.gdignore`'d `runtime/loggers/` folder so Godot's editor scan never
-## parses it (no "Could not find base class Logger" error on < 4.5), and
-## LoggerLoader compiles it from source at runtime only after the
-## ClassDB.class_exists("Logger") gate below. See issue #231 / #475.
-const LoggerLoader := preload("res://addons/godot_ai/runtime/logger_loader.gd")
+## `logs_read(source="editor")`.
+const EditorLogger := preload("res://addons/godot_ai/runtime/editor_logger.gd")
 
 ## EditorSettings keys used to remember which server process the plugin
 ## spawned — survives editor restarts, lets a later editor session adopt
@@ -48,6 +43,7 @@ const Telemetry := preload("res://addons/godot_ai/telemetry.gd")
 const LogBuffer := preload("res://addons/godot_ai/utils/log_buffer.gd")
 const GameLogBuffer := preload("res://addons/godot_ai/utils/game_log_buffer.gd")
 const EditorLogBuffer := preload("res://addons/godot_ai/utils/editor_log_buffer.gd")
+const SurfacedErrorTracker := preload("res://addons/godot_ai/utils/surfaced_error_tracker.gd")
 const Dock := preload("res://addons/godot_ai/mcp_dock.gd")
 const DebuggerPlugin := preload("res://addons/godot_ai/debugger/mcp_debugger_plugin.gd")
 const ClientConfigurator := preload("res://addons/godot_ai/client_configurator.gd")
@@ -83,6 +79,8 @@ const EnvironmentHandler := preload("res://addons/godot_ai/handlers/environment_
 const TextureHandler := preload("res://addons/godot_ai/handlers/texture_handler.gd")
 const CurveHandler := preload("res://addons/godot_ai/handlers/curve_handler.gd")
 const ControlDrawRecipeHandler := preload("res://addons/godot_ai/handlers/control_draw_recipe_handler.gd")
+const TilemapHandler := preload("res://addons/godot_ai/handlers/tilemap_handler.gd")
+const TilesetHandler := preload("res://addons/godot_ai/handlers/tileset_handler.gd")
 
 ## The Python server writes its own PID here on startup (passed as
 ## `--pid-file`) and unlinks on clean exit. Deterministic replacement
@@ -144,19 +142,14 @@ const STARTUP_TRACE_COUNTER_NAMES := [
 ##
 ## `tests/unit/test_plugin_self_update_safety.py` locks this wording in.
 ##
-## `_editor_logger` is untyped because its script extends Godot 4.5+'s Logger
-## class: `logger_loader.gd` compiles it at runtime from on-disk source
-## (FileAccess + `GDScript.new()`) past the `ClassDB.class_exists("Logger")`
-## gate in `_attach_editor_logger`, so the plugin still parses on 4.4. Null on
-## Godot < 4.5 or before `_attach_editor_logger` runs; "attached" state IS
-## exactly "non-null".
 var _connection
 var _dispatcher
 var _telemetry
 var _log_buffer
 var _game_log_buffer
 var _editor_log_buffer
-var _editor_logger
+var _surfaced_error_tracker
+var _editor_logger: Logger
 var _dock
 var _handlers: Array = []  # prevent GC of RefCounted handlers
 var _debugger_plugin
@@ -197,11 +190,9 @@ func _enter_tree() -> void:
 		print("MCP | plugin disabled in headless mode")
 		return
 
-	## Self-update from a pre-loggers/ version leaves the old logger scripts
-	## orphaned at runtime/*.gd (the runner only writes files in the new ZIP,
-	## it doesn't prune). Those still `extends Logger` and re-emit the parse
-	## errors on Godot < 4.5. Delete them once so upgraders match a fresh
-	## install. No-op on fresh installs and dev checkouts (files absent).
+	## Self-update extracts over the live addon and doesn't prune files that
+	## disappeared from the new ZIP. Remove obsolete Logger-loader quarantine
+	## files/folders once so upgraders match a fresh install.
 	_cleanup_legacy_logger_scripts()
 
 	## Register port overrides before spawn so `http_port()` / `ws_port()`
@@ -211,17 +202,24 @@ func _enter_tree() -> void:
 	_startup_trace_phase("settings_registered")
 
 	_log_buffer = LogBuffer.new()
+	## Apply the persisted dock "Log" toggle before anything logs through the
+	## buffer. Without this the choice only took effect after a manual toggle
+	## and reset to noisy on every editor restart (#626).
+	_log_buffer.enabled = McpSettings.mcp_logging_enabled()
 	_start_server()
 	_startup_trace_phase("server_start")
 
 	_game_log_buffer = GameLogBuffer.new()
 	_editor_log_buffer = EditorLogBuffer.new()
+	_surfaced_error_tracker = SurfacedErrorTracker.new(_editor_log_buffer, _game_log_buffer)
 	_attach_editor_logger()
-	_dispatcher = Dispatcher.new(_log_buffer)
+	_dispatcher = Dispatcher.new(_log_buffer, _surfaced_error_tracker)
+	_dispatcher.mcp_logging = _log_buffer.enabled
 	_startup_trace_phase("core_objects")
 
 	_connection = Connection.new()
 	_connection.log_buffer = _log_buffer
+	_connection.surfaced_error_tracker = _surfaced_error_tracker
 	_connection.ws_port = _resolved_ws_port
 	_connection.connect_blocked = _lifecycle.is_connection_blocked()
 	_connection.connect_block_reason = _lifecycle.get_status_dict().get("message", "")
@@ -233,11 +231,12 @@ func _enter_tree() -> void:
 
 	_telemetry = Telemetry.new(_connection)
 
-	_debugger_plugin = DebuggerPlugin.new(_log_buffer, _game_log_buffer, _editor_log_buffer)
+	_debugger_plugin = DebuggerPlugin.new(_log_buffer, _game_log_buffer, _editor_log_buffer, _surfaced_error_tracker)
 	add_debugger_plugin(_debugger_plugin)
+	_connection.debugger_plugin = _debugger_plugin
 	_ensure_game_helper_autoload()
 
-	var editor_handler := EditorHandler.new(_log_buffer, _connection, _debugger_plugin, _game_log_buffer, _editor_log_buffer)
+	var editor_handler := EditorHandler.new(_log_buffer, _connection, _debugger_plugin, _game_log_buffer, _editor_log_buffer, null, _surfaced_error_tracker)
 	var scene_handler := SceneHandler.new(_connection)
 	var node_handler := NodeHandler.new(get_undo_redo())
 	var project_handler := ProjectHandler.new(_connection, _debugger_plugin, _editor_log_buffer)
@@ -263,7 +262,9 @@ func _enter_tree() -> void:
 	var texture_handler := TextureHandler.new(get_undo_redo(), _connection)
 	var curve_handler := CurveHandler.new(get_undo_redo(), _connection)
 	var control_draw_recipe_handler := ControlDrawRecipeHandler.new(get_undo_redo())
-	_handlers = [editor_handler, scene_handler, node_handler, project_handler, client_handler, script_handler, resource_handler, api_handler, filesystem_handler, signal_handler, autoload_handler, input_handler, test_handler, batch_handler, ui_handler, theme_handler, animation_handler, material_handler, particle_handler, camera_handler, audio_handler, physics_shape_handler, environment_handler, texture_handler, curve_handler, control_draw_recipe_handler]
+	var tilemap_handler := TilemapHandler.new(get_undo_redo())
+	var tileset_handler := TilesetHandler.new()
+	_handlers = [editor_handler, scene_handler, node_handler, project_handler, client_handler, script_handler, resource_handler, api_handler, filesystem_handler, signal_handler, autoload_handler, input_handler, test_handler, batch_handler, ui_handler, theme_handler, animation_handler, material_handler, particle_handler, camera_handler, audio_handler, physics_shape_handler, environment_handler, texture_handler, curve_handler, control_draw_recipe_handler, tilemap_handler, tileset_handler]
 
 	_dispatcher.register("get_editor_state", editor_handler.get_editor_state)
 	_dispatcher.register("get_scene_tree", scene_handler.get_scene_tree)
@@ -327,8 +328,10 @@ func _enter_tree() -> void:
 	_dispatcher.register("remove_autoload", autoload_handler.remove_autoload)
 	_dispatcher.register("list_actions", input_handler.list_actions)
 	_dispatcher.register("add_action", input_handler.add_action)
+	_dispatcher.register("ensure_action", input_handler.ensure_action)
 	_dispatcher.register("remove_action", input_handler.remove_action)
 	_dispatcher.register("bind_event", input_handler.bind_event)
+	_dispatcher.register("ensure_binding", input_handler.ensure_binding)
 	_dispatcher.register("run_tests", test_handler.run_tests)
 	_dispatcher.register("get_test_results", test_handler.get_test_results)
 	_dispatcher.register("batch_execute", batch_handler.batch_execute)
@@ -394,6 +397,12 @@ func _enter_tree() -> void:
 	_dispatcher.register(
 		"control_draw_recipe", control_draw_recipe_handler.control_draw_recipe
 	)
+	_dispatcher.register("tilemap_set_cell",              tilemap_handler.set_cell)
+	_dispatcher.register("tilemap_set_cells_rect",        tilemap_handler.set_cells_rect)
+	_dispatcher.register("tilemap_clear",                 tilemap_handler.clear_layer)
+	_dispatcher.register("tilemap_get_cells",             tilemap_handler.get_used_cells)
+	_dispatcher.register("tileset_get_atlas_tiles",        tileset_handler.get_atlas_tiles)
+	_dispatcher.register("tileset_get_atlas_image",        tileset_handler.get_atlas_image)
 
 	_connection.dispatcher = _dispatcher
 	add_child(_connection)
@@ -490,6 +499,7 @@ func _exit_tree() -> void:
 	_log_buffer = null
 	_game_log_buffer = null
 	_editor_log_buffer = null
+	_surfaced_error_tracker = null
 
 	_stop_server()
 	## Symmetric with prepare_for_update_reload: the static guard persists
@@ -505,9 +515,7 @@ func _exit_tree() -> void:
 ## Attach editor_logger.gd as a Godot logger so editor-process script
 ## errors (parse errors, @tool runtime errors, EditorPlugin errors,
 ## push_error/push_warning) flow into _editor_log_buffer for
-## logs_read(source="editor"). Logger subclassing is 4.5+ only; the
-## ClassDB gate keeps the plugin loadable on 4.4 with no-op editor logs
-## (the buffer stays empty, logs_read returns no entries).
+## logs_read(source="editor").
 ##
 ## Limitation called out in the issue: parse errors fired *before* the
 ## plugin's _enter_tree (e.g. during the editor's initial filesystem
@@ -517,36 +525,53 @@ func _exit_tree() -> void:
 ## file would re-emit them but at the cost of disrupting the user's
 ## editing state, so we accept the gap.
 func _attach_editor_logger() -> void:
-	if not (ClassDB.class_exists("Logger") and OS.has_method("add_logger")):
-		return
-	var logger_script := LoggerLoader.build(LoggerLoader.EDITOR_LOGGER_PATH)
-	if logger_script == null:
-		return
-	_editor_logger = logger_script.new(_editor_log_buffer)
-	OS.call("add_logger", _editor_logger)
+	_editor_logger = EditorLogger.new(_editor_log_buffer)
+	OS.add_logger(_editor_logger)
 
 
-## Remove the pre-2.5.8 logger scripts left at runtime/*.gd by a self-update
-## (the runner doesn't prune files dropped between versions). They `extends
-## Logger` and would re-emit "Could not find base class Logger" parse errors
-## on Godot < 4.5 even though the live copies now live in the .gdignore'd
-## runtime/loggers/ folder. Idempotent: existence-guarded, so it's a no-op on
-## fresh installs and symlinked dev checkouts.
+## Remove old Logger-quarantine artifacts left by extract-over-live
+## self-update. Idempotent: existence-guarded, so it's a no-op on fresh
+## installs and symlinked dev checkouts.
 func _cleanup_legacy_logger_scripts() -> void:
-	var legacy := [
-		"res://addons/godot_ai/runtime/editor_logger.gd",
-		"res://addons/godot_ai/runtime/editor_logger.gd.uid",
-		"res://addons/godot_ai/runtime/game_logger.gd",
-		"res://addons/godot_ai/runtime/game_logger.gd.uid",
+	var legacy_files := [
+		"res://addons/godot_ai/runtime/logger_loader.gd",
+		"res://addons/godot_ai/runtime/logger_loader.gd.uid",
+		"res://addons/godot_ai/testing/script_error_capture_loader.gd",
+		"res://addons/godot_ai/testing/script_error_capture_loader.gd.uid",
 	]
-	for res_path in legacy:
+	for res_path in legacy_files:
 		if FileAccess.file_exists(res_path):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(res_path))
+	var legacy_dirs := [
+		"res://addons/godot_ai/runtime/loggers",
+		"res://addons/godot_ai/testing/loggers",
+	]
+	for res_path in legacy_dirs:
+		var absolute := ProjectSettings.globalize_path(res_path)
+		if DirAccess.dir_exists_absolute(absolute):
+			_remove_dir_recursive_absolute(absolute)
+
+
+static func _remove_dir_recursive_absolute(path: String) -> void:
+	var dir := DirAccess.open(path)
+	if dir == null:
+		return
+	dir.list_dir_begin()
+	var name := dir.get_next()
+	while not name.is_empty():
+		var child := path.path_join(name)
+		if dir.current_is_dir():
+			_remove_dir_recursive_absolute(child)
+		else:
+			DirAccess.remove_absolute(child)
+		name = dir.get_next()
+	dir.list_dir_end()
+	DirAccess.remove_absolute(path)
 
 
 func _detach_editor_logger() -> void:
-	if _editor_logger != null and OS.has_method("remove_logger"):
-		OS.call("remove_logger", _editor_logger)
+	if _editor_logger != null:
+		OS.remove_logger(_editor_logger)
 	_editor_logger = null
 
 

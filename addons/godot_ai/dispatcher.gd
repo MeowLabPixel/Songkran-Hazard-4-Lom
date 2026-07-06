@@ -9,6 +9,7 @@ var _command_queue: Array[Dictionary] = []
 var _handlers: Dictionary = {}  # command_name -> Callable
 var _pending_deferred: Dictionary = {}  # request_id -> {command, started_ms, timeout_ms}
 var _log_buffer
+var _surfaced_error_tracker
 var mcp_logging := true
 var deferred_timeout_overrides_ms: Dictionary = {}
 
@@ -26,8 +27,9 @@ const ErrorCodes := preload("res://addons/godot_ai/utils/error_codes.gd")
 const FuzzySuggestions := preload("res://addons/godot_ai/utils/fuzzy_suggestions.gd")
 
 
-func _init(log_buffer: McpLogBuffer) -> void:
+func _init(log_buffer: McpLogBuffer, surfaced_error_tracker = null) -> void:
 	_log_buffer = log_buffer
+	_surfaced_error_tracker = surfaced_error_tracker
 
 
 ## Register a command handler. The callable receives (params: Dictionary) -> Dictionary.
@@ -43,6 +45,11 @@ func clear() -> void:
 	_command_queue.clear()
 	_pending_deferred.clear()
 	_log_buffer = null
+	_surfaced_error_tracker = null
+
+
+func set_surfaced_error_tracker(surfaced_error_tracker) -> void:
+	_surfaced_error_tracker = surfaced_error_tracker
 
 
 ## Invoke a registered handler directly by name. Returns the handler's raw
@@ -162,6 +169,7 @@ func _dispatch(cmd: Dictionary) -> Dictionary:
 	## See connection.gd::send_deferred_response for the deferred-response
 	## counterpart, which stamps the same field.
 	result["readiness"] = McpConnection.get_readiness()
+	_stamp_error_watermark(result)
 
 	if mcp_logging:
 		var status: String = result.get("status", "ok")
@@ -253,22 +261,22 @@ func _collect_deferred_timeouts() -> Array[Dictionary]:
 		## dispatcher emits so the server cache can't drift just because
 		## the editor happened to time out a deferred command.
 		response["readiness"] = McpConnection.get_readiness()
+		_stamp_error_watermark(response)
 		responses.append(response)
 		if mcp_logging and _log_buffer != null:
 			_log_buffer.log("[defer] %s (request %s) -> timeout" % [command, request_id])
 	return responses
 
 
+func _stamp_error_watermark(response: Dictionary) -> void:
+	McpSurfacedErrorTracker.stamp_watermark(response, _surfaced_error_tracker)
+
+
 static func _capture_compact_backtrace(max_frames: int = 8) -> String:
-	# Use Engine.call() instead of a direct Engine.capture_script_backtraces()
-	# reference: the method is Godot 4.4+, and 4.3's GDScript parser type-checks
-	# the static call against GDScriptNativeClass at parse time and rejects the
-	# whole script even when guarded by has_method() at runtime.
-	if Engine.has_method("capture_script_backtraces"):
-		var traces: Array = Engine.call("capture_script_backtraces", false)
-		for bt in traces:
-			if bt != null and not bt.is_empty():
-				return _trim_backtrace_string(bt.format(0, 2), max_frames)
+	var traces: Array = Engine.capture_script_backtraces(false)
+	for bt in traces:
+		if bt != null and not bt.is_empty():
+			return _trim_backtrace_string(bt.format(0, 2), max_frames)
 	return _format_stack_frames(get_stack(), max_frames)
 
 

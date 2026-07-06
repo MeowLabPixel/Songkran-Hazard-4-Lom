@@ -57,6 +57,7 @@ var was_aiming: bool = false
 var was_grab: bool = false
 var target_tank_look_around: Vector2 = Vector2.ZERO
 var time_since_last_mouse_move: float = 0.0
+var _tank_turn_velocity: float = 0.0
 
 @export_group("Aim Deadzones")
 @export var aim_deadzone_left: float = 0.15 # Small limit on left to avoid body blocking
@@ -191,11 +192,16 @@ func _process(delta: float) -> void:
 				turn_input -= 1.0
 			if Input.is_action_pressed("ui_right"):
 				turn_input += 1.0
+			var accel = 7.0
+			var decel = 9.0
+			if abs(turn_input) > 0.0:
+				_tank_turn_velocity = move_toward(_tank_turn_velocity, turn_input, delta * accel)
+			else:
+				_tank_turn_velocity = move_toward(_tank_turn_velocity, 0.0, delta * decel)
 			
 			var turn_speed_rad = deg_to_rad(character.turn_speed) if character else 2.5
-			var turn_amount = turn_input * turn_speed_rad * delta
+			var turn_amount = _tank_turn_velocity * turn_speed_rad * delta
 			target_camera_rotation.x += turn_amount
-			camera_rotation.x += turn_amount
 			
 			# Check if player is active (walking or turning)
 			var is_walking = Input.is_action_pressed("move_forward") or Input.is_action_pressed("move_backward")

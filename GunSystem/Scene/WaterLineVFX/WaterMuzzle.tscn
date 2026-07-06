@@ -191,7 +191,7 @@ material_override = SubResource("ShaderMaterial_evm2p")
 mesh = SubResource("CylinderMesh_0tm5n")
 
 [node name="BeamFlare2" type="MeshInstance3D" parent="Node3D" unique_id=1016851004]
-transform = Transform3D(0, 0, 0, 0, 0, 0, 0, 0, 0, -6.617445e-24, -6.352747e-22, -0.5)
+transform = Transform3D(0.001, 0, 0, 0, 0.001, 0, 0, 0, 0.001, -6.617445e-24, -6.352747e-22, -0.5)
 sorting_offset = 2.0
 material_override = SubResource("ShaderMaterial_aox3o")
 mesh = SubResource("CylinderMesh_t1445")

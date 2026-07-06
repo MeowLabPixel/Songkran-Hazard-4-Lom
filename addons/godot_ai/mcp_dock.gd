@@ -78,7 +78,7 @@ var _install_label: Label
 # Tools tab (secondary window, Tab 2) — domain-exclusion UI for clients
 # that cap total tool count (Antigravity: 100). Pending set is mutated by
 # checkbox clicks; saved set reflects what the spawned server actually
-# sees. `Apply & Restart Server` writes pending → setting and triggers a
+# sees. `Apply and Restart Server` writes pending → setting and triggers a
 # plugin reload so the new server comes up with the trimmed list.
 var _tools_pending_excluded: PackedStringArray = PackedStringArray()
 var _tools_saved_excluded: PackedStringArray = PackedStringArray()
@@ -583,7 +583,7 @@ func _build_ui() -> void:
 	_update_label = Label.new()
 	_update_label.add_theme_font_size_override("font_size", 15)
 	_update_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
-	## Wrap long banner text (e.g. the < 4.4 manual-update guidance) instead
+	## Wrap long banner text (e.g. the < 4.5 support-floor guidance) instead
 	## of letting a single line stretch the whole dock wide. The dock is a
 	## fixed-width side panel, so constrain horizontally and wrap.
 	_update_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -1133,10 +1133,17 @@ func _apply_mixed_state_banner_diagnostic(diag: Dictionary) -> void:
 
 
 ## Signal handler for the extracted LogViewer — the panel owns its own
-## display visibility, the dock owns dispatcher logging routing.
+## display visibility, the dock owns logging routing. Routes to BOTH the
+## dispatcher (gates [recv]/[send] recording) and the log buffer's console
+## echo — the connection logs [event]/[defer] lines directly to the buffer,
+## bypassing the dispatcher, so gating only `mcp_logging` left the console
+## spamming with the toggle off (#626). Ring recording is unaffected, so
+## the dock's log panel keeps working while the console stays quiet.
 func _on_log_logging_enabled_changed(enabled: bool) -> void:
 	if _connection and _connection.dispatcher:
 		_connection.dispatcher.mcp_logging = enabled
+	if _log_buffer != null:
+		_log_buffer.enabled = enabled
 
 
 ## Signal handler for the extracted PortPickerPanel — the panel range-validates
@@ -1449,7 +1456,9 @@ func _refresh_setup_status() -> void:
 	# User mode — check for uv
 	var uv_version := ClientConfigurator.check_uv_version()
 	if not uv_version.is_empty():
-		_setup_container.add_child(_make_status_row("uv", uv_version, Color.GREEN))
+		var compact_uv_version := _compact_uv_version_text(uv_version)
+		var uv_tooltip := uv_version if compact_uv_version != uv_version else ""
+		_setup_container.add_child(_make_status_row("uv", compact_uv_version, Color.GREEN, uv_tooltip))
 		## Build the Server row with a placeholder label we can update every
 		## frame. `_refresh_server_version_label` replaces the text + color
 		## once `McpConnection.server_version` lands via `handshake_ack`, and
@@ -1510,19 +1519,39 @@ func _resolve_plugin_symlink_target() -> String:
 	return target
 
 
-func _make_status_row(label_text: String, value_text: String, value_color: Color) -> HBoxContainer:
+static func _compact_uv_version_text(uv_version: String) -> String:
+	var text := uv_version.strip_edges()
+	if text.ends_with(")"):
+		var metadata_start := text.rfind(" (")
+		if metadata_start >= 0:
+			return text.substr(0, metadata_start).strip_edges()
+	return text
+
+
+func _make_status_row(
+	label_text: String,
+	value_text: String,
+	value_color: Color,
+	tooltip_text: String = ""
+) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
+	if not tooltip_text.is_empty():
+		row.tooltip_text = tooltip_text
 
 	var label := Label.new()
 	label.text = label_text
 	label.add_theme_color_override("font_color", COLOR_MUTED)
 	label.custom_minimum_size.x = 60
+	if not tooltip_text.is_empty():
+		label.tooltip_text = tooltip_text
 	row.add_child(label)
 
 	var value := Label.new()
 	value.text = value_text
 	value.add_theme_color_override("font_color", value_color)
+	if not tooltip_text.is_empty():
+		value.tooltip_text = tooltip_text
 	row.add_child(value)
 
 	return row
@@ -1632,28 +1661,12 @@ func _update_dev_section_buttons() -> void:
 		_dev_stop_btn.tooltip_text = stop_state["tooltip"]
 
 
-func _configured_client_count() -> int:
-	var configured := 0
-	for client_id in _client_rows:
-		var status: Client.Status = _client_rows[client_id].get("status", Client.Status.NOT_CONFIGURED)
-		if status == Client.Status.CONFIGURED:
-			configured += 1
-	return configured
-
-
 func _client_status_refresh_has_completed() -> bool:
 	return _last_client_status_refresh_completed_msec > 0
 
 
 func _connected_status_text() -> String:
-	var configured := _configured_client_count()
-	if configured == 0:
-		if not _client_status_refresh_has_completed():
-			return "Server connected · checking AI client configuration"
-		return "Server connected · no AI client configured"
-	if configured == 1:
-		return "Server connected · 1 AI client configured"
-	return "Server connected · %d AI clients configured" % configured
+	return "Server connected"
 
 
 func _on_install_uv() -> void:
@@ -2008,7 +2021,7 @@ func _build_tools_tab(tabs: TabContainer) -> void:
 	footer.add_theme_constant_override("separation", 8)
 
 	_tools_apply_btn = Button.new()
-	_tools_apply_btn.text = "Apply && Restart Server"
+	_tools_apply_btn.text = "Apply and Restart Server"
 	_tools_apply_btn.tooltip_text = "Save the excluded list to Editor Settings and reload the plugin so the server respawns with --exclude-domains."
 	_tools_apply_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_tools_apply_btn.pressed.connect(_on_tools_apply)
@@ -2726,6 +2739,5 @@ func _on_install_state_changed(state: Dictionary) -> void:
 	if state.has("banner_visible") and _update_banner != null:
 		_update_banner.visible = bool(state["banner_visible"])
 	if String(state.get("outcome", "")) == "success" and _update_label != null:
-		## Visual confirmation for the pre-4.4 "Updated! Restart the editor."
-		## terminal state — the only outcome the manager paints green for.
+		## Visual confirmation for successful terminal update states.
 		_update_label.add_theme_color_override("font_color", Color.GREEN)

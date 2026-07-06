@@ -50,6 +50,8 @@ const DOMAINS := [
 	{"id": "signal", "label": "signal", "count": 1, "tools": ["signal_manage"]},
 	{"id": "testing", "label": "testing", "count": 2, "tools": ["test_manage", "test_run"]},
 	{"id": "theme", "label": "theme", "count": 1, "tools": ["theme_manage"]},
+	{"id": "tilemap", "label": "tilemap", "count": 1, "tools": ["tilemap_manage"]},
+	{"id": "tileset", "label": "tileset", "count": 1, "tools": ["tileset_manage"]},
 	{"id": "ui", "label": "ui", "count": 1, "tools": ["ui_manage"]},
 ]
 

@@ -136,6 +136,7 @@ var _anim_time: float = 0.53
 var _is_returning_to_neutral: bool = false
 var _stop_timer: float = 0.0
 var _peak_blend: float = 0.0
+var _current_turn_anim_scale: float = 0.0
 @onready var cross_hair: Control = $Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/Die/TextureRect
 @onready var reload_timer: Timer = $Reload_timer
 
@@ -322,11 +323,15 @@ func _process(delta: float) -> void:
 			var sm = get_node_or_null("Statemachine")
 			var is_reloading = sm and sm.current_state and sm.current_state.name == "Reload"
 			
+			lean_modifier.is_grab = is_grab
+			
 			if is_reloading:
 				lean_modifier.input_dir = Vector2.ZERO
 				lean_modifier.is_sprinting = false
 				lean_modifier.is_aiming = false
 				lean_modifier.is_reloading = true
+				lean_modifier.is_rotating_in_place = false
+				lean_modifier.rotating_in_place_speed = 0.0
 			else:
 				lean_modifier.is_reloading = false
 				lean_modifier.input_dir = Motion.input_dir
@@ -336,6 +341,12 @@ func _process(delta: float) -> void:
 					is_sprinting = true
 				lean_modifier.is_sprinting = is_sprinting
 				lean_modifier.is_aiming = is_aimming
+				lean_modifier.is_rotating_in_place = (
+					Motion.input_dir == Vector2.ZERO 
+					and _is_turning 
+					and not is_grab
+				)
+				lean_modifier.rotating_in_place_speed = abs(_current_turn_anim_scale)
 
 	_update_skeleton_tilt(delta)
 	_update_aim_target(delta)
@@ -1219,6 +1230,8 @@ func _update_idle_turn_blend(delta: float) -> void:
 			_stop_timer = 0.0
 			_is_returning_to_neutral = false
 			_smoothed_turn_speed = 0.0
+
+	_current_turn_anim_scale = target_scale if _is_turning else 0.0
 
 
 func _trigger_turn_seek() -> void:

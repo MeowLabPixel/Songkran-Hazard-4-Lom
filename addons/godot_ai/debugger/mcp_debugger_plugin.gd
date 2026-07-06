@@ -65,6 +65,7 @@ const EVAL_PROBE_INTERVAL_SEC := 0.35
 var _log_buffer: McpLogBuffer
 var _game_log_buffer: McpGameLogBuffer
 var _editor_log_buffer: McpEditorLogBuffer
+var _surfaced_error_tracker
 
 ## Pending request_id -> {connection, timer, timeout_callable}.
 ## We retain the bound timeout lambda so `_clear_pending` can disconnect
@@ -81,16 +82,41 @@ var _game_run_token := 0
 var _ready_run_token := -1
 var _game_session_id := -1
 var _game_run_active := false
+var _manual_run_armed := false
 var _game_run_started_msec := 0
 var _game_run_started_editor_cursor := 0
+var _game_run_started_debugger_cursor := 0
 var _game_helper_expected := true
+
+## #645: a GDScript parse error hit while an editor-launched game boots calls
+## GDScriptLanguage::debug_break_parse — the game parks in a remote-debugger
+## break BEFORE the helper's mcp:hello and before any record reaches the
+## Errors tab, the editor Logger, or the game log. The only editor-side traces
+## are the debugger break signals; the stack frames land in the Stack Trace
+## panel a few frames later. Track the break here so game_status can report
+## status="break" and a synthesized error record can name the failure.
+var _break_active := false
+var _break_can_debug := false
+var _break_reason := ""
+var _break_pre_live := false
+var _break_run_token := -1
+var _break_record_synthesized := false
+
+## #645: how long after the break signal to scrape the Stack Trace panel for
+## frames. The editor requests the stack dump from the game separately, so the
+## panel is empty at signal time; ~0.5s has it populated. The late tick
+## synthesizes with whatever is available so a scrape failure still yields a
+## record carrying the break reason.
+const BREAK_FRAME_SCRAPE_DELAYS_SEC: Array[float] = [0.5, 2.0]
+
 signal game_ready
 
 
-func _init(log_buffer: McpLogBuffer = null, game_log_buffer: McpGameLogBuffer = null, editor_log_buffer: McpEditorLogBuffer = null) -> void:
+func _init(log_buffer: McpLogBuffer = null, game_log_buffer: McpGameLogBuffer = null, editor_log_buffer: McpEditorLogBuffer = null, surfaced_error_tracker = null) -> void:
 	_log_buffer = log_buffer
 	_game_log_buffer = game_log_buffer
 	_editor_log_buffer = editor_log_buffer
+	_surfaced_error_tracker = surfaced_error_tracker
 
 
 func _has_capture(prefix: String) -> bool:
@@ -107,35 +133,297 @@ func _has_capture(prefix: String) -> bool:
 ## plugin.gd's _enter_tree logs "plugin loaded", and ci-reload-test
 ## asserts "plugin loaded" is the first line after a plugin reload.
 func _setup_session(session_id: int) -> void:
-	_game_ready = false
-	_ready_run_token = -1
+	_connect_session_stopped(session_id)
+	_connect_session_break_signals(session_id)
+	if EditorInterface.is_playing_scene() and not _game_run_active:
+		_begin_game_run_tracking(_editor_log_cursor(), true, true, true, true, true)
+	else:
+		_game_ready = false
+		_ready_run_token = -1
 	_game_session_id = session_id
 
 
 func begin_game_run(editor_log_cursor: int = 0, helper_expected: bool = true) -> void:
+	_begin_game_run_tracking(editor_log_cursor, helper_expected, true, true)
+
+
+func _begin_game_run_tracking(
+	editor_log_cursor: int = 0,
+	helper_expected: bool = true,
+	rotate_game_log: bool = true,
+	sticky_debugger_scan: bool = true,
+	quiet: bool = false,
+	manual_armed: bool = false,
+) -> void:
 	_game_run_token += 1
 	_game_run_active = true
+	_manual_run_armed = manual_armed
 	_game_ready = false
 	_ready_run_token = -1
 	_game_session_id = -1
+	clear_debug_break()
 	_game_run_started_msec = Time.get_ticks_msec()
 	_game_run_started_editor_cursor = maxi(0, editor_log_cursor)
+	if _surfaced_error_tracker != null:
+		_surfaced_error_tracker.note_game_run_started(sticky_debugger_scan)
+		_game_run_started_debugger_cursor = _surfaced_error_tracker.debugger_promoted_total()
+	else:
+		_game_run_started_debugger_cursor = 0
 	_game_helper_expected = helper_expected
 	var run_id := ""
-	if _game_log_buffer:
+	if _game_log_buffer and rotate_game_log:
 		run_id = _game_log_buffer.clear_for_new_run()
-	if _log_buffer:
+	if _log_buffer and not quiet:
 		var log_text := "[debug] game capture pending run token %d" % _game_run_token
 		if not run_id.is_empty():
 			log_text += " (run %s)" % run_id
 		_log_buffer.log(log_text)
 
 
+func _editor_log_cursor() -> int:
+	return _editor_log_buffer.appended_total() if _editor_log_buffer != null else 0
+
+
 func end_game_run() -> void:
 	_game_run_active = false
+	_manual_run_armed = false
 	_game_ready = false
 	_ready_run_token = -1
 	_game_session_id = -1
+	clear_debug_break()
+	if _surfaced_error_tracker != null:
+		_surfaced_error_tracker.note_game_run_stopped()
+
+
+## Authoritative fallback for runs whose debugger `stopped` signal never
+## fired or was never connected: the editor's play state falling to stopped
+## means the game process is gone. A game that exits on its own
+## (get_tree().quit(), crash) has no MCP stop op to run the bookkeeping, and
+## without this game_status stayed "live" until the next run (#642 smoke).
+## Called on the playing→stopped edge only, so the pre-play launch window
+## (run tracking begun, is_playing_scene() not yet true) is never clipped.
+func note_editor_play_stopped() -> void:
+	if not _game_run_active:
+		return
+	end_game_run()
+
+
+func _connect_session_stopped(session_id: int) -> void:
+	var session = get_session(session_id)
+	if session == null:
+		return
+	var stopped := Callable(self, "_on_debugger_session_stopped").bind(session_id)
+	if not session.stopped.is_connected(stopped):
+		session.stopped.connect(stopped)
+
+
+func _on_debugger_session_stopped(session_id: int) -> void:
+	if _game_session_id != -1 and session_id != _game_session_id:
+		return
+	## MCP-started runs normally end via project_manage(op="stop"), but a game
+	## that exits on its own (get_tree().quit(), crash) emits only this signal.
+	## Without ending the run here, game_status stays "live" until the next
+	## run's bookkeeping rewrites it (#642 live smoke). Before the game session
+	## attaches (_game_session_id == -1) only manual runs may end on this
+	## signal — a foreign session's stop must not cancel a launching MCP run.
+	if not _manual_run_armed and _game_session_id == -1:
+		return
+	end_game_run()
+
+
+## --- #645: boot-time debugger breaks ---------------------------------------
+
+func _connect_session_break_signals(session_id: int) -> void:
+	var session = get_session(session_id)
+	if session != null:
+		var breaked_cb := Callable(self, "_on_debugger_session_breaked").bind(session_id)
+		if not session.breaked.is_connected(breaked_cb):
+			session.breaked.connect(breaked_cb)
+		var continued_cb := Callable(self, "_on_debugger_session_continued").bind(session_id)
+		if not session.continued.is_connected(continued_cb):
+			session.continued.connect(continued_cb)
+	_connect_script_debugger_breaked()
+
+
+## The session-level `breaked` signal carries only can_debug; the underlying
+## ScriptEditorDebugger's own `breaked` also carries the human-readable break
+## reason ("Parser Error: ..."), which is otherwise visible only in the
+## Debugger UI. EditorDebuggerSession does not expose its debugger node, so
+## locate ScriptEditorDebugger instances by walking the editor UI — the same
+## approach as the tracker's Errors-tab scrape.
+func _connect_script_debugger_breaked() -> void:
+	var base := EditorInterface.get_base_control()
+	if base == null:
+		return
+	var debuggers: Array[Node] = []
+	_collect_nodes_of_class(base, "ScriptEditorDebugger", debuggers)
+	for dbg in debuggers:
+		if not dbg.has_signal("breaked"):
+			continue
+		var cb := Callable(self, "_on_script_debugger_breaked")
+		if not dbg.is_connected("breaked", cb):
+			dbg.connect("breaked", cb)
+
+
+static func _collect_nodes_of_class(node: Node, klass: String, out: Array[Node]) -> void:
+	if node.get_class() == klass:
+		out.append(node)
+	for child in node.get_children():
+		_collect_nodes_of_class(child, klass, out)
+
+
+func _on_debugger_session_breaked(can_debug: bool, session_id: int) -> void:
+	if _game_session_id != -1 and session_id != _game_session_id:
+		return
+	note_debug_break(can_debug, "")
+
+
+func _on_debugger_session_continued(session_id: int) -> void:
+	if _game_session_id != -1 and session_id != _game_session_id:
+		return
+	clear_debug_break()
+
+
+## reallydid=false is Godot's "left the break" notification (debug_exit).
+func _on_script_debugger_breaked(reallydid: bool, can_debug: bool, reason: String, _has_stackdump: bool) -> void:
+	if not reallydid:
+		clear_debug_break()
+		return
+	note_debug_break(can_debug, reason)
+
+
+## Record that the game process is parked in a remote-debugger break. Fires
+## once per break from the session signal (no reason text) and again moments
+## later from the ScriptEditorDebugger signal (with reason) — the notices
+## merge into one break. Public so tests can drive break state directly.
+func note_debug_break(can_debug: bool, reason: String) -> void:
+	var first_notice := not _break_active
+	_break_active = true
+	_break_can_debug = can_debug
+	if not reason.is_empty():
+		_break_reason = reason
+	if not first_notice:
+		return
+	_break_run_token = _game_run_token
+	_break_pre_live = _game_run_active and not is_game_capture_ready()
+	_break_record_synthesized = false
+	if _log_buffer:
+		_log_buffer.log("[debug] debugger break (pre_live=%s can_debug=%s)" % [str(_break_pre_live), str(can_debug)])
+	if _break_pre_live:
+		_schedule_break_record_synthesis()
+
+
+func clear_debug_break() -> void:
+	_break_active = false
+	_break_can_debug = false
+	_break_reason = ""
+	_break_pre_live = false
+	_break_run_token = -1
+	_break_record_synthesized = false
+
+
+## Stack frames land in the Stack Trace panel a few frames after the break
+## signal (the editor requests the stack dump separately), so the record is
+## synthesized on short timers rather than at signal time.
+func _schedule_break_record_synthesis() -> void:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return
+	var token := _break_run_token
+	for i in BREAK_FRAME_SCRAPE_DELAYS_SEC.size():
+		var final := i == BREAK_FRAME_SCRAPE_DELAYS_SEC.size() - 1
+		var timer := tree.create_timer(BREAK_FRAME_SCRAPE_DELAYS_SEC[i])
+		timer.timeout.connect(func() -> void: _on_break_scrape_tick(token, final))
+
+
+func _on_break_scrape_tick(run_token: int, final: bool) -> void:
+	if not _break_active or _break_record_synthesized or run_token != _break_run_token:
+		return
+	var frames := _scrape_break_stack_frames()
+	if frames.is_empty() and not final:
+		return
+	synthesize_break_error_record(frames)
+
+
+## Read the debugger's Stack Trace panel rows. Row metadata is a Dictionary
+## {frame, file, function, line} regardless of editor locale, so stack trees
+## are identified by metadata shape rather than the translated column title.
+func _scrape_break_stack_frames() -> Array[Dictionary]:
+	var base := EditorInterface.get_base_control()
+	if base == null:
+		return []
+	var debuggers: Array[Node] = []
+	_collect_nodes_of_class(base, "ScriptEditorDebugger", debuggers)
+	for dbg in debuggers:
+		var trees: Array[Node] = []
+		_collect_nodes_of_class(dbg, "Tree", trees)
+		for t in trees:
+			var frames := _frames_from_stack_tree(t as Tree)
+			if not frames.is_empty():
+				return frames
+	return []
+
+
+static func _frames_from_stack_tree(tree: Tree) -> Array[Dictionary]:
+	var frames: Array[Dictionary] = []
+	var root := tree.get_root()
+	if root == null:
+		return frames
+	var item := root.get_first_child()
+	while item != null:
+		var meta = item.get_metadata(0)
+		if not (meta is Dictionary and meta.has("file") and meta.has("frame")):
+			return []
+		frames.append({
+			"path": str(meta.get("file", "")),
+			"line": int(meta.get("line", 0)),
+			"function": str(meta.get("function", "")),
+		})
+		item = item.get_next()
+	return frames
+
+
+## Build the Errors-tab-shaped record for a boot-time break and promote it via
+## the tracker so recent_editor_errors_since / logs_read / the watermark all
+## surface it — the break itself produces no record anywhere else (#645).
+## Public so tests can synthesize without waiting on scrape timers.
+func synthesize_break_error_record(frames: Array[Dictionary]) -> void:
+	if _break_record_synthesized:
+		return
+	_break_record_synthesized = true
+	if _surfaced_error_tracker == null:
+		return
+	var reason := _break_reason
+	if reason.is_empty():
+		reason = "Game process broke into the debugger during startup (script parse/load error; reason not captured)"
+	var top: Dictionary = frames[0] if not frames.is_empty() else {}
+	var location := {
+		"path": str(top.get("path", "")),
+		"line": int(top.get("line", 0)),
+		"function": str(top.get("function", "")),
+	}
+	var entry := {
+		"source": "editor",
+		"level": "error",
+		"text": reason,
+		"path": location["path"],
+		"line": location["line"],
+		"function": location["function"],
+		"details": {
+			"debugger_tab": "Stack Trace",
+			"message": reason,
+			"error_type_name": "debugger_break",
+			"source": location.duplicate(true),
+			"resolved": location.duplicate(true),
+			"frames": frames.duplicate(true),
+		},
+	}
+	_surfaced_error_tracker.record_synthetic_error(entry)
+	if _log_buffer:
+		_log_buffer.log("[debug] synthesized boot-break error record: %s" % McpSurfacedErrorTracker.format_editor_error_summary(entry))
+
+
+## --- end #645 ---------------------------------------------------------------
 
 
 func is_game_capture_ready() -> bool:
@@ -157,7 +445,12 @@ func get_game_status(now_msec: int = -1, ready_wait_sec: float = GAME_READY_WAIT
 	## "stopped" also covers idle/never-ran; no game run is currently active.
 	var status := "stopped"
 	if _game_run_active:
-		if is_game_capture_ready():
+		## #645: a parked process takes precedence over "live" — a game frozen
+		## in a remote-debugger break cannot service game-side tools even when
+		## its helper registered before the break.
+		if _break_active:
+			status = "break"
+		elif is_game_capture_ready():
 			status = "live"
 		elif not _game_helper_expected:
 			status = "no_helper"
@@ -165,7 +458,7 @@ func get_game_status(now_msec: int = -1, ready_wait_sec: float = GAME_READY_WAIT
 			status = "not_live"
 		else:
 			status = "launching"
-	return with_liveness_flags({
+	var out := {
 		"status": status,
 		"run_token": _game_run_token,
 		"active": _game_run_active,
@@ -175,7 +468,14 @@ func get_game_status(now_msec: int = -1, ready_wait_sec: float = GAME_READY_WAIT
 		"elapsed_msec": elapsed_msec,
 		"ready_wait_msec": ready_wait_msec,
 		"editor_log_cursor": _game_run_started_editor_cursor,
-	})
+	}
+	if status == "break":
+		out["break"] = {
+			"reason": _break_reason,
+			"can_debug": _break_can_debug,
+			"pre_live": _break_pre_live,
+		}
+	return with_liveness_flags(out)
 
 
 func _explain_not_live(status: Dictionary, code: String = ErrorCodes.INTERNAL_ERROR) -> Dictionary:
@@ -191,6 +491,7 @@ func _explain_not_live(status: Dictionary, code: String = ErrorCodes.INTERNAL_ER
 		"recent_errors_may_predate_run": recent_errors_scope == "retained_recent",
 		"recent_errors_truncated": truncated,
 	}
+	data.merge(split_errors_by_scope(recent_errors, recent_errors_scope), true)
 	var message := ""
 	match state:
 		"not_live":
@@ -202,6 +503,14 @@ func _explain_not_live(status: Dictionary, code: String = ErrorCodes.INTERNAL_ER
 				message = "The game is not responding and reported no load errors during this run. A recent editor error may be related, but may predate this run: %s. Check logs_read(source='editor', include_details=true)." % _format_editor_error_summary(recent_errors[0])
 			else:
 				message = "The game is not responding and reported no load errors before the helper-ready window elapsed. It may still be booting or may have failed silently; check logs_read(source='editor', include_details=true) and retry."
+		"break":
+			var break_info: Dictionary = status.get("break", {})
+			var break_reason := str(break_info.get("reason", ""))
+			var reason_suffix := (": %s" % break_reason) if not break_reason.is_empty() else ""
+			if bool(break_info.get("pre_live", true)):
+				message = "The game hit a script error during startup and is frozen at a debugger break%s. It cannot become live; call project_manage(op='stop') to end the run, fix the error, and relaunch. Check logs_read(source='editor', include_details=true)." % reason_suffix
+			else:
+				message = "The game is paused at a debugger break%s. Resume it from the editor's Debugger panel or call project_manage(op='stop')." % reason_suffix
 		"no_helper":
 			message = "The running game has no _mcp_game_helper autoload, so game-side tools cannot connect. If this is a headless or custom-main-loop project, use editor_screenshot(source='viewport') where applicable. Otherwise, re-enable the plugin and relaunch the game."
 		"launching":
@@ -217,13 +526,56 @@ func _explain_not_live(status: Dictionary, code: String = ErrorCodes.INTERNAL_ER
 	return err
 
 
-func recent_editor_errors_since(cursor: int) -> Dictionary:
-	return _recent_editor_errors_since(cursor)
+static func split_errors_by_scope(recent_errors: Array, scope: String) -> Dictionary:
+	var current_run_errors: Array = []
+	var retained_errors: Array = []
+	if scope == "run":
+		current_run_errors = recent_errors
+	elif scope == "retained_recent":
+		retained_errors = recent_errors
+	return {
+		"current_run_errors": current_run_errors,
+		"retained_errors": retained_errors,
+	}
 
 
-func _recent_editor_errors_since(cursor: int) -> Dictionary:
+## `force_debugger_scan` bypasses the tracker's scan gate for one read. Keep it
+## false on per-frame polling paths (the run-liveness loop) — a forced scan
+## walks the Debugger dock UI — and pass true only for one-shot reads that must
+## see rows which landed after the last gated scan (#641).
+func recent_editor_errors_since(cursor: int, force_debugger_scan: bool = false) -> Dictionary:
+	return _recent_editor_errors_since(cursor, force_debugger_scan)
+
+
+func _recent_editor_errors_since(cursor: int, force_debugger_scan: bool = false) -> Dictionary:
 	var out: Array[Dictionary] = []
 	var truncated := false
+	if _surfaced_error_tracker != null:
+		var captured_by_tracker: Dictionary = _surfaced_error_tracker.editor_entries_since(
+			maxi(0, cursor),
+			_game_run_started_debugger_cursor,
+			force_debugger_scan,
+		)
+		truncated = bool(captured_by_tracker.get("truncated", false))
+		for raw_entry in captured_by_tracker.get("entries", []):
+			var compact := _compact_editor_error(raw_entry)
+			if compact.is_empty():
+				continue
+			out.append(compact)
+			if out.size() >= 5:
+				break
+		if not out.is_empty():
+			return {"errors": out, "truncated": truncated, "scope": "run"}
+		for raw_entry in _surfaced_error_tracker.retained_recent_editor_entries():
+			var compact := _compact_editor_error(raw_entry, true)
+			if compact.is_empty():
+				continue
+			out.append(compact)
+			if out.size() >= 5:
+				break
+		if not out.is_empty():
+			return {"errors": out, "truncated": false, "scope": "retained_recent"}
+		return {"errors": out, "truncated": false, "scope": "none"}
 	if _editor_log_buffer == null:
 		return {"errors": out, "truncated": false, "scope": "none"}
 	var captured: Dictionary = _editor_log_buffer.get_since(maxi(0, cursor), -1)
@@ -284,14 +636,7 @@ func _reversed_entries(entries: Array[Dictionary]) -> Array[Dictionary]:
 
 
 func _format_editor_error_summary(entry: Dictionary) -> String:
-	var text := str(entry.get("text", "editor error"))
-	var path := str(entry.get("path", ""))
-	var line := int(entry.get("line", 0))
-	if not path.is_empty() and line > 0:
-		return "%s (%s:%d)" % [text, path, line]
-	if not path.is_empty():
-		return "%s (%s)" % [text, path]
-	return text
+	return McpSurfacedErrorTracker.format_editor_error_summary(entry)
 
 
 func _capture(message: String, data: Array, session_id: int) -> bool:
@@ -322,6 +667,13 @@ func _capture(message: String, data: Array, session_id: int) -> bool:
 			_game_ready = true
 			_ready_run_token = _game_run_token
 			game_ready.emit()
+			## #641: boot-time parse errors race the hello beacon — both ride
+			## the same debugger channel, and the editor inserts Errors-tab
+			## rows with a per-frame throttle, so rows can land moments after
+			## the run is declared live. Arm forced scans so those rows get
+			## promoted into the watermark even if no tool call follows.
+			if _surfaced_error_tracker != null:
+				_surfaced_error_tracker.schedule_deferred_scans()
 			if _log_buffer:
 				if _game_log_buffer:
 					_log_buffer.log("[debug] <- mcp:hello from game_helper (run %s)" % _game_log_buffer.run_id())
@@ -422,7 +774,13 @@ func _wait_then_send(
 	timeout_sec: float,
 ) -> void:
 	var deadline := Time.get_ticks_msec() + int(GAME_READY_WAIT_SEC * 1000.0)
-	while not is_game_capture_ready() and Time.get_ticks_msec() < deadline:
+	## #645: always yield at least one frame — the dispatcher registers the
+	## deferred request only after the handler returns DEFERRED_RESPONSE, so a
+	## same-frame error reply would be dropped as an expired request. The break
+	## check then bails out with the actionable break error instead of waiting
+	## out the full window (a game parked in a debugger break never beacons).
+	await tree.process_frame
+	while not is_game_capture_ready() and not _break_active and Time.get_ticks_msec() < deadline:
 		await tree.process_frame
 	if not is_game_capture_ready():
 		_send_error_response(connection, request_id,
@@ -610,7 +968,12 @@ func _wait_then_eval(
 	## the not-ready path returns its actionable error before the 15s server-side
 	## command timeout fires an opaque TimeoutError. See EVAL_READY_WAIT_SEC.
 	var deadline := Time.get_ticks_msec() + int(EVAL_READY_WAIT_SEC * 1000.0)
-	while not is_game_capture_ready() and Time.get_ticks_msec() < deadline:
+	## #645: the leading yield guarantees the dispatcher has registered the
+	## deferred request before any reply (a same-frame reply is dropped as
+	## expired); the break check bails out early because a parked game never
+	## registers its capture.
+	await tree.process_frame
+	while not is_game_capture_ready() and not _break_active and Time.get_ticks_msec() < deadline:
 		await tree.process_frame
 	if not is_game_capture_ready():
 		## #518: EVAL_GAME_NOT_READY (not INTERNAL_ERROR) — the play session is up
@@ -871,7 +1234,12 @@ func _wait_then_game_command(
 	timeout_sec: float,
 ) -> void:
 	var deadline := Time.get_ticks_msec() + int(GAME_READY_WAIT_SEC * 1000.0)
-	while not is_game_capture_ready() and Time.get_ticks_msec() < deadline:
+	## #645: the leading yield guarantees the dispatcher has registered the
+	## deferred request before any reply (a same-frame reply is dropped as
+	## expired); the break check bails out early because a parked game never
+	## registers its capture.
+	await tree.process_frame
+	while not is_game_capture_ready() and not _break_active and Time.get_ticks_msec() < deadline:
 		await tree.process_frame
 	if not is_game_capture_ready():
 		_send_error_response(connection, request_id,

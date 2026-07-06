@@ -39,6 +39,9 @@ var input_dir: Vector2 = Vector2.ZERO
 var is_sprinting: bool = false
 var is_aiming: bool = false
 var is_reloading: bool = false
+var is_rotating_in_place: bool = false
+var is_grab: bool = false
+var rotating_in_place_speed: float = 0.0
 var current_tilt_x: float = 0.0
 var current_tilt_z: float = 0.0
 var _debug_non_zero_printed: bool = false
@@ -105,8 +108,10 @@ func _process_modification() -> void:
 	var pivot_pos = skeleton.get_bone_global_pose(pivot_idx).origin
 
 	# Calculate and apply body bobbing
-	# No bobbing when aiming, reloading, or standing still
-	var target_bob_weight = 1.0 if (input_dir != Vector2.ZERO and not is_aiming and not is_reloading) else 0.0
+	# Bob when moving or when rotating in place.
+	# No bobbing when aiming, reloading, or grabbed (during grab loop QTE)
+	var should_bob = (input_dir != Vector2.ZERO or is_rotating_in_place) and not is_aiming and not is_reloading and not is_grab
+	var target_bob_weight = 1.0 if should_bob else 0.0
 	_current_bob_weight = lerpf(_current_bob_weight, target_bob_weight, delta * 10.0)
 
 	var active_bob_speed = bobbing_speed
@@ -116,6 +121,14 @@ func _process_modification() -> void:
 		active_bob_speed *= sprint_bobbing_speed_multiplier
 		active_bob_amount *= sprint_bobbing_amount_multiplier
 		active_sway_amount *= sprint_bobbing_amount_multiplier
+	elif is_rotating_in_place:
+		# Sync bobbing speed with the step system of the turn-in-place animation.
+		# The turn-in-place animation (walk_side) has a length of 1.06 seconds, consisting of 2 steps.
+		# A full cycle of bobbing (2 steps) corresponds to 2 * PI radians.
+		# We scale the speed by 0.75 to make it slightly faster (3/4 of the step speed) and reduce the amplitude to 0.7 for a slightly subtler but noticeable look.
+		active_bob_speed = (2.0 * PI / 1.06) * rotating_in_place_speed * 0.75
+		active_bob_amount *= 0.7
+		active_sway_amount *= 0.7
 
 	# Only advance bob time when the weight is meaningfully active.
 	# Do NOT hard-snap bob_time to 0 — let the weight fade to 0 smoothly to avoid pops.
