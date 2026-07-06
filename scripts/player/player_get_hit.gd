@@ -166,8 +166,8 @@ func _set_player_hitbox_areas_monitoring(enabled: bool) -> void:
 	for area in nodes:
 		if area is Area3D:
 			# Modify both monitoring and monitorable so they neither scan nor are scanned
-			area.monitoring = enabled
-			area.monitorable = enabled
+			area.set_deferred("monitoring", enabled)
+			area.set_deferred("monitorable", enabled)
 
 func _set_all_enemy_hitboxes(enabled: bool) -> void:
 	if not owner or not owner.is_inside_tree():
@@ -175,5 +175,5 @@ func _set_all_enemy_hitboxes(enabled: bool) -> void:
 	var areas = owner.get_tree().get_nodes_in_group("enemy_attack")
 	for area in areas:
 		if area is Area3D:
-			area.monitoring = enabled
-			area.monitorable = enabled
+			area.set_deferred("monitoring", enabled)
+			area.set_deferred("monitorable", enabled)

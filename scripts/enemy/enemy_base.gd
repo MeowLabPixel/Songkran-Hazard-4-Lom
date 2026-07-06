@@ -216,6 +216,19 @@ func _ready() -> void:
 		debug_label.outline_modulate = Color.BLACK
 		add_child(debug_label)
 	
+	# Attach scale fix programmatically to GrabHitbox nodes to prevent Jolt Physics warnings
+	var scale_fix_script = load("res://scripts/enemy/hitbox_scale_fix.gd")
+	for path in [
+		"ZombieModel/rig_002/GeneralSkeleton/HitboxAttachChest/GrabHitbox",
+		"ZombieModel/rig/GeneralSkeleton/HitboxAttachChest/GrabHitbox",
+		"ZombieModel/rig_001/Skeleton3D/HitboxAttachChest/GrabHitbox",
+		"All zombie fix/rig_001/Skeleton3D/HitboxAttachChest/GrabHitbox"
+	]:
+		var node = get_node_or_null(path)
+		if node and node is Area3D:
+			node.set_script(scale_fix_script)
+			node.set_physics_process(true)
+
 	state_machine.initialize("StateIdle")
 	state_machine.state_changed.connect(_on_state_changed)
 	if debug_label:
@@ -420,6 +433,10 @@ func _physics_process(delta: float) -> void:
 
 func _update_skeleton_tilt(delta: float) -> void:
 	if not rig: return
+	# Enforce clean X and Z rotations on the root body
+	rotation.x = 0.0
+	rotation.z = 0.0
+	
 	var current_y_rot = atan2(global_transform.basis.z.x, global_transform.basis.z.z)
 	var rotation_delta = angle_difference(last_y_rotation, current_y_rot)
 	last_y_rotation = current_y_rot
@@ -428,6 +445,9 @@ func _update_skeleton_tilt(delta: float) -> void:
 	if delta > 0.0:
 		angular_velocity = rotation_delta / delta
 		
+	# Clamp angular velocity to reasonable maximum to prevent single-frame spikes
+	angular_velocity = clampf(angular_velocity, -PI * 2.0, PI * 2.0)
+	
 	var raw_speed = abs(angular_velocity)
 	if raw_speed > _smoothed_turn_speed:
 		_smoothed_turn_speed = lerp(_smoothed_turn_speed, raw_speed, delta * 25.0)

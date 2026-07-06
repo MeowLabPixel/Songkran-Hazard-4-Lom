@@ -168,8 +168,19 @@ func _ready() -> void:
 	# Enable collision mask for Layer 3 (Enemies) so the player physically collides with enemies
 	set_collision_mask_value(3, true)
 	
-
-	
+	# Attach scale fix programmatically to player Area3D nodes to prevent Jolt Physics warnings
+	var scale_fix_script = load("res://scripts/enemy/hitbox_scale_fix.gd")
+	for path in [
+		"Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox",
+		"Re4Lom Base Rig/rig/Skeleton3D/spine02/Stunned detect2",
+		"Re4Lom Base Rig/rig/Skeleton3D/spine02/Pickup2",
+		"Re4Lom Base Rig/rig/Skeleton3D/FriendArea",
+		"Re4Lom Base Rig/rig/Skeleton3D/FriendNearArea"
+	]:
+		var node = get_node_or_null(path)
+		if node and node is Area3D:
+			node.set_script(scale_fix_script)
+			node.set_physics_process(true)
 	# Configure FriendNearArea collision mask to detect Anchalee (layer 5, value 16)
 	var near_area = get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/FriendNearArea")
 	if near_area:

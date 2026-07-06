@@ -156,7 +156,7 @@ tracks/0/enabled = true
 tracks/0/path = NodePath("Node3D")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
-tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, 0, 0.033333335, 1, 1, 1, 1, 0.1, 1, 0, 0, 0)
+tracks/0/keys = PackedFloat32Array(0, 1, 0.001, 0.001, 0.001, 0.033333335, 1, 1, 1, 1, 0.1, 1, 0.001, 0.001, 0.001)
 
 [sub_resource type="Animation" id="Animation_7rinx"]
 length = 0.001

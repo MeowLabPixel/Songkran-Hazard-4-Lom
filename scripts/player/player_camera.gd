@@ -413,16 +413,18 @@ func set_camera_alignment(alignment: cameraalign)-> void:
 
 func update_collision_radius() -> void:
 	if rear_spring_arm and rear_spring_arm.shape is SphereShape3D:
-		if character and not character.is_aimming:
-			rear_spring_arm.shape.radius = rear_collision_radius_center
-		else:
+		var target_radius = rear_collision_radius_center
+		if character and character.is_aimming:
 			match current_camera_align:
 				cameraalign.CENTER:
-					rear_spring_arm.shape.radius = rear_collision_radius_center
+					target_radius = rear_collision_radius_center
 				cameraalign.RIGHT:
-					rear_spring_arm.shape.radius = rear_collision_radius_right
+					target_radius = rear_collision_radius_right
 				cameraalign.LEFT:
-					rear_spring_arm.shape.radius = rear_collision_radius_left
+					target_radius = rear_collision_radius_left
+					
+		# Enforce a minimum radius of 0.01 to prevent Jolt Physics build shape errors
+		rear_spring_arm.shape.radius = maxf(target_radius, 0.01)
 
 func get_camera_exclusion_rids() -> Array[RID]:
 	var excludes: Array[RID] = []

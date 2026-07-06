@@ -26,6 +26,11 @@ func _process_modification() -> void:
 	var head_idx = skeleton.find_bone(head_bone_name)
 	if head_idx == -1: return
 	
+	# Relax head tracking during quick turn back
+	if enemy and enemy.state_machine and enemy.state_machine.current_state and enemy.state_machine.current_state.name == "StateTurnBack":
+		_relax_head()
+		return
+	
 	# Target the player's camera height rather than face height
 	var target_pos = player.global_position + Vector3(0, 3.0, 0)
 	

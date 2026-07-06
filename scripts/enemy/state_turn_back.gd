@@ -1,18 +1,20 @@
 class_name StateTurnBack
 extends EnemyState
 
-@export var turn_duration: float = 1.0
+@export var turn_duration: float = 0.25
 
 var _timer: float = 0.0
-var _target_basis: Basis
+var _start_y: float = 0.0
+var _target_y: float = 0.0
 
 func enter() -> void:
 	_timer = 0.0
 	if enemy:
 		enemy.velocity = Vector3.ZERO
 		enemy.move_and_slide()
+		_start_y = enemy.rotation.y
+		_target_y = _start_y + PI
 	print("[StateTurnBack] Turning 180°.")
-	_target_basis = enemy.global_transform.basis.rotated(Vector3.UP, PI)
 	_play_anim(enemy.anim_set.idle)
 
 func exit() -> void:
@@ -21,10 +23,11 @@ func exit() -> void:
 func physics_update(delta: float) -> void:
 	_timer += delta
 	var t: float = clampf(_timer / turn_duration, 0.0, 1.0)
-	var from_basis: Basis = enemy.global_transform.basis.orthonormalized()
-	enemy.global_transform.basis = from_basis.slerp(_target_basis.orthonormalized(), t)
+	if enemy:
+		enemy.rotation.y = lerp_angle(_start_y, _target_y, t)
 	if _timer >= turn_duration:
-		enemy.global_transform.basis = _target_basis.orthonormalized()
+		if enemy:
+			enemy.rotation.y = wrapf(_target_y, -PI, PI)
 		state_machine.transition_to("StateHunt")
 
 func handle_hit(hit_data: Dictionary) -> String:
