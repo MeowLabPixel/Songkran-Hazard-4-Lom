@@ -49,7 +49,14 @@ var mouse_sensitivity: float = 0.002
 @export var max_look_down: float = 1.4 # ~80 degrees down
 @export var look_up_lift_amount: float = 1.5 # How much the camera lifts when looking up
 @export var look_down_lift_amount: float = 1.5 # How much the camera lifts when looking down
+@export var tank_look_down_lift: float = -0.2 # Tank mode custom look down lift multiplier
+@export var tank_snap_back_speed: float = 6.0 # Tank mode camera snap back speed
 var aim_offset: Vector2 = Vector2.ZERO
+var tank_look_around: Vector2 = Vector2.ZERO
+var was_aiming: bool = false
+var was_grab: bool = false
+var target_tank_look_around: Vector2 = Vector2.ZERO
+var time_since_last_mouse_move: float = 0.0
 
 @export_group("Aim Deadzones")
 @export var aim_deadzone_left: float = 0.15 # Small limit on left to avoid body blocking
@@ -158,6 +165,56 @@ func check_auto_shoulder_swap() -> void:
 			swap_camera_align()
 
 func _process(delta: float) -> void:
+	var is_aiming_now = character and character.is_aimming
+	var is_grab_now = character and character.is_grab
+	
+	if GameManager.movement_type == GameManager.MovementType.TANK:
+		if is_aiming_now and not was_aiming:
+			target_camera_rotation.x += tank_look_around.x
+			camera_rotation.x += tank_look_around.x
+			target_camera_rotation.y = tank_look_around.y
+			camera_rotation.y = tank_look_around.y
+			tank_look_around = Vector2.ZERO
+			target_tank_look_around = Vector2.ZERO
+		elif is_grab_now and not was_grab:
+			target_camera_rotation.x += tank_look_around.x
+			camera_rotation.x += tank_look_around.x
+			target_camera_rotation.y = tank_look_around.y
+			camera_rotation.y = tank_look_around.y
+			tank_look_around = Vector2.ZERO
+			target_tank_look_around = Vector2.ZERO
+			
+		# Handle keyboard turning and look-around snapping when not aiming and not in grab loop
+		if not is_aiming_now and not is_grab_now:
+			var turn_input = 0.0
+			if Input.is_action_pressed("ui_left"):
+				turn_input -= 1.0
+			if Input.is_action_pressed("ui_right"):
+				turn_input += 1.0
+			
+			var turn_speed_rad = deg_to_rad(character.turn_speed) if character else 2.5
+			var turn_amount = turn_input * turn_speed_rad * delta
+			target_camera_rotation.x += turn_amount
+			camera_rotation.x += turn_amount
+			
+			# Check if player is active (walking or turning)
+			var is_walking = Input.is_action_pressed("move_forward") or Input.is_action_pressed("move_backward")
+			var is_turning = abs(turn_input) > 0.0
+			var is_moving = is_walking or is_turning
+			
+			time_since_last_mouse_move += delta
+			if is_moving or time_since_last_mouse_move > 0.2:
+				var active_snap_speed = tank_snap_back_speed
+				if is_moving:
+					active_snap_speed *= 1.5
+				target_tank_look_around = target_tank_look_around.lerp(Vector2.ZERO, delta * active_snap_speed)
+				
+			# Smoothly interpolate active look-around
+			tank_look_around = tank_look_around.lerp(target_tank_look_around, delta * 8.0)
+			
+	was_aiming = is_aiming_now
+	was_grab = is_grab_now
+
 	if character and not character.is_aimming:
 		aim_offset = aim_offset.lerp(Vector2.ZERO, delta * 15.0)
 		
@@ -224,6 +281,12 @@ func _process(delta: float) -> void:
 		
 		# Apply the smoothed local offset to the pivot's current global transform
 		camera.global_transform = global_transform * current_local_transform
+		
+		var is_aiming_now_calc = character and character.is_aimming
+		var is_grab_now_calc = character and character.is_grab
+		if GameManager.movement_type == GameManager.MovementType.TANK and not is_aiming_now_calc and not is_grab_now_calc:
+			camera.rotate_object_local(Vector3(0, 1, 0), -tank_look_around.x)
+			camera.rotate_object_local(Vector3(1, 0, 0), -tank_look_around.y)
 
 func _input(event: InputEvent)-> void:
 	if event.is_action_pressed("ui_cancel"):
@@ -248,7 +311,10 @@ func _input(event: InputEvent)-> void:
 		exit_aim()
 
 func camera_look(mouse_movement: Vector2)-> void:
-	if character.is_aimming:
+	var is_aiming_now = character and character.is_aimming
+	var is_grab_now = character and character.is_grab
+	
+	if is_aiming_now:
 		aim_offset += mouse_movement
 		
 		var excess_vector = Vector2.ZERO
@@ -276,6 +342,12 @@ func camera_look(mouse_movement: Vector2)-> void:
 			aim_offset.y = -aim_deadzone_up
 			
 		pending_camera_rotation += excess_vector
+	elif GameManager.movement_type == GameManager.MovementType.TANK and not is_grab_now:
+		time_since_last_mouse_move = 0.0
+		# Tank look around: Left 20° (-0.349 rad), Right 15° (0.2618 rad), Up 10° (-0.1745 rad), Down 15° (0.2618 rad)
+		target_tank_look_around += mouse_movement
+		target_tank_look_around.x = clamp(target_tank_look_around.x, -0.349, 0.2618)
+		target_tank_look_around.y = clamp(target_tank_look_around.y, -0.1745, 0.2618)
 	else:
 		target_camera_rotation += mouse_movement
 		target_camera_rotation.y = clamp(target_camera_rotation.y, -max_look_up, max_look_down)
@@ -285,17 +357,31 @@ func _apply_camera_rotation() -> void:
 	
 	transform.basis = Basis()
 	
+	var is_aiming_now = character and character.is_aimming
+	var is_grab_now = character and character.is_grab
+	
 	if not character.is_quick_turn:
 		character.transform.basis = Basis()
-		character.rotate_object_local(Vector3(0,1,0),-camera_rotation.x)
+		character.rotate_object_local(Vector3(0,1,0), -camera_rotation.x)
 		
-	rotate_object_local(Vector3(1,0,0), -camera_rotation.y + action_pitch)	
+	if GameManager.movement_type == GameManager.MovementType.TANK and not is_aiming_now and not is_grab_now:
+		rotate_object_local(Vector3(1, 0, 0), action_pitch)
+	else:
+		rotate_object_local(Vector3(1, 0, 0), -camera_rotation.y + action_pitch)	
 	
 	# Dynamically push the camera's pivot UP when looking up or down to prevent the body from blocking the view!
-	if camera_rotation.y < 0.0: # Looking UP
-		position.y = base_position_y + action_offset_y + (abs(camera_rotation.y) * look_up_lift_amount)
+	var vertical_angle = camera_rotation.y
+	var current_look_up_lift = look_up_lift_amount
+	var current_look_down_lift = look_down_lift_amount
+	
+	if GameManager.movement_type == GameManager.MovementType.TANK and not is_aiming_now and not is_grab_now:
+		vertical_angle = tank_look_around.y
+		current_look_down_lift = tank_look_down_lift
+		
+	if vertical_angle < 0.0: # Looking UP
+		position.y = base_position_y + action_offset_y + (abs(vertical_angle) * current_look_up_lift)
 	else: # Looking DOWN
-		position.y = base_position_y + action_offset_y + (abs(camera_rotation.y) * look_down_lift_amount)
+		position.y = base_position_y + action_offset_y + (abs(vertical_angle) * current_look_down_lift)
 
 func swap_camera_align()-> void:
 	match current_camera_align:

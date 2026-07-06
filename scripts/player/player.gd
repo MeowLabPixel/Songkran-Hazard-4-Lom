@@ -1,6 +1,11 @@
 class_name Player extends CharacterBody3D
 
 @export_group("movement setting")
+@export var movement_type_override: GameManager.MovementType = GameManager.MovementType.HYBRID_RETRO:
+	set(val):
+		movement_type_override = val
+		if Engine.is_editor_hint() or is_node_ready():
+			GameManager.movement_type = val
 @export var walk_speed = 3.0
 @export var walk_Back_speed = 2.5
 @export var turn_speed:= 180.0
@@ -141,6 +146,8 @@ const SPEED = 5.0
 const JUMP_VELOCITY = 4.5
 
 func _ready() -> void:
+	if not GameManager.movement_type_selected:
+		GameManager.movement_type = movement_type_override
 	if anim:
 		anim.active = true
 	add_to_group("player")
@@ -294,7 +301,10 @@ func _process(delta: float) -> void:
 			# Ensure horizontal twisting is always on so the head can lead turns!
 			head_lookat.use_secondary_rotation = true
 			# Fade out head look IK during quickturn to prevent neck snapping!
-			head_lookat.influence = current_aim_influence
+			if GameManager.movement_type == GameManager.MovementType.TANK and not is_aimming and not is_grab:
+				head_lookat.influence = 1.0
+			else:
+				head_lookat.influence = current_aim_influence
 			
 		var lean_modifier = skeleton.get_node_or_null("SpineLeanModifier")
 		if lean_modifier:
@@ -375,38 +385,47 @@ func _update_aim_target(delta: float) -> void:
 			aim_target.global_position.y = camera.targetref.global_position.y
 			
 		if aim_target_head:
-			# Calculate the true global point we want the head to look at.
-			var true_target_global
-			if is_aimming:
-				# We use the gun's aim_target, but shift it a bit back towards the raw crosshair 
-				# so the head isn't completely perfectly aligned with the gun barrel.
-				true_target_global = aim_target.global_position.lerp(true_aim_position, 0.4)
+			if GameManager.movement_type == GameManager.MovementType.TANK and not is_aimming and not is_grab:
+				# Tank Control look-around head rotation based on mouse
+				var look_dir = Vector3(0, 0, -5.0)
+				var pitch = -camera.tank_look_around.y
+				var yaw = -camera.tank_look_around.x
+				var rotated_dir = look_dir.rotated(Vector3(1, 0, 0), pitch).rotated(Vector3(0, 1, 0), yaw)
+				var target_local = Vector3(0, 1.6, 0) + rotated_dir
+				aim_target_head.position = aim_target_head.position.lerp(target_local, delta * 15.0)
 			else:
-				true_target_global = camera.targetref.global_position
-			
-			if not is_aimming:
-				# Center the target horizontally so the head isn't skewed left by the camera's shoulder offset
-				var target_player_local = to_local(true_target_global)
-				target_player_local.x = 0.0
+				# Calculate the true global point we want the head to look at.
+				var true_target_global
+				if is_aimming:
+					# We use the gun's aim_target, but shift it a bit back towards the raw crosshair 
+					# so the head isn't completely perfectly aligned with the gun barrel.
+					true_target_global = aim_target.global_position.lerp(true_aim_position, 0.4)
+				else:
+					true_target_global = camera.targetref.global_position
 				
-				# Add head leading! (Flipped the sign because it was moving in reverse!)
-				target_player_local.x -= angular_velocity * 0.75 
+				if not is_aimming:
+					# Center the target horizontally so the head isn't skewed left by the camera's shoulder offset
+					var target_player_local = to_local(true_target_global)
+					target_player_local.x = 0.0
+					
+					# Add head leading! (Flipped the sign because it was moving in reverse!)
+					target_player_local.x -= angular_velocity * 0.75 
+					
+					true_target_global = to_global(target_player_local)
+					
+				# Lerp the head target smoothly towards the true global target
+				var target_local = to_local(true_target_global)
 				
-				true_target_global = to_global(target_player_local)
+				if is_aimming:
+					# The spine naturally leans UP to aim the gun, so we need a strong downward offset 
+					# on the head target to make him actually tuck his chin down into the sights!
+					target_local.y -= 1.35
+					
+				var lerp_speed = 8.0 if is_aimming else 5.0
+				aim_target_head.position = aim_target_head.position.lerp(target_local, delta * lerp_speed)
 				
-			# Lerp the head target smoothly towards the true global target
-			var target_local = to_local(true_target_global)
-			
-			if is_aimming:
-				# The spine naturally leans UP to aim the gun, so we need a strong downward offset 
-				# on the head target to make him actually tuck his chin down into the sights!
-				target_local.y -= 1.35
-				
-			var lerp_speed = 8.0 if is_aimming else 5.0
-			aim_target_head.position = aim_target_head.position.lerp(target_local, delta * lerp_speed)
-			
-			if not is_aimming:
-				aim_target_head.global_position.y = camera.targetref.global_position.y
+				if not is_aimming:
+					aim_target_head.global_position.y = camera.targetref.global_position.y
 
 func _update_skeleton_tilt(delta: float) -> void:
 	if not rig:
@@ -1102,17 +1121,10 @@ func _update_idle_turn_blend(delta: float) -> void:
 		_return_direction = 0.0
 		_peak_blend = 0.0
 		
-		# Transition out of turn-in-place state instantly to avoid blending with walk/run movement
+		# Allow the turn-in-place animation parameters to decay smoothly in the background
+		# during the crossfade transition to walk/run instead of snapping instantly.
 		if anim:
 			_smoothed_turn_speed = 0.0
-			anim.set("parameters/Main/Idle/Pis/Blend2/blend_amount", 0.0)
-			anim.set("parameters/Main/Idle/Pis/TimeScale/scale", 0.0)
-			anim.set("parameters/Main/Idle/Shot/Blend2/blend_amount", 0.0)
-			anim.set("parameters/Main/Idle/Shot/TimeScale/scale", 0.0)
-			anim.set("parameters/Main/QT/Pis/Blend2/blend_amount", 0.0)
-			anim.set("parameters/Main/QT/Pis/TimeScale/scale", 0.0)
-			anim.set("parameters/Main/QT/Shot/Blend2/blend_amount", 0.0)
-			anim.set("parameters/Main/QT/Shot/TimeScale/scale", 0.0)
 
 	# Accumulate animation time
 	var prev_anim_time = _anim_time

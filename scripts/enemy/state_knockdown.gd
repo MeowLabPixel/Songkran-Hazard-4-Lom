@@ -7,6 +7,9 @@ enum Phase { NONE, ACT3, ACT4, ACT5, DONE }
 @export var slip_forward_speed: float = 2.0
 @export var act3_push_speed: float = 2.0
 @export var act3_push_min_speed: float = 1.5
+@export var special_l_push_speed: float = 2.0
+@export var special_r_push_speed: float = 2.0
+@export var swing_shot_push_speed: float = 2.0
 @export var splash_push_radius: float = 1.0
 @export var splash_push_damage: int = 0
 
@@ -214,19 +217,28 @@ func physics_update(delta: float) -> void:
 					var duration = _get_act3_anim_duration(current_node)
 					var pct = _act3_timer / duration if duration > 0.0 else 0.0
 					
-					var current_speed = act3_push_speed
+					var base_speed = act3_push_speed
+					var min_speed = act3_push_min_speed
+					var dir = push_direction
+					
+					if "Special_L" in current_node:
+						base_speed = special_l_push_speed
+						if act3_push_speed > 0.0:
+							min_speed = special_l_push_speed * (act3_push_min_speed / act3_push_speed)
+					elif "Special_R" in current_node:
+						base_speed = special_r_push_speed
+						if act3_push_speed > 0.0:
+							min_speed = special_r_push_speed * (act3_push_min_speed / act3_push_speed)
+					elif "Attack Swing Leg Shot" in current_node:
+						base_speed = swing_shot_push_speed
+						if act3_push_speed > 0.0:
+							min_speed = swing_shot_push_speed * (act3_push_min_speed / act3_push_speed)
+						dir = -enemy.global_transform.basis.z
+						
+					var current_speed = base_speed
 					if pct > 0.25:
 						var t_factor = (pct - 0.25) / 0.75
-						current_speed = act3_push_min_speed * max(0.0, 1.0 - t_factor)
-					
-					var dir = push_direction
-					if "Attack Swing Leg Shot" in current_node:
-						dir = -enemy.global_transform.basis.z
-						var base_speed = slip_forward_speed
-						current_speed = base_speed
-						if pct > 0.25:
-							var t_factor = (pct - 0.25) / 0.75
-							current_speed = act3_push_min_speed * max(0.0, 1.0 - t_factor)
+						current_speed = min_speed * max(0.0, 1.0 - t_factor)
 						
 					enemy.velocity = dir * current_speed
 					enemy.move_and_slide()

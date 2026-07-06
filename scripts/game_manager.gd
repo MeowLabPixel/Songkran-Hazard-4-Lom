@@ -11,6 +11,10 @@ var is_timer_active: bool = false
 var is_game_ended: bool = false
 var is_game_active: bool = false
 
+enum MovementType { HYBRID_RETRO, MODERN, TANK }
+var movement_type: MovementType = MovementType.HYBRID_RETRO
+var movement_type_selected: bool = false
+
 func _ready() -> void:
 	# Reset state when autoload loads
 	reset_game()

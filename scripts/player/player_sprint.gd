@@ -26,8 +26,15 @@ func _update(_delta:float) -> void:
 		return
 	calculate_velocity(owner.run_speed,direction,_delta)
 	
-	owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position", Vector2(input_dir.x, -input_dir.y))
-	owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position", Vector2(input_dir.x, -input_dir.y))
+	var target_blend = Vector2(input_dir.x, -input_dir.y)
+	var current_blend_pis = owner.anim.get("parameters/Main/Run/Pis/BlendSpace2D/blend_position") as Vector2
+	var current_blend_shot = owner.anim.get("parameters/Main/Run/Shot/BlendSpace2D/blend_position") as Vector2
+	
+	var new_blend_pis = current_blend_pis.lerp(target_blend, _delta * 10.0)
+	var new_blend_shot = current_blend_shot.lerp(target_blend, _delta * 10.0)
+	
+	owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position", new_blend_pis)
+	owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position", new_blend_shot)
 	#owner.anim.get("parameters/Main/Run/Pis/BlendSpace2D/blend_position").set(direction)
 	D=_delta
 	if direction == Vector3.ZERO:

@@ -16,6 +16,36 @@ func _ready() -> void:
 	velocity_updated.connect(owner.set_velocity_from_motion)
 
 func set_direction() -> void:
+	if GameManager.movement_type == GameManager.MovementType.TANK:
+		var up = Input.is_action_pressed("ui_up")
+		var down = Input.is_action_pressed("ui_down")
+		
+		input_dir = Vector2.ZERO
+		if up:
+			input_dir.y = -1.0
+		elif down:
+			input_dir.y = 1.0
+			
+		direction = owner.global_transform.basis * Vector3(0.0, 0.0, input_dir.y)
+	elif GameManager.movement_type == GameManager.MovementType.MODERN:
+		var up = Input.is_action_pressed("ui_up")
+		var down = Input.is_action_pressed("ui_down")
+		var left = Input.is_action_pressed("ui_left")
+		var right = Input.is_action_pressed("ui_right")
+		
+		var horizontal = 0.0
+		if right: horizontal += 1.0
+		if left: horizontal -= 1.0
+		var vertical = 0.0
+		if down: vertical += 1.0
+		if up: vertical -= 1.0
+		
+		input_dir = Vector2(horizontal, vertical)
+		if input_dir.length_squared() > 0.0:
+			input_dir = input_dir.normalized()
+			
+		direction = owner.global_transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)
+	else:
 		var up = Input.is_action_pressed("ui_up")
 		var down = Input.is_action_pressed("ui_down")
 		var left = Input.is_action_pressed("ui_left")
@@ -41,7 +71,7 @@ func set_direction() -> void:
 			elif right: _active_direction = Vector2(1, 0)
 			
 		input_dir = _active_direction
-		direction = owner.global_transform.basis * Vector3(input_dir.x, 0, input_dir.y)
+		direction = owner.global_transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)
 
 func calculate_velocity(_speed:float,_direction: Vector3,delta:float)->void:
 	velocity.x = move_toward(velocity.x,_direction.x*_speed,acceleration*delta)
