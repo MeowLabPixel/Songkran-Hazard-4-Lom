@@ -13,5 +13,4 @@ func set_line(spawn_pos: Vector3, target_pos: Vector3) -> void:
 	mesh_instance.scale.z = distance
 	mesh_instance.position = Vector3(0, 0, -distance * 0.5)
 
-	await get_tree().create_timer(life_time).timeout
-	queue_free()
+	get_tree().create_timer(life_time).timeout.connect(queue_free)

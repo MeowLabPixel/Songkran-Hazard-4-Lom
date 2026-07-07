@@ -9,6 +9,8 @@ func _enter() -> void:
 		owner.anim.get(owner.anim_playback).travel("Aim")
 	owner.cross_hair.visible = true
 	owner.aim_bone_on(true)
+	if owner.camera and owner.camera.has_method("enter_aim"):
+		owner.camera.enter_aim()
 
 	if not Input.is_action_pressed("aim") :
 		owner.is_aimming = false

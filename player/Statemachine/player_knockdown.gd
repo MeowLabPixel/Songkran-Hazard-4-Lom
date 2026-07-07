@@ -20,6 +20,7 @@ func _exit() -> void:
 	owner.hitboxB.monitoring = true
 	if owner.anim and owner.anim.animation_finished.is_connected(anim_done):
 		owner.anim.animation_finished.disconnect(anim_done)
+	owner.aim_blocked_until_release = false
 
 func _knockdown_fallback() -> void:
 	print("Idle from Fallback.")

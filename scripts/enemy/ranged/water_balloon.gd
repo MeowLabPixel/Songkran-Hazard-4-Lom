@@ -52,9 +52,13 @@ func _splash() -> void:
 
 	# Detach and trigger splash particles in world space before freeing
 	if splash_particles:
-		splash_particles.reparent(get_tree().current_scene)
-		splash_particles.emitting = true
-		get_tree().create_timer(splash_particles.lifetime).timeout.connect(splash_particles.queue_free)
+		var current_scene = get_tree().current_scene
+		if is_instance_valid(current_scene):
+			splash_particles.reparent(current_scene)
+			splash_particles.emitting = true
+			get_tree().create_timer(splash_particles.lifetime).timeout.connect(splash_particles.queue_free)
+		else:
+			splash_particles.queue_free()
 
 	if _damage > 0.0:
 		for player in get_tree().get_nodes_in_group("player"):

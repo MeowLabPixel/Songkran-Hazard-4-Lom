@@ -204,7 +204,7 @@ func _process(delta: float) -> void:
 			target_camera_rotation.x += turn_amount
 			
 			# Check if player is active (walking or turning)
-			var is_walking = Input.is_action_pressed("move_forward") or Input.is_action_pressed("move_backward")
+			var is_walking = Input.is_action_pressed("move_forward") or Input.is_action_pressed("move_back")
 			var is_turning = abs(turn_input) > 0.0
 			var is_moving = is_walking or is_turning
 			
@@ -456,6 +456,13 @@ func set_rear_spring_pos(pos: float, speed: float)-> void:
 func enter_aim()-> void:
 	if camera_tween:
 		camera_tween.kill()
+	if offset_tween:
+		offset_tween.kill()
+	if pitch_tween:
+		pitch_tween.kill()
+	if spring_tween:
+		spring_tween.kill()
+		
 	character.is_aimming = true	
 	update_collision_radius()
 			
@@ -467,6 +474,10 @@ func enter_aim()-> void:
 	
 	camera_tween.tween_property(edge_spring_arm,"spring_length",get_target_edge_length(),aim_speed)
 	camera_tween.tween_property(self,"base_spring_length",aim_rear_spring_arm_length,aim_speed)
+	
+	camera_tween.tween_property(self, "action_offset_y", 0.0, aim_speed)
+	camera_tween.tween_property(self, "action_pitch", 0.0, aim_speed)
+	camera_tween.tween_property(self, "action_spring_length", 0.0, aim_speed)
 func exit_aim()-> void:
 	if camera_tween:
 		camera_tween.kill()

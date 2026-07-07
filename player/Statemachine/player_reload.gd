@@ -32,6 +32,7 @@ func _exit() -> void:
 		owner.anim.animation_finished.disconnect(anim_done)
 	if owner.reload_timer and owner.reload_timer.timeout.is_connected(reload_timeout):
 		owner.reload_timer.timeout.disconnect(reload_timeout)
+	owner.aim_blocked_until_release = false
 	
 	# Reset timescale to 1.0 upon exiting reload state
 	if owner.anim:

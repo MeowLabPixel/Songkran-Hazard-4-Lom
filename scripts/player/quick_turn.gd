@@ -29,6 +29,12 @@ func _enter() -> void:
 func _exit() -> void:
 	_exited = true
 	
+	# Force camera rotation to match the player's exact orientation
+	# to prevent any visual snaps when is_quick_turn becomes false!
+	if owner.camera:
+		owner.camera.camera_rotation.x = -owner.rotation.y
+		owner.camera.target_camera_rotation.x = -owner.rotation.y
+		
 	owner.is_quick_turn = false
 	owner.quick_turn_cooldown = owner.quick_turn_cooldown_duration # Use the exported inspector variable!
 	
@@ -57,16 +63,30 @@ func quick_turn():
 	owner.is_quick_turn =true
 	var traget_y_rotation = owner.rotation.y + -PI
 	
+	# Smoothly zoom out the camera slightly during the quick turn to make it feel cinematic and less abrupt
+	if owner.camera:
+		owner.camera.set_action_spring_length(0.8, owner.quick_turn_speed * 0.5)
+		var zoom_back_tween = create_tween()
+		zoom_back_tween.tween_interval(owner.quick_turn_speed * 0.5)
+		zoom_back_tween.tween_callback(func():
+			if owner.camera:
+				owner.camera.set_action_spring_length(0.0, owner.quick_turn_speed * 0.5)
+		)
+	
 	var tween:= create_tween() as Tween
-	# Add inertia/smoothing effect to the turn
-	tween.set_trans(Tween.TRANS_CUBIC)
+	tween.set_parallel(true)
+	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_IN_OUT)
+	
+	# Tween the player character's rotation
 	tween.tween_property(owner,"rotation:y",traget_y_rotation,owner.quick_turn_speed)
-	# Do NOT set is_quick_turn = false here, or the player can spam the button before the state finishes!
-	tween.finished.connect(func(): 
-		owner.camera.camera_rotation.x += PI
-		owner.camera.target_camera_rotation.x += PI
-	)
+	
+	# Tween the camera's internal rotation to match the transition smoothly in parallel
+	if owner.camera:
+		var target_cam = Vector2(owner.camera.camera_rotation.x + PI, owner.camera.camera_rotation.y)
+		var target_target_cam = Vector2(owner.camera.target_camera_rotation.x + PI, owner.camera.target_camera_rotation.y)
+		tween.tween_property(owner.camera, "camera_rotation", target_cam, owner.quick_turn_speed)
+		tween.tween_property(owner.camera, "target_camera_rotation", target_target_cam, owner.quick_turn_speed)
 
 	# Safety fallback: if animation/anim_done doesn't fire, ensure we exit quick turn
 	var fallback_time: float = owner.quick_turn_speed + 0.2
@@ -110,6 +130,9 @@ func anim_done(namee: String):
 
 func _qt_fallback_timeout() -> void:
 	if not _exited:
+		if owner.camera:
+			owner.camera.camera_rotation.x = -owner.rotation.y
+			owner.camera.target_camera_rotation.x = -owner.rotation.y
 		owner.is_quick_turn = false
 		finished.emit("Idle")
 

@@ -199,6 +199,7 @@ func _exit() -> void:
 	_current_grabber = null
 	_camera_state = 0
 	_transition_emitted = false
+	owner.aim_blocked_until_release = false
 
 	# Unblock enemy attacks after grab is over
 	get_tree().create_timer(0.5).timeout.connect(func():

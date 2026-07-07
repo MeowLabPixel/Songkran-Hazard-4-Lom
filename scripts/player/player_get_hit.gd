@@ -82,6 +82,7 @@ func _exit() -> void:
 	owner.Hit_info.bullet = null
 	owner.hit_damage_already_applied = false
 	owner.is_stunned = false
+	owner.aim_blocked_until_release = false
 	
 	# Re-enable player bone hitbox areas
 	_set_player_hitbox_areas_monitoring(true)

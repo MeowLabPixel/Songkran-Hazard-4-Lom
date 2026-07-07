@@ -201,7 +201,7 @@ func _process_modification() -> void:
 		var offset = pose.origin - pivot_pos
 		var rotated_offset = arm_tilt_basis * offset
 		pose.origin = pivot_pos + rotated_offset + extra_shift
-		pose.basis = arm_tilt_basis * pose.basis
+		pose.basis = (arm_tilt_basis * pose.basis).orthonormalized()
 		skeleton.set_bone_pose(bone_idx, pose)
 
 	# 5. Apply translation shift to the actual shoulder bones to prevent clipping
@@ -251,5 +251,5 @@ func _apply_tilt_to_group(skeleton: Skeleton3D, bone_names: Array[String], tilt_
 			# Convert the global tilt rotation into the bone's local space
 			local_tilt_basis = parent_global_pose.basis.inverse() * group_tilt_basis * parent_global_pose.basis
 
-		pose.basis = local_tilt_basis * pose.basis
+		pose.basis = (local_tilt_basis * pose.basis).orthonormalized()
 		skeleton.set_bone_pose(bone_idx, pose)

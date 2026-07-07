@@ -28,6 +28,8 @@ var shot_timer: float = 0.0
 var next_balloon_time: float = 1.0
 var next_shot_time: float = 0.5
 
+var is_visible: bool = true
+
 func _ready() -> void:
 	# Recursively collect all Node3D children that are meshes (the crowd members)
 	_collect_members(self)
@@ -48,6 +50,7 @@ func _ready() -> void:
 	# Store original positions, rotations and calculate individual offsets
 	for i in range(members.size()):
 		var member = members[i]
+		member.rotation.y = randf_range(0.0, TAU)
 		original_positions.append(member.position)
 		original_rotations.append(member.rotation)
 		
@@ -65,6 +68,18 @@ func _ready() -> void:
 	next_balloon_time = randf_range(balloon_throw_interval_min, balloon_throw_interval_max)
 	next_shot_time = randf_range(shot_interval_min, shot_interval_max)
 
+	# Performance optimization: Only process when visible on screen
+	var notifier = VisibleOnScreenNotifier3D.new()
+	add_child(notifier)
+	if members.size() > 0:
+		var aabb = AABB(members[0].position, Vector3.ZERO)
+		for member in members:
+			aabb = aabb.merge(AABB(member.position - Vector3(1, 1, 1), Vector3(2, 2, 2)))
+		notifier.aabb = aabb
+	
+	notifier.screen_entered.connect(func(): is_visible = true)
+	notifier.screen_exited.connect(func(): is_visible = false)
+
 func _collect_members(node: Node) -> void:
 	for child in node.get_children():
 		if child is MeshInstance3D:
@@ -77,34 +92,41 @@ func _process(delta: float) -> void:
 	if balloon_timer >= next_balloon_time:
 		balloon_timer = 0.0
 		next_balloon_time = randf_range(balloon_throw_interval_min, balloon_throw_interval_max)
-		_throw_random_balloon()
+		if is_visible:
+			_throw_random_balloon()
 
 	shot_timer += delta
 	if shot_timer >= next_shot_time:
 		shot_timer = 0.0
 		next_shot_time = randf_range(shot_interval_min, shot_interval_max)
-		_shoot_random_water_line()
+		if is_visible:
+			_shoot_random_water_line()
+
+	if not is_visible:
+		return
 
 	var time = Time.get_ticks_msec() / 1000.0
+	var members_count = members.size()
 	
-	for i in range(members.size()):
+	for i in range(members_count):
 		var member = members[i]
 		var orig_pos = original_positions[i]
 		var orig_rot = original_rotations[i]
 		var offset = member_offsets[i]
 		
 		# Combine a stadium wave/cheer bouncing motion
-		# We use absolute sine wave for the bounce/jump to simulate hitting the ground and jumping again.
+		# We share the sine calculations between the bounce, the tilt, and the spin logic where possible to save CPU
 		var wave_time = time * wave_speed + offset
-		var bounce = abs(sin(time * cheer_speed + offset * 2.0))
-		
-		# Envelope goes between 0.1 (idle) and 1.0 (cheering) to simulate wave peaks
 		var wave_envelope = (sin(wave_time) + 1.0) * 0.5
 		
-		# High cheer jump
-		var cheer_y = bounce * cheer_height
 		# Idle small bobbing
 		var idle_y = sin(time * idle_bob_speed + offset * 5.0) * idle_bob_height
+		
+		# High cheer jump and tilt (sharing sine phase)
+		var cheer_phase = time * cheer_speed + offset
+		var sin_cheer = sin(cheer_phase)
+		var bounce = abs(sin_cheer)
+		var cheer_y = bounce * cheer_height
 		
 		# Blend between idle and cheering based on the wave envelope
 		var displacement = lerp(idle_y, cheer_y, wave_envelope)
@@ -116,7 +138,7 @@ func _process(delta: float) -> void:
 		member.position.y = orig_pos.y + displacement
 		
 		# Tilt slightly during jump for extra flavor
-		var tilt_angle = (sin(time * cheer_speed + offset) * 0.08) * wave_envelope
+		var tilt_angle = (sin_cheer * 0.08) * wave_envelope
 		member.rotation.z = tilt_angle
 		
 		# Spin logic: dynamically rotate 180 degrees (PI) during cheer jumps
