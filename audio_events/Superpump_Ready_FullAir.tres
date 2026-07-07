@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_d56p5"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Superpump_Ready_FullAir_1.wav" id="2_fj15v"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Superpump_Ready_FullAir_2.wav" id="3_d3twu"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Superpump_Ready_FullAir_3.wav" id="4_rm2hy"]
+
+[resource]
+script = ExtResource("1_d56p5")
+name = "Superpump_Ready_FullAir"
+volume_randomness_db = 0.5
+is_3d = true
+streams = Array[AudioStream]([ExtResource("2_fj15v"), ExtResource("3_d3twu"), ExtResource("4_rm2hy")])

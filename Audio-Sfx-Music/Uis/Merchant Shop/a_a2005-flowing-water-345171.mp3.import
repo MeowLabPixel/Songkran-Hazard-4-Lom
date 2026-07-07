@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bmi1owqyp30ov"
+path="res://.godot/imported/a_a2005-flowing-water-345171.mp3-d7620341c9f27b467c3c50e9dc79ac41.mp3str"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/Uis/Merchant Shop/a_a2005-flowing-water-345171.mp3"
+dest_files=["res://.godot/imported/a_a2005-flowing-water-345171.mp3-d7620341c9f27b467c3c50e9dc79ac41.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

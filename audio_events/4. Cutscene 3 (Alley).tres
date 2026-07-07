@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_rj0c8"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Cutscene1 (Lee and Anchalee) (not use yet)/4. Cutscene 3 (Alley).ogg" id="2_gqx0s"]
+
+[resource]
+script = ExtResource("1_rj0c8")
+name = "4. Cutscene 3 (Alley)"
+is_3d = true
+category = "Voiceline"
+streams = Array[AudioStream]([ExtResource("2_gqx0s")])

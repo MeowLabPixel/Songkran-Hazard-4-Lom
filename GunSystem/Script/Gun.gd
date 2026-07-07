@@ -44,6 +44,11 @@ var super_timer: float = 0.0
 @export var max_spread: float = 8.0
 var current_spread: float = 0.0
 
+# Object Pooling & Exclude Cache
+var _shot_vfx_pool: Array[Node] = []
+var _cached_player_rids: Array = []
+var _cached_player_node: Node = null
+
 func _process(delta):
 	if shoot_timer > 0.0:
 		shoot_timer -= delta
@@ -53,8 +58,9 @@ func _process(delta):
 		if super_timer <= 0.0:
 			is_super_active = false
 			on_super_end()
-			update_accuracy()
-			print("Super End")
+			
+			# Play Superpump duration end sound
+			SoundManager.play_2d("Superpump_Duration_End")
 			
 	update_accuracy()
 
@@ -72,6 +78,16 @@ func can_shoot() -> bool:
 func shoot():
 	if not can_shoot():
 		return
+		
+	# Play watergun shoot sounds
+	var shoot_pos = spawn_point.global_position if spawn_point else global_position
+	
+	# Always play standard firing sound
+	SoundManager.play_3d("watergun_pistol_shoot", shoot_pos)
+	
+	# Layer the Superpump shoot addition sound in parallel if super is active
+	if is_super_active:
+		SoundManager.play_3d("watergun_pistol_Superpump_Shoot_Add", shoot_pos)
 
 	# Consume resources normally (super pump unlimited air/water time removed)
 	if water_tank:
@@ -123,9 +139,8 @@ func fire_pellet():
 			exclude_nodes.append(node.get_rid())
 		node = node.get_parent()
 	
-	# Exclude all nodes in the "player" group and their descendants that are CollisionObject3D
-	for player_node in get_tree().get_nodes_in_group("player"):
-		_add_collision_objects_recursive(player_node, exclude_nodes)
+	_update_player_exclude_cache()
+	exclude_nodes.append_array(_cached_player_rids)
 	
 	query.exclude = exclude_nodes
 	
@@ -136,7 +151,6 @@ func fire_pellet():
 	
 	if result:
 		end_pos = result.position
-		print("Ray hit: ", result["collider"].name)
 		# Apply damage to any enemy hit by the raycast
 		_apply_damage_to_result(result)
 
@@ -159,15 +173,29 @@ func fire_pellet():
 			else:
 				anim_player.play(anim_player.get_animation_list()[0])
 		
-		get_tree().create_timer(0.5).timeout.connect(muzzle_vfx.queue_free)
+		get_tree().create_timer(0.5).timeout.connect(func():
+			if is_instance_valid(muzzle_vfx):
+				muzzle_vfx.queue_free()
+		)
 
 	if shot_vfx_scene:
-		var shot_vfx: Node = shot_vfx_scene.instantiate()
-		get_tree().current_scene.add_child(shot_vfx)
-		if shot_vfx.has_method("set_line"):
+		var shot_vfx = _get_pooled_shot_vfx()
+		if shot_vfx and shot_vfx.has_method("set_line"):
 			shot_vfx.set_line(start_pos, end_pos)
 
 	if result and hit_vfx_scene:
+		# Play watergun hit SFX
+		var alt = false
+		if is_super_active:
+			alt = true
+		else:
+			var collider = result.get("collider")
+			if collider is Area3D:
+				var hz = collider.get_node_or_null("HitboxZone")
+				if hz and hz.zone_name == "head":
+					alt = true
+		SoundManager.play_3d("watergun_hit", result.position, 0.0, -1.0, 1.0, alt)
+		
 		var hit_vfx: Node3D = hit_vfx_scene.instantiate()
 		get_tree().current_scene.add_child(hit_vfx)
 		
@@ -197,7 +225,10 @@ func fire_pellet():
 			else:
 				anim_player.play(anim_player.get_animation_list()[0])
 		
-		get_tree().create_timer(10).timeout.connect(hit_vfx.queue_free)
+		get_tree().create_timer(3.0).timeout.connect(func():
+			if is_instance_valid(hit_vfx):
+				hit_vfx.queue_free()
+		)
 
 
 func update_accuracy():
@@ -250,10 +281,20 @@ func pump_air():
 	var _old_air = air
 	pump_air_gain = max_air / 5.0 # 5 pumps must fill to 100% air
 	
+	# Determine and play pump sound based on current air level before pumping
+	if _old_air >= max_air:
+		# Pumping the special transition from 100 to 120 air
+		SoundManager.play_2d("watergun_pistol_reload_Superpump")
+	else:
+		# Pumping standard air from 0 to 100
+		SoundManager.play_2d("watergun_pistol_reload")
+
 	if air < max_air:
 		air += pump_air_gain
-		if air > max_air:
+		if air >= max_air:
 			air = max_air
+			# Just reached 100% air! Play notification chime
+			SoundManager.play_2d("Superpump_Ready_FullAir")
 	else:
 		# Already at or above max_air, pumping goes toward super_threshold
 		air += pump_air_gain
@@ -262,7 +303,6 @@ func pump_air():
 			is_super_ready = false
 			is_super_active = true
 			super_timer = 5.0 # Super pump last for 5.0 sec
-			print("SUPER PUMP ACTIVATED IMMEDIATELY")
 
 	update_accuracy()
 
@@ -270,4 +310,33 @@ func reload_water(water_gain):
 	if water_tank:
 		water_tank.current_water += water_gain
 		water_tank.current_water = clamp(water_tank.current_water, 0.0, water_tank.max_water)
-		print("Reload Water! Water:", water_tank.current_water)
+
+func _update_player_exclude_cache() -> void:
+	var player = get_tree().get_first_node_in_group("player")
+	if player != _cached_player_node or _cached_player_rids.is_empty() or not is_instance_valid(_cached_player_node):
+		_cached_player_node = player
+		_cached_player_rids.clear()
+		if player:
+			var exclude_nodes: Array = []
+			_add_collision_objects_recursive(player, exclude_nodes)
+			_cached_player_rids = exclude_nodes
+
+func _get_pooled_shot_vfx() -> Node:
+	var i = _shot_vfx_pool.size() - 1
+	while i >= 0:
+		if not is_instance_valid(_shot_vfx_pool[i]):
+			_shot_vfx_pool.remove_at(i)
+		i -= 1
+
+	for vfx in _shot_vfx_pool:
+		if is_instance_valid(vfx) and not vfx.visible:
+			return vfx
+			
+	if shot_vfx_scene:
+		var vfx = shot_vfx_scene.instantiate()
+		var scene = get_tree().current_scene
+		if scene:
+			scene.add_child(vfx)
+			_shot_vfx_pool.append(vfx)
+			return vfx
+	return null

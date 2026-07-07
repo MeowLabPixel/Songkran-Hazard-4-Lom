@@ -120,6 +120,16 @@ func _ready() -> void:
 		
 	if camera:
 		camera.set_as_top_level(true)
+		# Ensure AudioListener3D is attached to the camera for 3D positional audio
+		var has_listener := false
+		for child in camera.get_children():
+			if child is AudioListener3D:
+				has_listener = true
+				break
+		if not has_listener:
+			var listener = AudioListener3D.new()
+			camera.add_child(listener)
+			listener.make_current()
 		
 	if rear_spring_arm:
 		ideal_camera_marker = Marker3D.new()

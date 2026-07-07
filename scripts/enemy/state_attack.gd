@@ -48,6 +48,13 @@ var _attack_index: int           = 0
 var _anim_started: bool          = false
 var _current_target_anim: String = ""
 
+# Voice & SFX state tracking
+var _player_grab_loop_sfx: Node  = null
+var _greeting_played: bool       = false
+
+static var last_greeting_time: float = -100.0
+const GREETING_COOLDOWN: float = 3.0
+
 
 func enter() -> void:
 	print("[StateAttack] Enter called for: ", enemy.name if enemy else "null")
@@ -57,6 +64,17 @@ func enter() -> void:
 	_grab_made_contact = false
 	_qte_hud           = null
 	_swing_phase       = SwingPhase.WINDUP
+	
+	# Determine if greeting plays on Attack Token receipt
+	_greeting_played = false
+	if enemy:
+		var time_now = Time.get_ticks_msec() / 1000.0
+		if time_now - last_greeting_time >= GREETING_COOLDOWN:
+			if randf() < 0.5:
+				_greeting_played = true
+				last_greeting_time = time_now
+				var event = "vo_zombie_m_melee_geeting" if enemy.voice_character == "Zombie Male" else "vo_zombie_f_melee_greeting"
+				SoundManager.play_3d(event, enemy, 0.0, -1.0, enemy.custom_pitch_scale)
 
 	var nav_agent = enemy.get_node_or_null("NavigationAgent3D") as NavigationAgent3D
 	if nav_agent:
@@ -238,6 +256,9 @@ func _tick_attack() -> void:
 	
 	if should_open and _swing_phase == SwingPhase.WINDUP:
 		open_hitboxes()
+		# Play male zombie attack swing sound if no alert greeting was played
+		if not _greeting_played and enemy and enemy.voice_character == "Zombie Male":
+			SoundManager.play_3d("vo_zombie_m_melee_attack", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
 	elif not should_open and _swing_phase == SwingPhase.SWING:
 		close_hitboxes()
 	
@@ -255,6 +276,11 @@ func _start_grab_reach() -> void:
 	_current_target_anim = "grab"
 	if _grab_hitbox and _grab_hitbox is AttackHitbox:
 		_grab_hitbox.attack_type = "grab"
+		
+	# Play zombie grab lunge growl
+	if enemy:
+		SoundManager.play_3d("zombie_grab", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+		
 	var anim = enemy.anim_set.grab_reach
 	_force_anim(anim, "attack/grab")
 	_anim_duration = _anim_length(anim, "attack/grab")
@@ -281,6 +307,11 @@ func _tick_grab_reach() -> void:
 func _start_grab_hold() -> void:
 	_phase = Phase.GRAB_HOLDING
 	_force_anim(enemy.anim_set.grab_hold, "attack/grab")
+	
+	# Play zombie grab success sound
+	if enemy:
+		SoundManager.play_3d("zonbie_grab_success", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+		
 	var hud_script = load("res://scripts/ui/grab_qte_hud.gd")
 	_qte_hud = hud_script.new(qte_duration, qte_shakes_needed)
 	_qte_hud.escaped.connect(_on_qte_escaped)
@@ -289,6 +320,9 @@ func _start_grab_hold() -> void:
 	
 	var player = _get_player()
 	if player:
+		# Play Rookie Lee's QTE grab loop voice line
+		_player_grab_loop_sfx = SoundManager.play_3d("vo_leon_grab_loop", player)
+		
 		var sm = player.get_node_or_null("Statemachine")
 		if sm and sm.has_method("_change_state"):
 			sm._change_state("Grab")
@@ -328,6 +362,18 @@ func _tick_grab_holding(delta: float) -> void:
 func _on_qte_escaped() -> void:
 	print("[StateAttack] Grab: player ESCAPED (Zombie failed)")
 	var player := _get_player()
+	
+	# Stop QTE grab loop sound
+	if is_instance_valid(_player_grab_loop_sfx):
+		_player_grab_loop_sfx.stop()
+		_player_grab_loop_sfx.queue_free()
+		
+	# Play escape sounds
+	if enemy:
+		SoundManager.play_3d("zonbie_grab_fail", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+	if player:
+		SoundManager.play_3d("vo_leon_grab_winend", player)
+		
 	var sm = player.get_node_or_null("Statemachine")
 	if sm:
 		var grab_state = sm.get_node_or_null("Grab")
@@ -352,6 +398,16 @@ func _on_qte_caught() -> void:
 	_anim_started = false
 	_current_target_anim = "grab"
 	var player := _get_player()
+	
+	# Stop QTE grab loop sound
+	if is_instance_valid(_player_grab_loop_sfx):
+		_player_grab_loop_sfx.stop()
+		_player_grab_loop_sfx.queue_free()
+		
+	# Play catch/fail sounds
+	if player:
+		SoundManager.play_3d("vo_leon_gethit", player)
+		
 	var sm = player.get_node_or_null("Statemachine")
 	if sm:
 		var grab_state = sm.get_node_or_null("Grab")
@@ -611,6 +667,14 @@ func _deal_damage(entity: Node3D, amount: int, source: String) -> void:
 	if entity and entity.has_method("take_damage"):
 		entity.take_damage(amount)
 		print("[StateAttack] %s hit %s for %d damage" % [source, entity.name, amount])
+		
+		# Play melee hit impact sound
+		SoundManager.play_3d("zombie_melee_hit", entity)
+		
+		# If it's the player, and this is a male zombie, play their cackle/laugh
+		var is_player = entity.is_in_group("player")
+		if is_player and enemy and enemy.voice_character == "Zombie Male":
+			SoundManager.play_3d("vo_zombie_m_melee_laugh", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
 
 func _anim_length(anim_name: String, sub_machine: String = "") -> float:
 	if enemy and enemy.anim_player and enemy.anim_player.has_animation(anim_name):

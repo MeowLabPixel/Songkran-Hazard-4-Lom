@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_u0v2a"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Zombie Melee (F)/vo_zombie_f_melee_greeting_1.ogg" id="2_u3xe3"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Zombie Melee (F)/vo_zombie_f_melee_greeting_2.ogg" id="3_ugnsp"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Zombie Melee (F)/vo_zombie_f_melee_greeting_3.ogg" id="4_v7pap"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Zombie Melee (F)/vo_zombie_f_melee_greeting_4.ogg" id="5_fuj7r"]
+
+[resource]
+script = ExtResource("1_u0v2a")
+name = "vo_zombie_f_melee_greeting"
+is_3d = true
+category = "Voiceline"
+streams = Array[AudioStream]([ExtResource("2_u3xe3"), ExtResource("3_ugnsp"), ExtResource("4_v7pap"), ExtResource("5_fuj7r")])

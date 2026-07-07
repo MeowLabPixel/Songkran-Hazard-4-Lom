@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bspf5dkj08mxx"
+path="res://.godot/imported/vo_leon_gethit_4.ogg-8b0bbf0ff29ea6d7fe2014173dafe615.oggvorbisstr"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_gethit_4.ogg"
+dest_files=["res://.godot/imported/vo_leon_gethit_4.ogg-8b0bbf0ff29ea6d7fe2014173dafe615.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

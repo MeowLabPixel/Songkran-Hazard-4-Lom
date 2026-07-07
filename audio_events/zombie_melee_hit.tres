@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_mh4km"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Zombie/zombie_melee_hit_1.ogg" id="2_ufgyh"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Zombie/zombie_melee_hit_2.ogg" id="3_mjnsc"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Zombie/zombie_melee_hit_3.ogg" id="4_8fliw"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Zombie/zombie_melee_hit_4.ogg" id="5_vvwhh"]
+
+[resource]
+script = ExtResource("1_mh4km")
+name = "zombie_melee_hit"
+volume_randomness_db = 0.5
+is_3d = true
+streams = Array[AudioStream]([ExtResource("2_ufgyh"), ExtResource("3_mjnsc"), ExtResource("4_8fliw"), ExtResource("5_vvwhh")])

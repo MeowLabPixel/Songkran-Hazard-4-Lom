@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://p3u2yjky6xun"
+path="res://.godot/imported/watergun_pistol_reload_Superpump.ogg-f0e8b6e394b9716fdd72b8c8f417df3b.oggvorbisstr"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_pistol_reload_Superpump.ogg"
+dest_files=["res://.godot/imported/watergun_pistol_reload_Superpump.ogg-f0e8b6e394b9716fdd72b8c8f417df3b.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

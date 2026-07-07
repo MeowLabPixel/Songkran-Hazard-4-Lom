@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_vdtr7"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Hover_Ui_1.wav" id="2_kteji"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Hover_Ui_2.wav" id="3_dju62"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Hover_Ui_3.wav" id="4_ydkdp"]
+
+[resource]
+script = ExtResource("1_vdtr7")
+name = "Hover_Ui"
+volume_randomness_db = 0.5
+category = "UI"
+streams = Array[AudioStream]([ExtResource("2_kteji"), ExtResource("3_dju62"), ExtResource("4_ydkdp")])

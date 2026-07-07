@@ -10,6 +10,13 @@ func _enter() -> void:
 	print(name)
 	_hit_primary = false
 	_hit_enemies.clear()
+	
+	# Play Rookie Lee attack grunt (low chance for heavy attack grunt)
+	if randf() < 0.15:
+		SoundManager.play_3d("vo_leon_attack", owner)
+	else:
+		SoundManager.play_3d("vo_leon_quickattack", owner)
+		
 	owner.stun_detect.monitorable = true
 	owner.aim_bone_on(false)
 	stop_moving()
@@ -33,10 +40,11 @@ func _update(_delta: float) -> void:
 
 func _exit() -> void:
 	# Removed the safety fallback: enemies will now ONLY be knocked down if the physical TakedownHitbox actually collided with them!
-
-	owner.stun_detect.monitorable = false
-	if owner.anim and owner.anim.animation_finished.is_connected(anim_done):
-		owner.anim.animation_finished.disconnect(anim_done)
+	if is_instance_valid(owner):
+		if owner.stun_detect:
+			owner.stun_detect.monitorable = false
+		if owner.anim and is_instance_valid(owner.anim) and owner.anim.animation_finished.is_connected(anim_done):
+			owner.anim.animation_finished.disconnect(anim_done)
 	
 	if is_instance_valid(splash_area):
 		if splash_area.area_entered.is_connected(_on_splash_area_entered):

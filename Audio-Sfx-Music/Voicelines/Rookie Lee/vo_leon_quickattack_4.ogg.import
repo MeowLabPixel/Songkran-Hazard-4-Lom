@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://tuxua76seku3"
+path="res://.godot/imported/vo_leon_quickattack_4.ogg-d82636039bc0778ef289765a1f2fc07c.oggvorbisstr"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_quickattack_4.ogg"
+dest_files=["res://.godot/imported/vo_leon_quickattack_4.ogg-d82636039bc0778ef289765a1f2fc07c.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://cfym0cd3so4aj"
+path="res://.godot/imported/Region_PlayerTakedownAttackStart.wav-91a91aa9d2d8d0fa3720835e32a27a18.sample"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/Rookie Lee/Region_PlayerTakedownAttackStart.wav"
+dest_files=["res://.godot/imported/Region_PlayerTakedownAttackStart.wav-91a91aa9d2d8d0fa3720835e32a27a18.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

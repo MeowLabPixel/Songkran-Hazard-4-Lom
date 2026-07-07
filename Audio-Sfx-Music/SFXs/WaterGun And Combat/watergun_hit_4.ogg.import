@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bwr141whv1lgh"
+path="res://.godot/imported/watergun_hit_4.ogg-ba16af13d10b4d536641f8d8c6b5eb4f.oggvorbisstr"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_hit_4.ogg"
+dest_files=["res://.godot/imported/watergun_hit_4.ogg-ba16af13d10b4d536641f8d8c6b5eb4f.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

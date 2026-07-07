@@ -11,17 +11,15 @@ signal coins_changed(total: int)
 var inventory: Dictionary = {}
 
 func _ready() -> void:
-	print("[ItemManager] Ready.")
+	pass
 
 ## Called by ItemPickup when the player collects an item.
 func add_item(item_type: String, value: int) -> void:
 	if item_type == "coin":
 		inventory["coin"] = inventory.get("coin", 0) + value
-		print("[ItemManager] Coins: %d  (+%d)" % [inventory["coin"], value])
 		coins_changed.emit(inventory["coin"])
 	else:
 		inventory[item_type] = inventory.get(item_type, 0) + value
-		print("[ItemManager] +%d %s  (total: %d)" % [value, item_type, inventory[item_type]])
 	inventory_changed.emit(inventory)
 
 ## Returns current coin total.

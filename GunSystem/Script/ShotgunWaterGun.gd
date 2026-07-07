@@ -27,7 +27,6 @@ func fire_projectiles():
 		current_spread = old_spread
 		is_super_active = false
 		on_super_end()
-		print("Shotgun DOUBLE Super Blast! Super Ended.")
 	else:
 		# Normal shot
 		for i in range(pellet_count):

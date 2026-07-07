@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_ox046"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/air_pump_loop_loop.wav" id="2_g1odb"]
+
+[resource]
+script = ExtResource("1_ox046")
+name = "air_pump_loop_loop"
+volume_randomness_db = 0.5
+is_3d = true
+streams = Array[AudioStream]([ExtResource("2_g1odb")])

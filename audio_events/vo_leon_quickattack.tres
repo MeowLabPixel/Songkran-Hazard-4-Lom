@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_r0tki"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_quickattack_1.ogg" id="2_15ytg"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_quickattack_2.ogg" id="3_icaca"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_quickattack_3.ogg" id="4_cd1vj"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_quickattack_4.ogg" id="5_acyrc"]
+
+[resource]
+script = ExtResource("1_r0tki")
+name = "vo_leon_quickattack"
+is_3d = true
+category = "Voiceline"
+streams = Array[AudioStream]([ExtResource("2_15ytg"), ExtResource("3_icaca"), ExtResource("4_cd1vj"), ExtResource("5_acyrc")])

@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://dpeq6jytmmel4"
+path="res://.godot/imported/universfield-water-splash-199583_clip.wav-97f23ee6355ec9cecb4ff8cfc4606338.sample"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/Uis/Merchant Shop/universfield-water-splash-199583_clip.wav"
+dest_files=["res://.godot/imported/universfield-water-splash-199583_clip.wav-97f23ee6355ec9cecb4ff8cfc4606338.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

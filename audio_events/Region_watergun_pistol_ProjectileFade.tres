@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_ytxme"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Region_watergun_pistol_ProjectileFade.wav" id="2_kkq6m"]
+
+[resource]
+script = ExtResource("1_ytxme")
+name = "Region_watergun_pistol_ProjectileFade"
+volume_randomness_db = 0.5
+is_3d = true
+use_regions = true
+stream = ExtResource("2_kkq6m")
+regions = Array[Vector2]([Vector2(0, 10.5)])

@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://c6vc0gelu4yqe"
+path="res://.godot/imported/Superpump_Ready_FullAir_1.wav-348832cbb70ced299fdee838de59ac7c.sample"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Superpump_Ready_FullAir_1.wav"
+dest_files=["res://.godot/imported/Superpump_Ready_FullAir_1.wav-348832cbb70ced299fdee838de59ac7c.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

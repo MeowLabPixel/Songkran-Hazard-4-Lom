@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_w3ikk"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_player_gethit_01.ogg" id="2_mjjni"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_player_gethit_02.ogg" id="3_dq45y"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_player_gethit_03.ogg" id="4_nkcm5"]
+
+[resource]
+script = ExtResource("1_w3ikk")
+name = "vo_anchalee_player_gethit"
+is_3d = true
+category = "Voiceline"
+streams = Array[AudioStream]([ExtResource("2_mjjni"), ExtResource("3_dq45y"), ExtResource("4_nkcm5")])

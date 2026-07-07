@@ -31,7 +31,6 @@ var visual_r: float = 45.0
 var was_visible: bool = false
 
 func _ready() -> void:
-	print("ProceduralCrosshair: _ready called")
 	scale = Vector2.ONE
 	visual_r = max_reticle_radius
 
@@ -44,7 +43,6 @@ func get_player() -> Node:
 	while node:
 		if node.has_method("get_damage_multiplier") or node.name == "Player":
 			player = node
-			print("ProceduralCrosshair: found player via parent chain walk: ", player)
 			return player
 		node = node.get_parent()
 		
@@ -52,17 +50,13 @@ func get_player() -> Node:
 	var players = get_tree().get_nodes_in_group("player")
 	if players.size() > 0:
 		player = players[0]
-		print("ProceduralCrosshair: found player via group fallback: ", player)
 		return player
 		
-	print("ProceduralCrosshair: player node not found!")
 	return null
 
 func _process(delta: float) -> void:
 	if visible:
 		if not was_visible:
-			print("ProceduralCrosshair: became visible, visual_r initialized to ", max_reticle_radius)
-			# Snap to raw unfocused size and reset scale when aiming starts
 			visual_r = max_reticle_radius
 			scale = Vector2.ONE
 			was_visible = true
@@ -72,14 +66,11 @@ func _process(delta: float) -> void:
 			var focus_prog: float = p.get("focus_progress") if "focus_progress" in p else 0.0
 			var target_r = lerp(max_reticle_radius, min_reticle_radius, focus_prog)
 			
-			# Gradually lerp the visual radius smoothly
 			var lerp_speed = shrink_speed if target_r < visual_r else expand_speed
 			visual_r = lerpf(visual_r, target_r, delta * lerp_speed)
 			
 		queue_redraw()
 	else:
-		if was_visible:
-			print("ProceduralCrosshair: became hidden")
 		was_visible = false
 
 func _draw() -> void:

@@ -27,14 +27,12 @@ func _ready() -> void:
 func unlock_gun(index: int) -> void:
 	if index >= 0 and index < unlocked_guns.size():
 		unlocked_guns[index] = true
-		print("Gun unlocked at index: ", index)
 
 func switch_gun(index: int) -> void:
 	if index < 0 or index >= guns.size():
 		return
 	
 	if not unlocked_guns[index]:
-		print("Gun at index ", index, " is locked!")
 		return
 
 	current_gun_index = index

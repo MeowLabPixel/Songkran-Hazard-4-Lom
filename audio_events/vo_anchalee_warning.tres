@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_1q14p"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_1.ogg" id="2_1uagl"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_2.ogg" id="3_yw5ow"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_3.ogg" id="4_hmoan"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_4.ogg" id="5_kya2e"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_5.ogg" id="6_u1m06"]
+
+[resource]
+script = ExtResource("1_1q14p")
+name = "vo_anchalee_warning"
+is_3d = true
+category = "Voiceline"
+streams = Array[AudioStream]([ExtResource("2_1uagl"), ExtResource("3_yw5ow"), ExtResource("4_hmoan"), ExtResource("5_kya2e"), ExtResource("6_u1m06")])

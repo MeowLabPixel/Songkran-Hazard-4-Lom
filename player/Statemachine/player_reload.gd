@@ -5,7 +5,6 @@ var _exited: bool = false
 var _pump_cooldown_timer: float = 0.2
 
 func _enter() -> void:
-	print(name)
 	_exited = false
 	stop_moving()
 	owner.is_aimming = false
@@ -28,16 +27,16 @@ func _enter() -> void:
 
 func _exit() -> void:
 	_exited = true
-	if owner.anim and owner.anim.animation_finished.is_connected(anim_done):
-		owner.anim.animation_finished.disconnect(anim_done)
-	if owner.reload_timer and owner.reload_timer.timeout.is_connected(reload_timeout):
-		owner.reload_timer.timeout.disconnect(reload_timeout)
-	owner.aim_blocked_until_release = false
-	
-	# Reset timescale to 1.0 upon exiting reload state
-	if owner.anim:
-		owner.anim.set("parameters/Main/Reload/Reload/TimeScale/scale", 1.0)
-		owner.anim.set("parameters/Main/Reload/Reload 2/TimeScale/scale", 1.0)
+	if is_instance_valid(owner):
+		owner.aim_blocked_until_release = false
+		if owner.anim and is_instance_valid(owner.anim):
+			if owner.anim.animation_finished.is_connected(anim_done):
+				owner.anim.animation_finished.disconnect(anim_done)
+			owner.anim.set("parameters/Main/Reload/Reload/TimeScale/scale", 1.0)
+			owner.anim.set("parameters/Main/Reload/Reload 2/TimeScale/scale", 1.0)
+		if owner.reload_timer and is_instance_valid(owner.reload_timer):
+			if owner.reload_timer.timeout.is_connected(reload_timeout):
+				owner.reload_timer.timeout.disconnect(reload_timeout)
 
 func _update(_delta: float) -> void:
 	if owner.HP <= 0:
@@ -45,6 +44,12 @@ func _update(_delta: float) -> void:
 		return
 	if _pump_cooldown_timer > 0.0:
 		_pump_cooldown_timer -= _delta
+		
+	# QoL: Aim cancels reload immediately
+	if Input.is_action_pressed("aim"):
+		owner.is_aimming = true
+		finished.emit("Aim")
+		return
 
 func _state_input(_event: InputEvent) -> void:
 	if Input.is_action_just_pressed("Reload"):
@@ -96,7 +101,6 @@ func reloading() -> void:
 func anim_done(namee: String) -> void:
 	if _exited:
 		return
-	print("[Reload] anim_done: ", namee)
 	if namee == reload_anim:
 		owner.anim.set("parameters/Main/Reload/Reload/TimeScale/scale", 1.0)
 		owner.anim.set("parameters/Main/Reload/Reload 2/TimeScale/scale", 1.0)

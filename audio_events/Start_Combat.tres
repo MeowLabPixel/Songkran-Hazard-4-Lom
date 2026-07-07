@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_dftsu"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Musics/Start_Combat.ogg" id="2_t5rhj"]
+
+[resource]
+script = ExtResource("1_dftsu")
+name = "Start_Combat"
+volume_randomness_db = 0.5
+is_3d = true
+streams = Array[AudioStream]([ExtResource("2_t5rhj")])

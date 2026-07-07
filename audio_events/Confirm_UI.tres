@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_Add_1.wav" id="1_asf7u"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_Add_2.wav" id="2_11ew2"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_Add_3.wav" id="3_6lk77"]
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="4_e3elp"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_1.wav" id="5_lp8o7"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_2.wav" id="6_p06si"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_3.wav" id="7_qbahh"]
+
+[resource]
+script = ExtResource("4_e3elp")
+name = "Confirm_UI"
+volume_randomness_db = 0.5
+category = "UI"
+streams = Array[AudioStream]([ExtResource("5_lp8o7"), ExtResource("6_p06si"), ExtResource("7_qbahh")])
+parallel_streams = Array[AudioStream]([ExtResource("1_asf7u"), ExtResource("2_11ew2"), ExtResource("3_6lk77")])

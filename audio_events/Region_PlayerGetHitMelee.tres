@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_b0qid"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/Region_PlayerGetHitMelee.wav" id="2_3ibf3"]
+
+[resource]
+script = ExtResource("1_b0qid")
+name = "Region_PlayerGetHitMelee"
+volume_randomness_db = 0.5
+is_3d = true
+use_regions = true
+stream = ExtResource("2_3ibf3")
+regions = Array[Vector2]([Vector2(0, 9)])

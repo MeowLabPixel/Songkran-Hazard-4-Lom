@@ -21,6 +21,22 @@ func _enter() -> void:
 	owner.cancel_aim()
 	stop_moving()
 	
+	# Play Rookie Lee get hit voice line
+	SoundManager.play_3d("vo_leon_gethit", owner)
+	
+	# Play Anchalee worried voiceline 1.0 second after player gets hit
+	var timer = owner.get_tree().create_timer(1.0)
+	timer.timeout.connect(func():
+		var followers = owner.get_tree().get_nodes_in_group("Anchalee")
+		if followers.size() > 0:
+			var follower = followers[0]
+			if is_instance_valid(follower) and follower.get("HP") > 0:
+				SoundManager.play_3d("vo_anchalee_player_gethit", follower)
+	)
+	
+	# Muffle the music bus when player is hit
+	SoundManager.set_bus_muffled("Music", true)
+	
 	# Mark the player as stunned (this makes them invulnerable)
 	owner.is_stunned = true
 	
@@ -78,6 +94,9 @@ func _on_hit_anim_finished(_anim_name: String) -> void:
 	_anim_finished = true
 
 func _exit() -> void:
+	# Unmuffle the music bus when recovering
+	SoundManager.set_bus_muffled("Music", false)
+	
 	owner.Hit_info.location = null
 	owner.Hit_info.bullet = null
 	owner.hit_damage_already_applied = false

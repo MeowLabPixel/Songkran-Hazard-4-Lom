@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://disthlkvkuko"
+path="res://.godot/imported/leon_dead.ogg-037914745314c892c51f096f15578813.oggvorbisstr"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_dead.ogg"
+dest_files=["res://.godot/imported/leon_dead.ogg-037914745314c892c51f096f15578813.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

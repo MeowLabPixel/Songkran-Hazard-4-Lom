@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://boduyce0qsbdk"
+path="res://.godot/imported/watergun_pistol_reload.ogg-e10adc5e7d2e363f9cbaebb1fbe2fa28.oggvorbisstr"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_pistol_reload.ogg"
+dest_files=["res://.godot/imported/watergun_pistol_reload.ogg-e10adc5e7d2e363f9cbaebb1fbe2fa28.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

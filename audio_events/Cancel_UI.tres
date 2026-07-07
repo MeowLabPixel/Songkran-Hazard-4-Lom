@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_k7vne"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Cancel_UI_1.wav" id="2_tisfd"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Cancel_UI_2.wav" id="3_ap0a7"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Cancel_UI_3.wav" id="4_uvynj"]
+
+[resource]
+script = ExtResource("1_k7vne")
+name = "Cancel_UI"
+volume_randomness_db = 0.5
+category = "UI"
+streams = Array[AudioStream]([ExtResource("2_tisfd"), ExtResource("3_ap0a7"), ExtResource("4_uvynj")])

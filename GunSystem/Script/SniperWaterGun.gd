@@ -10,7 +10,6 @@ func fire_projectiles():
 		# Immediately reset air and end super after this powerful shot
 		air = 0.0
 		is_super_active = false
-		print("Sniper Super Shot Fired! Air Reset to 0.")
 	else:
 		fire_pellet()
 
@@ -62,17 +61,18 @@ func fire_sniper_super_shot():
 			hit_vfx.scale = impact_scale
 			if hit_vfx is GPUParticles3D:
 				hit_vfx.emitting = true
-			get_tree().create_timer(10).timeout.connect(hit_vfx.queue_free)
+			get_tree().create_timer(3.0).timeout.connect(func():
+				if is_instance_valid(hit_vfx):
+					hit_vfx.queue_free()
+			)
 
 		exclude.append(result.rid)
 		final_pos = result.position
 
 	if shot_vfx_scene:
-		var shot_vfx: Node = shot_vfx_scene.instantiate()
-		get_tree().current_scene.add_child(shot_vfx)
-		if shot_vfx.has_method("set_line"):
+		var shot_vfx = _get_pooled_shot_vfx()
+		if shot_vfx and shot_vfx.has_method("set_line"):
 			shot_vfx.set_line(start_pos, final_pos)
 
 func on_super_end():
 	air = 0.0
-	print("Sniper Air Reset to 0 after Super.")

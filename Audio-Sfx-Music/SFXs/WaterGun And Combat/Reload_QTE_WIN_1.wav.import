@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://bu8l0dwocahoy"
+path="res://.godot/imported/Reload_QTE_WIN_1.wav-a4d9c83ba0e29009c38da90aeeb4bd5c.sample"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Reload_QTE_WIN_1.wav"
+dest_files=["res://.godot/imported/Reload_QTE_WIN_1.wav-a4d9c83ba0e29009c38da90aeeb4bd5c.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

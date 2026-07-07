@@ -12,5 +12,12 @@ func set_line(spawn_pos: Vector3, target_pos: Vector3) -> void:
 	
 	mesh_instance.scale.z = distance
 	mesh_instance.position = Vector3(0, 0, -distance * 0.5)
+	
+	visible = true
 
-	get_tree().create_timer(life_time).timeout.connect(queue_free)
+	var tree = get_tree()
+	if tree:
+		tree.create_timer(life_time).timeout.connect(func():
+			if is_instance_valid(self):
+				visible = false
+		)

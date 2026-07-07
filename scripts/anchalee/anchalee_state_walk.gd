@@ -27,6 +27,10 @@ var _jink_dir_sign: int = 1     # alternates left/right each jink
 var _failed_jinks: int = 0
 var _jink_phase: int = 0
 
+# Breathing audio tracking
+var _active_breath_sfx: Node = null
+var _current_breath_event: String = ""
+
 func enter() -> void:
 	print("[Anchalee] Walk/Run")
 	if is_instance_valid(Anchalee):
@@ -41,6 +45,13 @@ func enter() -> void:
 	_jink_phase = 0
 
 func exit() -> void:
+	# Stop walk/run breathing sound
+	if is_instance_valid(_active_breath_sfx):
+		_active_breath_sfx.stop()
+		_active_breath_sfx.queue_free()
+	_active_breath_sfx = null
+	_current_breath_event = ""
+	
 	if is_instance_valid(Anchalee):
 		if Anchalee.nav_agent:
 			Anchalee.nav_agent.avoidance_enabled = true
@@ -59,6 +70,9 @@ func physics_update(delta: float) -> void:
 		else:
 			Anchalee.zombie_reaction_state = "back_up"
 		Anchalee.zombie_reaction_timer = Anchalee.zombie_reaction_cooldown
+		
+		# Play warning sound on random threat reaction behavior
+		SoundManager.play_3d("vo_anchalee_warning", Anchalee)
 			
 	var aim_duck = Anchalee.is_player_aiming_or_takedown()
 	if aim_duck or Anchalee.zombie_reaction_state == "duck":
@@ -253,6 +267,15 @@ func physics_update(delta: float) -> void:
 
 	var is_far = not is_in_near_area
 	var is_running = is_far or Anchalee.player_is_sprinting
+	
+	# Dynamic breathing SFX manager
+	var target_event = "vo_anchalee_Exhausted" if is_running else "vo_anchalee_Panting"
+	if _current_breath_event != target_event or _active_breath_sfx == null or not is_instance_valid(_active_breath_sfx) or not _active_breath_sfx.playing:
+		if is_instance_valid(_active_breath_sfx):
+			_active_breath_sfx.stop()
+			_active_breath_sfx.queue_free()
+		_current_breath_event = target_event
+		_active_breath_sfx = SoundManager.play_3d(target_event, Anchalee)
 	
 	var current_speed = walk_speed
 	if is_running:

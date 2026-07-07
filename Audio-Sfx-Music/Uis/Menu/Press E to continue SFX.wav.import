@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://c5hqt4c3h6qdg"
+path="res://.godot/imported/Press E to continue SFX.wav-ab97fa411b911664efdec2a2d8351311.sample"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/Uis/Menu/Press E to continue SFX.wav"
+dest_files=["res://.godot/imported/Press E to continue SFX.wav-ab97fa411b911664efdec2a2d8351311.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

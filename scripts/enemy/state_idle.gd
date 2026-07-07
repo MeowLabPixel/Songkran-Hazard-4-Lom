@@ -15,15 +15,17 @@ func enter() -> void:
 		enemy.velocity = Vector3.ZERO
 		enemy.move_and_slide()
 	_play_anim(enemy.anim_set.idle)
-	print("[StateIdle] Entered Idle.")
+	if enemy and enemy.get("show_debug_label") == true:
+		print("[StateIdle] Entered Idle.")
 	
-	if _is_first_enter and enemy and enemy.anim_tree:
+	if _is_first_enter and enemy and enemy.is_inside_tree() and enemy.anim_tree:
 		_is_first_enter = false
-		# Wait one frame for the AnimationTree to start playing Idle, then fast-forward it
-		enemy.get_tree().process_frame.connect(func():
-			if is_instance_valid(enemy) and is_instance_valid(enemy.anim_tree):
-				enemy.anim_tree.advance(randf_range(0.0, 5.0))
-		, CONNECT_ONE_SHOT)
+		var tree = enemy.get_tree()
+		if tree:
+			tree.process_frame.connect(func():
+				if is_instance_valid(enemy) and is_instance_valid(enemy.anim_tree):
+					enemy.anim_tree.advance(randf_range(0.0, 5.0))
+			, CONNECT_ONE_SHOT)
 
 func exit() -> void:
 	pass
@@ -61,16 +63,21 @@ func _alert_all_zombies() -> void:
 	if not enemy or not enemy.is_inside_tree():
 		return
 		
+	var tree = enemy.get_tree()
+	if not tree:
+		return
+		
 	# Play combat music
-	var music = enemy.get_tree().current_scene.get_node_or_null("MusicPlayer2D")
+	var music = tree.current_scene.get_node_or_null("MusicPlayer2D")
 	if not music:
-		music = enemy.get_tree().current_scene.get_node_or_null("AudioStreamPlayer2D")
+		music = tree.current_scene.get_node_or_null("AudioStreamPlayer2D")
 	if music and music is AudioStreamPlayer2D and not music.playing:
 		music.play()
-		print("Combat music started.")
+		if enemy.get("show_debug_label") == true:
+			print("Combat music started.")
 		
-	if enemy.get_tree().root.has_node("GameManager"):
-		enemy.get_tree().root.get_node("GameManager").start_timer()
+	if tree.root.has_node("GameManager"):
+		tree.root.get_node("GameManager").start_timer()
 
 	var enemies = enemy.get_tree().get_nodes_in_group("enemies")
 	for other_enemy in enemies:

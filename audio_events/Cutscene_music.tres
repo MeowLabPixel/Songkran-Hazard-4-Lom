@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_1qla8"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Musics/Cutscene_music.mp3" id="2_wacic"]
+
+[resource]
+script = ExtResource("1_1qla8")
+name = "Cutscene_music"
+volume_randomness_db = 0.5
+is_3d = true
+streams = Array[AudioStream]([ExtResource("2_wacic")])

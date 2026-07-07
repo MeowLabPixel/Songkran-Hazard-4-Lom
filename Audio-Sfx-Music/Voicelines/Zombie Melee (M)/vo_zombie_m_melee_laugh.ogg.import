@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://cm15oe4ks7l7v"
+path="res://.godot/imported/vo_zombie_m_melee_laugh.ogg-c74688cae991f1b759274f42da1679fa.oggvorbisstr"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/Voicelines/Zombie Melee (M)/vo_zombie_m_melee_laugh.ogg"
+dest_files=["res://.godot/imported/vo_zombie_m_melee_laugh.ogg-c74688cae991f1b759274f42da1679fa.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

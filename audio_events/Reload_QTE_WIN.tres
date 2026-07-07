@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_vvkhq"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Reload_QTE_WIN_1.wav" id="2_u1bni"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Reload_QTE_WIN_2.wav" id="3_ww3gt"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Reload_QTE_WIN_3.wav" id="4_06stt"]
+
+[resource]
+script = ExtResource("1_vvkhq")
+name = "Reload_QTE_WIN"
+volume_randomness_db = 0.5
+is_3d = true
+streams = Array[AudioStream]([ExtResource("2_u1bni"), ExtResource("3_ww3gt"), ExtResource("4_06stt")])

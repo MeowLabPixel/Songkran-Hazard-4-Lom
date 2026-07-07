@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://c7l36geprr3bo"
+path="res://.godot/imported/leon_takedown.ogg-10e233d7ca8e2dc0390e78b47c52d2a1.oggvorbisstr"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_takedown.ogg"
+dest_files=["res://.godot/imported/leon_takedown.ogg-10e233d7ca8e2dc0390e78b47c52d2a1.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

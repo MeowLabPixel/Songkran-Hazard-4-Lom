@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_vtd1d"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/Region_PlayerTakedownAttackStart.wav" id="2_s16x8"]
+
+[resource]
+script = ExtResource("1_vtd1d")
+name = "Region_PlayerTakedownAttackStart"
+volume_randomness_db = 0.5
+is_3d = true
+use_regions = true
+stream = ExtResource("2_s16x8")
+regions = Array[Vector2]([Vector2(0, 7.5)])

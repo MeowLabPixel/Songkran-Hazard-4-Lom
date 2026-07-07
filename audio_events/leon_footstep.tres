@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_b66ni"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_footstep_1.ogg" id="2_emnmm"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_footstep_2.ogg" id="3_pud4e"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_footstep_3.ogg" id="4_voeej"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_footstep_4.ogg" id="5_ctuuh"]
+
+[resource]
+script = ExtResource("1_b66ni")
+name = "leon_footstep"
+volume_randomness_db = 0.5
+is_3d = true
+streams = Array[AudioStream]([ExtResource("2_emnmm"), ExtResource("3_pud4e"), ExtResource("4_voeej"), ExtResource("5_ctuuh")])

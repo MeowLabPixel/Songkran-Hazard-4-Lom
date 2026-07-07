@@ -68,6 +68,18 @@ func enter() -> void:
 		enemy.move_and_slide()
 	print("[StateKnockdown] Knocked down. Mode: %s Zone: %s skip_act3=%s special_side=%s" % [knockdown_mode, stun_type, skip_act3, special_side])
 	
+	# Trigger Act 3 takedown/knockdown sounds
+	if not skip_act3 and enemy:
+		if knockdown_mode == "NORMAL":
+			# Normal player-triggered takedown sequence
+			SoundManager.play_3d("Region_ZombieGetHitTakedown_Part1", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+		else:
+			# Non-normal knockdown (stumble, leg shot, swing shot)
+			if stun_type == "head":
+				SoundManager.play_3d("zombie_hit_head_act_3_takedown", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+			else:
+				SoundManager.play_3d("zombie_hit_leg_act_3_takedown", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+				
 	if skip_act3:
 		_start_act4()
 		return
@@ -154,6 +166,13 @@ func _start_act4() -> void:
 	_timer = 0.0
 	var loop_anim: String = enemy.anim_set.takedown_idle(knockdown_type)
 	_force_anim(loop_anim, "hit/hit_takedown")
+	
+	if enemy:
+		# Play hit ground sound
+		SoundManager.play_3d("Region_Zombie_Hitground_Sound", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+		# If leg hit, play loop struggle
+		if knockdown_type != "head":
+			SoundManager.play_3d("zombie_hit_leg_act_2_loop", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
 
 func _start_act5() -> void:
 	_phase = Phase.ACT5
@@ -161,6 +180,13 @@ func _start_act5() -> void:
 	if enemy:
 		enemy.velocity = Vector3.ZERO
 		enemy.move_and_slide()
+		
+		# Play getup reaction sound
+		if knockdown_type == "head":
+			SoundManager.play_3d("zombie_hit_head_act_5_getup", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+		else:
+			SoundManager.play_3d("zombie_hit_leg_act_5_getup", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+			
 	var getup_anim = enemy.anim_set.get_up_anim(knockdown_type)
 	_force_anim(getup_anim, "hit/hit_takedown")
 	

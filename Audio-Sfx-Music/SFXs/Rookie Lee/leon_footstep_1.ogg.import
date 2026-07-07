@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bofte524tkjb7"
+path="res://.godot/imported/leon_footstep_1.ogg-66008732d2fec4f2f730743556e89302.oggvorbisstr"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_footstep_1.ogg"
+dest_files=["res://.godot/imported/leon_footstep_1.ogg-66008732d2fec4f2f730743556e89302.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

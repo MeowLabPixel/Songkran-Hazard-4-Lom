@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bp2m8b86wujb7"
+path="res://.godot/imported/leon_grab_sucess.ogg-26dccf53ae2a6086117bbaad00f2ed0f.oggvorbisstr"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_grab_sucess.ogg"
+dest_files=["res://.godot/imported/leon_grab_sucess.ogg-26dccf53ae2a6086117bbaad00f2ed0f.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

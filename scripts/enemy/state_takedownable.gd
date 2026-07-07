@@ -49,6 +49,9 @@ func _start_act1() -> void:
 		# If it's a leg hit during get-up, we need the hit_getup condition to be true
 		if enemy and enemy.anim_tree:
 			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/hit_getup", true)
+		
+		# Play leg slip/stumble sound
+		SoundManager.play_3d("zombie_hit_leg_act_1_slipping", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
 				
 	_force_anim_instant(anim, "hit/hit_takedown")
 

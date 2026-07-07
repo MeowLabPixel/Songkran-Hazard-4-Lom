@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_5y04d"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_Scared_Duck_01.ogg" id="2_b5h4y"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_Scared_Duck_02.ogg" id="3_cw88q"]
+
+[resource]
+script = ExtResource("1_5y04d")
+name = "vo_anchalee_Scared_Duck"
+is_3d = true
+category = "Voiceline"
+streams = Array[AudioStream]([ExtResource("2_b5h4y"), ExtResource("3_cw88q")])

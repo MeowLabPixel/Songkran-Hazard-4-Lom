@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_medx2"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Zombie Melee (M)/vo_zombie_m_melee_gethit_1.ogg" id="2_yfhy1"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Zombie Melee (M)/vo_zombie_m_melee_gethit_2.ogg" id="3_3gbf2"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Zombie Melee (M)/vo_zombie_m_melee_gethit_3.ogg" id="4_21u0q"]
+
+[resource]
+script = ExtResource("1_medx2")
+name = "vo_zombie_m_melee_gethit"
+is_3d = true
+category = "Voiceline"
+streams = Array[AudioStream]([ExtResource("2_yfhy1"), ExtResource("3_3gbf2"), ExtResource("4_21u0q")])

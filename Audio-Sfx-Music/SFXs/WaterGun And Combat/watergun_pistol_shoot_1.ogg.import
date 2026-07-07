@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://p6gyx1gcpkah"
+path="res://.godot/imported/watergun_pistol_shoot_1.ogg-c472e562192ee61f60f4e5e91ec60624.oggvorbisstr"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_pistol_shoot_1.ogg"
+dest_files=["res://.godot/imported/watergun_pistol_shoot_1.ogg-c472e562192ee61f60f4e5e91ec60624.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

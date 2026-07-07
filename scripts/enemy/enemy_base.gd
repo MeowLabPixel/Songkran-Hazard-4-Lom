@@ -29,6 +29,11 @@ var anim_tree: AnimationTree = null
 var debug_label: Label3D = null
 @export var show_debug_label: bool = false
 
+@export_group("Voice Config")
+@export_enum("Zombie Male", "Zombie Female") var voice_character: String = "Zombie Male"
+var custom_pitch_scale: float = 1.0
+var _last_voice_gethit_time: float = -100.0
+
 var next_idle_offset: float = -1.0
 var guaranteed_grab_next_attack: bool = false
 var selected_attack_type: String = ""
@@ -102,6 +107,10 @@ func _find_anim_player() -> AnimationPlayer:
 
 # ─── Ready ─────────────────────────────────────────────────────────────────
 func _ready() -> void:
+	# Choose a persistent randomized pitch modifier for this zombie instance's voice
+	const PITCH_INCREMENTS = [0.92, 0.96, 1.0, 1.04, 1.08]
+	custom_pitch_scale = PITCH_INCREMENTS.pick_random()
+	
 	add_to_group("enemies")
 	MAX_HP = float(randi_range(10, 12))
 	current_hp = MAX_HP
@@ -112,7 +121,7 @@ func _ready() -> void:
 	anim_player = _find_anim_player()
 	anim_tree = get_node_or_null("ZombieModel/AnimationTree") as AnimationTree
 	
-	if anim_player:
+	if anim_player and show_debug_label:
 		print("[EnemyBase] AnimationPlayer found: %s" % anim_player.get_path())
 		print("[EnemyBase] %d animations available" % anim_player.get_animation_list().size())
 	_disable_attack_hitboxes()
@@ -253,12 +262,20 @@ func _disable_attack_hitboxes() -> void:
 func take_hit(hit_data: Dictionary) -> void:
 	if is_defeated or is_takedown_defeat:
 		return
-	print("[EnemyBase] take_hit — zone:'%s' dmg:%d state:%s hp:%d" % [
-		hit_data.get("hit_zone", "?"),
-		hit_data.get("damage", 0),
-		state_machine.get_current_state_name(),
-		current_hp
-	])
+		
+	# Play pain voiceline with 0.8s cooldown
+	var time_now = Time.get_ticks_msec() / 1000.0
+	if time_now - _last_voice_gethit_time >= 0.8:
+		_last_voice_gethit_time = time_now
+		var event_name = "vo_zombie_m_melee_gethit" if voice_character == "Zombie Male" else "vo_zombie_f_melee_gethit"
+		SoundManager.play_3d(event_name, self, 0.0, -1.0, custom_pitch_scale)
+	if show_debug_label:
+		print("[EnemyBase] take_hit — zone:'%s' dmg:%d state:%s hp:%d" % [
+			hit_data.get("hit_zone", "?"),
+			hit_data.get("damage", 0),
+			state_machine.get_current_state_name(),
+			current_hp
+		])
 	
 	# Trigger procedural hit impact sway
 	var is_takedown = (hit_data.get("hit_type") == "takedown_splash" or 
@@ -314,7 +331,8 @@ func take_hit(hit_data: Dictionary) -> void:
 			_trigger_defeat()
 
 func _on_second_chance_triggered() -> void:
-	print("[EnemyBase] Second chance triggered!")
+	if show_debug_label:
+		print("[EnemyBase] Second chance triggered!")
 
 func _trigger_defeat() -> void:
 	is_defeated = true
@@ -381,10 +399,12 @@ func reset_getup_conditions() -> void:
 	]:
 		if param in anim_tree:
 			anim_tree.set(param, false)
-			print("[EnemyBase debug] Resetting parameter: %s to %s" % [param, anim_tree.get(param)])
+			if show_debug_label:
+				print("[EnemyBase debug] Resetting parameter: %s to %s" % [param, anim_tree.get(param)])
 
 func _on_state_changed(old_state: String, new_state: String) -> void:
-	print("[EnemyBase] State: %s → %s  |  HP: %d/%d" % [old_state, new_state, current_hp, MAX_HP])
+	if show_debug_label:
+		print("[EnemyBase] State: %s → %s  |  HP: %d/%d" % [old_state, new_state, current_hp, MAX_HP])
 	if debug_label:
 		debug_label.text = "State: %s\n(%s → %s)" % [new_state, old_state, new_state]
 
@@ -500,8 +520,11 @@ func _exit_tree() -> void:
 func _check_stop_combat_music() -> void:
 	if not is_inside_tree():
 		return
+	var tree = get_tree()
+	if not tree or not is_instance_valid(tree) or not tree.current_scene:
+		return
 	var any_in_combat = false
-	var enemies = get_tree().get_nodes_in_group("enemies")
+	var enemies = tree.get_nodes_in_group("enemies")
 	for other in enemies:
 		if is_instance_valid(other) and other != self and not other.is_defeated and other.is_inside_tree():
 			var sm = other.get_node_or_null("EnemyStateMachine")
@@ -511,9 +534,10 @@ func _check_stop_combat_music() -> void:
 					any_in_combat = true
 					break
 	if not any_in_combat:
-		var music = get_tree().current_scene.get_node_or_null("MusicPlayer2D")
+		var music = tree.current_scene.get_node_or_null("MusicPlayer2D")
 		if not music:
-			music = get_tree().current_scene.get_node_or_null("AudioStreamPlayer2D")
+			music = tree.current_scene.get_node_or_null("AudioStreamPlayer2D")
 		if music and music is AudioStreamPlayer2D and music.playing:
 			music.stop()
-			print("No enemies left in combat. Stopping combat music.")
+			if show_debug_label:
+				print("No enemies left in combat. Stopping combat music.")

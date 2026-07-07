@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_cqw7i"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_Exhausted.ogg" id="2_2em28"]
+
+[resource]
+script = ExtResource("1_cqw7i")
+name = "vo_anchalee_Exhausted"
+is_3d = true
+category = "Voiceline"
+streams = Array[AudioStream]([ExtResource("2_2em28")])

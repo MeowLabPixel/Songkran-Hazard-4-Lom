@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://bugae4ekoi00i"
+path="res://.godot/imported/Region_Shotgun_SuperShot.wav-d934c26842a61fdf347d156d2f0a671e.sample"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Region_Shotgun_SuperShot.wav"
+dest_files=["res://.godot/imported/Region_Shotgun_SuperShot.wav-d934c26842a61fdf347d156d2f0a671e.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

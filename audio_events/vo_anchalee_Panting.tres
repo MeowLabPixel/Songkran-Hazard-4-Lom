@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_xbgy6"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_Panting_01.ogg" id="2_dtk8v"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_Panting_02.ogg" id="3_j273b"]
+
+[resource]
+script = ExtResource("1_xbgy6")
+name = "vo_anchalee_Panting"
+is_3d = true
+category = "Voiceline"
+streams = Array[AudioStream]([ExtResource("2_dtk8v"), ExtResource("3_j273b")])

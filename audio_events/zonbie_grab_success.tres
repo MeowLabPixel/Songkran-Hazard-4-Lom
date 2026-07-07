@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_oho4f"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Zombie/zonbie_grab_success.ogg" id="2_cbqbu"]
+
+[resource]
+script = ExtResource("1_oho4f")
+name = "zonbie_grab_success"
+volume_randomness_db = 0.5
+is_3d = true
+streams = Array[AudioStream]([ExtResource("2_cbqbu")])

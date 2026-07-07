@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://cfo6sodkdfrmj"
+path="res://.godot/imported/Region_Rifle_SuperShot.wav-a202c4481b31b1e5136133610c8e6e61.sample"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Region_Rifle_SuperShot.wav"
+dest_files=["res://.godot/imported/Region_Rifle_SuperShot.wav-a202c4481b31b1e5136133610c8e6e61.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

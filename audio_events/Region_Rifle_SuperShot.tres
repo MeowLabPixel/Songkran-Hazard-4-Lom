@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_qgkyx"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Region_Rifle_SuperShot.wav" id="2_0r6jh"]
+
+[resource]
+script = ExtResource("1_qgkyx")
+name = "Region_Rifle_SuperShot"
+volume_randomness_db = 0.5
+is_3d = true
+use_regions = true
+stream = ExtResource("2_0r6jh")
+regions = Array[Vector2]([Vector2(0, 12)])

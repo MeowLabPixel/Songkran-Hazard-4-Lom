@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Zombie/ZombieGetHitTakedown_Part1_Add_1.wav" id="1_emhnl"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Zombie/ZombieGetHitTakedown_Part1_Add_2.wav" id="2_2hj0g"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Zombie/ZombieGetHitTakedown_Part1_Add_3.wav" id="3_m6mp7"]
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="4_6oicm"]
+
+[resource]
+script = ExtResource("4_6oicm")
+name = "ZombieGetHitTakedown_Part1"
+volume_randomness_db = 0.5
+is_3d = true
+next_event_name = "ZombieGetHitTakedown_Part2"
+parallel_streams = Array[AudioStream]([ExtResource("1_emhnl"), ExtResource("2_2hj0g"), ExtResource("3_m6mp7")])

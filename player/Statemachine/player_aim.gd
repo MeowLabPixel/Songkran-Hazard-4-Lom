@@ -1,7 +1,6 @@
 extends State
 var anim_node = "parameters/Main/Aim/"
 func _enter() -> void:
-	print(name)
 	stop_moving()
 	owner.is_aimming = true
 	#set_gun_anim()

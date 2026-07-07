@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bfm8cikau7gl"
+path="res://.godot/imported/vo_zombie_m_melee_gethit_2.ogg-02522a15b1cc25dec6a92143f6007157.oggvorbisstr"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/Voicelines/Zombie Melee (M)/vo_zombie_m_melee_gethit_2.ogg"
+dest_files=["res://.godot/imported/vo_zombie_m_melee_gethit_2.ogg-02522a15b1cc25dec6a92143f6007157.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
