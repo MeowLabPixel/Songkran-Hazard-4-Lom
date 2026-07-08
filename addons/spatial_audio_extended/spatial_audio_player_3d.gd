@@ -1032,7 +1032,18 @@ func _get_listener() -> Node3D:
 		if vp != null:
 			return vp.get_camera_3d()
 		return null
-	return get_viewport().get_camera_3d()
+	var camera := get_viewport().get_camera_3d()
+	if camera != null:
+		var body := _find_character_body(camera)
+		if body != null:
+			var virtual_target = body.get_node_or_null("SpatialAudioVirtualListenerTarget")
+			if virtual_target == null:
+				virtual_target = Marker3D.new()
+				virtual_target.name = "SpatialAudioVirtualListenerTarget"
+				body.add_child(virtual_target)
+				virtual_target.position = Vector3(0, 1.6, 0)
+			return virtual_target
+	return camera
 
 
 ## Walks up the scene tree from [param node] to find the first
@@ -1042,8 +1053,31 @@ static func _find_character_body(node: Node) -> CharacterBody3D:
 	while current != null:
 		if current is CharacterBody3D:
 			return current
-		current = current.get_parent()
 	return null
+
+
+func _get_exclusion_rids(listener: Node3D) -> Array[RID]:
+	var rids : Array[RID] = []
+	if ignore_listener_body:
+		var listener_body := _find_character_body(listener)
+		if listener_body != null:
+			_gather_collision_rids(listener_body, rids)
+		else:
+			_gather_collision_rids(listener, rids)
+	
+	var emitter_body := _find_character_body(self)
+	if emitter_body != null:
+		_gather_collision_rids(emitter_body, rids)
+	else:
+		_gather_collision_rids(self, rids)
+		
+	return rids
+
+func _gather_collision_rids(node: Node, rids: Array[RID]) -> void:
+	if node is CollisionObject3D:
+		rids.append(node.get_rid())
+	for child in node.get_children(true):
+		_gather_collision_rids(child, rids)
 
 
 static func _generate_fibonacci_sphere(count: int) -> Array[Vector3]:
@@ -1619,6 +1653,9 @@ func _update_lowpass(listener: Node3D) -> void:
 	_target_raycast.target_position = (
 		(listener.global_position - global_position).normalized() * dist_to_player
 	)
+	_target_raycast.clear_exceptions()
+	for rid in _get_exclusion_rids(listener):
+		_target_raycast.add_exception_rid(rid)
 	_target_raycast.force_raycast_update()
 
 	#  Multi-hit ray march 
@@ -1629,12 +1666,7 @@ func _update_lowpass(listener: Node3D) -> void:
 	params.collision_mask = occlusion_collision_mask
 	params.collide_with_areas = false
 
-	# Exclude the listener's CharacterBody3D so the player's own collision
-	# shapes aren't detected as walls.
-	if ignore_listener_body:
-		var body := _find_character_body(listener)
-		if body != null:
-			params.exclude = [body.get_rid()]
+	params.exclude = _get_exclusion_rids(listener)
 
 	var march_pos := global_position
 	var wall_count := 0
@@ -1660,6 +1692,9 @@ func _update_lowpass(listener: Node3D) -> void:
 		var hit_point : Vector3 = result["position"]
 		var hit_normal : Vector3 = result["normal"]
 		var dist_hit := global_position.distance_to(hit_point)
+		
+		# Print details of the hit object for debugging occlusion issues
+		print("[Occlusion Debug] Sound '", name, "' hit collider: '", result["collider"].name, "' (Class: ", result["collider"].get_class(), ") at position: ", hit_point)
 
 		# Make sure the hit is between emitter and listener.
 		if dist_hit >= dist_to_player:

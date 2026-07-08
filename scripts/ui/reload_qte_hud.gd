@@ -17,16 +17,19 @@ signal cancelled() # Emitted if interrupted (e.g. by aiming)
 var start_air: float = 0.0
 var max_air: float = 100.0
 var mode: String = "qte" # "qte" or "superpump"
+@export var show_progress_bar: bool = false
 
 # QTE variables
 var num_prompts: int = 4
 var prompt_size: float = 0.05
-var duration: float = 2.0
-var time_left: float = 2.0
-var current_progress: float = 0.0
+var duration: float = 2.0 # The needle sweep duration is always exactly 2.0s
+var actual_time: float = 0.0 # Actual time elapsed in reload (max 2.0s)
+var time_skipped: float = 0.0 # Time skipped from QTE hits
+var current_progress: float = 0.0 # Needle progress (0.0 to 1.0)
 var reload_progress: float = 0.0 # Conveyed by the progress line (0.0 to 1.0)
 var prompts: Array = [] # Array of Dictionary: { center: float, hit: bool, missed: bool }
 var resolved: bool = false
+var progress_segments: Array = [] # Array of Dictionary: { start: float, end: float, is_skipped: bool }
 
 # Superpump hold variables
 var superpump_hold_time: float = 0.0
@@ -56,13 +59,16 @@ func _ready() -> void:
 	_build_ui()
 
 func _setup_qte_parameters() -> void:
-	# Keep QTE sweep duration fixed at 2.0 seconds for steady timing
+	# Needle sweep duration is always exactly 2.0 seconds
 	duration = 2.0
-	time_left = duration
+	actual_time = 0.0
+	time_skipped = 0.0
 	
 	var air_pct = clampf(start_air / max_air, 0.0, 1.0)
-	# Reload progress starts at current air percentage
-	reload_progress = air_pct
+	reload_progress = 0.0
+	progress_segments = [
+		{"start": 0.0, "end": 0.0, "is_skipped": false}
+	]
 	
 	# Determine number of QTE prompts based on remaining air
 	if start_air >= 75.0:
@@ -75,7 +81,7 @@ func _setup_qte_parameters() -> void:
 		num_prompts = 4
 		
 	# Interpolate prompt size between 0.05 (hard at 0 air) and 0.14 (easy at 100 air)
-	prompt_size = lerp(0.05, 0.14, air_pct)
+	prompt_size = lerp(0.05, 0.14, air_pct) * 0.75
 	
 	# Generate randomized non-overlapping prompt centers inside [0.12, 0.88]
 	prompts.clear()
@@ -108,6 +114,7 @@ func _build_ui() -> void:
 	_container.custom_minimum_size = Vector2(250, 270)
 	_container.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_container.grow_vertical = Control.GROW_DIRECTION_BOTH
+	_container.pivot_offset = Vector2(125, 135)
 	add_child(_container)
 	
 	# 3. Custom Procedural Drawing Gauge
@@ -142,7 +149,7 @@ func _build_ui() -> void:
 	
 	# 5. Text prompt below the gauge and progress line
 	_prompt_label = Label.new()
-	_prompt_label.text = "PRESS [R] IN ZONE" if mode == "qte" else "HOLD [R] TO SUPERPUMP"
+	_prompt_label.text = "" if mode == "qte" else "HOLD [R] TO SUPERPUMP"
 	_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_prompt_label.position = Vector2(0, 235)
 	_prompt_label.size = Vector2(250, 24)
@@ -154,7 +161,7 @@ func _build_ui() -> void:
 	
 	# 6. Small helper text above the gauge
 	_instruction_label = Label.new()
-	_instruction_label.text = "RELOADING AIR..." if mode == "qte" else "PRESSURE STABLE"
+	_instruction_label.text = "" if mode == "qte" else "PRESSURE STABLE"
 	_instruction_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_instruction_label.position = Vector2(0, 30)
 	_instruction_label.size = Vector2(250, 20)
@@ -174,17 +181,40 @@ func _process(delta: float) -> void:
 		_process_superpump(delta)
 
 func _process_qte(delta: float) -> void:
-	# Tick down time
-	time_left -= delta
+	actual_time += delta
 	
-	# Calculate needle progress (0.0 to 1.0)
-	if duration > 0.0:
-		current_progress = clampf((duration - time_left) / duration, 0.0, 1.0)
-	else:
-		current_progress = 1.0
+	# Needle sweeps steadily over 2.0s duration without jumping
+	current_progress = clampf(actual_time / duration, 0.0, 1.0)
+	
+	# Count hits and check if all hit
+	var hit_count = 0
+	var all_hit = true
+	for p in prompts:
+		if p.hit:
+			hit_count += 1
+		else:
+			all_hit = false
+			
+	# Determine skip percent per hit
+	var skip_percent = 0.20
+	if num_prompts == 4:
+		skip_percent = 0.20
+	elif num_prompts == 3:
+		skip_percent = 0.25
+	elif num_prompts == 2:
+		skip_percent = 0.40
+	elif num_prompts == 1:
+		skip_percent = 1.00
 		
-	# Increase reload progress steadily based on elapsed time (reaches 1.0 at 2.0s)
-	reload_progress = clampf(reload_progress + (delta / duration), 0.0, 1.0)
+	var hit_ratio = float(hit_count) * skip_percent
+	var time_ratio = clampf(actual_time / duration, 0.0, 1.0)
+	
+	# Calculate reload progress (interpolates to 1.0 at actual_time = 2.0s, with jumps on hits)
+	reload_progress = time_ratio * (1.0 - hit_ratio) + hit_ratio
+	
+	# Update the current elapsed progress segment's end value
+	if progress_segments.size() > 0:
+		progress_segments[-1].end = clampf(reload_progress, 0.0, 1.0)
 	
 	# Check for missed prompts that the needle has passed
 	for p in prompts:
@@ -194,11 +224,10 @@ func _process_qte(delta: float) -> void:
 	# Redraw the UI
 	_gauge.queue_redraw()
 	
-	# If reload progress reaches 100%, we are done!
-	if reload_progress >= 1.0:
+	# End condition checks: Only resolve early if ALL prompts are hit!
+	if all_hit:
 		_resolve(true)
-	elif time_left <= 0.0:
-		# Time ran out, resolve with whatever progress was made
+	elif actual_time >= duration:
 		_resolve(reload_progress >= 1.0)
 
 func _process_superpump(delta: float) -> void:
@@ -232,6 +261,23 @@ func _check_qte_input() -> void:
 			
 		# Check if current needle progress falls inside the target range
 		if current_progress >= (p.center - prompt_size) and current_progress <= (p.center + prompt_size):
+			# Calculate current hit count before adding this hit
+			var old_hit_count = 0
+			for other_p in prompts:
+				if other_p.hit:
+					old_hit_count += 1
+					
+			var skip_pct = 0.20
+			if num_prompts == 4: skip_pct = 0.20
+			elif num_prompts == 3: skip_pct = 0.25
+			elif num_prompts == 2: skip_pct = 0.40
+			elif num_prompts == 1: skip_pct = 1.00
+			
+			var old_hit_ratio = float(old_hit_count) * skip_pct
+			var time_ratio = clampf(actual_time / duration, 0.0, 1.0)
+			var val_before = time_ratio * (1.0 - old_hit_ratio) + old_hit_ratio
+			
+			# Register the hit
 			p.hit = true
 			hit_any = true
 			
@@ -241,12 +287,36 @@ func _check_qte_input() -> void:
 			# Visual success flash
 			_flash_center_success()
 			
-			# Add 25% (0.25) to reload progress immediately!
-			reload_progress = minf(reload_progress + 0.25, 1.0)
+			# Juicy scale pulse on correct timing
+			var pop_tween = create_tween()
+			_container.scale = Vector2(1.12, 1.12)
+			pop_tween.tween_property(_container, "scale", Vector2.ONE, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			
+			# Calculate new hit ratio
+			var new_hit_ratio = float(old_hit_count + 1) * skip_pct
+			var val_after = time_ratio * (1.0 - new_hit_ratio) + new_hit_ratio
+			
+			# Close the current elapsed segment at val_before
+			if progress_segments.size() > 0:
+				progress_segments[-1].end = clampf(val_before, 0.0, 1.0)
+				
+			# Add skipped segment
+			progress_segments.append({"start": clampf(val_before, 0.0, 1.0), "end": clampf(val_after, 0.0, 1.0), "is_skipped": true})
+			# Add new elapsed segment
+			progress_segments.append({"start": clampf(val_after, 0.0, 1.0), "end": clampf(val_after, 0.0, 1.0), "is_skipped": false})
+			
+			# Update reload_progress instantly to prevent any single-frame lag
+			reload_progress = clampf(val_after, 0.0, 1.0)
 			break
 			
 	if hit_any:
-		if reload_progress >= 1.0:
+		var all_hit = true
+		for p in prompts:
+			if not p.hit:
+				all_hit = false
+				break
+				
+		if all_hit:
 			_resolve(true)
 	else:
 		# Miss penalty: flash red, play click
@@ -289,21 +359,43 @@ func _draw_gauge() -> void:
 		_gauge.draw_line(needle_start, needle_end, Color.WHITE, 4.0, true)
 		_gauge.draw_circle(needle_end, 5.0, Color.WHITE)
 		
-		# Draw horizontal reload progress line below the gauge
-		var line_y = 212.0
-		var line_width = 180.0
-		var line_left = center.x - line_width / 2.0
-		var line_right = center.x + line_width / 2.0
+		# Draw reload progress filling the inner circle (default option)
+		if not show_progress_bar:
+			var max_radius = 60.0
+			
+			if resolved:
+				# Paint the entire progress circle green on resolution!
+				_gauge.draw_circle(center, max_radius * reload_progress, Color(0.2, 0.85, 0.4, 0.25))
+			else:
+				for segment in progress_segments:
+					var r_start = segment.start * max_radius
+					var r_end = segment.end * max_radius
+					
+					var seg_thickness = r_end - r_start
+					var mid_radius = (r_start + r_end) / 2.0
+					var color = Color(1.0, 1.0, 1.0, 0.22) if segment.is_skipped else Color(0.2, 0.65, 0.95, 0.32)
+					
+					if seg_thickness > 0.05:
+						# Draw all segments as exact concentric rings.
+						# Set antialiased = false to prevent edge bleeding and stacked opacity lines.
+						_gauge.draw_arc(center, mid_radius, 0, 2*PI, 64, color, seg_thickness, false)
 		
-		# Line background (dark grey track)
-		_gauge.draw_line(Vector2(line_left, line_y), Vector2(line_right, line_y), Color(0.12, 0.12, 0.15, 0.85), 6.0, true)
-		
-		# Line fill (cyan/blue reload fill)
-		var fill_x = line_left + line_width * clampf(reload_progress, 0.0, 1.0)
-		if fill_x > line_left:
-			_gauge.draw_line(Vector2(line_left, line_y), Vector2(fill_x, line_y), Color(0.3, 0.75, 1.0, 0.95), 6.0, true)
-			# Small glowing tip on progress line
-			_gauge.draw_circle(Vector2(fill_x, line_y), 4.5, Color.WHITE)
+		# Draw horizontal reload progress line below the gauge (optional)
+		if show_progress_bar:
+			var line_y = 212.0
+			var line_width = 180.0
+			var line_left = center.x - line_width / 2.0
+			var line_right = center.x + line_width / 2.0
+			
+			# Line background (dark grey track)
+			_gauge.draw_line(Vector2(line_left, line_y), Vector2(line_right, line_y), Color(0.12, 0.12, 0.15, 0.85), 6.0, true)
+			
+			# Line fill (cyan/blue reload fill)
+			var fill_x = line_left + line_width * clampf(reload_progress, 0.0, 1.0)
+			if fill_x > line_left:
+				_gauge.draw_line(Vector2(line_left, line_y), Vector2(fill_x, line_y), Color(0.3, 0.75, 1.0, 0.95), 6.0, true)
+				# Small glowing tip on progress line
+				_gauge.draw_circle(Vector2(fill_x, line_y), 4.5, Color.WHITE)
 
 	elif mode == "superpump":
 		# Draw hold progress bar filling up the circle
@@ -365,6 +457,12 @@ func _resolve(success: bool) -> void:
 	
 	if mode == "qte":
 		var final_air = start_air
+		# Force full progress and redraw circle fill on resolution
+		reload_progress = 1.0
+		if progress_segments.size() > 0:
+			progress_segments[-1].end = 1.0
+		_gauge.queue_redraw()
+		
 		if success:
 			final_air = max_air
 			_prompt_label.text = "PERFECT RELOAD!"
@@ -381,6 +479,13 @@ func _resolve(success: bool) -> void:
 		create_tween().tween_property(_prompt_label, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK)
 		
 		await get_tree().create_timer(0.3).timeout
+		
+		var fade_tween = create_tween().set_parallel(true)
+		fade_tween.tween_property(_container, "scale", Vector2(1.15, 1.15), 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		fade_tween.tween_property(_container, "modulate:a", 0.0, 0.25)
+		fade_tween.tween_property(_background_dim, "color:a", 0.0, 0.25)
+		await fade_tween.finished
+		
 		finished.emit(final_air, false)
 		queue_free()
 		
@@ -394,9 +499,22 @@ func _resolve(success: bool) -> void:
 			create_tween().tween_property(_prompt_label, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK)
 			
 			await get_tree().create_timer(0.3).timeout
+			
+			var fade_tween = create_tween().set_parallel(true)
+			fade_tween.tween_property(_container, "scale", Vector2(1.15, 1.15), 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			fade_tween.tween_property(_container, "modulate:a", 0.0, 0.25)
+			fade_tween.tween_property(_background_dim, "color:a", 0.0, 0.25)
+			await fade_tween.finished
+			
 			finished.emit(120.0, true) # 120.0 is the super_threshold
 			queue_free()
 		else:
+			var fade_tween = create_tween().set_parallel(true)
+			fade_tween.tween_property(_container, "scale", Vector2(1.15, 1.15), 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			fade_tween.tween_property(_container, "modulate:a", 0.0, 0.2)
+			fade_tween.tween_property(_background_dim, "color:a", 0.0, 0.2)
+			await fade_tween.finished
+			
 			finished.emit(start_air, false)
 			queue_free()
 

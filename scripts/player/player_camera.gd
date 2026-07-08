@@ -323,7 +323,13 @@ func _input(event: InputEvent)-> void:
 			enter_aim()
 	if event.is_action_released("aim"):
 		# Always clear the block when aim is released so re-press works
-		character.aim_blocked_until_release = false
+		if is_instance_valid(character):
+			character.aim_blocked_until_release = false
+			
+			var sm = character.get_node_or_null("Statemachine")
+			if sm and sm.current_state and sm.current_state.name == "Reload":
+				return
+				
 		exit_aim()
 
 func camera_look(mouse_movement: Vector2)-> void:
@@ -463,7 +469,7 @@ func set_rear_spring_pos(pos: float, speed: float)-> void:
 	camera_tween = get_tree().create_tween()
 	camera_tween.tween_property(edge_spring_arm,"spring_length",pos,speed)
 	
-func enter_aim()-> void:
+func enter_aim(set_aiming: bool = true)-> void:
 	if camera_tween:
 		camera_tween.kill()
 	if offset_tween:
@@ -473,7 +479,11 @@ func enter_aim()-> void:
 	if spring_tween:
 		spring_tween.kill()
 		
-	character.is_aimming = true	
+	if set_aiming:
+		character.is_aimming = true	
+	else:
+		character.is_aimming = false
+		
 	update_collision_radius()
 			
 	camera_tween = get_tree().create_tween()
@@ -488,10 +498,11 @@ func enter_aim()-> void:
 	camera_tween.tween_property(self, "action_offset_y", 0.0, aim_speed)
 	camera_tween.tween_property(self, "action_pitch", 0.0, aim_speed)
 	camera_tween.tween_property(self, "action_spring_length", 0.0, aim_speed)
-func exit_aim()-> void:
+func exit_aim(set_aiming: bool = true)-> void:
 	if camera_tween:
 		camera_tween.kill()
-	character.is_aimming = false		
+	if set_aiming:
+		character.is_aimming = false		
 	update_collision_radius()
 		
 	camera_tween = get_tree().create_tween()

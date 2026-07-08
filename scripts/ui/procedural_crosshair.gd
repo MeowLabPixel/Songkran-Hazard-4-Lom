@@ -72,6 +72,8 @@ func _process(delta: float) -> void:
 		queue_redraw()
 	else:
 		was_visible = false
+		visual_r = max_reticle_radius
+		scale = Vector2.ONE
 
 func _draw() -> void:
 	var p = get_player()

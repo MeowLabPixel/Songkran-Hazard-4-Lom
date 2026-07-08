@@ -5147,7 +5147,7 @@ states/Shotgun/node = SubResource("AnimationNodeBlendTree_pjwc4")
 states/Shotgun/position = Vector2(306.2, 236)
 states/Start/position = Vector2(50.400005, 99.7056)
 transitions = ["Start", "Pis", SubResource("AnimationNodeStateMachineTransition_dx5ib"), "Pis", "End", SubResource("AnimationNodeStateMachineTransition_fjxoa"), "Start", "Shotgun", SubResource("AnimationNodeStateMachineTransition_a2xo5"), "Shotgun", "Pis", SubResource("AnimationNodeStateMachineTransition_2uvqg"), "Pis", "Shotgun", SubResource("AnimationNodeStateMachineTransition_b8hi5"), "Shotgun", "End", SubResource("AnimationNodeStateMachineTransition_art4l"), "Shotgun", "Rifle", SubResource("AnimationNodeStateMachineTransition_pgo6y"), "Pis", "Rifle", SubResource("AnimationNodeStateMachineTransition_qm6yy"), "Rifle", "Pis", SubResource("AnimationNodeStateMachineTransition_gcmgo"), "Rifle", "Shotgun", SubResource("AnimationNodeStateMachineTransition_rnncm"), "Rifle", "End", SubResource("AnimationNodeStateMachineTransition_nj2w7"), "Start", "Rifle", SubResource("AnimationNodeStateMachineTransition_iojyt")]
-graph_offset = Vector2(-37, 142)
+graph_offset = Vector2(-25, 14)
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_g4c7l"]
 animation = &"Gun_idle/pis_idle"
@@ -5536,12 +5536,10 @@ xfade_time = 0.3
 xfade_time = 0.1
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_utr5e"]
-xfade_time = 0.1
+xfade_time = 0.2
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_kewli"]
 xfade_time = 0.2
-switch_mode = 2
-advance_mode = 2
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_kcq4v"]
 
@@ -5568,7 +5566,7 @@ xfade_time = 0.15
 xfade_time = 0.15
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_2s0vo"]
-xfade_time = 0.1
+xfade_time = 0.2
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_hgm8h"]
 
@@ -5587,7 +5585,7 @@ states/Start/position = Vector2(67.2, 55.2)
 states/Takedown/node = SubResource("AnimationNodeStateMachine_a1u5o")
 states/Takedown/position = Vector2(675.2, 130.064)
 transitions = ["Start", "Idle", SubResource("AnimationNodeStateMachineTransition_35wys"), "Idle", "Run", SubResource("AnimationNodeStateMachineTransition_pjwc4"), "Run", "Idle", SubResource("AnimationNodeStateMachineTransition_or4qq"), "Idle", "Aim", SubResource("AnimationNodeStateMachineTransition_hggc2"), "Aim", "Idle", SubResource("AnimationNodeStateMachineTransition_b2j0d"), "QT", "Idle", SubResource("AnimationNodeStateMachineTransition_55jnj"), "Idle", "QT", SubResource("AnimationNodeStateMachineTransition_xcnuv"), "Aim", "Reload", SubResource("AnimationNodeStateMachineTransition_s3g0c"), "Run", "Reload", SubResource("AnimationNodeStateMachineTransition_7l6ig"), "Idle", "Reload", SubResource("AnimationNodeStateMachineTransition_utr5e"), "Reload", "Idle", SubResource("AnimationNodeStateMachineTransition_kewli"), "Idle", "Takedown", SubResource("AnimationNodeStateMachineTransition_kcq4v"), "Run", "Takedown", SubResource("AnimationNodeStateMachineTransition_qavcc"), "Takedown", "Idle", SubResource("AnimationNodeStateMachineTransition_bd26m"), "Run", "Aim", SubResource("AnimationNodeStateMachineTransition_237xx"), "Aim", "QT", SubResource("AnimationNodeStateMachineTransition_gswnw"), "Run", "QT", SubResource("AnimationNodeStateMachineTransition_j55il"), "QT", "Run", SubResource("AnimationNodeStateMachineTransition_wpyo2"), "QT", "Aim", SubResource("AnimationNodeStateMachineTransition_a1u5o"), "Reload", "Aim", SubResource("AnimationNodeStateMachineTransition_2s0vo"), "Start", "Aim", SubResource("AnimationNodeStateMachineTransition_hgm8h")]
-graph_offset = Vector2(72.86243, -23.036469)
+graph_offset = Vector2(40.862427, -66.03647)
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_j3r50"]
 priority = 0

@@ -313,16 +313,16 @@ func _process(delta: float) -> void:
 	update_crosshair_accuracy(delta)
 	
 	if cross_hair and camera:
+		var screen_size = get_viewport().get_visible_rect().size
+		var center = screen_size / 2.0
+		
+		# Scale the crosshair speed uniformly based on screen height (prevents stretching on wide monitors)
+		var crosshair_speed = screen_size.y * 1.25
+		var offset_pixels = Vector2(camera.aim_offset.x, camera.aim_offset.y) * crosshair_speed
+		
+		cross_hair.position = center - (cross_hair.size / 2.0) + offset_pixels
+		
 		if is_aimming:
-			var screen_size = get_viewport().get_visible_rect().size
-			var center = screen_size / 2.0
-			
-			# Scale the crosshair speed uniformly based on screen height (prevents stretching on wide monitors)
-			# A multiplier of 1.25 gives a nice tight bounding box before the camera starts turning
-			var crosshair_speed = screen_size.y * 1.25
-			var offset_pixels = Vector2(camera.aim_offset.x, camera.aim_offset.y) * crosshair_speed
-			
-			cross_hair.position = center - (cross_hair.size / 2.0) + offset_pixels
 			cross_hair.show()
 		else:
 			cross_hair.hide()
@@ -626,9 +626,17 @@ func _physics_process(_delta: float) -> void:
 	if sm and sm.current_state:
 		var s_name = sm.current_state.name
 		if s_name == "Reload" or (s_name == "Grab" and not sm.current_state.get("is_exiting")):
-			# Completely disable WASD sliding/movement during reload and grab loop (keep gravity)
-			velocity.x = 0.0
-			velocity.z = 0.0
+			# Check if reload state permits movement
+			var block_move = true
+			if s_name == "Reload":
+				var rel_state = sm.current_state
+				var is_pistol_qte = is_instance_valid(rel_state.get("qte_hud")) and rel_state.qte_hud.mode == "qte"
+				if is_pistol_qte and not rel_state.get("block_movement_during_qte"):
+					block_move = false
+			
+			if block_move:
+				velocity.x = 0.0
+				velocity.z = 0.0
 		
 	move_and_slide()
 	
