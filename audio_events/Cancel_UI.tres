@@ -8,6 +8,7 @@
 [resource]
 script = ExtResource("1_k7vne")
 name = "Cancel_UI"
+pitch_range = Vector2(1, 1)
 volume_randomness_db = 0.5
 category = "UI"
 streams = Array[AudioStream]([ExtResource("2_tisfd"), ExtResource("3_ap0a7"), ExtResource("4_uvynj")])

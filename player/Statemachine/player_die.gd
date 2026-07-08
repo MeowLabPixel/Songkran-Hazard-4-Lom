@@ -5,6 +5,7 @@ func _enter() -> void:
 	stop_moving()
 	owner.cancel_aim()
 	owner.anim.get("parameters/playback").travel("Die")
+	SoundManager.play_3d("leon_dead", owner)
 	if owner.has_method("force_die"):
 		owner.force_die()
 

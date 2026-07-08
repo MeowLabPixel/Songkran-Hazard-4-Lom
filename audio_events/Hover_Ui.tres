@@ -8,6 +8,7 @@
 [resource]
 script = ExtResource("1_vdtr7")
 name = "Hover_Ui"
+pitch_range = Vector2(1, 1)
 volume_randomness_db = 0.5
 category = "UI"
 streams = Array[AudioStream]([ExtResource("2_kteji"), ExtResource("3_dju62"), ExtResource("4_ydkdp")])

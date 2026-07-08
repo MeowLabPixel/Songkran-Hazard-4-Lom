@@ -68,13 +68,9 @@ func _alert_all_zombies() -> void:
 		return
 		
 	# Play combat music
-	var music = tree.current_scene.get_node_or_null("MusicPlayer2D")
-	if not music:
-		music = tree.current_scene.get_node_or_null("AudioStreamPlayer2D")
-	if music and music is AudioStreamPlayer2D and not music.playing:
-		music.play()
-		if enemy.get("show_debug_label") == true:
-			print("Combat music started.")
+	SoundManager.play_music_combat()
+	if enemy.get("show_debug_label") == true:
+		print("Combat music started.")
 		
 	if tree.root.has_node("GameManager"):
 		tree.root.get_node("GameManager").start_timer()

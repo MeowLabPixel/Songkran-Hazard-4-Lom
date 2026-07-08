@@ -6,8 +6,9 @@
 [resource]
 script = ExtResource("1_hwkaj")
 name = "Region_Shotgun_SuperShot"
+pitch_range = Vector2(1, 1)
 volume_randomness_db = 0.5
 is_3d = true
 use_regions = true
 stream = ExtResource("2_cql8h")
-regions = Array[Vector2]([Vector2(0, 18)])
+regions = Array[Vector2]([Vector2(0, 1.64), Vector2(3, 1.62), Vector2(6, 1.62), Vector2(9, 1.64), Vector2(12, 1.6), Vector2(15, 1.64)])

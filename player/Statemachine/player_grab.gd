@@ -34,6 +34,8 @@ var _time_in_grab: float = 0.0
 var _push_velocity: float = 0.0
 var _current_grabber: Node = null
 var max_grab_duration: float = 8.0
+var _grab_loop_player: AudioStreamPlayer3D = null
+
 
 func _ready() -> void:
 	set_process(false)
@@ -134,6 +136,15 @@ func _process(_delta: float) -> void:
 					_transition_emitted = true
 					owner.is_grab = false
 					print("[PlayerGrab] Grab animation path completed (root reached: ", root_node, ")")
+					if last_anim == win_anim:
+						SoundManager.play_3d("vo_leon_grab_winend", owner)
+						var followers = owner.get_tree().get_nodes_in_group("Anchalee")
+						if followers.size() > 0:
+							var follower = followers[0]
+							if is_instance_valid(follower):
+								var health = follower.get("health")
+								if health != null and health > 0:
+									SoundManager.play_3d("vo_anchalee_after_gethit", follower)
 					finished.emit("Idle")
 
 
@@ -144,6 +155,21 @@ func _enter() -> void:
 	owner.cancel_aim()
 	owner.is_stunned = true
 	owner.is_grab = true
+	
+	_grab_loop_player = SoundManager.play_3d("grab_sucess_loop", owner)
+	
+	# Play Anchalee worried voiceline 1.0 second after player gets grabbed
+	var timer = owner.get_tree().create_timer(1.0)
+	timer.timeout.connect(func():
+		if is_instance_valid(owner) and owner.is_grab:
+			var followers = owner.get_tree().get_nodes_in_group("Anchalee")
+			if followers.size() > 0:
+				var follower = followers[0]
+				if is_instance_valid(follower):
+					var health = follower.get("health")
+					if health != null and health > 0:
+						SoundManager.play_3d("vo_anchalee_player_gethit", follower)
+	)
 	
 	# Clear Motion's static vars so held movement keys can't carry velocity into/out of grab
 	Motion.input_dir = Vector2.ZERO
@@ -186,6 +212,11 @@ func _exit() -> void:
 	owner.start_qte = false
 	owner.qte_bar.value = 0
 	
+	# Stop looping grab sound if not already stopped
+	if _grab_loop_player and is_instance_valid(_grab_loop_player):
+		_grab_loop_player.stop()
+		_grab_loop_player = null
+		
 	# If the grab state was aborted prematurely (e.g., zombie died), we must force the AnimationTree to End
 	if not is_exiting:
 		var sub_pb = owner.anim.get("parameters/Grab/playback")
@@ -248,14 +279,23 @@ func resolve_grab(success: bool) -> void:
 	_push_velocity = player_push_speed
 	
 
+	# Stop looping grab sound when QTE is resolved
+	if _grab_loop_player and is_instance_valid(_grab_loop_player):
+		_grab_loop_player.stop()
+		_grab_loop_player = null
+
 	if success:
 		# Player LOST QTE (grab success)
 		owner.anim.get("parameters/Grab/playback").start("Fail")
 		last_anim = fail_anim
+		# Play QTE Fail sound!
+		SoundManager.play_3d("leon_grab_fail", owner)
 	else:
 		# Player ESCAPED
 		owner.anim.get("parameters/Grab/playback").start("Win")
 		last_anim = win_anim
+		# Play QTE Win/Success sound!
+		SoundManager.play_3d("leon_grab_success", owner)
 
 
 

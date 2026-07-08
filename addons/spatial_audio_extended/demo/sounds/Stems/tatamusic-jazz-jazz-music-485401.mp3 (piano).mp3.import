@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://epn5abmhwreh"
+path="res://.godot/imported/tatamusic-jazz-jazz-music-485401.mp3 (piano).mp3-49cd4c3842df1691d14c49cd70f1e82b.mp3str"
+
+[deps]
+
+source_file="res://addons/spatial_audio_extended/demo/sounds/Stems/tatamusic-jazz-jazz-music-485401.mp3 (piano).mp3"
+dest_files=["res://.godot/imported/tatamusic-jazz-jazz-music-485401.mp3 (piano).mp3-49cd4c3842df1691d14c49cd70f1e82b.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

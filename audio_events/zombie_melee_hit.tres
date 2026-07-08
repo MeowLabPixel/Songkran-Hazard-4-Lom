@@ -9,6 +9,7 @@
 [resource]
 script = ExtResource("1_mh4km")
 name = "zombie_melee_hit"
+pitch_range = Vector2(1, 1)
 volume_randomness_db = 0.5
 is_3d = true
 streams = Array[AudioStream]([ExtResource("2_ufgyh"), ExtResource("3_mjnsc"), ExtResource("4_8fliw"), ExtResource("5_vvwhh")])

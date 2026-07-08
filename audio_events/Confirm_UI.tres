@@ -11,6 +11,7 @@
 [resource]
 script = ExtResource("4_e3elp")
 name = "Confirm_UI"
+pitch_range = Vector2(1, 1)
 volume_randomness_db = 0.5
 category = "UI"
 streams = Array[AudioStream]([ExtResource("5_lp8o7"), ExtResource("6_p06si"), ExtResource("7_qbahh")])

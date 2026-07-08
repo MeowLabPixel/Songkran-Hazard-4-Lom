@@ -21,8 +21,10 @@ func _enter() -> void:
 	owner.cancel_aim()
 	stop_moving()
 	
-	# Play Rookie Lee get hit voice line
+	# Play Rookie Lee get hit voice line and physical hit sound
 	SoundManager.play_3d("vo_leon_gethit", owner)
+	SoundManager.play_3d("leon_hit", owner)
+	SoundManager.play_3d("Region_PlayerGetHitMelee", owner)
 	
 	# Play Anchalee worried voiceline 1.0 second after player gets hit
 	var timer = owner.get_tree().create_timer(1.0)
@@ -30,8 +32,10 @@ func _enter() -> void:
 		var followers = owner.get_tree().get_nodes_in_group("Anchalee")
 		if followers.size() > 0:
 			var follower = followers[0]
-			if is_instance_valid(follower) and follower.get("HP") > 0:
-				SoundManager.play_3d("vo_anchalee_player_gethit", follower)
+			if is_instance_valid(follower):
+				var health = follower.get("health")
+				if health != null and health > 0:
+					SoundManager.play_3d("vo_anchalee_player_gethit", follower)
 	)
 	
 	# Muffle the music bus when player is hit

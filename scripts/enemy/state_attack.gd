@@ -257,8 +257,10 @@ func _tick_attack() -> void:
 	if should_open and _swing_phase == SwingPhase.WINDUP:
 		open_hitboxes()
 		# Play male zombie attack swing sound if no alert greeting was played
-		if not _greeting_played and enemy and enemy.voice_character == "Zombie Male":
-			SoundManager.play_3d("vo_zombie_m_melee_attack", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+		if not _greeting_played and enemy:
+			if enemy.voice_character == "Zombie Male":
+				SoundManager.play_3d("vo_zombie_m_melee_attack", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+			SoundManager.play_3d("zonbie_attack", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
 	elif not should_open and _swing_phase == SwingPhase.SWING:
 		close_hitboxes()
 	
@@ -372,7 +374,10 @@ func _on_qte_escaped() -> void:
 	if enemy:
 		SoundManager.play_3d("zonbie_grab_fail", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
 	if player:
-		SoundManager.play_3d("vo_leon_grab_winend", player)
+		if randf() < 0.15:
+			SoundManager.play_3d("vo_leon_attack", player)
+		else:
+			SoundManager.play_3d("vo_leon_quickattack", player)
 		
 	var sm = player.get_node_or_null("Statemachine")
 	if sm:

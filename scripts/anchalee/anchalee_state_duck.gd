@@ -9,9 +9,12 @@ func enter() -> void:
 	Anchalee.move_and_slide()
 	
 	_set_immune(true)
+	SoundManager.play_3d("anchalee_ducking_start", Anchalee)
 	
-	# Play scared duck loop voice line
-	_scared_duck_sfx = SoundManager.play_3d("vo_anchalee_Scared_Duck", Anchalee)
+	# Play scared duck loop voice line if ducking due to threats
+	var is_threat = Anchalee.zombie_reaction_state == "duck" or Anchalee.get_threat_count() > 0
+	if is_threat:
+		_scared_duck_sfx = SoundManager.play_3d("vo_anchalee_Scared_Duck", Anchalee)
 	
 	if Anchalee.has_node("AnchaleeModel/AnimationTree"):
 		var tree = Anchalee.get_node("AnchaleeModel/AnimationTree")

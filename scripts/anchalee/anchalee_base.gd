@@ -52,6 +52,32 @@ var is_walking_backward: bool = false
 var player_is_sprinting: bool = false
 var is_touching_player: bool = false
 var smoothed_target_pos: Vector3 = Vector3.ZERO
+var _walk_markers: Array[float] = [0.5, 1.0]
+var _last_norm_pos: float = -1.0
+var _last_step_time: int = 0
+
+func _get_footstep_markers(anim_player: AnimationPlayer, anim_name: String) -> Array[float]:
+	var result: Array[float] = [0.5, 1.0]
+	if not anim_player or not anim_player.has_animation(anim_name):
+		return result
+	var anim_res = anim_player.get_animation(anim_name)
+	if not anim_res:
+		return result
+		
+	var markers = anim_res.get_marker_names()
+	if markers.size() > 0:
+		var temp: Array[float] = []
+		var length = anim_res.length
+		if length <= 0.0:
+			length = 1.0
+		for m_name in markers:
+			if "step" in String(m_name).to_lower():
+				var t = anim_res.get_marker_time(m_name)
+				temp.append(fmod(t / length, 1.0))
+		if temp.size() > 0:
+			temp.sort()
+			result = temp
+	return result
 
 var _has_rolled_takedown_duck: bool = false
 var _takedown_duck_roll: bool = false
@@ -75,6 +101,7 @@ var is_cornered: bool = false:
 func _ready() -> void:
 	if has_node("AnchaleeModel/AnimationPlayer"):
 		anim_player = $AnchaleeModel/AnimationPlayer
+		_walk_markers = _get_footstep_markers(anim_player, "Walk -loop")
 	health = max_health
 	add_to_group("Anchalee")
 	
@@ -355,6 +382,61 @@ func _physics_process(delta: float) -> void:
 				col.shape.height = target_height
 				col.position.y = target_col_y
 
+	# Process footstep sound logic based on animation play position and loaded markers
+	if not is_dead:
+		var tree = get_node_or_null("AnchaleeModel/AnimationTree")
+		if tree and tree.active:
+			var pb = tree.get("parameters/playback")
+			if pb:
+				var current_node = pb.get_current_node()
+				if current_node == "Walk":
+					var is_moving = Vector2(velocity.x, velocity.z).length_squared() > 0.05
+					if is_moving:
+						var length = 0.8 if velocity.length_squared() > 10.0 else 1.0
+						var play_pos = pb.get_current_play_position()
+						var norm_pos = fmod(play_pos / length, 1.0)
+						
+						# Check crossings for each marker
+						if _last_norm_pos >= 0.0:
+							for marker_ratio in _walk_markers:
+								if _last_norm_pos > norm_pos: # Wrap around!
+									if _last_norm_pos < marker_ratio or norm_pos >= marker_ratio:
+										var now = Time.get_ticks_msec()
+										if now - _last_step_time > 220:
+											_last_step_time = now
+											SoundManager.play_3d("anchalee_footstep", self)
+										break
+								else:
+									if _last_norm_pos < marker_ratio and norm_pos >= marker_ratio:
+										var now = Time.get_ticks_msec()
+										if now - _last_step_time > 220:
+											_last_step_time = now
+											SoundManager.play_3d("anchalee_footstep", self)
+										break
+						_last_norm_pos = norm_pos
+					else:
+						if _last_norm_pos >= 0.0:
+							var now = Time.get_ticks_msec()
+							if now - _last_step_time > 220:
+								_last_step_time = now
+								SoundManager.play_3d("anchalee_footstep", self)
+						_last_norm_pos = -1.0
+				else:
+					if _last_norm_pos >= 0.0:
+						var now = Time.get_ticks_msec()
+						if now - _last_step_time > 220:
+							_last_step_time = now
+							SoundManager.play_3d("anchalee_footstep", self)
+					_last_norm_pos = -1.0
+			else:
+				_last_norm_pos = -1.0
+		else:
+			_last_norm_pos = -1.0
+	else:
+		_last_norm_pos = -1.0
+
+
+
 func get_threat_count() -> int:
 	# Clean up any dead or freed enemies from the list
 	var valid_threats = []
@@ -507,3 +589,13 @@ func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
 			touching = true
 			break
 	is_touching_player = touching
+
+
+func step_1() -> void:
+	if not is_dead:
+		SoundManager.play_3d("anchalee_footstep", self)
+
+
+func step_2() -> void:
+	if not is_dead:
+		SoundManager.play_3d("anchalee_footstep", self)

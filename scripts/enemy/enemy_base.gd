@@ -90,6 +90,33 @@ var _smoothed_angular_velocity: float = 0.0
 @export var flipflop_blend_depth_speed: float = 10.0
 @export var flipflop_blend_rot_speed: float = 10.0
 var rig: Node3D
+var _walk_markers: Array[float] = [0.5, 1.0]
+var _dead_walk_markers: Array[float] = [0.5, 1.0]
+var _last_norm_pos: float = -1.0
+var _last_step_time: int = 0
+
+func _get_footstep_markers(anim_player: AnimationPlayer, anim_name: String) -> Array[float]:
+	var result: Array[float] = [0.5, 1.0]
+	if not anim_player or not anim_player.has_animation(anim_name):
+		return result
+	var anim_res = anim_player.get_animation(anim_name)
+	if not anim_res:
+		return result
+		
+	var markers = anim_res.get_marker_names()
+	if markers.size() > 0:
+		var temp: Array[float] = []
+		var length = anim_res.length
+		if length <= 0.0:
+			length = 1.0
+		for m_name in markers:
+			if "step" in String(m_name).to_lower():
+				var t = anim_res.get_marker_time(m_name)
+				temp.append(fmod(t / length, 1.0))
+		if temp.size() > 0:
+			temp.sort()
+			result = temp
+	return result
 
 func _find_anim_player() -> AnimationPlayer:
 	var model := get_node_or_null("ZombieModel")
@@ -108,7 +135,7 @@ func _find_anim_player() -> AnimationPlayer:
 # ─── Ready ─────────────────────────────────────────────────────────────────
 func _ready() -> void:
 	# Choose a persistent randomized pitch modifier for this zombie instance's voice
-	const PITCH_INCREMENTS = [0.92, 0.96, 1.0, 1.04, 1.08]
+	const PITCH_INCREMENTS = [1.0, 1.05, 1.10, 1.15]
 	custom_pitch_scale = PITCH_INCREMENTS.pick_random()
 	
 	add_to_group("enemies")
@@ -119,6 +146,9 @@ func _ready() -> void:
 		anim_set = ZombieAnimSet.new()
 		push_warning("[EnemyBase] anim_set not assigned in Inspector — using defaults")
 	anim_player = _find_anim_player()
+	if anim_player:
+		_walk_markers = _get_footstep_markers(anim_player, anim_set.walk_anim)
+		_dead_walk_markers = _get_footstep_markers(anim_player, anim_set.dead_walk)
 	anim_tree = get_node_or_null("ZombieModel/AnimationTree") as AnimationTree
 	
 	if anim_player and show_debug_label:
@@ -269,6 +299,7 @@ func take_hit(hit_data: Dictionary) -> void:
 		_last_voice_gethit_time = time_now
 		var event_name = "vo_zombie_m_melee_gethit" if voice_character == "Zombie Male" else "vo_zombie_f_melee_gethit"
 		SoundManager.play_3d(event_name, self, 0.0, -1.0, custom_pitch_scale)
+		SoundManager.play_3d("zombie_melee_hit", self)
 	if show_debug_label:
 		print("[EnemyBase] take_hit — zone:'%s' dmg:%d state:%s hp:%d" % [
 			hit_data.get("hit_zone", "?"),
@@ -336,6 +367,7 @@ func _on_second_chance_triggered() -> void:
 
 func _trigger_defeat() -> void:
 	is_defeated = true
+	custom_pitch_scale = 1.0
 	state_machine.transition_to("StateDefeated")
 	enemy_defeated.emit()
 	_spawn_drops()
@@ -451,6 +483,61 @@ func _physics_process(delta: float) -> void:
 		target_update_timer = randf_range(1.0, 2.0)
 		_update_target()
 
+	# Process footstep sound logic based on animation play position and loaded markers
+	if not is_defeated:
+		if anim_tree and anim_tree.active:
+			var pb = anim_tree.get("parameters/playback")
+			if pb:
+				var current_node = pb.get_current_node()
+				if current_node == anim_set.walk_anim or current_node == anim_set.dead_walk:
+					var is_moving = Vector2(velocity.x, velocity.z).length_squared() > 0.05
+					if is_moving:
+						var length = 1.0 # Walk and DeadWalk animations are 1.0s cycles
+						var play_pos = pb.get_current_play_position()
+						var norm_pos = fmod(play_pos / length, 1.0)
+						
+						var active_markers = _dead_walk_markers if current_node == anim_set.dead_walk else _walk_markers
+						
+						# Check crossings for each marker
+						if _last_norm_pos >= 0.0:
+							for marker_ratio in active_markers:
+								if _last_norm_pos > norm_pos: # Wrap around!
+									if _last_norm_pos < marker_ratio or norm_pos >= marker_ratio:
+										var now = Time.get_ticks_msec()
+										if now - _last_step_time > 220:
+											_last_step_time = now
+											SoundManager.play_3d("zombie_footstep", self, 0.0, -1.0, custom_pitch_scale)
+										break
+								else:
+									if _last_norm_pos < marker_ratio and norm_pos >= marker_ratio:
+										var now = Time.get_ticks_msec()
+										if now - _last_step_time > 220:
+											_last_step_time = now
+											SoundManager.play_3d("zombie_footstep", self, 0.0, -1.0, custom_pitch_scale)
+										break
+						_last_norm_pos = norm_pos
+					else:
+						if _last_norm_pos >= 0.0:
+							var now = Time.get_ticks_msec()
+							if now - _last_step_time > 220:
+								_last_step_time = now
+								SoundManager.play_3d("zombie_footstep", self, 0.0, -1.0, custom_pitch_scale)
+						_last_norm_pos = -1.0
+				else:
+					if _last_norm_pos >= 0.0:
+						var now = Time.get_ticks_msec()
+						if now - _last_step_time > 220:
+							_last_step_time = now
+							SoundManager.play_3d("zombie_footstep", self, 0.0, -1.0, custom_pitch_scale)
+					_last_norm_pos = -1.0
+			else:
+				_last_norm_pos = -1.0
+		else:
+			_last_norm_pos = -1.0
+	else:
+		_last_norm_pos = -1.0
+
+
 func _update_skeleton_tilt(delta: float) -> void:
 	if not rig: return
 	# Enforce clean X and Z rotations on the root body
@@ -534,10 +621,16 @@ func _check_stop_combat_music() -> void:
 					any_in_combat = true
 					break
 	if not any_in_combat:
-		var music = tree.current_scene.get_node_or_null("MusicPlayer2D")
-		if not music:
-			music = tree.current_scene.get_node_or_null("AudioStreamPlayer2D")
-		if music and music is AudioStreamPlayer2D and music.playing:
-			music.stop()
-			if show_debug_label:
-				print("No enemies left in combat. Stopping combat music.")
+		SoundManager.play_music_non_combat()
+		if show_debug_label:
+			print("No enemies left in combat. Transitioning to non-combat music.")
+
+
+func step_1() -> void:
+	if not is_defeated:
+		SoundManager.play_3d("zombie_footstep", self, 0.0, -1.0, custom_pitch_scale)
+
+
+func step_2() -> void:
+	if not is_defeated:
+		SoundManager.play_3d("zombie_footstep", self, 0.0, -1.0, custom_pitch_scale)

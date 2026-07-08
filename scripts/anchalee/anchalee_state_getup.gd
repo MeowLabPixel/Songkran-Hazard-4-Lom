@@ -10,6 +10,7 @@ func enter() -> void:
 	Anchalee.move_and_slide()
 	_timer = 0.0
 	_immunity_lifted = false  # reset so immunity ends at GetupAct 2 start
+	SoundManager.play_3d("anchalee_ducking_getup", Anchalee)
 	
 	if Anchalee.has_node("AnchaleeModel/AnimationTree"):
 		var tree = Anchalee.get_node("AnchaleeModel/AnimationTree")

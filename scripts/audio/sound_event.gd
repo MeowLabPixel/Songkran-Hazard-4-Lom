@@ -11,7 +11,7 @@ extends Resource
 
 @export_group("3D Attenuation")
 @export var max_distance: float = 30.0
-@export_range(0.0, 10.0) var unit_size: float = 1.0
+@export_range(0.0, 10.0) var unit_size: float = 3.0
 
 @export_group("Filters")
 @export_enum("None", "Reverb", "Muffled", "Retro") var effect: String = "None"

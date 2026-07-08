@@ -69,10 +69,8 @@ func generate_all_events() -> void:
 			event_name = check_alternative
 			type = "alternative"
 		
-		# Setup sequence chaining for Part1 / Part2
+		# Setup sequence chaining for Part1 / Part2 (disabled for now)
 		var next_event_name = ""
-		if "Part1" in event_name:
-			next_event_name = event_name.replace("Part1", "Part2")
 			
 		if not groups.has(event_name):
 			groups[event_name] = {
@@ -95,6 +93,32 @@ func generate_all_events() -> void:
 			
 	print("[SoundEventGenerator] Grouped into %d unique SoundEvents." % groups.size())
 	
+	# Load pre-detected regions map if it exists
+	var detected_regions = {}
+	var regions_file = "res://scripts/audio/detected_regions.json"
+	if FileAccess.file_exists(regions_file):
+		var file = FileAccess.open(regions_file, FileAccess.READ)
+		if file:
+			var test_json_conv = JSON.new()
+			var err = test_json_conv.parse(file.get_as_text())
+			if err == OK:
+				detected_regions = test_json_conv.data
+				print("[SoundEventGenerator] Loaded pre-detected regions map successfully.")
+	
+	# Clean up obsolete SoundEvent files
+	var out_dir = DirAccess.open(output_dir)
+	if out_dir:
+		out_dir.list_dir_begin()
+		var file_name = out_dir.get_next()
+		while file_name != "":
+			if not out_dir.current_is_dir() and file_name.ends_with(".tres"):
+				var ev_basename = file_name.get_basename()
+				if not groups.has(ev_basename):
+					var obsolete_path = output_dir + "/" + file_name
+					print("[SoundEventGenerator] Deleting obsolete SoundEvent: ", obsolete_path)
+					out_dir.remove(file_name)
+			file_name = out_dir.get_next()
+
 	# Generate and save resources
 	var count = 0
 	for ev_name in groups:
@@ -120,28 +144,64 @@ func generate_all_events() -> void:
 				var s = load(stream_path)
 				event.stream = s
 				if s:
-					event.regions.append(Vector2(0.0, s.get_length()))
+					if detected_regions.has(ev_name):
+						var reg_data = detected_regions[ev_name]
+						for reg in reg_data:
+							event.regions.append(Vector2(reg[0], reg[1]))
+					else:
+						event.regions.append(Vector2(0.0, s.get_length()))
 					
 			if grp.adds.size() > 0:
 				var ps_path = grp.adds[0]
 				var ps = load(ps_path)
 				if ps:
 					event.parallel_streams.append(ps)
-					event.parallel_regions.append(Vector2(0.0, ps.get_length()))
+					if detected_regions.has(ev_name + "_Add"):
+						var reg_data = detected_regions[ev_name + "_Add"]
+						for reg in reg_data:
+							event.parallel_regions.append(Vector2(reg[0], reg[1]))
+					elif detected_regions.has(ev_name):
+						# Fallback: use base regions
+						var reg_data = detected_regions[ev_name]
+						for reg in reg_data:
+							event.parallel_regions.append(Vector2(reg[0], reg[1]))
+					else:
+						event.parallel_regions.append(Vector2(0.0, ps.get_length()))
 					
 			if grp.alternatives.size() > 0:
 				var alt_path = grp.alternatives[0]
 				var alts = load(alt_path)
 				if alts:
 					event.alternative_streams.append(alts)
-					event.alternative_regions.append(Vector2(0.0, alts.get_length()))
+					if detected_regions.has(ev_name + "_Alternative"):
+						var reg_data = detected_regions[ev_name + "_Alternative"]
+						for reg in reg_data:
+							event.alternative_regions.append(Vector2(reg[0], reg[1]))
+					elif detected_regions.has(ev_name):
+						# Fallback: use base regions
+						var reg_data = detected_regions[ev_name]
+						for reg in reg_data:
+							event.alternative_regions.append(Vector2(reg[0], reg[1]))
+					else:
+						event.alternative_regions.append(Vector2(0.0, alts.get_length()))
 					
 			if grp.alternative_adds.size() > 0:
 				var alta_path = grp.alternative_adds[0]
 				var altas = load(alta_path)
 				if altas:
 					event.alternative_parallel_streams.append(altas)
-					event.alternative_parallel_regions.append(Vector2(0.0, altas.get_length()))
+					if detected_regions.has(ev_name + "_Alternative_Add") or detected_regions.has(ev_name + "_Add_Alternative"):
+						var key = ev_name + "_Alternative_Add" if detected_regions.has(ev_name + "_Alternative_Add") else ev_name + "_Add_Alternative"
+						var reg_data = detected_regions[key]
+						for reg in reg_data:
+							event.alternative_parallel_regions.append(Vector2(reg[0], reg[1]))
+					elif detected_regions.has(ev_name):
+						# Fallback: use base regions
+						var reg_data = detected_regions[ev_name]
+						for reg in reg_data:
+							event.alternative_parallel_regions.append(Vector2(reg[0], reg[1]))
+					else:
+						event.alternative_parallel_regions.append(Vector2(0.0, altas.get_length()))
 		else:
 			for filepath in grp.normals:
 				var s = load(filepath)
@@ -156,6 +216,14 @@ func generate_all_events() -> void:
 				var s = load(filepath)
 				if s: event.alternative_parallel_streams.append(s)
 				
+		# Disable pitch randomness if the event has multiple variations (files or regions)
+		if event.use_regions:
+			if event.regions.size() > 1:
+				event.pitch_range = Vector2(1.0, 1.0)
+		else:
+			if grp.normals.size() > 1:
+				event.pitch_range = Vector2(1.0, 1.0)
+
 		# Save resource
 		var save_path = output_dir + "/" + ev_name + ".tres"
 		var err = ResourceSaver.save(event, save_path)

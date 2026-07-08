@@ -31,6 +31,34 @@ class_name Player extends CharacterBody3D
 @export var turn_speed_scale_factor: float = 0.3  # how much faster each rad/s of turning adds
 @export var anim: AnimationTree
 var anim_playback = "parameters/Main/playback"
+var _walk_markers: Array[float] = [0.5, 1.0]
+var _turn_markers: Array[float] = [0.5, 1.0]
+var _last_norm_pos: float = -1.0
+var _turn_last_norm_pos: float = -1.0
+var _last_step_time: int = 0
+
+func _get_footstep_markers(anim_player: AnimationPlayer, anim_name: String) -> Array[float]:
+	var result: Array[float] = [0.5, 1.0]
+	if not anim_player or not anim_player.has_animation(anim_name):
+		return result
+	var anim_res = anim_player.get_animation(anim_name)
+	if not anim_res:
+		return result
+		
+	var markers = anim_res.get_marker_names()
+	if markers.size() > 0:
+		var temp: Array[float] = []
+		var length = anim_res.length
+		if length <= 0.0:
+			length = 1.0
+		for m_name in markers:
+			if "step" in String(m_name).to_lower():
+				var t = anim_res.get_marker_time(m_name)
+				temp.append(fmod(t / length, 1.0))
+		if temp.size() > 0:
+			temp.sort()
+			result = temp
+	return result
 
 @export_group("Data setting")
 @export var MaxHP = 1000
@@ -151,6 +179,10 @@ func _ready() -> void:
 		GameManager.movement_type = movement_type_override
 	if anim:
 		anim.active = true
+		var anim_player = anim.get_node_or_null(anim.anim_player) as AnimationPlayer
+		if anim_player:
+			_walk_markers = _get_footstep_markers(anim_player, "walk/walk_fw")
+			_turn_markers = _get_footstep_markers(anim_player, "walk/walk_side")
 	add_to_group("player")
 	
 	# Defer animation start to allow Godot to finish skeleton bone binding
@@ -599,6 +631,101 @@ func _physics_process(_delta: float) -> void:
 			velocity.z = 0.0
 		
 	move_and_slide()
+	
+	# Process footstep sound logic based on animation play position and loaded markers
+	if HP > 0:
+		var statemachine = get_node_or_null("Statemachine")
+		if statemachine and statemachine.current_state and statemachine.current_state.name in ["Idle", "Aim", "Run", "Sprint"]:
+			var pb = anim.get(anim_playback)
+			if pb:
+				var current_node = pb.get_current_node()
+				if current_node == "Run" or current_node == "Aim":
+					var is_moving = Vector2(velocity.x, velocity.z).length_squared() > 0.05
+					if is_moving:
+						# Walking or sprinting
+						_turn_last_norm_pos = -1.0 # reset turn pos
+						var length = 0.8 if Input.is_action_pressed("sprint") and not is_aimming else 1.0
+						var play_pos = pb.get_current_play_position()
+						var norm_pos = fmod(play_pos / length, 1.0)
+						
+						# Check crossings for each marker
+						if _last_norm_pos >= 0.0:
+							for marker_ratio in _walk_markers:
+								if _last_norm_pos > norm_pos: # Wrap around!
+									if _last_norm_pos < marker_ratio or norm_pos >= marker_ratio:
+										var now = Time.get_ticks_msec()
+										if now - _last_step_time > 220:
+											_last_step_time = now
+											SoundManager.play_3d("leon_footstep", self)
+										break
+								else:
+									if _last_norm_pos < marker_ratio and norm_pos >= marker_ratio:
+										var now = Time.get_ticks_msec()
+										if now - _last_step_time > 220:
+											_last_step_time = now
+											SoundManager.play_3d("leon_footstep", self)
+										break
+						_last_norm_pos = norm_pos
+					elif _is_turning and abs(_current_turn_anim_scale) > 0.01:
+						# Rotating in place
+						_last_norm_pos = -1.0 # reset walk pos
+						var length = 1.06
+						var norm_pos = fmod(_anim_time / length, 1.0)
+						if norm_pos < 0.0:
+							norm_pos += 1.0
+							
+						# Check crossings for each marker
+						if _turn_last_norm_pos >= 0.0:
+							for marker_ratio in _turn_markers:
+								if _turn_last_norm_pos > norm_pos: # Wrap around!
+									if _turn_last_norm_pos < marker_ratio or norm_pos >= marker_ratio:
+										var now = Time.get_ticks_msec()
+										if now - _last_step_time > 220:
+											_last_step_time = now
+											SoundManager.play_3d("leon_footstep", self)
+										break
+								else:
+									if _turn_last_norm_pos < marker_ratio and norm_pos >= marker_ratio:
+										var now = Time.get_ticks_msec()
+										if now - _last_step_time > 220:
+											_last_step_time = now
+											SoundManager.play_3d("leon_footstep", self)
+										break
+						_turn_last_norm_pos = norm_pos
+					else:
+						# Stopped moving and stopped rotating
+						if _last_norm_pos >= 0.0 or _turn_last_norm_pos >= 0.0:
+							var now = Time.get_ticks_msec()
+							if now - _last_step_time > 220:
+								_last_step_time = now
+								SoundManager.play_3d("leon_footstep", self)
+						_last_norm_pos = -1.0
+						_turn_last_norm_pos = -1.0
+				else:
+					if _last_norm_pos >= 0.0 or _turn_last_norm_pos >= 0.0:
+						var now = Time.get_ticks_msec()
+						if now - _last_step_time > 220:
+							_last_step_time = now
+							SoundManager.play_3d("leon_footstep", self)
+					_last_norm_pos = -1.0
+					_turn_last_norm_pos = -1.0
+			else:
+				_last_norm_pos = -1.0
+				_turn_last_norm_pos = -1.0
+		else:
+			if _last_norm_pos >= 0.0 or _turn_last_norm_pos >= 0.0:
+				var now = Time.get_ticks_msec()
+				if now - _last_step_time > 220:
+					_last_step_time = now
+					SoundManager.play_3d("leon_footstep", self)
+			_last_norm_pos = -1.0
+			_turn_last_norm_pos = -1.0
+	else:
+		_last_norm_pos = -1.0
+		_turn_last_norm_pos = -1.0
+
+	
+
 	if nav_agent and nav_agent.avoidance_enabled:
 		nav_agent.set_velocity(velocity)
 	if player_obstacle:
@@ -1248,3 +1375,13 @@ func _trigger_turn_seek() -> void:
 	for path in paths:
 		if anim.get(path) != null:
 			anim.set(path, 0.53)
+
+
+func step_1() -> void:
+	if HP > 0:
+		SoundManager.play_3d("leon_footstep", self)
+
+
+func step_2() -> void:
+	if HP > 0:
+		SoundManager.play_3d("leon_footstep", self)

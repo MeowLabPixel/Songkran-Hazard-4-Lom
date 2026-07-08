@@ -9,6 +9,7 @@
 [resource]
 script = ExtResource("1_r0tki")
 name = "vo_leon_quickattack"
+pitch_range = Vector2(1, 1)
 is_3d = true
 category = "Voiceline"
 streams = Array[AudioStream]([ExtResource("2_15ytg"), ExtResource("3_icaca"), ExtResource("4_cd1vj"), ExtResource("5_acyrc")])

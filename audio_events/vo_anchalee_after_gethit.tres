@@ -7,6 +7,7 @@
 [resource]
 script = ExtResource("1_vppxc")
 name = "vo_anchalee_after_gethit"
+pitch_range = Vector2(1, 1)
 is_3d = true
 category = "Voiceline"
 streams = Array[AudioStream]([ExtResource("2_ija3h"), ExtResource("3_ohicu")])

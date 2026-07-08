@@ -9,8 +9,9 @@ func enter() -> void:
 	Anchalee.move_and_slide()
 	_timer = 0.0
 	
-	# Play Anchalee get hit voice line
+	# Play Anchalee get hit voice line and physical hit sound
 	SoundManager.play_3d("vo_anchalee_gethit", Anchalee)
+	SoundManager.play_3d("anchalee_hit", Anchalee)
 	
 	if Anchalee.has_node("AnchaleeModel/AnimationTree"):
 		var tree = Anchalee.get_node("AnchaleeModel/AnimationTree")

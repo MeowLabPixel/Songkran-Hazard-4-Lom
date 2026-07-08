@@ -19,13 +19,17 @@ run/main_scene="res://scenes/disclaimer.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="uid://bvhvlnw1hbiv6"
 
+[audio]
+
+buses/default_bus_layout="uid://bwabc5j3e71wj"
+
 [autoload]
 
 PhantomCameraManager="uid://duq6jhf6unyis"
 ItemManager="*res://scripts/items/item_manager.gd"
 AttackTokenManager="*res://scripts/enemy/attack_token_manager.gd"
 GameManager="*res://scripts/game_manager.gd"
-SoundManager="*res://scripts/audio/sound_manager.gd"
+SoundManager="*res://scripts/audio/sound_manager.tscn"
 _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 
 [debug]
@@ -43,7 +47,7 @@ window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/StyleboxFancy/plugin.cfg", "res://addons/godot_ai/plugin.cfg")
+enabled=PackedStringArray("res://addons/StyleboxFancy/plugin.cfg", "res://addons/godot_ai/plugin.cfg", "res://addons/spatial_audio_extended/plugin.cfg")
 
 [global_group]
 

@@ -6,8 +6,9 @@
 [resource]
 script = ExtResource("1_xm5p2")
 name = "Region_Zombie_Hitground_Sound"
+pitch_range = Vector2(1, 1)
 volume_randomness_db = 0.5
 is_3d = true
 use_regions = true
 stream = ExtResource("2_umscm")
-regions = Array[Vector2]([Vector2(0, 9)])
+regions = Array[Vector2]([Vector2(0, 0.48), Vector2(1.5, 0.46), Vector2(3, 0.46), Vector2(4.5, 0.48), Vector2(6, 0.46), Vector2(7.5, 0.48)])

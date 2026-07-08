@@ -17,6 +17,10 @@ func _enter() -> void:
 	else:
 		SoundManager.play_3d("vo_leon_quickattack", owner)
 		
+	# Play Rookie Lee takedown sound and Region_PlayerTakedownAttackStart
+	SoundManager.play_3d("leon_takedown", owner)
+	SoundManager.play_3d("Region_PlayerTakedownAttackStart", owner)
+		
 	owner.stun_detect.monitorable = true
 	owner.aim_bone_on(false)
 	stop_moving()

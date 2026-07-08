@@ -18,6 +18,7 @@ func _enter() -> void:
 		
 	stop_moving()
 	set_gun_anim()
+	SoundManager.play_3d("leon_quickturn", owner)
 	if owner.anim.get(owner.anim_playback).get_current_node() != "QT":
 		owner.anim.get(owner.anim_playback).travel("QT")
 	quick_turn()
