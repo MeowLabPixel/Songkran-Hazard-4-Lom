@@ -3,6 +3,7 @@ extends State
 var reload_anim = "RR/re"
 var _exited: bool = false
 var _pump_cooldown_timer: float = 0.2
+var qte_hud = null
 
 func _enter() -> void:
 	_exited = false
@@ -23,10 +24,36 @@ func _enter() -> void:
 		finished.emit("Idle")
 		return
 
-	reloading()
+	var gun = owner.gun_controller.current_gun
+	if gun and (gun.gun_name == "Water pistol" or owner.gun_controller.current_gun_index == 0):
+		# Start QTE reload hud for pistol
+		qte_hud = load("res://scripts/ui/reload_qte_hud.gd").new(gun.air, gun.max_air)
+		qte_hud.qte_hit.connect(_on_qte_hit)
+		qte_hud.finished.connect(_on_reload_finished)
+		qte_hud.cancelled.connect(_on_reload_cancelled)
+		owner.add_child(qte_hud)
+		
+		# Travel to main Reload state first
+		owner.anim.get(owner.anim_playback).travel("Reload")
+		
+		# Set Reload timescale to half speed
+		owner.anim.set("parameters/Main/Reload/Reload/TimeScale/scale", 0.5)
+		
+		# Travel to SuperPump or Reload in sub-state machine based on air
+		var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
+		if sub_pb:
+			if gun.air >= gun.max_air:
+				sub_pb.travel("SuperPump")
+			else:
+				sub_pb.travel("Reload")
+	else:
+		reloading()
 
 func _exit() -> void:
 	_exited = true
+	if is_instance_valid(qte_hud):
+		qte_hud.cancel()
+		qte_hud = null
 	if is_instance_valid(owner):
 		owner.aim_blocked_until_release = false
 		if owner.anim and is_instance_valid(owner.anim):
@@ -34,6 +61,7 @@ func _exit() -> void:
 				owner.anim.animation_finished.disconnect(anim_done)
 			owner.anim.set("parameters/Main/Reload/Reload/TimeScale/scale", 1.0)
 			owner.anim.set("parameters/Main/Reload/Reload 2/TimeScale/scale", 1.0)
+			owner.anim.set("parameters/Main/Reload/Reload_Quick/TimeScale/scale", 1.5)
 		if owner.reload_timer and is_instance_valid(owner.reload_timer):
 			if owner.reload_timer.timeout.is_connected(reload_timeout):
 				owner.reload_timer.timeout.disconnect(reload_timeout)
@@ -52,9 +80,13 @@ func _update(_delta: float) -> void:
 		return
 
 func _state_input(_event: InputEvent) -> void:
+	var gun = owner.gun_controller.current_gun
+	if gun and (gun.gun_name == "Water pistol" or owner.gun_controller.current_gun_index == 0):
+		# Let the QTE HUD handle input for the pistol
+		return
+		
 	if Input.is_action_just_pressed("Reload"):
 		if _pump_cooldown_timer <= 0.0:
-			var gun = owner.gun_controller.current_gun
 			# Only allow pumping again if not in super active mode yet
 			if not gun.is_super_active:
 				reloading()
@@ -112,3 +144,57 @@ func reload_timeout() -> void:
 
 func stop_moving() -> void:
 	owner.set_velocity_from_motion(Vector3.ZERO)
+
+# ---- QTE HUD Callbacks ----
+
+func _on_qte_hit() -> void:
+	if _exited:
+		return
+		
+	var gun = owner.gun_controller.current_gun
+	if gun:
+		# Add 25% of max air (25.0)
+		gun.air = clampf(gun.air + 25.0, 0.0, gun.max_air)
+		# Play standard pump SFX on hit
+		SoundManager.play_2d("watergun_pistol_reload")
+		
+	# Travel to Reload_Quick in animation tree
+	var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
+	if sub_pb:
+		sub_pb.travel("Reload_Quick")
+
+func _on_reload_finished(final_air: float, super_activated: bool) -> void:
+	if _exited:
+		return
+		
+	var gun = owner.gun_controller.current_gun
+	if gun:
+		gun.air = final_air
+		if super_activated:
+			gun.is_super_ready = false
+			gun.is_super_active = true
+			gun.super_timer = 5.0 # Super pump lasts for 5.0 sec
+			SoundManager.play_2d("watergun_pistol_reload_Superpump")
+			
+	# Cleanup HUD reference
+	qte_hud = null
+	
+	# Transition AnimationTree sub-state to End to exit Reload state
+	var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
+	if sub_pb:
+		sub_pb.travel("End")
+	
+	# Transition back to Idle
+	finished.emit("Idle")
+
+func _on_reload_cancelled() -> void:
+	if _exited:
+		return
+	qte_hud = null
+	
+	# Transition AnimationTree out of Reload
+	var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
+	if sub_pb:
+		sub_pb.travel("End")
+		
+	finished.emit("Idle")

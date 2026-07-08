@@ -758,7 +758,6 @@ max_water = 200.0
 current_water = 200.0
 
 [node name="Pistol" type="Node3D" parent="." unique_id=1327767996 node_paths=PackedStringArray("spawn_point")]
-visible = false
 script = ExtResource("1_nbubd")
 spawn_point = NodePath("Gunfix/SpawnPoint")
 shot_vfx_scene = ExtResource("2_n8a5k")
