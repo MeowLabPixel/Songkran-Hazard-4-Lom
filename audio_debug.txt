@@ -1,0 +1,754 @@
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-7.586613, 1.562506, 45.92039), cam_fwd: (0.0, 0.0, -1.0), to_sound_dir: (0.278086, -0.727167, -0.627612), dot: 0.627612, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-7.586613, 1.562506, 45.92039), cam_fwd: (0.0, 0.0, -1.0), to_sound_dir: (0.157621, -0.717075, -0.67894), dot: 0.678940, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-7.586613, 1.562506, 45.92039), cam_fwd: (0.0, 0.0, -1.0), to_sound_dir: (0.063774, -0.674994, -0.735062), dot: 0.735062, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-7.586613, 1.562506, 45.92039), cam_fwd: (0.0, 0.0, -1.0), to_sound_dir: (-0.022835, -0.651388, -0.758401), dot: 0.758401, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-7.586613, 1.562506, 45.92039), cam_fwd: (0.0, 0.0, -1.0), to_sound_dir: (-0.09512, -0.638456, -0.763758), dot: 0.763758, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-7.586613, 1.562506, 45.92039), cam_fwd: (0.0, 0.0, -1.0), to_sound_dir: (-0.163744, -0.630637, -0.758608), dot: 0.758608, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.586613, 1.562506, 45.92039), cam_fwd: (0.0, 0.0, -1.0), to_sound_dir: (-0.163744, -0.630637, -0.758608), dot: 0.758608, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-7.586613, 1.562506, 45.92039), cam_fwd: (0.0, 0.0, -1.0), to_sound_dir: (-0.240854, -0.626551, -0.74123), dot: 0.741230, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.586613, 1.562506, 45.92039), cam_fwd: (0.0, 0.0, -1.0), to_sound_dir: (-0.240854, -0.626551, -0.74123), dot: 0.741230, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-7.586613, 1.562506, 45.92039), cam_fwd: (0.0, 0.0, -1.0), to_sound_dir: (-0.334243, -0.629271, -0.701641), dot: 0.701641, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.586613, 1.562506, 45.92039), cam_fwd: (0.0, 0.0, -1.0), to_sound_dir: (-0.334243, -0.629271, -0.701641), dot: 0.701641, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.586613, 1.562506, 45.92039), cam_fwd: (0.0, 0.0, -1.0), to_sound_dir: (-0.417008, -0.640187, -0.645186), dot: 0.645186, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.586613, 1.562506, 45.92039), cam_fwd: (0.0, 0.0, -1.0), to_sound_dir: (-0.417008, -0.640187, -0.645186), dot: 0.645186, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.586613, 1.562506, 45.92039), cam_fwd: (0.0, 0.0, -1.0), to_sound_dir: (-0.417008, -0.640187, -0.645186), dot: 0.645186, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-7.376567, 1.562506, 45.6177), cam_fwd: (-0.216276, -0.0, -0.976332), to_sound_dir: (-0.52614, -0.662731, -0.532883), dot: 0.634063, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: leon_footstep, cam_pos: (-7.400434, 1.562506, 45.54484), cam_fwd: (-0.250383, -0.0, -0.968147), to_sound_dir: (-0.306944, -0.876822, -0.370094), dot: 0.435159, muffle: 0.000000
+[SpatialAudioDebug] SFX: leon_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: leon_footstep, cam_pos: (-7.368928, 1.562506, 45.68039), cam_fwd: (-0.342436, -0.0, -0.939541), to_sound_dir: (-0.313349, -0.846369, -0.430665), dot: 0.511930, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.368928, 1.562506, 45.68039), cam_fwd: (-0.342436, -0.0, -0.939541), to_sound_dir: (-0.575544, -0.66181, -0.480372), dot: 0.648416, muffle: 0.000000
+[SpatialAudioDebug] SFX: leon_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.29786, 1.581356, 45.72066), cam_fwd: (-0.520005, 0.018849, -0.853955), to_sound_dir: (-0.588312, -0.649895, -0.481171), dot: 0.704574, muffle: 0.000000
+[SoundDebug] SFX: vo_anchalee_Panting, cam_pos: (-7.29786, 1.581356, 45.72066), cam_fwd: (-0.520005, 0.018849, -0.853955), to_sound_dir: (-0.588312, -0.649895, -0.481171), dot: 0.704574, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Panting, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-6.985295, 1.57178, 45.39174), cam_fwd: (-0.753518, 0.009274, -0.657362), to_sound_dir: (-0.730406, -0.634327, -0.253251), dot: 0.710969, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-6.853053, 1.565351, 44.8256), cam_fwd: (-0.994403, 0.002846, -0.105613), to_sound_dir: (-0.767039, -0.613315, 0.188403), dot: 0.741103, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-6.866175, 1.565029, 44.70515), cam_fwd: (-0.999336, 0.002523, 0.036337), to_sound_dir: (-0.664607, -0.611786, 0.42897), dot: 0.678210, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-6.866175, 1.565029, 44.70515), cam_fwd: (-0.999336, 0.002523, 0.036337), to_sound_dir: (-0.664607, -0.611786, 0.42897), dot: 0.678210, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-6.929865, 1.564019, 44.69345), cam_fwd: (-0.999324, 0.001513, -0.036736), to_sound_dir: (-0.61593, -0.621246, 0.484441), dot: 0.596778, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.294181, 1.562506, 44.58065), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.971625, -0.197287, 0.130472), dot: 0.935682, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.294181, 1.562506, 44.58065), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.987656, -0.012466, -0.15614), dot: 0.999841, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.294181, 1.562506, 44.58065), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.987656, -0.012466, -0.15614), dot: 0.999841, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.301456, 1.562506, 44.57913), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.971229, -0.198178, 0.132062), dot: 0.935024, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.301456, 1.562506, 44.57913), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.987661, -0.012473, -0.156111), dot: 0.999841, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.301456, 1.562506, 44.57913), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.987661, -0.012473, -0.156111), dot: 0.999841, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.301421, 1.562506, 44.57913), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.97123, -0.198173, 0.132059), dot: 0.935026, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.301421, 1.562506, 44.57913), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.987661, -0.012473, -0.15611), dot: 0.999841, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.301421, 1.562506, 44.57913), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.987661, -0.012473, -0.15611), dot: 0.999841, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.301421, 1.562506, 44.57913), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.987104, 0.016424, -0.159237), dot: 0.999819, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.301421, 1.562506, 44.57913), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.987104, 0.016424, -0.159237), dot: 0.999819, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.302389, 1.562506, 44.58478), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.987588, -0.012473, -0.156571), dot: 0.999847, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.302389, 1.562506, 44.58478), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.987588, -0.012473, -0.156571), dot: 0.999847, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.302389, 1.562506, 44.58478), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.987029, 0.016424, -0.159697), dot: 0.999824, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.302389, 1.562506, 44.58478), cam_fwd: (-0.985664, -0.0, -0.16872), to_sound_dir: (-0.987029, 0.016424, -0.159697), dot: 0.999824, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.148487, 1.562506, 44.84483), cam_fwd: (-0.912347, -0.0, -0.409417), to_sound_dir: (-0.983898, 0.016167, -0.178), dot: 0.970533, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.148487, 1.562506, 44.84483), cam_fwd: (-0.912347, -0.0, -0.409417), to_sound_dir: (-0.983898, 0.016167, -0.178), dot: 0.970533, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.148487, 1.562506, 44.84483), cam_fwd: (-0.912347, -0.0, -0.409417), to_sound_dir: (-0.573038, -0.676502, 0.462571), dot: 0.333425, muffle: 0.000000
+[SoundDebug] SFX: vo_anchalee_Panting, cam_pos: (-7.148487, 1.562506, 44.84483), cam_fwd: (-0.912347, -0.0, -0.409417), to_sound_dir: (-0.573038, -0.676502, 0.462571), dot: 0.333425, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Panting, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.131636, 1.562506, 45.42072), cam_fwd: (-0.572283, -0.0, -0.820056), to_sound_dir: (-0.974976, 0.015998, -0.221732), dot: 0.739795, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.131636, 1.562506, 45.42072), cam_fwd: (-0.572283, -0.0, -0.820056), to_sound_dir: (-0.974976, 0.015998, -0.221732), dot: 0.739795, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.131636, 1.562506, 45.42072), cam_fwd: (-0.572283, -0.0, -0.820056), to_sound_dir: (-0.557804, -0.785137, 0.2691), dot: 0.098545, muffle: 0.000000
+[SoundDebug] SFX: vo_anchalee_Panting, cam_pos: (-7.131636, 1.562506, 45.42072), cam_fwd: (-0.572283, -0.0, -0.820056), to_sound_dir: (-0.557804, -0.785137, 0.2691), dot: 0.098545, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Panting, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.483512, 1.562506, 45.83508), cam_fwd: (-0.095969, -0.0, -0.995384), to_sound_dir: (-0.375035, -0.922523, 0.091099), dot: -0.054687, muffle: 0.109375
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.483512, 1.562506, 45.83508), cam_fwd: (-0.095969, -0.0, -0.995384), to_sound_dir: (-0.375035, -0.922523, 0.091099), dot: -0.054687, muffle: 0.109375
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-7.483512, 1.562506, 45.83508), cam_fwd: (-0.095969, -0.0, -0.995384), to_sound_dir: (-0.375035, -0.922523, 0.091099), dot: -0.054687, muffle: 0.109375
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.109375, combined_cutoff: 18031.255633, filter_hz: 18466.845703
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.109375, combined_cutoff: 18031.255633, filter_hz: 18466.845703
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.109375, combined_cutoff: 18031.255633, filter_hz: 18158.697266
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-8.070234, 1.562506, 45.9651), cam_fwd: (0.450573, -0.0, -0.89274), to_sound_dir: (-0.08856, -0.995986, -0.012998), dot: -0.028299, muffle: 0.056597
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-8.070234, 1.562506, 45.9651), cam_fwd: (0.450573, -0.0, -0.89274), to_sound_dir: (-0.08856, -0.995986, -0.012998), dot: -0.028299, muffle: 0.056597
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.056597, combined_cutoff: 18981.249541, filter_hz: 18519.189453
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.056597, combined_cutoff: 18981.249541, filter_hz: 18772.437500
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-8.568818, 1.563009, 45.78878), cam_fwd: (0.821177, 0.000504, -0.570673), to_sound_dir: (0.014105, -0.99756, -0.068377), dot: 0.050101, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 19862.402344
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-8.934211, 1.562737, 45.36258), cam_fwd: (0.996293, 0.000231, -0.086021), to_sound_dir: (0.081799, -0.985396, -0.149343), dot: 0.094114, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 19992.224609
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-9.04589, 1.562455, 44.87782), cam_fwd: (0.939943, 0.000101, 0.341332), to_sound_dir: (0.132734, -0.98493, -0.110883), dot: 0.086815, muffle: 0.000000
+[SoundDebug] SFX: anchalee_ducking_start, cam_pos: (-9.04589, 1.562455, 44.87782), cam_fwd: (0.939943, 0.000101, 0.341332), to_sound_dir: (0.132734, -0.98493, -0.110883), dot: 0.086815, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_start, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-8.723092, 1.562491, 45.02689), cam_fwd: (0.935036, 0.000101, 0.354553), to_sound_dir: (-0.070286, -0.976615, -0.203182), dot: -0.137858, muffle: 0.275716
+[SoundDebug] SFX: anchalee_ducking_start, cam_pos: (-8.723092, 1.562491, 45.02689), cam_fwd: (0.935036, 0.000101, 0.354553), to_sound_dir: (-0.070286, -0.976615, -0.203182), dot: -0.137858, muffle: 0.275716
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.275716, combined_cutoff: 15037.118852, filter_hz: 16209.765625
+[SpatialAudioDebug] SFX: anchalee_ducking_start, muffle_factor: 0.275716, combined_cutoff: 15037.118852, filter_hz: 15037.119141
+[SoundDebug] SFX: anchalee_ducking_start, cam_pos: (-8.644617, 1.5625, 45.06014), cam_fwd: (0.935036, 0.000101, 0.354554), to_sound_dir: (-0.118297, -0.967852, -0.221964), dot: -0.189409, muffle: 0.378817
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.644617, 1.5625, 45.06014), cam_fwd: (0.935036, 0.000101, 0.354554), to_sound_dir: (0.995512, -0.028367, 0.090279), dot: 0.962846, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.644617, 1.5625, 45.06014), cam_fwd: (0.935036, 0.000101, 0.354554), to_sound_dir: (0.986997, 0.012909, 0.160223), dot: 0.979686, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_start, muffle_factor: 0.378817, combined_cutoff: 13181.292534, filter_hz: 13382.676758
+[SoundDebug] SFX: anchalee_ducking_start, cam_pos: (-8.640073, 1.5625, 45.06202), cam_fwd: (0.935036, 0.000101, 0.354554), to_sound_dir: (-0.121042, -0.967275, -0.222997), dot: -0.192341, muffle: 0.384682
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.640073, 1.5625, 45.06202), cam_fwd: (0.935036, 0.000101, 0.354554), to_sound_dir: (0.995591, -0.028448, 0.089389), dot: 0.962603, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.640073, 1.5625, 45.06202), cam_fwd: (0.935036, 0.000101, 0.354554), to_sound_dir: (0.987028, 0.01292, 0.16003), dot: 0.979647, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_start, muffle_factor: 0.384682, combined_cutoff: 13075.729370, filter_hz: 13094.063477
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.637052, 1.5625, 45.07364), cam_fwd: (0.940875, 0.000101, 0.338753), to_sound_dir: (0.996184, -0.028518, 0.082488), dot: 0.965225, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.637052, 1.5625, 45.07364), cam_fwd: (0.940875, 0.000101, 0.338753), to_sound_dir: (0.98733, 0.012931, 0.158156), dot: 0.982531, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.628533, 1.5625, 45.10243), cam_fwd: (0.954268, 0.000101, 0.298952), to_sound_dir: (0.997455, -0.028705, 0.06527), dot: 0.971349, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.628533, 1.5625, 45.10243), cam_fwd: (0.954268, 0.000101, 0.298952), to_sound_dir: (0.98806, 0.01296, 0.153521), dot: 0.988771, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.628533, 1.5625, 45.10243), cam_fwd: (0.954268, 0.000101, 0.298952), to_sound_dir: (0.999251, -0.010116, 0.037358), dot: 0.964721, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.628533, 1.5625, 45.10243), cam_fwd: (0.954268, 0.000101, 0.298952), to_sound_dir: (0.995791, 0.025999, 0.087883), dot: 0.976528, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.628533, 1.5625, 45.10243), cam_fwd: (0.954268, 0.000101, 0.298952), to_sound_dir: (0.995791, 0.025999, 0.087883), dot: 0.976528, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.638679, 1.563099, 45.02832), cam_fwd: (0.928204, -0.000989, 0.372071), to_sound_dir: (0.986088, 0.012808, 0.165733), dot: 0.976942, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.638679, 1.563099, 45.02832), cam_fwd: (0.928204, -0.000989, 0.372071), to_sound_dir: (0.996563, -0.01039, 0.082181), dot: 0.955601, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.638679, 1.563099, 45.02832), cam_fwd: (0.928204, -0.000989, 0.372071), to_sound_dir: (0.9946, 0.025817, 0.100522), dot: 0.960567, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.638679, 1.563099, 45.02832), cam_fwd: (0.928204, -0.000989, 0.372071), to_sound_dir: (0.9946, 0.025817, 0.100522), dot: 0.960567, muffle: 0.000000
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-8.638679, 1.563099, 45.02832), cam_fwd: (0.928204, -0.000989, 0.372071), to_sound_dir: (-0.122393, -0.971514, -0.202929), dot: -0.188149, muffle: 0.376298
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.376298, combined_cutoff: 13226.632595, filter_hz: 13061.885742
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.795216, 1.563276, 45.09012), cam_fwd: (0.982709, -0.001283, 0.185153), to_sound_dir: (0.999124, -0.009606, 0.040742), dot: 0.989403, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.795216, 1.563276, 45.09012), cam_fwd: (0.982709, -0.001283, 0.185153), to_sound_dir: (0.995849, 0.02513, 0.087481), dot: 0.994795, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.795216, 1.563276, 45.09012), cam_fwd: (0.982709, -0.001283, 0.185153), to_sound_dir: (0.995849, 0.02513, 0.087481), dot: 0.994795, muffle: 0.000000
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-8.795216, 1.563276, 45.09012), cam_fwd: (0.982709, -0.001283, 0.185153), to_sound_dir: (-0.024998, -0.9702, -0.241013), dot: -0.067945, muffle: 0.135889
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.135889, combined_cutoff: 17553.990066, filter_hz: 17088.708984
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.734127, 1.562849, 45.53482), cam_fwd: (0.946012, -0.000572, -0.324131), to_sound_dir: (0.999599, 0.025564, 0.012216), dot: 0.941658, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.734127, 1.562849, 45.53482), cam_fwd: (0.946012, -0.000572, -0.324131), to_sound_dir: (0.999599, 0.025564, 0.012216), dot: 0.941658, muffle: 0.000000
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-8.734127, 1.562849, 45.53482), cam_fwd: (0.946012, -0.000572, -0.324131), to_sound_dir: (-0.057162, -0.880953, -0.469739), dot: 0.098684, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 19627.669922
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-8.370564, 1.562612, 45.87047), cam_fwd: (0.680525, -0.000178, -0.732725), to_sound_dir: (-0.231878, -0.778851, -0.582772), dot: 0.269352, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 19978.845703
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-7.848065, 1.562536, 45.97319), cam_fwd: (0.242959, -0.00005, -0.970037), to_sound_dir: (-0.440304, -0.696299, -0.566833), dot: 0.442908, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 19998.806641
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-7.319247, 1.562513, 45.78362), cam_fwd: (-0.271421, -0.000012, -0.962461), to_sound_dir: (-0.623854, -0.642468, -0.445019), dot: 0.597648, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 19999.931641
+[SoundDebug] SFX: vo_anchalee_Panting, cam_pos: (-7.511105, 1.562506, 45.8909), cam_fwd: (-0.073904, -0.0, -0.997265), to_sound_dir: (-0.560938, -0.665442, -0.492478), dot: 0.532587, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Panting, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Panting, cam_pos: (-8.062303, 1.562506, 45.97544), cam_fwd: (0.426312, -0.0, -0.904576), to_sound_dir: (-0.378058, -0.771867, -0.511169), dot: 0.301222, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Panting, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Panting, cam_pos: (-7.936047, 1.562506, 45.98142), cam_fwd: (0.319343, -0.0, -0.947639), to_sound_dir: (-0.490997, -0.760889, -0.424228), dot: 0.245218, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.936047, 1.562506, 45.98142), cam_fwd: (0.319343, -0.0, -0.947639), to_sound_dir: (-0.490997, -0.760889, -0.424228), dot: 0.245218, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Panting, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Panting, cam_pos: (-7.693817, 1.562506, 45.95174), cam_fwd: (0.101763, -0.0, -0.994809), to_sound_dir: (-0.601387, -0.69755, -0.389561), dot: 0.326340, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.693817, 1.562506, 45.95174), cam_fwd: (0.101763, -0.0, -0.994809), to_sound_dir: (-0.601387, -0.69755, -0.389561), dot: 0.326340, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Panting, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.621652, 1.562506, 45.66342), cam_fwd: (0.102489, -0.0, -0.994734), to_sound_dir: (-0.650348, -0.712333, -0.263874), dot: 0.195831, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.589158, 1.562506, 45.45157), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.672668, -0.720361, -0.169112), dot: 0.099281, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.596746, 1.562506, 45.49008), cam_fwd: (0.102489, -0.0, -0.994734), to_sound_dir: (-0.163284, -0.017158, -0.98643), dot: 0.964501, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.596746, 1.562506, 45.49008), cam_fwd: (0.102489, -0.0, -0.994734), to_sound_dir: (-0.093428, 0.011487, -0.99556), dot: 0.980742, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.596746, 1.562506, 45.49008), cam_fwd: (0.102489, -0.0, -0.994734), to_sound_dir: (-0.093428, 0.011487, -0.99556), dot: 0.980742, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.598514, 1.562506, 45.50723), cam_fwd: (0.102489, -0.0, -0.994734), to_sound_dir: (-0.160527, -0.016983, -0.986885), dot: 0.965237, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.598514, 1.562506, 45.50723), cam_fwd: (0.102489, -0.0, -0.994734), to_sound_dir: (-0.093357, 0.011483, -0.995567), dot: 0.980756, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.598514, 1.562506, 45.50723), cam_fwd: (0.102489, -0.0, -0.994734), to_sound_dir: (-0.093357, 0.011483, -0.995567), dot: 0.980756, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.59874, 1.562506, 45.50943), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.160178, -0.016961, -0.986942), dot: 0.965329, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.59874, 1.562506, 45.50943), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.093348, 0.011483, -0.995567), dot: 0.980758, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.59874, 1.562506, 45.50943), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.093348, 0.011483, -0.995567), dot: 0.980758, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.598739, 1.562506, 45.50941), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.16018, -0.016961, -0.986942), dot: 0.965329, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.598739, 1.562506, 45.50941), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.093348, 0.011483, -0.995567), dot: 0.980758, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.598739, 1.562506, 45.50941), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.093348, 0.011483, -0.995567), dot: 0.980758, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.598739, 1.562506, 45.50941), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.12188, -0.045962, -0.99148), dot: 0.973768, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.598739, 1.562506, 45.50941), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.031126, -0.047523, -0.998385), dot: 0.989938, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.598739, 1.562506, 45.50941), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.031126, -0.047523, -0.998385), dot: 0.989938, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.59874, 1.562506, 45.50942), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.121879, -0.045962, -0.99148), dot: 0.973768, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.59874, 1.562506, 45.50942), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.031126, -0.047523, -0.998385), dot: 0.989938, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.59874, 1.562506, 45.50942), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.031126, -0.047523, -0.998385), dot: 0.989938, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.657442, 1.562506, 45.61929), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.080544, -0.04321, -0.995814), dot: 0.982315, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.657442, 1.562506, 45.61929), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.029245, -0.047368, -0.998449), dot: 0.990194, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.657442, 1.562506, 45.61929), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.029245, -0.047368, -0.998449), dot: 0.990194, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.680967, 1.562506, 45.82076), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.028359, -0.047082, -0.998488), dot: 0.990324, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.680967, 1.562506, 45.82076), cam_fwd: (0.102488, -0.0, -0.994734), to_sound_dir: (-0.028359, -0.047082, -0.998488), dot: 0.990324, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Panting, cam_pos: (-8.034444, 1.562506, 45.92705), cam_fwd: (0.422383, -0.0, -0.906417), to_sound_dir: (-0.497121, -0.768583, -0.402679), dot: 0.155019, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Panting, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Panting, cam_pos: (-8.551308, 1.562506, 45.78555), cam_fwd: (0.80232, -0.0, -0.596894), to_sound_dir: (-0.278433, -0.879178, -0.386679), dot: 0.007414, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-8.551308, 1.562506, 45.78555), cam_fwd: (0.80232, -0.0, -0.596894), to_sound_dir: (-0.278433, -0.879178, -0.386679), dot: 0.007414, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Panting, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-8.951064, 1.562506, 45.32338), cam_fwd: (0.998025, -0.0, -0.062826), to_sound_dir: (-0.046588, -0.945656, -0.321813), dot: -0.026278, muffle: 0.052555
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-8.951064, 1.562506, 45.32338), cam_fwd: (0.998025, -0.0, -0.062826), to_sound_dir: (-0.046588, -0.945656, -0.321813), dot: -0.026278, muffle: 0.052555
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.052555, combined_cutoff: 19054.007411, filter_hz: 18888.462891
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.052555, combined_cutoff: 19054.007411, filter_hz: 19072.779297
+[SoundDebug] SFX: anchalee_ducking_start, cam_pos: (-9.045485, 1.561353, 44.91741), cam_fwd: (0.951597, 0.002306, 0.307338), to_sound_dir: (0.103673, -0.945471, -0.308766), dot: 0.001579, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-9.045485, 1.561353, 44.91741), cam_fwd: (0.951597, 0.002306, 0.307338), to_sound_dir: (0.103673, -0.945471, -0.308766), dot: 0.001579, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_start, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 19932.509766
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 19932.509766
+[SoundDebug] SFX: anchalee_ducking_start, cam_pos: (-8.702716, 1.562217, 45.06492), cam_fwd: (0.949217, 0.002306, 0.314612), to_sound_dir: (-0.100841, -0.916994, -0.385945), dot: -0.219257, muffle: 0.438515
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-8.702716, 1.562217, 45.06492), cam_fwd: (0.949217, 0.002306, 0.314612), to_sound_dir: (-0.100841, -0.916994, -0.385945), dot: -0.219257, muffle: 0.438515
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-8.702716, 1.562217, 45.06492), cam_fwd: (0.949217, 0.002306, 0.314612), to_sound_dir: (-0.100841, -0.916994, -0.385945), dot: -0.219257, muffle: 0.438515
+[SpatialAudioDebug] SFX: anchalee_ducking_start, muffle_factor: 0.438515, combined_cutoff: 12106.733084, filter_hz: 12106.733398
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.438515, combined_cutoff: 12106.733084, filter_hz: 13809.763672
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.438515, combined_cutoff: 12106.733084, filter_hz: 12765.248047
+[SoundDebug] SFX: anchalee_ducking_start, cam_pos: (-8.620473, 1.562418, 45.09491), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (-0.147232, -0.905328, -0.398375), dot: -0.267177, muffle: 0.534353
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-8.620473, 1.562418, 45.09491), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (-0.147232, -0.905328, -0.398375), dot: -0.267177, muffle: 0.534353
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.620473, 1.562418, 45.09491), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.969295, -0.07171, 0.235214), dot: 0.993907, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.620473, 1.562418, 45.09491), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.886034, -0.057314, 0.460063), dot: 0.985649, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.620473, 1.562418, 45.09491), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.886034, -0.057314, 0.460063), dot: 0.985649, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_start, muffle_factor: 0.534353, combined_cutoff: 10381.644607, filter_hz: 10662.988281
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.534353, combined_cutoff: 10381.644607, filter_hz: 10384.285156
+[SoundDebug] SFX: anchalee_ducking_start, cam_pos: (-8.635715, 1.562381, 45.08997), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (-0.13873, -0.907505, -0.396469), dot: -0.258512, muffle: 0.517023
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-8.635715, 1.562381, 45.08997), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (-0.13873, -0.907505, -0.396469), dot: -0.258512, muffle: 0.517023
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.635715, 1.562381, 45.08997), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.969164, -0.070954, 0.23598), dot: 0.994026, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.635715, 1.562381, 45.08997), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.88623, -0.057168, 0.459704), dot: 0.985722, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.635715, 1.562381, 45.08997), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.88623, -0.057168, 0.459704), dot: 0.985722, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_start, muffle_factor: 0.517023, combined_cutoff: 10693.583369, filter_hz: 10612.052734
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.517023, combined_cutoff: 10693.583369, filter_hz: 10596.237305
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-8.631695, 1.562391, 45.09129), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (-0.140977, -0.906933, -0.396986), dot: -0.260806, muffle: 0.521612
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.631695, 1.562391, 45.09129), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.969201, -0.071153, 0.235767), dot: 0.993994, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.631695, 1.562391, 45.09129), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.88618, -0.057207, 0.459796), dot: 0.985703, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.631695, 1.562391, 45.09129), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.88618, -0.057207, 0.459796), dot: 0.985703, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.631695, 1.562391, 45.09129), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.989686, 0.006565, 0.143101), dot: 0.984464, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.631695, 1.562391, 45.09129), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.942678, 0.0767, 0.32477), dot: 0.997160, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.631695, 1.562391, 45.09129), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.942678, 0.0767, 0.32477), dot: 0.997160, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.521612, combined_cutoff: 10610.992789, filter_hz: 10611.563477
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-8.632049, 1.56239, 45.09118), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (-0.14078, -0.906983, -0.396941), dot: -0.260604, muffle: 0.521209
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.632049, 1.56239, 45.09118), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.969198, -0.071135, 0.235785), dot: 0.993997, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.632049, 1.56239, 45.09118), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.886184, -0.057203, 0.459788), dot: 0.985705, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.632049, 1.56239, 45.09118), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.886184, -0.057203, 0.459788), dot: 0.985705, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.632049, 1.56239, 45.09118), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.989681, 0.006564, 0.14314), dot: 0.984471, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.632049, 1.56239, 45.09118), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.942678, 0.076699, 0.32477), dot: 0.997160, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.632049, 1.56239, 45.09118), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.942678, 0.076699, 0.32477), dot: 0.997160, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.521209, combined_cutoff: 10618.246555, filter_hz: 10617.889648
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-8.632004, 1.56239, 45.09119), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (-0.140805, -0.906978, -0.396944), dot: -0.260629, muffle: 0.521258
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.632004, 1.56239, 45.09119), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.886183, -0.057204, 0.45979), dot: 0.985704, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.632004, 1.56239, 45.09119), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.886183, -0.057204, 0.45979), dot: 0.985704, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.632004, 1.56239, 45.09119), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.989681, 0.006564, 0.14314), dot: 0.984471, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.632004, 1.56239, 45.09119), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.942678, 0.0767, 0.32477), dot: 0.997160, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.632004, 1.56239, 45.09119), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.942678, 0.0767, 0.32477), dot: 0.997160, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.521258, combined_cutoff: 10617.354989, filter_hz: 10617.372070
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.63201, 1.56239, 45.09119), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.989681, 0.006564, 0.143139), dot: 0.984471, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.63201, 1.56239, 45.09119), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.942678, 0.0767, 0.32477), dot: 0.997160, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.63201, 1.56239, 45.09119), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.942678, 0.0767, 0.32477), dot: 0.997160, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.63201, 1.56239, 45.09119), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.997614, -0.050004, 0.047602), dot: 0.961814, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.63201, 1.56239, 45.09119), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.993717, -0.053283, 0.09842), dot: 0.974096, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.63201, 1.56239, 45.09119), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.993717, -0.053283, 0.09842), dot: 0.974096, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.63201, 1.56239, 45.09118), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.942678, 0.0767, 0.32477), dot: 0.997160, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.63201, 1.56239, 45.09118), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.942678, 0.0767, 0.32477), dot: 0.997160, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.63201, 1.56239, 45.09118), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.997614, -0.050004, 0.047604), dot: 0.961814, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.63201, 1.56239, 45.09118), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.993717, -0.053283, 0.098421), dot: 0.974096, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.63201, 1.56239, 45.09118), cam_fwd: (0.949218, 0.002306, 0.314611), to_sound_dir: (0.993717, -0.053283, 0.098421), dot: 0.974096, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.626848, 1.56239, 45.10764), cam_fwd: (0.956528, 0.002306, 0.29163), to_sound_dir: (0.998027, -0.050183, 0.037724), dot: 0.965527, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.626848, 1.56239, 45.10764), cam_fwd: (0.956528, 0.002306, 0.29163), to_sound_dir: (0.993983, -0.053345, 0.095668), dot: 0.978549, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.626848, 1.56239, 45.10764), cam_fwd: (0.956528, 0.002306, 0.29163), to_sound_dir: (0.993983, -0.053345, 0.095668), dot: 0.978549, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.610433, 1.56239, 45.15265), cam_fwd: (0.973913, 0.002306, 0.226908), to_sound_dir: (0.998659, -0.050724, 0.010349), dot: 0.974839, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.610433, 1.56239, 45.15265), cam_fwd: (0.973913, 0.002306, 0.226908), to_sound_dir: (0.994669, -0.053536, 0.088136), dot: 0.988596, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.610433, 1.56239, 45.15265), cam_fwd: (0.973913, 0.002306, 0.226908), to_sound_dir: (0.994669, -0.053536, 0.088136), dot: 0.988596, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.610433, 1.56239, 45.15265), cam_fwd: (0.973913, 0.002306, 0.226908), to_sound_dir: (0.996968, -0.054197, -0.055832), dot: 0.958167, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.610433, 1.56239, 45.15265), cam_fwd: (0.973913, 0.002306, 0.226908), to_sound_dir: (0.99797, -0.055285, -0.031624), dot: 0.964633, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.610433, 1.56239, 45.15265), cam_fwd: (0.973913, 0.002306, 0.226908), to_sound_dir: (0.99797, -0.055285, -0.031624), dot: 0.964633, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.60783, 1.56239, 45.15902), cam_fwd: (0.976052, 0.002306, 0.217525), to_sound_dir: (0.996736, -0.05427, -0.059773), dot: 0.959739, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.60783, 1.56239, 45.15902), cam_fwd: (0.976052, 0.002306, 0.217525), to_sound_dir: (0.997932, -0.055308, -0.032756), dot: 0.966781, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.60783, 1.56239, 45.15902), cam_fwd: (0.976052, 0.002306, 0.217525), to_sound_dir: (0.997932, -0.055308, -0.032756), dot: 0.966781, muffle: 0.000000
+[SoundDebug] SFX: vo_anchalee_Panting, cam_pos: (-8.60783, 1.56239, 45.15902), cam_fwd: (0.976052, 0.002306, 0.217525), to_sound_dir: (-0.115149, -0.888789, -0.443616), dot: -0.210938, muffle: 0.421876
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Panting, muffle_factor: 0.421876, combined_cutoff: 12406.227469, filter_hz: 12382.118164
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.608044, 1.56239, 45.1585), cam_fwd: (0.975883, 0.002306, 0.218283), to_sound_dir: (0.996755, -0.054264, -0.059454), dot: 0.959613, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.608044, 1.56239, 45.1585), cam_fwd: (0.975883, 0.002306, 0.218283), to_sound_dir: (0.997935, -0.055306, -0.032664), dot: 0.966610, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.608044, 1.56239, 45.1585), cam_fwd: (0.975883, 0.002306, 0.218283), to_sound_dir: (0.997935, -0.055306, -0.032664), dot: 0.966610, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-8.608044, 1.56239, 45.1585), cam_fwd: (0.975883, 0.002306, 0.218283), to_sound_dir: (-0.113278, -0.887385, -0.446896), dot: -0.210142, muffle: 0.420284
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.420284, combined_cutoff: 12434.882045, filter_hz: 12435.054688
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.608041, 1.56239, 45.15851), cam_fwd: (0.975884, 0.002306, 0.218276), to_sound_dir: (0.997935, -0.055306, -0.032666), dot: 0.966612, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.608041, 1.56239, 45.15851), cam_fwd: (0.975884, 0.002306, 0.218276), to_sound_dir: (0.997935, -0.055306, -0.032666), dot: 0.966612, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-8.608041, 1.56239, 45.15851), cam_fwd: (0.975884, 0.002306, 0.218276), to_sound_dir: (-0.113279, -0.887383, -0.446899), dot: -0.210141, muffle: 0.420282
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.420282, combined_cutoff: 12434.921741, filter_hz: 12434.914063
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-8.658648, 1.562506, 45.08606), cam_fwd: (0.972144, 0.0, 0.234383), to_sound_dir: (-0.084869, -0.903465, -0.420177), dot: -0.180987, muffle: 0.361974
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.361974, combined_cutoff: 13484.474957, filter_hz: 13591.585938
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-8.604203, 1.562506, 45.09814), cam_fwd: (0.972144, 0.0, 0.234383), to_sound_dir: (-0.115664, -0.897975, -0.424574), dot: -0.211955, muffle: 0.423910
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.423910, combined_cutoff: 12369.623363, filter_hz: 12484.949219
+[SoundDebug] SFX: vo_anchalee_Panting, cam_pos: (-8.594, 1.562506, 45.21893), cam_fwd: (0.999481, 0.0, 0.032228), to_sound_dir: (-0.049216, -0.855917, -0.514767), dot: -0.065780, muffle: 0.131560
+[SpatialAudioDebug] SFX: vo_anchalee_Panting, muffle_factor: 0.131560, combined_cutoff: 17631.911993, filter_hz: 15743.675781
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-8.794958, 1.562506, 45.21403), cam_fwd: (0.999674, 0.0, 0.025533), to_sound_dir: (0.114428, -0.835757, -0.537044), dot: 0.100678, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-8.684691, 1.562856, 45.27236), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.056388, -0.825044, -0.562248), dot: 0.042068, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.55094, 1.562813, 45.28041), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.99122, -0.028515, -0.129109), dot: 0.987552, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.55094, 1.562813, 45.28041), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.998696, -0.012104, 0.049587), dot: 0.999650, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.543209, 1.562811, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.9911, -0.028651, -0.129996), dot: 0.987409, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.543209, 1.562811, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.998697, -0.01212, 0.04958), dot: 0.999650, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.542938, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.991096, -0.028655, -0.130025), dot: 0.987404, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542938, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.998697, -0.012121, 0.049581), dot: 0.999650, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.542938, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.987149, -0.028497, -0.15724), dot: 0.982753, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542938, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.999006, 0.011658, -0.043033), dot: 0.997552, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542938, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.999006, 0.011658, -0.043033), dot: 0.997552, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542938, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.998697, -0.012121, 0.049581), dot: 0.999650, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.542938, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.987149, -0.028497, -0.15724), dot: 0.982753, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542938, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.999006, 0.011658, -0.043033), dot: 0.997552, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542938, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.999006, 0.011658, -0.043033), dot: 0.997552, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.542938, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.98715, -0.028497, -0.157237), dot: 0.982754, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542938, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.999006, 0.011658, -0.043033), dot: 0.997552, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542938, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.999006, 0.011658, -0.043033), dot: 0.997552, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.542938, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.989558, -0.046346, -0.136481), dot: 0.985705, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542938, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.998873, -0.038675, 0.02751), dot: 0.999263, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542938, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.998873, -0.038675, 0.02751), dot: 0.999263, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542939, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.999006, 0.011658, -0.043033), dot: 0.997552, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542939, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.999006, 0.011658, -0.043033), dot: 0.997552, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.542939, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.989558, -0.046346, -0.136481), dot: 0.985705, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542939, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.998873, -0.038675, 0.02751), dot: 0.999263, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542939, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.998873, -0.038675, 0.02751), dot: 0.999263, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.542942, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.989558, -0.046346, -0.136483), dot: 0.985704, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542942, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.998873, -0.038675, 0.027509), dot: 0.999263, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542942, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.998873, -0.038675, 0.027509), dot: 0.999263, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.542942, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.986688, -0.036909, -0.158383), dot: 0.982265, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542942, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.999984, 0.004778, -0.003071), dot: 0.999567, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542942, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.999984, 0.004778, -0.003071), dot: 0.999567, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542943, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025908), to_sound_dir: (0.998873, -0.038675, 0.027509), dot: 0.999263, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542943, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025908), to_sound_dir: (0.998873, -0.038675, 0.027509), dot: 0.999263, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.542943, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025908), to_sound_dir: (0.986688, -0.036909, -0.158383), dot: 0.982265, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542943, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025908), to_sound_dir: (0.999984, 0.004778, -0.003071), dot: 0.999567, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542943, 1.56281, 45.28084), cam_fwd: (0.999664, -0.000321, 0.025908), to_sound_dir: (0.999984, 0.004778, -0.003071), dot: 0.999567, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542945, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.998873, -0.038675, 0.02751), dot: 0.999263, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542945, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.998873, -0.038675, 0.02751), dot: 0.999263, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.542945, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.986688, -0.036909, -0.15838), dot: 0.982266, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542945, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.999984, 0.004778, -0.00307), dot: 0.999567, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542945, 1.56281, 45.28083), cam_fwd: (0.999664, -0.000321, 0.025907), to_sound_dir: (0.999984, 0.004778, -0.00307), dot: 0.999567, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.657727, 1.502927, 44.70081), cam_fwd: (0.709265, 0.0, 0.704942), to_sound_dir: (0.995104, 0.015054, 0.097684), dot: 0.774654, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.657727, 1.502927, 44.70081), cam_fwd: (0.709265, 0.0, 0.704942), to_sound_dir: (0.995104, 0.015054, 0.097684), dot: 0.774654, muffle: 0.000000
+[SoundDebug] SFX: leon_quickturn, cam_pos: (-8.657727, 1.502927, 44.70081), cam_fwd: (0.709265, 0.0, 0.704942), to_sound_dir: (0.411474, -0.905132, 0.106885), dot: 0.367192, muffle: 0.000000
+[SoundDebug] SFX: vo_anchalee_Panting, cam_pos: (-8.657727, 1.502927, 44.70081), cam_fwd: (0.709265, 0.0, 0.704942), to_sound_dir: (0.120385, -0.935894, -0.331075), dot: -0.148004, muffle: 0.296007
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: leon_quickturn, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Panting, muffle_factor: 0.296007, combined_cutoff: 14671.866894, filter_hz: 16816.337891
+[SoundDebug] SFX: watergun_hit, cam_pos: (-6.859137, 1.503716, 44.03755), cam_fwd: (-0.842971, 0.0, 0.537958), to_sound_dir: (0.954511, 0.020849, 0.297447), dot: -0.644611, muffle: 1.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-6.859137, 1.503716, 44.03755), cam_fwd: (-0.842971, 0.0, 0.537958), to_sound_dir: (0.954511, 0.020849, 0.297447), dot: -0.644611, muffle: 1.000000
+[SoundDebug] SFX: leon_quickturn, cam_pos: (-6.859137, 1.503716, 44.03755), cam_fwd: (-0.842971, 0.0, 0.537958), to_sound_dir: (-0.522119, -0.749639, 0.406735), dot: 0.658937, muffle: 0.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-6.859137, 1.503716, 44.03755), cam_fwd: (-0.842971, 0.0, 0.537958), to_sound_dir: (-0.634305, -0.773068, 0.004855), dot: 0.537313, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 1.000000, combined_cutoff: 2000.000000, filter_hz: 4937.900879
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 1.000000, combined_cutoff: 2000.000000, filter_hz: 4937.900879
+[SpatialAudioDebug] SFX: leon_quickturn, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 19696.697266
+[SoundDebug] SFX: leon_quickturn, cam_pos: (-6.65817, 1.503716, 44.55782), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.628276, -0.761444, 0.159603), dot: 0.623930, muffle: 0.000000
+[SoundDebug] SFX: anchalee_ducking_start, cam_pos: (-6.65817, 1.503716, 44.55782), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.575275, -0.774978, -0.261663), dot: 0.581861, muffle: 0.000000
+[SpatialAudioDebug] SFX: leon_quickturn, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_start, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: leon_quickturn, cam_pos: (-7.199944, 1.503716, 44.49921), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.421203, -0.880482, 0.217577), dot: 0.415424, muffle: 0.000000
+[SoundDebug] SFX: anchalee_ducking_start, cam_pos: (-7.199944, 1.503716, 44.49921), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.343541, -0.899867, -0.268737), dot: 0.350388, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.199944, 1.503716, 44.49921), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.343541, -0.899867, -0.268737), dot: 0.350388, muffle: 0.000000
+[SpatialAudioDebug] SFX: leon_quickturn, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_start, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: leon_quickturn, cam_pos: (-7.348578, 1.503716, 44.49), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.348282, -0.908755, 0.229923), dot: 0.342208, muffle: 0.000000
+[SoundDebug] SFX: anchalee_ducking_start, cam_pos: (-7.348578, 1.503716, 44.49), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.261996, -0.926256, -0.270938), dot: 0.268927, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.348578, 1.503716, 44.49), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.261996, -0.926256, -0.270938), dot: 0.268927, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.348578, 1.503716, 44.49), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.94616, -0.226889, 0.230875), dot: 0.939861, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.348578, 1.503716, 44.49), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999905, 0.010799, -0.008615), dot: 0.999792, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.348578, 1.503716, 44.49), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999905, 0.010799, -0.008615), dot: 0.999792, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: leon_quickturn, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_start, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: leon_quickturn, cam_pos: (-7.354505, 1.503716, 44.48973), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.345235, -0.90981, 0.230344), dot: 0.339152, muffle: 0.000000
+[SoundDebug] SFX: anchalee_ducking_start, cam_pos: (-7.354505, 1.503716, 44.48973), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.2586, -0.927179, -0.271045), dot: 0.265536, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.354505, 1.503716, 44.48973), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.945719, -0.227704, 0.231875), dot: 0.939395, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.354505, 1.503716, 44.48973), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999905, 0.010804, -0.008597), dot: 0.999792, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.354505, 1.503716, 44.48973), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999905, 0.010804, -0.008597), dot: 0.999792, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: leon_quickturn, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_start, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.351724, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.945921, -0.22732, 0.231427), dot: 0.939608, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351724, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999905, 0.010802, -0.008602), dot: 0.999792, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351724, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999905, 0.010802, -0.008602), dot: 0.999792, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.351724, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.991, -0.024665, 0.131567), dot: 0.987259, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351724, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.99891, 0.02098, -0.041691), dot: 0.999655, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351724, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.99891, 0.02098, -0.041691), dot: 0.999655, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351886, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999905, 0.010802, -0.008602), dot: 0.999792, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351886, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999905, 0.010802, -0.008602), dot: 0.999792, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.351886, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.990998, -0.024668, 0.131583), dot: 0.987257, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351886, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.99891, 0.02098, -0.041691), dot: 0.999655, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351886, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.99891, 0.02098, -0.041691), dot: 0.999655, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351862, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.99891, 0.02098, -0.041691), dot: 0.999655, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351862, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.99891, 0.02098, -0.041691), dot: 0.999655, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.351862, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.991001, -0.024634, 0.131565), dot: 0.987260, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351862, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999519, 0.029447, -0.009707), dot: 0.999435, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351862, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999519, 0.029447, -0.009707), dot: 0.999435, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351866, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.99891, 0.02098, -0.041691), dot: 0.999655, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351866, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.99891, 0.02098, -0.041691), dot: 0.999655, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.351866, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.991001, -0.024634, 0.131565), dot: 0.987260, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351866, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999519, 0.029447, -0.009707), dot: 0.999435, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351866, 1.503716, 44.48982), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999519, 0.029447, -0.009707), dot: 0.999435, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.351866, 1.503716, 44.48981), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.991001, -0.024634, 0.131568), dot: 0.987260, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351866, 1.503716, 44.48981), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999519, 0.029447, -0.009707), dot: 0.999435, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351866, 1.503716, 44.48981), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999519, 0.029447, -0.009707), dot: 0.999435, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.351866, 1.503716, 44.48981), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.990992, -0.02463, 0.131637), dot: 0.987249, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.351866, 1.503716, 44.48981), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999722, -0.022982, 0.005267), dot: 0.999250, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.352048, 1.503716, 44.49688), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999513, 0.029447, -0.010296), dot: 0.999445, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.352048, 1.503716, 44.49688), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999513, 0.029447, -0.010296), dot: 0.999445, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.352048, 1.503716, 44.49688), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.991562, -0.024647, 0.127269), dot: 0.987932, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.352048, 1.503716, 44.49688), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.999725, -0.022982, 0.004678), dot: 0.999268, muffle: 0.000000
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-7.352048, 1.503716, 44.49688), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.259701, -0.9257, -0.275017), dot: 0.266739, muffle: 0.000000
+[SoundDebug] SFX: leon_quickturn, cam_pos: (-7.352048, 1.503716, 44.49688), cam_fwd: (-0.999664, 0.0, -0.025908), to_sound_dir: (-0.346824, -0.910225, 0.226284), dot: 0.340845, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: leon_quickturn, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.179357, 1.503716, 45.24372), cam_fwd: (-0.63842, 0.0, -0.769688), to_sound_dir: (-0.954296, -0.021373, -0.298099), dot: 0.838684, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-7.179357, 1.503716, 45.24372), cam_fwd: (-0.63842, 0.0, -0.769688), to_sound_dir: (-0.998138, -0.02262, -0.056648), dot: 0.680832, muffle: 0.000000
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-7.179357, 1.503716, 45.24372), cam_fwd: (-0.63842, 0.0, -0.769688), to_sound_dir: (-0.295836, -0.748064, -0.594038), dot: 0.646092, muffle: 0.000000
+[SoundDebug] SFX: leon_quickturn, cam_pos: (-7.179357, 1.503716, 45.24372), cam_fwd: (-0.63842, 0.0, -0.769688), to_sound_dir: (-0.43208, -0.879009, -0.20162), dot: 0.431033, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: leon_quickturn, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-9.191581, 1.503716, 45.57448), cam_fwd: (0.969094, 0.0, -0.246691), to_sound_dir: (0.552309, -0.585298, -0.593617), dot: 0.681679, muffle: 0.000000
+[SoundDebug] SFX: leon_quickturn, cam_pos: (-9.191581, 1.503716, 45.57448), cam_fwd: (0.969094, 0.0, -0.246691), to_sound_dir: (0.588847, -0.73951, -0.326165), dot: 0.651110, muffle: 0.000000
+[SpatialAudioDebug] SFX: leon_quickturn, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-9.103965, 1.503716, 45.21628), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.573184, -0.647425, -0.502296), dot: 0.559979, muffle: 0.000000
+[SoundDebug] SFX: leon_quickturn, cam_pos: (-9.103965, 1.503716, 45.21628), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.586504, -0.792368, -0.16783), dot: 0.581959, muffle: 0.000000
+[SpatialAudioDebug] SFX: leon_quickturn, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-8.709829, 1.503716, 45.26982), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.435504, -0.699, -0.567217), dot: 0.420662, muffle: 0.000000
+[SoundDebug] SFX: leon_quickturn, cam_pos: (-8.709829, 1.503716, 45.26982), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.42818, -0.877516, -0.215935), dot: 0.422442, muffle: 0.000000
+[SpatialAudioDebug] SFX: leon_quickturn, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-8.550661, 1.503716, 45.28032), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.371527, -0.718463, -0.58803), dot: 0.356168, muffle: 0.000000
+[SoundDebug] SFX: leon_quickturn, cam_pos: (-8.550661, 1.503716, 45.28032), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.350552, -0.90798, -0.229532), dot: 0.344488, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.550661, 1.503716, 45.28032), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.973355, -0.189981, -0.128403), dot: 0.969702, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.550661, 1.503716, 45.28032), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.997759, 0.011391, 0.065937), dot: 0.999132, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.550661, 1.503716, 45.28032), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.997759, 0.011391, 0.065937), dot: 0.999132, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: leon_quickturn, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_ducking_getup, cam_pos: (-8.540366, 1.503716, 45.2809), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.367212, -0.719653, -0.589283), dot: 0.351822, muffle: 0.000000
+[SoundDebug] SFX: leon_quickturn, cam_pos: (-8.540366, 1.503716, 45.2809), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.345261, -0.909803, -0.230333), dot: 0.339178, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.540366, 1.503716, 45.2809), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.972967, -0.191171, -0.129575), dot: 0.969283, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.540366, 1.503716, 45.2809), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.997757, 0.011412, 0.065954), dot: 0.999131, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.540366, 1.503716, 45.2809), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.997757, 0.011412, 0.065954), dot: 0.999131, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.540366, 1.503716, 45.2809), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.990965, -0.024314, -0.131901), dot: 0.987215, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.540366, 1.503716, 45.2809), cam_fwd: (0.999664, 0.0, 0.025908), to_sound_dir: (0.999267, 0.030755, 0.022805), dot: 0.999522, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: leon_quickturn, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_ducking_getup, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.544122, 1.503716, 45.2808), cam_fwd: (0.999664, 0.0, 0.025907), to_sound_dir: (0.973101, -0.190733, -0.129214), dot: 0.969426, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.544122, 1.503716, 45.2808), cam_fwd: (0.999664, 0.0, 0.025907), to_sound_dir: (0.997759, 0.011404, 0.065928), dot: 0.999132, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.544122, 1.503716, 45.2808), cam_fwd: (0.999664, 0.0, 0.025907), to_sound_dir: (0.997759, 0.011404, 0.065928), dot: 0.999132, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.544122, 1.503716, 45.2808), cam_fwd: (0.999664, 0.0, 0.025907), to_sound_dir: (0.991015, -0.024257, -0.131529), dot: 0.987275, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.544122, 1.503716, 45.2808), cam_fwd: (0.999664, 0.0, 0.025907), to_sound_dir: (0.999267, 0.030735, 0.022808), dot: 0.999523, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542902, 1.503716, 45.28083), cam_fwd: (0.999664, 0.0, 0.025907), to_sound_dir: (0.997759, 0.011407, 0.065937), dot: 0.999132, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542902, 1.503716, 45.28083), cam_fwd: (0.999664, 0.0, 0.025907), to_sound_dir: (0.997759, 0.011407, 0.065937), dot: 0.999132, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.542902, 1.503716, 45.28083), cam_fwd: (0.999664, 0.0, 0.025907), to_sound_dir: (0.990999, -0.024276, -0.131648), dot: 0.987256, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.542902, 1.503716, 45.28083), cam_fwd: (0.999664, 0.0, 0.025907), to_sound_dir: (0.999267, 0.030742, 0.022808), dot: 0.999523, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545174, 1.503716, 45.26054), cam_fwd: (0.999664, 0.0, 0.025907), to_sound_dir: (0.999179, 0.030726, 0.026403), dot: 0.999528, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-8.678239, 1.489205, 45.26062), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.42405, -0.703093, -0.570825), dot: 0.342746, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-8.556657, 1.498942, 45.27087), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.372883, -0.719808, -0.585521), dot: 0.289846, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.556657, 1.498942, 45.27087), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.991863, -0.003303, -0.12727), dot: 0.982334, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.556657, 1.498942, 45.27087), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.998662, 0.007736, 0.051126), dot: 0.997365, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.556657, 1.498942, 45.27087), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.998662, 0.007736, 0.051126), dot: 0.997365, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.545156, 1.499862, 45.27165), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.991679, -0.00391, -0.128674), dot: 0.982045, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545156, 1.499862, 45.27165), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.998665, 0.007588, 0.051093), dot: 0.997355, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545156, 1.499862, 45.27165), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.998665, 0.007588, 0.051093), dot: 0.997355, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.545769, 1.499813, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.991688, -0.003878, -0.128605), dot: 0.982059, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545769, 1.499813, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.998665, 0.007596, 0.051093), dot: 0.997356, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545769, 1.499813, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.998665, 0.007596, 0.051093), dot: 0.997356, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.545769, 1.499813, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.991603, -0.004089, -0.129257), dot: 0.981930, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545769, 1.499813, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.999297, 0.003983, 0.037266), dot: 0.997126, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545769, 1.499813, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.999297, 0.003983, 0.037266), dot: 0.997126, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545758, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.998665, 0.007596, 0.051093), dot: 0.997356, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545758, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.998665, 0.007596, 0.051093), dot: 0.997356, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.545758, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.991602, -0.00409, -0.129258), dot: 0.981930, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545758, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.999297, 0.003983, 0.037266), dot: 0.997126, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545758, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.999297, 0.003983, 0.037266), dot: 0.997126, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.998665, 0.007596, 0.051093), dot: 0.997356, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.998665, 0.007596, 0.051093), dot: 0.997356, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.991602, -0.00409, -0.12926), dot: 0.981929, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.999297, 0.003983, 0.037265), dot: 0.997126, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.999297, 0.003983, 0.037265), dot: 0.997126, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.999297, 0.003983, 0.037265), dot: 0.997126, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.999297, 0.003983, 0.037265), dot: 0.997126, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.984978, 0.078026, -0.154048), dot: 0.980844, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.986893, 0.160903, -0.012367), dot: 0.995211, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.545759, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.984978, 0.078026, -0.154046), dot: 0.980844, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545759, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.986893, 0.160903, -0.012367), dot: 0.995211, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.984978, 0.078026, -0.154048), dot: 0.980844, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.986893, 0.160903, -0.012367), dot: 0.995211, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.986893, 0.160903, -0.012367), dot: 0.995211, muffle: 0.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.98929, -0.014257, -0.145263), dot: 0.978155, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.999942, 0.001167, -0.010734), dot: 0.995557, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.545761, 1.499814, 45.27162), cam_fwd: (0.995967, 0.079616, 0.041373), to_sound_dir: (0.999942, 0.001167, -0.010734), dot: 0.995557, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-8.544291, 1.507072, 45.26258), cam_fwd: (0.999975, -0.005595, 0.004389), to_sound_dir: (0.99, -0.018854, -0.139804), dot: 0.989467, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.544291, 1.507072, 45.26258), cam_fwd: (0.999975, -0.005595, 0.004389), to_sound_dir: (0.999958, -0.000124, -0.009128), dot: 0.999894, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.544291, 1.507072, 45.26258), cam_fwd: (0.999975, -0.005595, 0.004389), to_sound_dir: (0.999958, -0.000124, -0.009128), dot: 0.999894, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.556963, 1.513991, 45.50832), cam_fwd: (0.871735, -0.017127, -0.489677), to_sound_dir: (0.998611, -0.00135, -0.052667), dot: 0.896338, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.556963, 1.513991, 45.50832), cam_fwd: (0.871735, -0.017127, -0.489677), to_sound_dir: (0.998611, -0.00135, -0.052667), dot: 0.896338, muffle: 0.000000
+[SoundDebug] SFX: vo_anchalee_Panting, cam_pos: (-8.556963, 1.513991, 45.50832), cam_fwd: (0.871735, -0.017127, -0.489677), to_sound_dir: (0.318774, -0.67882, -0.661503), dot: 0.613436, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Panting, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.196439, 1.509889, 45.86068), cam_fwd: (0.438418, -0.01029, -0.898713), to_sound_dir: (0.992498, -0.000662, -0.122262), dot: 0.545014, muffle: 0.000000
+[SoundDebug] SFX: watergun_hit, cam_pos: (-8.196439, 1.509889, 45.86068), cam_fwd: (0.438418, -0.01029, -0.898713), to_sound_dir: (0.992498, -0.000662, -0.122262), dot: 0.545014, muffle: 0.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-8.196439, 1.509889, 45.86068), cam_fwd: (0.438418, -0.01029, -0.898713), to_sound_dir: (0.031989, -0.626517, -0.778751), dot: 0.720345, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: watergun_hit, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-7.720833, 1.506188, 45.93678), cam_fwd: (-0.026732, -0.004121, -0.999634), to_sound_dir: (-0.356883, -0.589933, -0.724302), dot: 0.736009, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-7.372268, 1.504617, 45.81341), cam_fwd: (-0.379107, 0.000902, -0.925352), to_sound_dir: (-0.617839, -0.584215, -0.526277), dot: 0.720692, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.372268, 1.504617, 45.81341), cam_fwd: (-0.379107, 0.000902, -0.925352), to_sound_dir: (-0.617839, -0.584215, -0.526277), dot: 0.720692, muffle: 0.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.366552, 1.51097, 45.81505), cam_fwd: (-0.367938, 0.007256, -0.929822), to_sound_dir: (-0.67045, -0.605003, -0.429498), dot: 0.641651, muffle: 0.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.366552, 1.51097, 45.81505), cam_fwd: (-0.367938, 0.007256, -0.929822), to_sound_dir: (-0.67045, -0.605003, -0.429498), dot: 0.641651, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.263593, 1.500906, 45.55492), cam_fwd: (-0.357569, 0.008392, -0.933849), to_sound_dir: (-0.724642, -0.609446, -0.321667), dot: 0.554384, muffle: 0.000000
+[SoundDebug] SFX: vo_anchalee_Exhausted, cam_pos: (-7.263593, 1.500906, 45.55492), cam_fwd: (-0.357569, 0.008392, -0.933849), to_sound_dir: (-0.724642, -0.609446, -0.321667), dot: 0.554384, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SpatialAudioDebug] SFX: vo_anchalee_Exhausted, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.349782, 1.503169, 45.29915), cam_fwd: (-0.357569, 0.008392, -0.933849), to_sound_dir: (-0.727078, -0.654936, -0.205953), dot: 0.446813, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: anchalee_footstep, cam_pos: (-7.354339, 1.50329, 45.28542), cam_fwd: (-0.357569, 0.008392, -0.933849), to_sound_dir: (-0.727001, -0.656714, -0.200492), dot: 0.441671, muffle: 0.000000
+[SpatialAudioDebug] SFX: anchalee_footstep, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000
+[SoundDebug] SFX: watergun_pistol_shoot, cam_pos: (-7.357777, 1.503296, 45.28959), cam_fwd: (-0.350061, 0.008392, -0.936689), to_sound_dir: (-0.356323, -0.02553, -0.934014), dot: 0.999401, muffle: 0.000000
+[SpatialAudioDebug] SFX: watergun_pistol_shoot, muffle_factor: 0.000000, combined_cutoff: 20000.000000, filter_hz: 20000.000000

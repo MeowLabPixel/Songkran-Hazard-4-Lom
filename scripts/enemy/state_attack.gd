@@ -243,6 +243,12 @@ func _start_attack() -> void:
 	_force_anim(anim, "attack")
 	_anim_duration = _anim_length(anim, "attack")
 	print("[StateAttack] Attack: %s (%.2fs)" % [anim, _anim_duration])
+	
+	# Play male zombie attack swing sound if no alert greeting was played
+	if not _greeting_played and enemy:
+		if enemy.voice_character == "Zombie Male":
+			SoundManager.play_3d("vo_zombie_m_melee_attack", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+		SoundManager.play_3d("zonbie_attack", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
 
 @export var early_exit_fraction: float = 0.85
 
@@ -256,11 +262,6 @@ func _tick_attack() -> void:
 	
 	if should_open and _swing_phase == SwingPhase.WINDUP:
 		open_hitboxes()
-		# Play male zombie attack swing sound if no alert greeting was played
-		if not _greeting_played and enemy:
-			if enemy.voice_character == "Zombie Male":
-				SoundManager.play_3d("vo_zombie_m_melee_attack", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
-			SoundManager.play_3d("zonbie_attack", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
 	elif not should_open and _swing_phase == SwingPhase.SWING:
 		close_hitboxes()
 	

@@ -5,6 +5,7 @@ extends Control
 func _ready() -> void:
 	# Keep mouse cursor visible
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	SoundManager.stop_music()
 
 	# Set up initial state for pop-in animation
 	container.scale = Vector2.ZERO

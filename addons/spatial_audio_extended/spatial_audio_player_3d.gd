@@ -383,6 +383,10 @@ var _last_wall_absorptions: Array = []
 ## Lowpass cutoff when the listener has clear line of sight to the emitter.
 @export_custom(PROPERTY_HINT_NONE, "suffix:Hz") var open_lowpass_cutoff : int = 20000
 
+## Lowpass cutoff when the emitter is directly behind the listener/camera.
+## Lower values produce a heavier, more muffled sound.
+@export_custom(PROPERTY_HINT_NONE, "suffix:Hz") var behind_camera_lowpass_cutoff : float = 2000.0
+
 ## How often geometry is re-sampled and audio effects are recalculated, in
 ## seconds. Increase for static or slow-moving emitters to save CPU.
 @export_range(.01, 1, .01, "suffix:s") var update_frequency : float = 0.2
@@ -539,6 +543,8 @@ var _debug_instance : MeshInstance3D = null
 var _base_volume_db : float = 0.0
 ## External volume offset (dB) injected by routing/reflection systems.
 var _external_volume_db_offset : float = 0.0
+## Muffle factor when the emitter is behind the camera (0.0 = clear, 1.0 = fully muffled).
+var _behind_camera_muffle_factor : float = 0.0
 ## External occlusion hold-until time (msec). While active, occlusion is forced open.
 var _external_occlusion_hold_until_msec : int = 0
 ## Hard-mute the emitter while a total-absorption wall blocks the direct path.
@@ -596,6 +602,14 @@ func set_external_volume_db_offset(offset_db: float) -> void:
 
 func get_external_volume_db_offset() -> float:
 	return _external_volume_db_offset
+
+
+func set_behind_camera_muffle(factor: float) -> void:
+	_behind_camera_muffle_factor = clampf(factor, 0.0, 1.0)
+
+
+func get_behind_camera_muffle() -> float:
+	return _behind_camera_muffle_factor
 
 
 func clear_external_volume_db_offset() -> void:
@@ -1032,18 +1046,7 @@ func _get_listener() -> Node3D:
 		if vp != null:
 			return vp.get_camera_3d()
 		return null
-	var camera := get_viewport().get_camera_3d()
-	if camera != null:
-		var body := _find_character_body(camera)
-		if body != null:
-			var virtual_target = body.get_node_or_null("SpatialAudioVirtualListenerTarget")
-			if virtual_target == null:
-				virtual_target = Marker3D.new()
-				virtual_target.name = "SpatialAudioVirtualListenerTarget"
-				body.add_child(virtual_target)
-				virtual_target.position = Vector3(0, 1.6, 0)
-			return virtual_target
-	return camera
+	return get_viewport().get_camera_3d()
 
 
 ## Walks up the scene tree from [param node] to find the first
@@ -1053,31 +1056,8 @@ static func _find_character_body(node: Node) -> CharacterBody3D:
 	while current != null:
 		if current is CharacterBody3D:
 			return current
+		current = current.get_parent()
 	return null
-
-
-func _get_exclusion_rids(listener: Node3D) -> Array[RID]:
-	var rids : Array[RID] = []
-	if ignore_listener_body:
-		var listener_body := _find_character_body(listener)
-		if listener_body != null:
-			_gather_collision_rids(listener_body, rids)
-		else:
-			_gather_collision_rids(listener, rids)
-	
-	var emitter_body := _find_character_body(self)
-	if emitter_body != null:
-		_gather_collision_rids(emitter_body, rids)
-	else:
-		_gather_collision_rids(self, rids)
-		
-	return rids
-
-func _gather_collision_rids(node: Node, rids: Array[RID]) -> void:
-	if node is CollisionObject3D:
-		rids.append(node.get_rid())
-	for child in node.get_children(true):
-		_gather_collision_rids(child, rids)
 
 
 static func _generate_fibonacci_sphere(count: int) -> Array[Vector3]:
@@ -1128,9 +1108,10 @@ func _lerp_parameters(delta: float) -> void:
 	panning_strength = lerpf(panning_strength, _target_panning_strength, t)
 
 	# Interpolate lowpass cutoff on a log scale for perceptual smoothness.
-	# Combine occlusion lowpass and air absorption by taking the darker filter.
+	# Combine occlusion lowpass, air absorption, and behind-camera muffle by taking the darker filter.
 	if _lowpass_filter != null:
-		var combined_cutoff := minf(_target_lowpass_cutoff, _target_air_absorption_cutoff)
+		var behind_cutoff := lerpf(float(open_lowpass_cutoff), float(behind_camera_lowpass_cutoff), _behind_camera_muffle_factor)
+		var combined_cutoff := minf(minf(_target_lowpass_cutoff, _target_air_absorption_cutoff), behind_cutoff)
 		var cur_cut := maxf(1.0, float(_lowpass_filter.cutoff_hz))
 		var tgt_cut := maxf(1.0, combined_cutoff)
 		var t_filter := t_total_absorption if total_absorption_transitioning else t
@@ -1160,7 +1141,8 @@ func _snap_parameters(snap_volume: bool = true) -> void:
 	panning_strength = _target_panning_strength
 
 	if _lowpass_filter != null:
-		var combined_cutoff := minf(_target_lowpass_cutoff, _target_air_absorption_cutoff)
+		var behind_cutoff := lerpf(float(open_lowpass_cutoff), float(behind_camera_lowpass_cutoff), _behind_camera_muffle_factor)
+		var combined_cutoff := minf(minf(_target_lowpass_cutoff, _target_air_absorption_cutoff), behind_cutoff)
 		_lowpass_filter.cutoff_hz = maxf(1.0, combined_cutoff)
 
 	if _reverb_effect != null:
@@ -1374,6 +1356,10 @@ func _update_omni_distance(ray: RayCast3D, idx: int) -> void:
 				first_mat_name = mat.resource_path.get_file().get_basename()
 			else:
 				first_mat_name = "AcousticMaterial"
+	else:
+		if surface_absorption:
+			first_absorption = 0.15  # Fallback: 15% average absorption for normal walls
+			first_mat_name = "FallbackMaterial"
 	_ray_absorptions[idx] = first_absorption
 	_ray_material_names[idx] = first_mat_name
 
@@ -1444,6 +1430,10 @@ func _update_omni_distance(ray: RayCast3D, idx: int) -> void:
 				if bmat.total_absorption:
 					bounce_absorption = 1.0
 				absorption_sum += bounce_absorption
+				absorption_count += 1
+		else:
+			if surface_absorption:
+				absorption_sum += 0.15  # Fallback average absorption
 				absorption_count += 1
 
 		incoming_dir = reflect_dir
@@ -1653,9 +1643,6 @@ func _update_lowpass(listener: Node3D) -> void:
 	_target_raycast.target_position = (
 		(listener.global_position - global_position).normalized() * dist_to_player
 	)
-	_target_raycast.clear_exceptions()
-	for rid in _get_exclusion_rids(listener):
-		_target_raycast.add_exception_rid(rid)
 	_target_raycast.force_raycast_update()
 
 	#  Multi-hit ray march 
@@ -1666,7 +1653,12 @@ func _update_lowpass(listener: Node3D) -> void:
 	params.collision_mask = occlusion_collision_mask
 	params.collide_with_areas = false
 
-	params.exclude = _get_exclusion_rids(listener)
+	# Exclude the listener's CharacterBody3D so the player's own collision
+	# shapes aren't detected as walls.
+	if ignore_listener_body:
+		var body := _find_character_body(listener)
+		if body != null:
+			params.exclude = [body.get_rid()]
 
 	var march_pos := global_position
 	var wall_count := 0
@@ -1692,19 +1684,22 @@ func _update_lowpass(listener: Node3D) -> void:
 		var hit_point : Vector3 = result["position"]
 		var hit_normal : Vector3 = result["normal"]
 		var dist_hit := global_position.distance_to(hit_point)
-		
-		# Print details of the hit object for debugging occlusion issues
-		print("[Occlusion Debug] Sound '", name, "' hit collider: '", result["collider"].name, "' (Class: ", result["collider"].get_class(), ") at position: ", hit_point)
 
 		# Make sure the hit is between emitter and listener.
 		if dist_hit >= dist_to_player:
 			break
 
+		var collider : Node = result["collider"]
+		if collider is CharacterBody3D:
+			# Advance past the player/NPC body and continue the raycast march.
+			# (Do not count player or NPCs as occluding walls)
+			march_pos = hit_point + ray_dir * 0.02
+			continue
+
 		wall_count += 1
 
 		# Look for an AcousticBody on the collider to get material data.
 		# Uses find_for_collider to also resolve CSG internal StaticBody3D.
-		var collider : Node = result["collider"]
 		var acoustic_body := AcousticBody.find_for_collider(collider)
 		var mat_name := "(fallback)"
 

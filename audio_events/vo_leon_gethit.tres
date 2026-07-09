@@ -12,4 +12,6 @@ name = "vo_leon_gethit"
 pitch_range = Vector2(1, 1)
 is_3d = true
 category = "Voiceline"
+max_distance = 15.0
+unit_size = 5.0
 streams = Array[AudioStream]([ExtResource("2_x3iso"), ExtResource("3_hrplf"), ExtResource("4_5pynk"), ExtResource("5_l71go")])

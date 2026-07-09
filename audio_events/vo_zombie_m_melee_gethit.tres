@@ -11,4 +11,6 @@ name = "vo_zombie_m_melee_gethit"
 pitch_range = Vector2(1, 1)
 is_3d = true
 category = "Voiceline"
+max_distance = 15.0
+unit_size = 5.0
 streams = Array[AudioStream]([ExtResource("2_yfhy1"), ExtResource("3_3gbf2"), ExtResource("4_21u0q")])

@@ -5,6 +5,7 @@ extends Control
 func _ready() -> void:
 	# Keep mouse cursor visible
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	SoundManager.stop_music()
 
 	# Animate the buttons fade in
 	buttons_container.modulate.a = 0.0

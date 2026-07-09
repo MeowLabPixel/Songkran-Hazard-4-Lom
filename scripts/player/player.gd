@@ -185,6 +185,9 @@ func _ready() -> void:
 			_turn_markers = _get_footstep_markers(anim_player, "walk/walk_side")
 	add_to_group("player")
 	
+	# Start playing ambient/non-combat music when entering the world scene
+	SoundManager.play_music_non_combat()
+	
 	# Defer animation start to allow Godot to finish skeleton bone binding
 	get_tree().create_timer(0.1).timeout.connect(func():
 		if is_instance_valid(self) and anim:

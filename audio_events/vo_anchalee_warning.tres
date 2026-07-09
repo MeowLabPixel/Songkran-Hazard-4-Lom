@@ -13,4 +13,6 @@ name = "vo_anchalee_warning"
 pitch_range = Vector2(1, 1)
 is_3d = true
 category = "Voiceline"
+max_distance = 15.0
+unit_size = 5.0
 streams = Array[AudioStream]([ExtResource("2_1uagl"), ExtResource("3_yw5ow"), ExtResource("4_hmoan"), ExtResource("5_kya2e"), ExtResource("6_u1m06")])

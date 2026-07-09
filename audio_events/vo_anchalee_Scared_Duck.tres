@@ -10,4 +10,6 @@ name = "vo_anchalee_Scared_Duck"
 pitch_range = Vector2(1, 1)
 is_3d = true
 category = "Voiceline"
+max_distance = 15.0
+unit_size = 5.0
 streams = Array[AudioStream]([ExtResource("2_b5h4y"), ExtResource("3_cw88q")])

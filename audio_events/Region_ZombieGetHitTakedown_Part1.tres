@@ -6,6 +6,7 @@
 [resource]
 script = ExtResource("1_0djp6")
 name = "Region_ZombieGetHitTakedown_Part1"
+volume_db = -5.0
 pitch_range = Vector2(1, 1)
 volume_randomness_db = 0.5
 is_3d = true

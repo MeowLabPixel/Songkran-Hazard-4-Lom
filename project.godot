@@ -47,7 +47,7 @@ window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/StyleboxFancy/plugin.cfg", "res://addons/godot_ai/plugin.cfg", "res://addons/spatial_audio_extended/plugin.cfg")
+enabled=PackedStringArray("res://addons/StyleboxFancy/plugin.cfg", "res://addons/godot_ai/plugin.cfg")
 
 [global_group]
 

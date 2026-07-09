@@ -123,20 +123,63 @@ func generate_all_events() -> void:
 	var count = 0
 	for ev_name in groups:
 		var grp = groups[ev_name]
-		var event = SoundEvent.new()
+		var save_path = output_dir + "/" + ev_name + ".tres"
+		
+		var event: SoundEvent = null
+		var is_new = true
+		if ResourceLoader.exists(save_path):
+			event = load(save_path) as SoundEvent
+			if event:
+				is_new = false
+				
+		if not event:
+			event = SoundEvent.new()
+			
 		event.name = ev_name
 		event.category = grp.category
 		event.is_3d = grp.is_3d
 		event.use_regions = grp.use_regions
 		event.next_event_name = grp.next_event_name
 		
-		# Set defaults
-		event.volume_db = 0.0
-		event.pitch_range = Vector2(0.95, 1.05)
-		event.volume_randomness_db = 0.5
-		event.max_instances = 0
-		if grp.category == "Voiceline":
-			event.volume_randomness_db = 0.0 # Keep voicelines flat
+		# Set defaults only if newly created
+		if is_new:
+			event.volume_db = 0.0
+			event.pitch_range = Vector2(0.95, 1.05)
+			event.volume_randomness_db = 0.5
+			event.max_instances = 0
+			if grp.category == "Voiceline":
+				event.volume_randomness_db = 0.0 # Keep voicelines flat
+				
+		# Update or initialize 3D Attenuation settings
+		if grp.is_3d:
+			var is_footstep = "footstep" in ev_name
+			var is_player_footstep = ev_name == "leon_footstep"
+			
+			var default_max = 10.0
+			var default_unit = 3.0
+			
+			if grp.category == "Voiceline":
+				default_max = 15.0
+				default_unit = 5.0
+			elif is_footstep:
+				default_max = 15.0 if is_player_footstep else 10.0
+				default_unit = 5.0 if is_player_footstep else 3.0
+				
+			# If newly created, or if using old/inherited defaults, update to category defaults
+			var is_old_or_class_default = (event.max_distance == 30.0 or event.max_distance == 5.0 or event.max_distance == 10.0) and (event.unit_size == 3.0 or event.unit_size == 1.0 or event.unit_size == 2.0 or event.unit_size == 5.0)
+			if is_new or is_old_or_class_default:
+				event.max_distance = default_max
+				event.unit_size = default_unit
+				
+		# Clear existing arrays to rebuild them cleanly without duplicates
+		event.streams.clear()
+		event.parallel_streams.clear()
+		event.alternative_streams.clear()
+		event.alternative_parallel_streams.clear()
+		event.regions.clear()
+		event.parallel_regions.clear()
+		event.alternative_regions.clear()
+		event.alternative_parallel_regions.clear()
 			
 		if grp.use_regions:
 			var stream_path = grp.normals[0] if grp.normals.size() > 0 else ""
@@ -225,7 +268,6 @@ func generate_all_events() -> void:
 				event.pitch_range = Vector2(1.0, 1.0)
 
 		# Save resource
-		var save_path = output_dir + "/" + ev_name + ".tres"
 		var err = ResourceSaver.save(event, save_path)
 		if err == OK:
 			count += 1

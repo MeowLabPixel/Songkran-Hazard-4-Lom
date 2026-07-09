@@ -8,4 +8,6 @@ script = ExtResource("1_woann")
 name = "1. Cutscene Taxi"
 is_3d = true
 category = "Voiceline"
+max_distance = 15.0
+unit_size = 5.0
 streams = Array[AudioStream]([ExtResource("2_x4dwu")])

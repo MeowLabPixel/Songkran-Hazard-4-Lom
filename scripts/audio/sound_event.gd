@@ -10,7 +10,7 @@ extends Resource
 @export_enum("SFX", "Music", "UI", "Voiceline") var category: String = "SFX"
 
 @export_group("3D Attenuation")
-@export var max_distance: float = 30.0
+@export var max_distance: float = 10.0
 @export_range(0.0, 10.0) var unit_size: float = 3.0
 
 @export_group("Filters")

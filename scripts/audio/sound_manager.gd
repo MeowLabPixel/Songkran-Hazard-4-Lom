@@ -49,10 +49,68 @@ extends Node
 @export_group("Sound Event Bank")
 @export var sound_bank: Array[SoundEvent] = []
 
+
 var _events: Dictionary = {}
 var _active_instances: Dictionary = {} # event_name -> Array[Node] (players)
 var _muffle_tweens: Dictionary = {} # bus_name -> Tween
 var _muffle_linger_tweens: Dictionary = {} # bus_name -> Tween
+var _all_spatial_players: Array[AudioStreamPlayer3D] = []
+var audio_listener: AudioListener3D = null
+
+
+func _get_clean_basis(raw_basis: Basis) -> Basis:
+	var back = raw_basis.z.normalized()
+	var up = raw_basis.y.normalized()
+	var right = up.cross(back).normalized()
+	up = back.cross(right).normalized()
+	return Basis(right, up, back)
+
+
+func _physics_process(_delta: float) -> void:
+	# Keep only valid instances in the list
+	var alive: Array[AudioStreamPlayer3D] = []
+	for p in _all_spatial_players:
+		if is_instance_valid(p):
+			alive.append(p)
+			var target = p.get_meta("follow_target", null)
+			if is_instance_valid(target):
+				p.global_position = target.global_position
+	_all_spatial_players = alive
+
+	# Track player node and camera to update the global unscaled audio listener
+	var player_node = get_tree().get_first_node_in_group("player")
+	var camera: Camera3D = null
+	if player_node != null:
+		camera = player_node.get_node_or_null("Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D") as Camera3D
+	if camera == null:
+		camera = get_viewport().get_camera_3d()
+
+	if camera != null:
+		if "use_listener" in camera:
+			camera.use_listener = false
+
+	if audio_listener != null:
+		if player_node != null and camera != null:
+			audio_listener.global_position = player_node.global_position + Vector3(0, 1.5, 0)
+			audio_listener.global_basis = _get_clean_basis(camera.global_basis)
+		elif camera != null:
+			audio_listener.global_position = camera.global_position
+			audio_listener.global_basis = _get_clean_basis(camera.global_basis)
+
+
+func _initialize_spatial_player(p: AudioStreamPlayer3D, source) -> void:
+	add_child(p)
+	if source is Node3D:
+		p.global_position = source.global_position
+		p.set_meta("follow_target", source)
+	elif source is Vector3:
+		p.global_position = source
+
+
+func _set_bus_vol(bus_name: String, db: float) -> void:
+	var idx = AudioServer.get_bus_index(bus_name)
+	if idx != -1:
+		AudioServer.set_bus_volume_db(idx, db)
 
 # Interactive Music Players & State
 var _music_player_1: AudioStreamPlayer
@@ -63,10 +121,6 @@ var _pending_transition_tween: Tween = null
 var _next_loop_event: String = ""
 var _current_music_state: String = "None"
 
-func _set_bus_vol(bus_name: String, db: float) -> void:
-	var idx = AudioServer.get_bus_index(bus_name)
-	if idx != -1:
-		AudioServer.set_bus_volume_db(idx, db)
 
 func _load_sound_bank_from_disk() -> void:
 	sound_bank.clear()
@@ -113,6 +167,12 @@ func _ready() -> void:
 	# Initialize/create audio buses dynamically
 	_setup_audio_buses()
 	
+	# Instantiate and set the global audio listener at the root level (under SoundManager)
+	# to avoid inherited scale distortion from the player character scene.
+	audio_listener = AudioListener3D.new()
+	add_child(audio_listener)
+	audio_listener.make_current()
+	
 	# Apply exported volumes to the newly initialized buses
 	_set_bus_vol("Master", master_volume)
 	_set_bus_vol("SFX", sfx_volume)
@@ -128,8 +188,8 @@ func _ready() -> void:
 	_music_player_1.bus = "Music"
 	_music_player_2.bus = "Music"
 	
-	# Start playing ambient/non-combat music after a brief moment
-	get_tree().create_timer(0.1).timeout.connect(play_music_non_combat)
+	# Start playing ambient/non-combat music after a brief moment (Disabled: started dynamically in world scene)
+	# get_tree().create_timer(0.1).timeout.connect(play_music_non_combat)
 	
 	# Print music stream lengths for tempo/beat analysis
 	for ev_name in ["Start_Non-combat", "Loop_Non-combat", "Start_Combat", "Loop_Combat"]:
@@ -177,22 +237,23 @@ func _setup_audio_buses() -> void:
 				AudioServer.set_bus_name(sub_idx, sub_bus_name)
 				AudioServer.set_bus_send(sub_idx, category) # route output to main category
 				
-				# Add effect to sub-bus
-				match effect:
-					"Reverb":
-						var reverb = AudioEffectReverb.new()
-						reverb.room_size = 0.6
-						reverb.wet = 0.4
-						AudioServer.add_bus_effect(sub_idx, reverb)
-					"Muffled":
-						var lpf = AudioEffectLowPassFilter.new()
-						lpf.cutoff_hz = 1000.0 # muffled
-						AudioServer.add_bus_effect(sub_idx, lpf)
-					"Retro":
-						var dist = AudioEffectDistortion.new()
-						dist.mode = AudioEffectDistortion.MODE_CLIP
-						dist.drive = 0.5
-						AudioServer.add_bus_effect(sub_idx, dist)
+				# Add effect to sub-bus (only if not SFX category)
+				if category != "SFX":
+					match effect:
+						"Reverb":
+							var reverb = AudioEffectReverb.new()
+							reverb.room_size = 0.6
+							reverb.wet = 0.4
+							AudioServer.add_bus_effect(sub_idx, reverb)
+						"Muffled":
+							var lpf = AudioEffectLowPassFilter.new()
+							lpf.cutoff_hz = 1000.0 # muffled
+							AudioServer.add_bus_effect(sub_idx, lpf)
+						"Retro":
+							var dist = AudioEffectDistortion.new()
+							dist.mode = AudioEffectDistortion.MODE_CLIP
+							dist.drive = 0.5
+							AudioServer.add_bus_effect(sub_idx, dist)
 
 # Helper to check polyphony (max_instances) and prune old players
 func _check_polyphony(event: SoundEvent) -> bool:
@@ -322,8 +383,10 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 		push_warning("[SoundManager] SoundEvent '%s' has no streams/regions configured." % event_name)
 		return null
 		
-	# Create primary SpatialAudioPlayer3D
-	var player = SpatialAudioPlayer3D.new()
+	# Create primary AudioStreamPlayer3D
+	var player = AudioStreamPlayer3D.new()
+	player.set_meta("event_name", event_name)
+	_all_spatial_players.append(player)
 	
 	_active_instances[event.name].append(player)
 	
@@ -333,8 +396,6 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 		target_bus += "_" + event.effect
 	player.bus = target_bus
 	
-	# Configure volume, pitch, and attenuation settings BEFORE adding to scene tree
-	# so that SpatialAudioPlayer3D's _ready() captures them as base values
 	var random_vol = randf_range(-event.volume_randomness_db, event.volume_randomness_db)
 	player.volume_db = event.volume_db + random_vol
 	
@@ -342,68 +403,29 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 	player.pitch_scale = random_pitch
 	
 	# Attenuation ranges
-	var is_footstep = "footstep" in event_name
-	var is_player_footstep = event_name == "leon_footstep"
-	var target_max_distance = 15.0 if is_footstep else event.max_distance
-	var target_unit_size = (5.0 if is_player_footstep else 1.0) if is_footstep else event.unit_size
+	var target_max_distance = event.max_distance
+	var target_unit_size = event.unit_size
 	
 	player.max_distance = target_max_distance
 	player.unit_size = target_unit_size
+	player.attenuation_filter_cutoff_hz = 20500.0
+	player.attenuation_filter_db = 0.0
 	
-	# Determine emitter position for area query
-	var emitter_pos = Vector3.ZERO
-	if source is Node3D:
-		emitter_pos = source.global_position
-	elif source is Vector3:
-		emitter_pos = source
+	var is_player_sound = (
+		event_name.begins_with("watergun_pistol_") or 
+		event_name.begins_with("Superpump_") or 
+		event_name == "leon_footstep" or 
+		event_name.begins_with("vo_leon_")
+	)
+	if is_player_sound:
+		player.panning_strength = 0.0
+		player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
+	else:
+		player.panning_strength = 0.85
+		player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 		
-	# Check if emitter is inside a ReverbArea or ReverbShape
-	var has_reverb = false
-	var world_3d : World3D = null
-	if source is Node3D:
-		world_3d = source.get_world_3d()
-	if not world_3d and is_inside_tree():
-		world_3d = get_viewport().find_world_3d()
-		
-	if world_3d:
-		var space_state = world_3d.direct_space_state
-		if space_state:
-			var query = PhysicsPointQueryParameters3D.new()
-			query.position = emitter_pos
-			query.collide_with_areas = true
-			query.collide_with_bodies = false
-			var hits = space_state.intersect_point(query)
-			for hit in hits:
-				var collider = hit.get("collider")
-				if collider and (collider.name.to_lower().contains("reverbarea") or collider.name.to_lower().contains("reverbshape")):
-					has_reverb = true
-					break
-					
-	# Configure SpatialAudioPlayer3D specific properties
-	player.inner_radius = target_unit_size
-	player.falloff_distance = maxf(target_max_distance - target_unit_size, 1.0)
-	player.enable_volume_attenuation = true
-	player.audio_occlusion = true
-	player.room_size_reverb = has_reverb
-	player.ignore_listener_body = true
-	player.panning_strength = 0.85
 	player.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP
 	
-	if is_footstep:
-		# Use inverse square distance falloff for steps
-		player.attenuation_function = 4 # natural/inverse square
-	else:
-		player.attenuation_function = 2 # logarithmic/inverse
-		
-	# Determine parent attachment and trigger _ready()
-	if source is Node3D:
-		source.add_child(player)
-		player.position = Vector3.ZERO
-	else:
-		add_child(player)
-		if source is Vector3:
-			player.global_position = source
-			
 	# Playback details (Multi-file vs Regions)
 	var final_duration = duration
 	var parallel_player: AudioStreamPlayer3D = null
@@ -411,6 +433,7 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 	if event.use_regions:
 		var reg = event.alternative_regions[idx] if alternative else event.regions[idx]
 		player.stream = event.stream
+		_initialize_spatial_player(player, source)
 		player.play(reg.x)
 		if final_duration < 0.0:
 			final_duration = reg.y
@@ -419,7 +442,9 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 		var has_parallel = (alternative and event.alternative_parallel_regions.size() > idx) or (not alternative and event.parallel_regions.size() > idx)
 		if has_parallel:
 			var preg = event.alternative_parallel_regions[idx] if alternative else event.parallel_regions[idx]
-			parallel_player = SpatialAudioPlayer3D.new()
+			parallel_player = AudioStreamPlayer3D.new()
+			parallel_player.set_meta("event_name", event_name)
+			_all_spatial_players.append(parallel_player)
 			parallel_player.bus = target_bus
 			parallel_player.volume_db = event.volume_db + random_vol
 			parallel_player.pitch_scale = random_pitch
@@ -427,36 +452,31 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 			
 			parallel_player.max_distance = target_max_distance
 			parallel_player.unit_size = target_unit_size
-			parallel_player.inner_radius = target_unit_size
-			parallel_player.falloff_distance = maxf(target_max_distance - target_unit_size, 1.0)
-			parallel_player.enable_volume_attenuation = true
-			parallel_player.audio_occlusion = true
-			parallel_player.room_size_reverb = has_reverb
-			parallel_player.ignore_listener_body = true
-			parallel_player.panning_strength = 0.85
-			parallel_player.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP
-			if is_footstep:
-				parallel_player.attenuation_function = 4
+			parallel_player.attenuation_filter_cutoff_hz = 20500.0
+			parallel_player.attenuation_filter_db = 0.0
+			
+			if is_player_sound:
+				parallel_player.panning_strength = 0.0
+				parallel_player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
 			else:
-				parallel_player.attenuation_function = 2
+				parallel_player.panning_strength = 0.85
+				parallel_player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 				
-			if source is Node3D:
-				source.add_child(parallel_player)
-				parallel_player.position = Vector3.ZERO
-			else:
-				add_child(parallel_player)
-				if source is Vector3:
-					parallel_player.global_position = source
-					
+			parallel_player.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP
+				
+			_initialize_spatial_player(parallel_player, source)
 			parallel_player.play(preg.x)
 	else:
 		player.stream = event.alternative_streams[idx] if alternative else event.streams[idx]
+		_initialize_spatial_player(player, source)
 		player.play(start_offset)
 		
 		# Parallel file layering
 		var has_parallel = (alternative and event.alternative_parallel_streams.size() > idx) or (not alternative and event.parallel_streams.size() > idx)
 		if has_parallel:
-			parallel_player = SpatialAudioPlayer3D.new()
+			parallel_player = AudioStreamPlayer3D.new()
+			parallel_player.set_meta("event_name", event_name)
+			_all_spatial_players.append(parallel_player)
 			parallel_player.bus = target_bus
 			parallel_player.volume_db = event.volume_db + random_vol
 			parallel_player.pitch_scale = random_pitch
@@ -464,29 +484,23 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 			
 			parallel_player.max_distance = target_max_distance
 			parallel_player.unit_size = target_unit_size
-			parallel_player.inner_radius = target_unit_size
-			parallel_player.falloff_distance = maxf(target_max_distance - target_unit_size, 1.0)
-			parallel_player.enable_volume_attenuation = true
-			parallel_player.audio_occlusion = true
-			parallel_player.room_size_reverb = has_reverb
-			parallel_player.ignore_listener_body = true
-			parallel_player.panning_strength = 0.85
-			parallel_player.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP
-			if is_footstep:
-				parallel_player.attenuation_function = 4
+			parallel_player.attenuation_filter_cutoff_hz = 20500.0
+			parallel_player.attenuation_filter_db = 0.0
+			
+			if is_player_sound:
+				parallel_player.panning_strength = 0.0
+				parallel_player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
 			else:
-				parallel_player.attenuation_function = 2
+				parallel_player.panning_strength = 0.85
+				parallel_player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 				
-			if source is Node3D:
-				source.add_child(parallel_player)
-				parallel_player.position = Vector3.ZERO
-			else:
-				add_child(parallel_player)
-				if source is Vector3:
-					parallel_player.global_position = source
-					
+			parallel_player.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP
+				
+			_initialize_spatial_player(parallel_player, source)
 			parallel_player.play(start_offset)
 			
+
+
 	# Apply duration limit / automatic cleanup
 	if final_duration > 0.0:
 		var timer = get_tree().create_timer(final_duration)

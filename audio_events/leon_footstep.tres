@@ -12,4 +12,6 @@ name = "leon_footstep"
 pitch_range = Vector2(1, 1)
 volume_randomness_db = 0.5
 is_3d = true
+max_distance = 15.0
+unit_size = 5.0
 streams = Array[AudioStream]([ExtResource("2_emnmm"), ExtResource("3_pud4e"), ExtResource("4_voeej"), ExtResource("5_ctuuh")])

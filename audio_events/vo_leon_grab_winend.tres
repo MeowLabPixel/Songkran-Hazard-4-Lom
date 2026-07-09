@@ -10,4 +10,6 @@ name = "vo_leon_grab_winend"
 pitch_range = Vector2(1, 1)
 is_3d = true
 category = "Voiceline"
+max_distance = 15.0
+unit_size = 5.0
 streams = Array[AudioStream]([ExtResource("2_eg253"), ExtResource("3_ba20u")])

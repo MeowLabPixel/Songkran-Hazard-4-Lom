@@ -120,16 +120,6 @@ func _ready() -> void:
 		
 	if camera:
 		camera.set_as_top_level(true)
-		# Ensure AudioListener3D is attached to the camera for 3D positional audio
-		var has_listener := false
-		for child in camera.get_children():
-			if child is AudioListener3D:
-				has_listener = true
-				break
-		if not has_listener:
-			var listener = AudioListener3D.new()
-			camera.add_child(listener)
-			listener.make_current()
 		
 	if rear_spring_arm:
 		ideal_camera_marker = Marker3D.new()
@@ -303,6 +293,8 @@ func _process(delta: float) -> void:
 		if GameManager.movement_type == GameManager.MovementType.TANK and not is_aiming_now_calc and not is_grab_now_calc:
 			camera.rotate_object_local(Vector3(0, 1, 0), -tank_look_around.x)
 			camera.rotate_object_local(Vector3(1, 0, 0), -tank_look_around.y)
+			
+
 
 func _input(event: InputEvent)-> void:
 	if event.is_action_pressed("ui_cancel"):
