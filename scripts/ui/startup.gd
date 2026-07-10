@@ -248,6 +248,9 @@ func _start_reveal() -> void:
 			scale_tween.tween_property(child, "scale", original_scale * 1.15, 0.8).set_delay(delay).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 			scale_tween.tween_property(child, "scale", original_scale, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 			
+			# Play the title drop voiceline when the MC animation starts
+			reveal_tween.tween_callback(func(): SoundManager.play_2d("Title Drop")).set_delay(delay)
+			
 		elif "logo" in name:
 			# Falling drop with elastic overshoot and slight spin
 			child.position = target_pos + Vector2(0, -400)
@@ -278,7 +281,6 @@ func _start_reveal() -> void:
 	reveal_tween.finished.connect(_on_reveal_finished)
 
 func _on_reveal_finished() -> void:
-	SoundManager.play_2d("Title Drop")
 	_init_sway_configs()
 	_change_phase(Phase.IDLE)
 	
@@ -391,6 +393,7 @@ func _start_transition() -> void:
 	)
 
 func _reset_to_press_e() -> void:
+	SoundManager.stop_music()
 	if reveal_tween:
 		reveal_tween.kill()
 		reveal_tween = null

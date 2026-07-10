@@ -247,8 +247,8 @@ func _setup_audio_buses() -> void:
 					match effect:
 						"Reverb":
 							var reverb = AudioEffectReverb.new()
-							reverb.room_size = 0.6
-							reverb.wet = 0.4
+							reverb.room_size = 0.4
+							reverb.wet = 0.25
 							AudioServer.add_bus_effect(sub_idx, reverb)
 						"Muffled":
 							var lpf = AudioEffectLowPassFilter.new()
