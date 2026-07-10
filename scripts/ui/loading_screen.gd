@@ -101,6 +101,19 @@ func _start_transition_flow() -> void:
 		get_tree().root.add_child(scene_instance)
 		get_tree().current_scene = scene_instance
 		
+		# Apply Casual Mode changes to pre-placed enemies
+		if get_tree().root.has_node("GameManager"):
+			var gm = get_tree().root.get_node("GameManager")
+			if gm.difficulty == gm.Difficulty.CASUAL:
+				for zom_name in ["MMeleeZom1", "FMeleeZom1"]:
+					var zom = scene_instance.get_node_or_null(zom_name)
+					if zom:
+						zom.visible = false
+						zom.global_position = Vector3(0, -999, 0)
+						zom.process_mode = Node.PROCESS_MODE_DISABLED
+						if zom.is_in_group("enemies"):
+							zom.remove_from_group("enemies")
+		
 		# Start game manager loop
 		if get_tree().root.has_node("GameManager"):
 			get_tree().root.get_node("GameManager").start_game()

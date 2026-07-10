@@ -31,6 +31,12 @@ var img_type_a_th = preload("res://scenes/Type_A_Thai.png")
 var img_type_b_th = preload("res://scenes/Type_B_Thai.png")
 var img_type_c_th = preload("res://scenes/Type_C_Thai.png")
 
+# Preload difficulty selection buttons
+var img_expert_en = preload("res://scenes/Expert.png")
+var img_casual_en = preload("res://scenes/Casual.png")
+var img_expert_th = preload("res://scenes/Expert_Thai.png")
+var img_casual_th = preload("res://scenes/Casual_Thai.png")
+
 @onready var container: Control = $ContentContainer
 @onready var texture_rect: TextureRect = $ContentContainer/VBox/TextureRect
 @onready var prompt_label: Label = $ContentContainer/VBox/Prompt
@@ -41,11 +47,14 @@ var language_selected := true
 var selected_lang := "en"
 var lang_changer_container: HBoxContainer
 var move_selection_container: Control
+var difficulty_selection_container: Control
 var btn_en: TextureButton
 var btn_th: TextureButton
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	if not SoundManager.is_playing_main_theme():
+		SoundManager.stop_music()
 	
 	if get_tree().root.has_node("GameManager"):
 		get_tree().root.get_node("GameManager").reset_game()
@@ -158,7 +167,13 @@ func _switch_language(lang: String) -> void:
 		return
 	is_transitioning = true
 	
-	var current_container = move_selection_container if move_selection_container else container
+	var current_container: Control
+	if difficulty_selection_container:
+		current_container = difficulty_selection_container
+	elif move_selection_container:
+		current_container = move_selection_container
+	else:
+		current_container = container
 	
 	# Start pop-out animation
 	var tween = create_tween().set_parallel(true)
@@ -189,6 +204,22 @@ func _switch_language(lang: String) -> void:
 			var tween_in = create_tween().set_parallel(true)
 			tween_in.tween_property(move_selection_container, "scale", Vector2.ONE, 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 			tween_in.tween_property(move_selection_container, "modulate:a", 1.0, 0.3)
+			
+			tween_in.finished.connect(func():
+				is_transitioning = false
+			)
+		elif current_step == pages.size() + 1:
+			_show_difficulty_selection()
+			
+			difficulty_selection_container.scale = Vector2.ZERO
+			difficulty_selection_container.modulate.a = 0.0
+			difficulty_selection_container.resized.connect(func():
+				difficulty_selection_container.pivot_offset = difficulty_selection_container.size / 2.0
+			)
+			
+			var tween_in = create_tween().set_parallel(true)
+			tween_in.tween_property(difficulty_selection_container, "scale", Vector2.ONE, 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tween_in.tween_property(difficulty_selection_container, "modulate:a", 1.0, 0.3)
 			
 			tween_in.finished.connect(func():
 				is_transitioning = false
@@ -239,6 +270,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	
 	if is_forward:
 		if current_step < pages.size():
+			if current_step == 0:
+				SoundManager.play_main_theme()
 			transition_to_page(current_step + 1)
 	elif is_backward:
 		if current_step > 0:
@@ -247,7 +280,13 @@ func _unhandled_input(event: InputEvent) -> void:
 func transition_to_page(next_page_index: int) -> void:
 	is_transitioning = true
 	
-	var current_container = move_selection_container if move_selection_container else container
+	var current_container: Control
+	if difficulty_selection_container:
+		current_container = difficulty_selection_container
+	elif move_selection_container:
+		current_container = move_selection_container
+	else:
+		current_container = container
 	
 	# Start pop-out animation
 	var tween = create_tween().set_parallel(true)
@@ -257,7 +296,10 @@ func transition_to_page(next_page_index: int) -> void:
 	tween.finished.connect(func():
 		current_step = next_page_index
 		
-		# Clean up movement selection UI if transitioning back to a normal page
+		# Clean up UI containers if transitioning
+		if difficulty_selection_container and current_step != pages.size() + 1:
+			difficulty_selection_container.queue_free()
+			difficulty_selection_container = null
 		if move_selection_container and current_step < pages.size():
 			move_selection_container.queue_free()
 			move_selection_container = null
@@ -274,6 +316,22 @@ func transition_to_page(next_page_index: int) -> void:
 			var tween_in = create_tween().set_parallel(true)
 			tween_in.tween_property(move_selection_container, "scale", Vector2.ONE, 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 			tween_in.tween_property(move_selection_container, "modulate:a", 1.0, 0.3)
+			
+			tween_in.finished.connect(func():
+				is_transitioning = false
+			)
+		elif current_step == pages.size() + 1:
+			_show_difficulty_selection()
+			
+			difficulty_selection_container.scale = Vector2.ZERO
+			difficulty_selection_container.modulate.a = 0.0
+			difficulty_selection_container.resized.connect(func():
+				difficulty_selection_container.pivot_offset = difficulty_selection_container.size / 2.0
+			)
+			
+			var tween_in = create_tween().set_parallel(true)
+			tween_in.tween_property(difficulty_selection_container, "scale", Vector2.ONE, 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tween_in.tween_property(difficulty_selection_container, "modulate:a", 1.0, 0.3)
 			
 			tween_in.finished.connect(func():
 				is_transitioning = false
@@ -296,7 +354,14 @@ func transition_to_page(next_page_index: int) -> void:
 
 func transition_to_game() -> void:
 	is_transitioning = true
-	var active_container = move_selection_container if move_selection_container else container
+	SoundManager.fade_out_music(0.8)
+	var active_container: Control
+	if difficulty_selection_container:
+		active_container = difficulty_selection_container
+	elif move_selection_container:
+		active_container = move_selection_container
+	else:
+		active_container = container
 	
 	# Start pop-out animation
 	var tween = create_tween().set_parallel(true)
@@ -324,6 +389,8 @@ func _show_movement_selection() -> void:
 	move_selection_container = Control.new()
 	move_selection_container.name = "MovementSelectionUI"
 	add_child(move_selection_container)
+	if lang_changer_container:
+		move_child(lang_changer_container, -1)
 	move_selection_container.anchor_right = 1.0
 	move_selection_container.anchor_bottom = 1.0
 	
@@ -342,7 +409,7 @@ func _show_movement_selection() -> void:
 	
 	var vbox = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 35)
+	vbox.add_theme_constant_override("separation", 20)
 	move_selection_container.add_child(vbox)
 	vbox.anchor_right = 1.0
 	vbox.anchor_bottom = 1.0
@@ -364,7 +431,7 @@ func _show_movement_selection() -> void:
 	# Buttons horizontal layout
 	var hbox = HBoxContainer.new()
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox.add_theme_constant_override("separation", 30)
+	hbox.add_theme_constant_override("separation", 20)
 	vbox.add_child(hbox)
 	
 	# Create the 3 custom image buttons
@@ -398,7 +465,7 @@ func _create_movement_button(parent: Control, type_val: GameManager.MovementType
 	btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	
 	# Make them a nice size
-	btn.custom_minimum_size = Vector2(340, 520)
+	btn.custom_minimum_size = Vector2(230, 350)
 	parent.add_child(btn)
 	
 	btn.resized.connect(func():
@@ -438,4 +505,180 @@ func _select_movement_type(type: GameManager.MovementType) -> void:
 	GameManager.movement_type = type
 	GameManager.movement_type_selected = true
 	print("[Disclaimer] Selected movement control: ", GameManager.MovementType.keys()[type])
+	transition_to_page(pages.size() + 1)
+
+var difficulty_texts = {
+	"title": {
+		"en": "CHOOSE DIFFICULTY MODE",
+		"th": "เลือกโหมดระดับความยาก"
+	}
+}
+
+func _show_difficulty_selection() -> void:
+	if difficulty_selection_container:
+		difficulty_selection_container.queue_free()
+		difficulty_selection_container = null
+		
+	container.hide()
+	if move_selection_container:
+		move_selection_container.hide()
+	
+	difficulty_selection_container = Control.new()
+	difficulty_selection_container.name = "DifficultySelectionUI"
+	add_child(difficulty_selection_container)
+	if lang_changer_container:
+		move_child(lang_changer_container, -1)
+	difficulty_selection_container.anchor_right = 1.0
+	difficulty_selection_container.anchor_bottom = 1.0
+	
+	# Background style matching disclaimer (with blur shader)
+	var bg = ColorRect.new()
+	var blur_shader = load("res://shaders/screen_blur.gdshader") as Shader
+	if blur_shader:
+		var mat = ShaderMaterial.new()
+		mat.shader = blur_shader
+		bg.material = mat
+	else:
+		bg.color = Color(0.02, 0.02, 0.03, 0.8)
+	difficulty_selection_container.add_child(bg)
+	bg.anchor_right = 1.0
+	bg.anchor_bottom = 1.0
+	
+	var vbox = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 35)
+	difficulty_selection_container.add_child(vbox)
+	vbox.anchor_right = 1.0
+	vbox.anchor_bottom = 1.0
+	vbox.offset_top = 40
+	vbox.offset_bottom = -40
+	
+	# Title
+	var title_lbl = Label.new()
+	title_lbl.text = difficulty_texts["title"][selected_lang]
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.add_theme_font_size_override("font_size", 42)
+	
+	# Header font: lazy_dog for Eng, iannnnn-DOG-Bold for Thai
+	var title_font = preload("res://scenes/font/iannnnn-DOG-Bold.ttf") if selected_lang == "th" else preload("res://scenes/font/lazy_dog.ttf")
+	title_lbl.add_theme_font_override("font", title_font)
+	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3)) # Golden text
+	vbox.add_child(title_lbl)
+	
+	# Buttons horizontal layout
+	var hbox = HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 50)
+	vbox.add_child(hbox)
+	
+	# Create the 2 custom image buttons (Casual and Expert)
+	if GameManager.expert_mode_played:
+		_create_difficulty_button(hbox, GameManager.Difficulty.CASUAL)
+	_create_difficulty_button(hbox, GameManager.Difficulty.EXPERT)
+	
+	# Back prompt
+	var back_prompt = Label.new()
+	back_prompt.text = "[ Press Q to go back ]" if selected_lang == "en" else "[ กดปุ่ม Q เพื่อย้อนกลับ ]"
+	back_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	back_prompt.add_theme_font_size_override("font_size", 24)
+	back_prompt.add_theme_font_override("font", preload("res://scenes/font/iannnnn-DOG-Bold.ttf"))
+	back_prompt.add_theme_color_override("font_color", Color(0.6, 0.6, 0.7, 1))
+	vbox.add_child(back_prompt)
+
+func _create_difficulty_button(parent: Control, diff_val: GameManager.Difficulty) -> void:
+	var btn = TextureButton.new()
+	
+	var normal_tex: Texture2D
+	match diff_val:
+		GameManager.Difficulty.CASUAL:
+			normal_tex = img_casual_th if selected_lang == "th" else img_casual_en
+		GameManager.Difficulty.EXPERT:
+			normal_tex = img_expert_th if selected_lang == "th" else img_expert_en
+			
+	btn.texture_normal = normal_tex
+	btn.ignore_texture_size = true
+	btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	
+	# Make them a nice size
+	btn.custom_minimum_size = Vector2(340, 520)
+	parent.add_child(btn)
+	
+	if diff_val == GameManager.Difficulty.CASUAL and get_tree().root.has_node("GameManager") and get_tree().root.get_node("GameManager").casual_mode_new:
+		var new_lbl = Label.new()
+		new_lbl.text = "NEW!" if selected_lang == "en" else "ใหม่!"
+		new_lbl.add_theme_font_override("font", preload("res://scenes/font/iannnnn-DOG-Bold.ttf"))
+		new_lbl.add_theme_font_size_override("font_size", 28)
+		new_lbl.add_theme_color_override("font_color", Color(1.0, 0.2, 0.2)) # Red text
+		
+		# Overlay styling (dark background, red border)
+		var sb = StyleBoxFlat.new()
+		sb.bg_color = Color(0.08, 0.08, 0.1, 0.85)
+		sb.border_width_left = 2
+		sb.border_width_top = 2
+		sb.border_width_right = 2
+		sb.border_width_bottom = 2
+		sb.border_color = Color(1.0, 0.2, 0.2)
+		sb.corner_radius_top_left = 6
+		sb.corner_radius_top_right = 6
+		sb.corner_radius_bottom_left = 6
+		sb.corner_radius_bottom_right = 6
+		new_lbl.add_theme_stylebox_override("normal", sb)
+		
+		new_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		new_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		
+		btn.add_child(new_lbl)
+		new_lbl.anchor_left = 0.5
+		new_lbl.anchor_right = 0.5
+		new_lbl.anchor_top = 0.0
+		new_lbl.anchor_bottom = 0.0
+		new_lbl.offset_left = -60
+		new_lbl.offset_right = 60
+		new_lbl.offset_top = 20
+		new_lbl.offset_bottom = 60
+		new_lbl.pivot_offset = Vector2(60, 20)
+		
+		# Pulse animation
+		var tween_new = new_lbl.create_tween().set_loops()
+		tween_new.tween_property(new_lbl, "scale", Vector2(1.1, 1.1), 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween_new.tween_property(new_lbl, "scale", Vector2(1.0, 1.0), 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	
+	btn.resized.connect(func():
+		btn.pivot_offset = btn.size / 2.0
+	)
+	
+	btn.focus_mode = Control.FOCUS_ALL
+	
+	btn.mouse_entered.connect(func():
+		var tween = create_tween().set_parallel(true)
+		tween.tween_property(btn, "scale", Vector2(1.05, 1.05), 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		btn.modulate = Color(1.15, 1.15, 1.15, 1.0)
+	)
+	btn.mouse_exited.connect(func():
+		var tween = create_tween().set_parallel(true)
+		tween.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		btn.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	)
+	
+	btn.focus_entered.connect(func():
+		var tween = create_tween().set_parallel(true)
+		tween.tween_property(btn, "scale", Vector2(1.05, 1.05), 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		btn.modulate = Color(1.15, 1.15, 1.15, 1.0)
+	)
+	btn.focus_exited.connect(func():
+		var tween = create_tween().set_parallel(true)
+		tween.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		btn.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	)
+	
+	btn.pressed.connect(func():
+		_select_difficulty(diff_val)
+	)
+
+func _select_difficulty(diff: GameManager.Difficulty) -> void:
+	GameManager.difficulty = diff
+	if diff == GameManager.Difficulty.CASUAL:
+		GameManager.casual_mode_new = false
+		GameManager.save_settings()
+	print("[Disclaimer] Selected difficulty: ", GameManager.Difficulty.keys()[diff])
 	transition_to_game()

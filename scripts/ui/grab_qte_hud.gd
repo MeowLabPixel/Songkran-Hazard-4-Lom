@@ -63,9 +63,9 @@ func _build_ui() -> void:
 	card.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root_panel.add_child(card)
 
-	# Red border highlight.
+	# Blue/Green border highlight.
 	var border := ColorRect.new()
-	border.color = Color(0.8, 0.1, 0.1, 0.85)
+	border.color = Color(0.2, 0.65, 0.95, 0.85)
 	border.size = Vector2(320, 4)
 	border.position = Vector2(0, 0)
 	_root_panel.add_child(border)
@@ -83,7 +83,7 @@ func _build_ui() -> void:
 	_label_prompt.position = Vector2(0, 20)
 	_label_prompt.size = Vector2(320, 30)
 	_label_prompt.add_theme_font_size_override("font_size", 16)
-	_label_prompt.add_theme_color_override("font_color", Color(1, 0.85, 0.2))
+	_label_prompt.add_theme_color_override("font_color", Color(0.3, 0.7, 1.0))
 	_label_prompt.add_theme_font_override("font", subheader_font)
 	_root_panel.add_child(_label_prompt)
 
@@ -107,9 +107,9 @@ func _build_ui() -> void:
 	_bar_bg.size = Vector2(280, 14)
 	_root_panel.add_child(_bar_bg)
 
-	# Timer bar fill (starts full, drains red).
+	# Timer bar fill (starts full, drains).
 	_bar_fill = ColorRect.new()
-	_bar_fill.color = Color(0.85, 0.15, 0.15)
+	_bar_fill.color = Color(0.2, 0.65, 0.95)
 	_bar_fill.position = Vector2(20, 116)
 	_bar_fill.size = Vector2(280, 14)
 	_root_panel.add_child(_bar_fill)
@@ -152,8 +152,8 @@ func _process(delta: float) -> void:
 	_time_left -= delta
 	var frac: float = clampf(_time_left / duration, 0.0, 1.0)
 	_bar_fill.size.x = 280.0 * frac
-	# Colour shifts from red toward dark as time runs out.
-	_bar_fill.color = Color(0.85, 0.15 + frac * 0.35, 0.15)
+	# Colour shifts from blue toward green as time runs out.
+	_bar_fill.color = Color(0.2, 0.85, 0.4).lerp(Color(0.2, 0.65, 0.95), frac)
 
 	if _time_left <= 0.0:
 		_resolve(false)

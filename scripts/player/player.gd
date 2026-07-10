@@ -61,7 +61,7 @@ func _get_footstep_markers(anim_player: AnimationPlayer, anim_name: String) -> A
 	return result
 
 @export_group("Data setting")
-@export var MaxHP = 150
+var MaxHP = 150
 @export var hitboxF: Area3D
 @export var hitboxB: Area3D
 @export var stun_detect: Area3D
@@ -176,6 +176,12 @@ const SPEED = 5.0
 const JUMP_VELOCITY = 4.5
 
 func _ready() -> void:
+	if get_tree().root.has_node("GameManager") and GameManager.difficulty == GameManager.Difficulty.CASUAL:
+		MaxHP = 210
+	else:
+		MaxHP = 150
+	HP = MaxHP
+
 	if not GameManager.movement_type_selected:
 		GameManager.movement_type = movement_type_override
 	
@@ -264,7 +270,16 @@ func _ready() -> void:
 	add_child(prompt_layer)
 	
 	takedown_prompt_label = Label.new()
-	takedown_prompt_label.text = "[E] Takedown"
+	var lang = "en"
+	if get_tree().root.has_node("GameManager"):
+		lang = GameManager.selected_language
+		
+	if lang == "th":
+		takedown_prompt_label.text = "กด E เพื่อปะแป้ง"
+		takedown_prompt_label.add_theme_font_override("font", preload("res://scenes/font/iannnnn-DOG-Bold.ttf"))
+	else:
+		takedown_prompt_label.text = "[E] Takedown"
+		
 	takedown_prompt_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	takedown_prompt_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	takedown_prompt_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
@@ -573,7 +588,10 @@ func update_crosshair_accuracy(delta: float) -> void:
 		var gun = gun_controller.current_gun
 		var air_pct = gun.air / gun.max_air
 		if air_pct < 0.5:
-			focus_time = 1.0
+			if get_tree().root.has_node("GameManager") and GameManager.difficulty == GameManager.Difficulty.CASUAL:
+				focus_time = 0.5 / 0.75 # penalty is -25% (speed is 0.75x normal)
+			else:
+				focus_time = 1.0 # penalty is -50% (speed is 0.50x normal)
 			
 	# Update focus progress
 	var old_focus = focus_progress

@@ -10,4 +10,5 @@ is_3d = true
 category = "Voiceline"
 max_distance = 15.0
 unit_size = 5.0
+effect = "Reverb"
 streams = Array[AudioStream]([ExtResource("2_0egjl")])

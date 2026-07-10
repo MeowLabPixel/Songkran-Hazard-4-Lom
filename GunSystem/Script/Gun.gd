@@ -70,9 +70,15 @@ func get_gun_name() -> String:
 func on_super_end():
 	pass
 
+func get_air_consumption() -> float:
+	var base_consumption = air_consumption
+	if get_tree().root.has_node("GameManager") and GameManager.difficulty == GameManager.Difficulty.CASUAL:
+		return base_consumption * 0.5
+	return base_consumption
+
 func can_shoot() -> bool:
 	var has_water = water_tank.current_water >= water_consumption if water_tank else false
-	var has_air = air >= air_consumption
+	var has_air = air >= get_air_consumption()
 	return shoot_timer <= 0.0 and has_water and has_air
 
 func shoot():
@@ -98,7 +104,7 @@ func shoot():
 		water_tank.current_water -= water_consumption
 		water_tank.current_water = max(water_tank.current_water, 0.0)
 	
-	air -= air_consumption
+	air -= get_air_consumption()
 	air = max(air, 0.0)
 
 	fire_projectiles()
@@ -253,10 +259,12 @@ func _apply_damage_to_result(result: Dictionary) -> void:
 		return
 
 	var final_damage = damage
+	if get_tree().root.has_node("GameManager") and GameManager.difficulty == GameManager.Difficulty.CASUAL:
+		final_damage = final_damage * 1.25
 	var tree := get_tree()
 	var player = tree.get_first_node_in_group("player") if tree else null
 	if player and player.has_method("get_damage_multiplier"):
-		final_damage = damage * player.get_damage_multiplier()
+		final_damage = final_damage * player.get_damage_multiplier()
 
 	# ✅ Case 1: Hit an Area3D (hitbox)
 	if collider is Area3D and not collider.is_in_group("player_hitbox"):

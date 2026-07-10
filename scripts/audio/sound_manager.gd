@@ -638,6 +638,40 @@ func play_music_combat() -> void:
 	_current_music_state = "CombatStart"
 	_play_music_stream("Start_Combat", "Loop_Combat")
 
+# Plays Main Theme
+func play_main_theme() -> void:
+	if _current_music_state == "MainTheme":
+		return
+	_current_music_state = "MainTheme"
+	_play_music_stream("MainTheme")
+
+# Returns whether the current music is MainTheme
+func is_playing_main_theme() -> bool:
+	return _current_music_state == "MainTheme"
+
+# Fades out all active music players smoothly over duration
+func fade_out_music(duration: float = 1.0) -> void:
+	_current_music_state = "None"
+	_next_loop_event = ""
+	if _music_player_1.finished.is_connected(_on_music_track_finished):
+		_music_player_1.finished.disconnect(_on_music_track_finished)
+	if _music_player_2.finished.is_connected(_on_music_track_finished):
+		_music_player_2.finished.disconnect(_on_music_track_finished)
+	
+	var tween = create_tween().set_parallel(true)
+	if _music_player_1.playing:
+		tween.tween_property(_music_player_1, "volume_db", -80.0, duration)
+	if _music_player_2.playing:
+		tween.tween_property(_music_player_2, "volume_db", -80.0, duration)
+	
+	tween.finished.connect(func():
+		_music_player_1.stop()
+		_music_player_2.stop()
+		_music_player_1.volume_db = 0.0
+		_music_player_2.volume_db = 0.0
+		_active_music_player = null
+	)
+
 # Stops all music players
 func stop_music() -> void:
 	_current_music_state = "None"

@@ -7,5 +7,5 @@
 script = ExtResource("1_x8sn1")
 name = "Disclaimer"
 volume_randomness_db = 0.5
-is_3d = true
+category = "Music"
 streams = Array[AudioStream]([ExtResource("2_m1kdb")])

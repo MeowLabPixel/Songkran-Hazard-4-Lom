@@ -31,14 +31,15 @@ func generate_all_events() -> void:
 	
 	for filepath in files:
 		var filename = filepath.get_file().get_basename()
+		var filepath_lower = filepath.to_lower()
 		
 		# Determine category
 		var category = "SFX"
-		if "/Voicelines/" in filepath:
+		if "/voicelines/" in filepath_lower:
 			category = "Voiceline"
-		elif "/Music/" in filepath:
+		elif "/music/" in filepath_lower or "/musics/" in filepath_lower:
 			category = "Music"
-		elif "/Uis/" in filepath:
+		elif "/uis/" in filepath_lower:
 			category = "UI"
 			
 		var is_3d = (category == "Voiceline" or category == "SFX")

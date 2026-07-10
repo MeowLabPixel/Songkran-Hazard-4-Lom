@@ -7873,7 +7873,6 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 script = ExtResource("41_procedural_crosshair")
 max_reticle_radius = 75.0
-min_reticle_radius = 7.5
 reticle_line_length = 11.25
 reticle_line_thickness = 3.0
 reticle_outline_thickness = 5.0

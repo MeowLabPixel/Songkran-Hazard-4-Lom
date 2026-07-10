@@ -5,7 +5,7 @@ extends Control
 func _ready() -> void:
 	# Keep mouse cursor visible
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	SoundManager.stop_music()
+	SoundManager.play_main_theme()
 
 	var lang = "en"
 	if get_tree().root.has_node("GameManager"):

@@ -100,6 +100,7 @@ var _aura_fade_speed: float = 4.0
 var _takedown_aura_material: ShaderMaterial = null
 var _left_hand_aura_material: ShaderMaterial = null
 var _right_hand_aura_material: ShaderMaterial = null
+var _takedown_last_mask_dir: int = 0
 var current_attack_type: String = ""
 var _dead_walk_markers: Array[float] = [0.5, 1.0]
 var _last_norm_pos: float = -1.0
@@ -383,14 +384,22 @@ func _trigger_defeat() -> void:
 	custom_pitch_scale = 1.0
 	state_machine.transition_to("StateDefeated")
 	enemy_defeated.emit()
-	_spawn_drops()
-	_check_stop_combat_music()
-	if is_inside_tree():
-		var ui = get_tree().get_first_node_in_group("player_ui")
-		if ui and ui.has_method("spawn_kill_projectile"):
-			ui.spawn_kill_projectile(global_position)
-		if get_tree().root.has_node("GameManager"):
-			get_tree().root.get_node("GameManager").register_kill(is_takedown_defeat)
+	
+	var is_game_over = false
+	if get_tree().root.has_node("GameManager"):
+		is_game_over = get_tree().root.get_node("GameManager").is_game_ended
+		
+	if not is_game_over:
+		_spawn_drops()
+		_check_stop_combat_music()
+		if is_inside_tree():
+			var ui = get_tree().get_first_node_in_group("player_ui")
+			if ui and ui.has_method("spawn_kill_projectile"):
+				ui.spawn_kill_projectile(global_position)
+			if get_tree().root.has_node("GameManager"):
+				get_tree().root.get_node("GameManager").register_kill(is_takedown_defeat)
+	else:
+		_check_stop_combat_music()
 
 # --- Animation Event Hooks ---
 # Call these from AnimationPlayer Method Tracks on the root node
@@ -460,7 +469,23 @@ func _on_state_changed(old_state: String, new_state: String) -> void:
 	if new_state == "StateTakedownable":
 		var ui = get_tree().get_first_node_in_group("player_ui")
 		if ui and ui.has_method("spawn_takedown_shockwave"):
-			ui.spawn_takedown_shockwave(global_position)
+			var stun_bone = "DEF-spine.006" # Default to head
+			if state_machine:
+				var td = state_machine._states.get("StateTakedownable")
+				if td:
+					if td.stun_type == "left_foot":
+						stun_bone = "DEF-foot.L"
+					elif td.stun_type == "right_foot":
+						stun_bone = "DEF-foot.R"
+						
+			var spawn_pos = global_position
+			var skeleton = _find_skeleton(self)
+			if skeleton:
+				var bone_idx = skeleton.find_bone(stun_bone)
+				if bone_idx != -1:
+					spawn_pos = skeleton.global_transform * skeleton.get_bone_global_pose(bone_idx).origin
+					
+			ui.spawn_takedown_shockwave(spawn_pos)
 
 func _find_meshes_recursive(node: Node, meshes: Array[MeshInstance3D]) -> void:
 	if node is MeshInstance3D:
@@ -470,7 +495,15 @@ func _find_meshes_recursive(node: Node, meshes: Array[MeshInstance3D]) -> void:
 
 func _update_aura_overlays(delta: float) -> void:
 	# 1. Update targets based on current state
-	var target_takedown = 1.0 if (state_machine and state_machine.current_state and state_machine.current_state.name == "StateTakedownable") else 0.0
+	var target_takedown = 0.0
+	if state_machine:
+		var td = state_machine._states.get("StateTakedownable")
+		if td and state_machine.current_state == td:
+			target_takedown = 1.0
+			if td.stun_type == "head":
+				_takedown_last_mask_dir = 1 # Upper half only
+			else:
+				_takedown_last_mask_dir = 2 # Lower half only (foot/leg shots)
 	
 	var active_attack = get_active_attack_type()
 	var target_left = 1.0 if (active_attack == "attack_2" or active_attack == "attack_grab") else 0.0
@@ -490,6 +523,8 @@ func _update_aura_overlays(delta: float) -> void:
 			_takedown_aura_material.shader = shader
 			_takedown_aura_material.set_shader_parameter("pink_color", Color(1.0, 1.0, 1.0, 1.0))
 			_takedown_aura_material.set_shader_parameter("blue_color", Color(0.8, 0.85, 0.95, 1.0))
+			# Make it a little bit smaller (user requested)
+			_takedown_aura_material.set_shader_parameter("aura_scale", 0.025)
 	if _left_hand_aura_alpha > 0.0 and not _left_hand_aura_material:
 		if not shader:
 			shader = load("res://shaders/takedown_aura.gdshader")
@@ -510,6 +545,7 @@ func _update_aura_overlays(delta: float) -> void:
 	# Update Shader uniform alpha values
 	if _takedown_aura_material:
 		_takedown_aura_material.set_shader_parameter("alpha_val", _takedown_aura_alpha)
+		_takedown_aura_material.set_shader_parameter("mask_direction", _takedown_last_mask_dir)
 	if _left_hand_aura_material:
 		_left_hand_aura_material.set_shader_parameter("alpha_val", _left_hand_aura_alpha)
 	if _right_hand_aura_material:

@@ -78,7 +78,7 @@ func _process(delta: float) -> void:
 			# Trigger focus pop when progress hits 100%
 			if focus_prog >= 1.0:
 				if not was_fully_focused:
-					pop_scale = 1.35
+					pop_scale = 1.5
 					was_fully_focused = true
 			else:
 				was_fully_focused = false

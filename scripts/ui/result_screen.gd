@@ -183,7 +183,7 @@ func _calculate_results() -> void:
 			"name_en": "Executioner",
 			"name_th": "เพชฌฆาต",
 			"desc_en": "Performed 5 or more takedowns",
-			"desc_th": "จัดการซอมบี้ด้วยท่าจู่โจมพิเศษ 5 ครั้งขึ้นไป"
+			"desc_th": "จัดการซอมบี้สงกรานต์ด้วยท่าจู่โจมพิเศษ 5 ครั้งขึ้นไป"
 		})
 		
 	# Untouchable
@@ -210,7 +210,7 @@ func _calculate_results() -> void:
 			"name_en": "Crowd Cleaner",
 			"name_th": "นักกวาดล้าง",
 			"desc_en": "Defeated every single zombie",
-			"desc_th": "เอาชนะซอมบี้ทุกตัวในฉาก"
+			"desc_th": "เอาชนะซอมบี้สงกรานต์ทุกตัวในฉาก"
 		})
 
 func _build_ui() -> void:
@@ -305,7 +305,7 @@ func _build_ui() -> void:
 			if gm.game_outcome == gm.Outcome.DEFEAT_ANCHALEE:
 				reason = "Mission Failed - You failed to protect Anchalee." if lang != "th" else "ภารกิจล้มเหลว - คุณไม่สามารถปกป้องอัญชลีได้"
 			else:
-				reason = "You were overwhelmed." if lang != "th" else "คุณถูกฝูงซอมบี้รุมล้อมจนพ่ายแพ้"
+				reason = "You were overwhelmed." if lang != "th" else "คุณถูกฝูงซอมบี้สงกรานต์รุมล้อมจนพ่ายแพ้"
 		subtitle_lbl.text = reason
 		subtitle_lbl.add_theme_color_override("font_color", Color(0.9, 0.5, 0.5))
 		
@@ -378,7 +378,7 @@ func _build_ui() -> void:
 	var accuracy_formatted = "%d%%" % int(accuracy_val * 100.0)
 	
 	_add_stat_row("Time Remaining" if lang != "th" else "เวลาที่เหลือ", time_formatted)
-	_add_stat_row("Songkarner Defeated" if lang != "th" else "ซอมบี้ที่ถูกปราบ", kills_formatted + " (" + kill_pct_formatted + ")")
+	_add_stat_row("Songkarner Defeated" if lang != "th" else "ซอมบี้สงกรานต์ที่ถูกปราบ", kills_formatted + " (" + kill_pct_formatted + ")")
 	_add_stat_row("Takedowns Executed" if lang != "th" else "ท่าพิเศษที่ใช้ (Takedown)", str(takedown_count_val))
 	_add_stat_row("Player Damage Taken" if lang != "th" else "ความเสียหายที่ผู้เล่นได้รับ", "%d HP" % int(damage_taken_val))
 	_add_stat_row("Water Gun Accuracy" if lang != "th" else "ความแม่นยำปืนฉีดน้ำ", accuracy_formatted)
@@ -524,6 +524,18 @@ func _build_ui() -> void:
 	retry_btn.pressed.connect(_on_retry_pressed)
 	buttons_container.add_child(retry_btn)
 	
+	# Select Mode button
+	var mode_btn = Button.new()
+	mode_btn.text = "Select Mode" if lang != "th" else "เลือกโหมด/การควบคุม"
+	_style_button(mode_btn)
+	mode_btn.pressed.connect(_on_mode_pressed)
+	buttons_container.add_child(mode_btn)
+	
+	if get_tree().root.has_node("GameManager") and get_tree().root.get_node("GameManager").casual_mode_new:
+		var tween = mode_btn.create_tween().set_loops()
+		tween.tween_property(mode_btn, "modulate", Color(1.4, 1.2, 0.4, 1.0), 0.6).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+		tween.tween_property(mode_btn, "modulate", Color(1.0, 1.0, 1.0, 1.0), 0.6).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+
 	# Main menu button
 	var menu_btn = Button.new()
 	menu_btn.text = "Main Menu" if lang != "th" else "เมนูหลัก"
@@ -661,6 +673,16 @@ func _on_retry_pressed() -> void:
 	if get_tree().root.has_node("GameManager"):
 		get_tree().root.get_node("GameManager").reset_game()
 	get_tree().change_scene_to_file("res://scenes/loading_screen.tscn")
+
+func _on_mode_pressed() -> void:
+	SoundManager.play_2d("Confirm_UI")
+	if get_tree().root.has_node("GameManager"):
+		var gm = get_tree().root.get_node("GameManager")
+		gm.reset_game()
+		gm.movement_type_selected = false
+		if gm.has_node("/root/ItemManager"):
+			gm.get_node("/root/ItemManager").reset()
+	get_tree().change_scene_to_file("res://scenes/disclaimer.tscn")
 
 func _on_menu_pressed() -> void:
 	SoundManager.play_2d("Confirm_UI")

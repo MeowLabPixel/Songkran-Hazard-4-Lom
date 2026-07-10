@@ -251,7 +251,7 @@ func _update_hud_counters() -> void:
 		
 	# Update Kill Count Box
 	var kills = GameManager.kill_count
-	var limit = GameManager.KILL_LIMIT
+	var limit = GameManager.kill_limit
 	if lang == "th":
 		kill_label.text = "กำจัด: %d/%d" % [kills, limit]
 	else:

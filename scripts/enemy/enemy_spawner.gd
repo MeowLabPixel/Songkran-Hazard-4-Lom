@@ -37,7 +37,13 @@ func _ready() -> void:
 	
 	# Register with GameManager
 	if get_tree().root.has_node("GameManager"):
-		get_tree().root.get_node("GameManager").register_spawner(self)
+		var gm = get_tree().root.get_node("GameManager")
+		gm.register_spawner(self)
+		if gm.difficulty == gm.Difficulty.CASUAL:
+			max_concurrent_enemies = 4
+			spawn_cooldown = 1.5
+		elif gm.difficulty == gm.Difficulty.EXPERT:
+			spawn_cooldown = 0.5
 		
 	# Gather all Marker3D or Node3D spawn points
 	for child in spawn_points_container.get_children():

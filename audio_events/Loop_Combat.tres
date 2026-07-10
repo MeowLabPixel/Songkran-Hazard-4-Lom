@@ -7,5 +7,5 @@
 script = ExtResource("1_64e4q")
 name = "Loop_Combat"
 volume_randomness_db = 0.5
-is_3d = true
+category = "Music"
 streams = Array[AudioStream]([ExtResource("2_pirsw")])

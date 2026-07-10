@@ -30,7 +30,8 @@ func _ready() -> void:
 	if get_tree().root.has_node("GameManager"):
 		get_tree().root.get_node("GameManager").reset_game()
 	
-	SoundManager.play_music_non_combat()
+	if not SoundManager.is_playing_main_theme():
+		SoundManager.stop_music()
 	
 	# Setup UI prompt font and color override to fix scene layout alpha bug
 	var font = preload("res://scenes/font/iannnnn-DOG-Bold.ttf")
@@ -101,8 +102,7 @@ func _change_phase(new_phase: Phase) -> void:
 			prompt_label.text = _get_continue_text()
 			_start_prompt_pulse()
 		Phase.IDLE:
-			prompt_label.text = _get_continue_text()
-			_start_prompt_pulse()
+			pass
 
 func _get_continue_text() -> String:
 	var selected_lang = "en"
@@ -114,6 +114,7 @@ func _start_prompt_pulse() -> void:
 	if pulse_tween:
 		pulse_tween.kill()
 	
+	prompt_label.show()
 	prompt_label.modulate.a = 0.0
 	pulse_tween = create_tween().set_loops()
 	pulse_tween.tween_property(prompt_label, "modulate:a", 1.0, 0.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -126,10 +127,14 @@ func _stop_prompt_pulse(fade_out_duration: float = 0.2) -> void:
 	
 	var fade = create_tween()
 	fade.tween_property(prompt_label, "modulate:a", 0.0, fade_out_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	fade.finished.connect(func():
+		prompt_label.hide()
+	)
 
 func _start_reveal() -> void:
 	_change_phase(Phase.REVEAL)
 	_stop_prompt_pulse(0.2)
+	SoundManager.play_main_theme()
 	
 	var children = bg_instance.get_children()
 	reveal_tween = create_tween().set_parallel(true)
@@ -273,6 +278,7 @@ func _start_reveal() -> void:
 	reveal_tween.finished.connect(_on_reveal_finished)
 
 func _on_reveal_finished() -> void:
+	SoundManager.play_2d("Title Drop")
 	_init_sway_configs()
 	_change_phase(Phase.IDLE)
 	

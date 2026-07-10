@@ -3,7 +3,14 @@ extends Node
 signal game_ended
 
 const SURVIVAL_LIMIT: float = 600.0 # 10 minutes
-const KILL_LIMIT: int = 15
+var kill_limit: int = 15
+
+enum Difficulty { EXPERT, CASUAL }
+var difficulty: Difficulty = Difficulty.EXPERT
+
+const SAVE_PATH = "user://game_settings.cfg"
+var expert_mode_played: bool = false
+var casual_mode_new: bool = false
 
 var survival_time_elapsed: float = 0.0
 var kill_count: int = 0
@@ -38,15 +45,41 @@ const COMBO_WINDOW: float = 7.0 # seconds to chain kills
 var registered_spawners: Array = []
 
 
+func save_settings() -> void:
+	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if file:
+		file.store_var(expert_mode_played)
+		file.store_var(casual_mode_new)
+		file.close()
+
+func load_settings() -> void:
+	if FileAccess.file_exists(SAVE_PATH):
+		var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
+		if file:
+			var val1 = file.get_var()
+			if val1 is bool:
+				expert_mode_played = val1
+			if not file.eof_reached():
+				var val2 = file.get_var()
+				if val2 is bool:
+					casual_mode_new = val2
+			file.close()
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	load_settings()
 	# Reset state when autoload loads
 	reset_game()
 
 func start_game() -> void:
 	reset_game()
 	is_game_active = true
-	print("[GameManager] Game loop started. Survive 10 minutes or defeat 15 villagers.")
+	if difficulty == Difficulty.EXPERT:
+		if not expert_mode_played:
+			expert_mode_played = true
+			casual_mode_new = true
+			save_settings()
+	print("[GameManager] Game loop started. Survive 10 minutes or defeat %d villagers." % kill_limit)
 
 func reset_game() -> void:
 	survival_time_elapsed = 0.0
@@ -54,6 +87,11 @@ func reset_game() -> void:
 	is_game_ended = false
 	is_game_active = false
 	is_timer_active = false
+	
+	if difficulty == Difficulty.CASUAL:
+		kill_limit = 10
+	else:
+		kill_limit = 15
 	
 	# Reset all performance metrics
 	game_outcome = Outcome.VICTORY
@@ -149,8 +187,8 @@ func register_kill(is_takedown: bool = false) -> void:
 	if current_combo > highest_combo:
 		highest_combo = current_combo
 		
-	print("[GameManager] Villager defeated! Total kills: %d/%d (Combo: %d, Max Combo: %d)" % [kill_count, KILL_LIMIT, current_combo, highest_combo])
-	if kill_count >= KILL_LIMIT:
+	print("[GameManager] Villager defeated! Total kills: %d/%d (Combo: %d, Max Combo: %d)" % [kill_count, kill_limit, current_combo, highest_combo])
+	if kill_count >= kill_limit:
 		print("[GameManager] Kill threshold reached! Ending game.")
 		end_game()
 
@@ -166,8 +204,13 @@ func end_game() -> void:
 	if not tree:
 		return
 
+	# Disable all registered spawners right away
+	for spawner in registered_spawners:
+		if is_instance_valid(spawner):
+			spawner.stop_spawning()
+
 	# If victory is triggered by kill count limit, immediately defeat all active zombies
-	if kill_count >= KILL_LIMIT:
+	if kill_count >= kill_limit:
 		var enemies = tree.get_nodes_in_group("enemies")
 		for enemy in enemies:
 			if is_instance_valid(enemy) and not enemy.is_defeated:
@@ -178,7 +221,7 @@ func end_game() -> void:
 					enemy._trigger_defeat()
 
 	# Wait 3 seconds before transitioning to the result screen
-	await tree.create_timer(6.0).timeout
+	await tree.create_timer(3.0).timeout
 	
 	# If the game was reset or restarted during the wait, do not transition
 	if not is_game_ended:
@@ -196,6 +239,9 @@ func restart_game_to_disclaimer() -> void:
 	print("[GameManager] Backspace pressed. Resetting game and restarting to startup main menu.")
 	reset_game()
 	movement_type_selected = false
+	expert_mode_played = false
+	casual_mode_new = false
+	save_settings()
 	if has_node("/root/ItemManager"):
 		get_node("/root/ItemManager").reset()
 	var tree := get_tree()

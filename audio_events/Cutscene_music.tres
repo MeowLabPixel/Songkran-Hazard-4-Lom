@@ -7,5 +7,5 @@
 script = ExtResource("1_1qla8")
 name = "Cutscene_music"
 volume_randomness_db = 0.5
-is_3d = true
+category = "Music"
 streams = Array[AudioStream]([ExtResource("2_wacic")])

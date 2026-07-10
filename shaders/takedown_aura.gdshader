@@ -8,6 +8,9 @@ uniform float aura_flicker : hint_range(0.0, 1.0) = 0.25;
 uniform float aura_scale : hint_range(0.0, 0.2) = 0.04; // how much it expands along normals
 uniform float alpha_val : hint_range(0.0, 1.0) = 1.0;
 
+uniform float height_mask_y : hint_range(0.0, 3.0) = 0.85;
+uniform int mask_direction : hint_range(0, 2) = 0; // 0: None, 1: Upper half only, 2: Lower half only
+
 void vertex() {
 	float speed = TIME * aura_speed;
 	
@@ -18,13 +21,21 @@ void vertex() {
 	
 	// Taper displacement slightly at the very top of the character
 	float height_taper = clamp(1.0 - (VERTEX.y - 1.0) * 0.3, 0.3, 1.0);
-	float displacement = (aura_scale + undulation) * height_taper;
 	
+	// Calculate height-based mask
+	float mask = 1.0;
+	if (mask_direction == 1) {
+		mask = smoothstep(height_mask_y - 0.15, height_mask_y + 0.15, VERTEX.y);
+	} else if (mask_direction == 2) {
+		mask = 1.0 - smoothstep(height_mask_y - 0.15, height_mask_y + 0.15, VERTEX.y);
+	}
+	
+	float displacement = (aura_scale + undulation) * height_taper * mask;
 	VERTEX += NORMAL * displacement;
 	
 	// Apply rising heat sway to simulate wind/heat-haze moving the flame tongues
-	VERTEX.x += sin(speed * 1.2 + VERTEX.y * 3.0) * 0.015 * height_taper;
-	VERTEX.z += cos(speed * 1.0 + VERTEX.y * 3.0) * 0.015 * height_taper;
+	VERTEX.x += sin(speed * 1.2 + VERTEX.y * 3.0) * 0.015 * height_taper * mask;
+	VERTEX.z += cos(speed * 1.0 + VERTEX.y * 3.0) * 0.015 * height_taper * mask;
 }
 
 void fragment() {
@@ -48,10 +59,18 @@ void fragment() {
 	// Dynamic flicker
 	float flicker = 1.0 - (sin(TIME * 25.0) * cos(TIME * 18.0) * aura_flicker);
 	
-	// Alpha is determined by the flame tongues, vertical taper, and flicker
-	float alpha_glow = flame_tongues * taper * flicker;
+	// Calculate height-based mask
+	float mask = 1.0;
+	if (mask_direction == 1) {
+		mask = smoothstep(height_mask_y - 0.15, height_mask_y + 0.15, pos.y);
+	} else if (mask_direction == 2) {
+		mask = 1.0 - smoothstep(height_mask_y - 0.15, height_mask_y + 0.15, pos.y);
+	}
 	
-	// Complex color mix: Pink inside the hotter cores, Blue at the outer edges and cooler tops
+	// Alpha is determined by the flame tongues, vertical taper, flicker, and height mask
+	float alpha_glow = flame_tongues * taper * flicker * mask;
+	
+	// Complex color mix: Pink/White inside the hotter cores, Blue/Grey at the outer edges
 	float core_mix = clamp(flame_tongues * 1.5 - 0.2, 0.0, 1.0);
 	float height_mix = clamp((pos.y + 0.2) / 1.8, 0.0, 1.0);
 	float blend_factor = clamp(core_mix * 0.65 + (1.0 - height_mix) * 0.35, 0.0, 1.0);
