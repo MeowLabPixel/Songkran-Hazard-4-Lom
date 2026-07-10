@@ -11,6 +11,20 @@ var shader_material: ShaderMaterial = null
 func _ready() -> void:
 	print("[LoadingScreen] Ready, starting async load: ", world_scene_path)
 	
+	# Override text and font based on selected language
+	var lang = "en"
+	if get_tree().root.has_node("GameManager"):
+		lang = get_tree().root.get_node("GameManager").selected_language
+		
+	var font = preload("res://scenes/font/iannnnn-DOG-Bold.ttf") if lang == "th" else preload("res://scenes/font/lazy_dog.ttf")
+	var label = get_node_or_null("CanvasLayer/CenterContainer/RichTextLabel")
+	if label:
+		label.add_theme_font_override("normal_font", font)
+		if lang == "th":
+			label.text = "[center][wave amp=50 freq=5]กำลังโหลด..[/wave][/center]"
+		else:
+			label.text = "[center][wave amp=50 freq=5]loading..[/wave][/center]"
+
 	# Start loading the world scene asynchronously
 	ResourceLoader.load_threaded_request(world_scene_path)
 	

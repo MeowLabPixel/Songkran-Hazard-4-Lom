@@ -1,9 +1,9 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://da6v3t236rxd1"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_medx2"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Zombie Melee (M)/vo_zombie_m_melee_gethit_1.ogg" id="2_yfhy1"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Zombie Melee (M)/vo_zombie_m_melee_gethit_2.ogg" id="3_3gbf2"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Zombie Melee (M)/vo_zombie_m_melee_gethit_3.ogg" id="4_21u0q"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_medx2"]
+[ext_resource type="AudioStream" uid="uid://jdwcnlqtqsom" path="res://Audio-Sfx-Music/Voicelines/Zombie Melee (M)/vo_zombie_m_melee_gethit_1.ogg" id="2_yfhy1"]
+[ext_resource type="AudioStream" uid="uid://bfm8cikau7gl" path="res://Audio-Sfx-Music/Voicelines/Zombie Melee (M)/vo_zombie_m_melee_gethit_2.ogg" id="3_3gbf2"]
+[ext_resource type="AudioStream" uid="uid://davv4wbl1dpad" path="res://Audio-Sfx-Music/Voicelines/Zombie Melee (M)/vo_zombie_m_melee_gethit_3.ogg" id="4_21u0q"]
 
 [resource]
 script = ExtResource("1_medx2")

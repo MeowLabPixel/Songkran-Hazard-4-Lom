@@ -1,9 +1,9 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://ddxsqr7nqxr5a"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_k7vne"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Cancel_UI_1.wav" id="2_tisfd"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Cancel_UI_2.wav" id="3_ap0a7"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Cancel_UI_3.wav" id="4_uvynj"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_k7vne"]
+[ext_resource type="AudioStream" uid="uid://c6t72dt551i6e" path="res://Audio-Sfx-Music/Uis/Menu/Cancel_UI_1.wav" id="2_tisfd"]
+[ext_resource type="AudioStream" uid="uid://b1a3ujh88mv5o" path="res://Audio-Sfx-Music/Uis/Menu/Cancel_UI_2.wav" id="3_ap0a7"]
+[ext_resource type="AudioStream" uid="uid://c407h7tarxpp1" path="res://Audio-Sfx-Music/Uis/Menu/Cancel_UI_3.wav" id="4_uvynj"]
 
 [resource]
 script = ExtResource("1_k7vne")

@@ -4,12 +4,22 @@ var reload_anim = "RR/re"
 var _exited: bool = false
 var _pump_cooldown_timer: float = 0.2
 var qte_hud = null
+var _time_in_state: float = 0.0
 
+@export_group("QTE Customization")
 @export var block_movement_during_qte: bool = true
 @export var block_aiming_during_qte: bool = true
-
+@export var can_cancel_qte_via_aim: bool = true
+@export var can_cancel_qte_via_movement: bool = true
+@export var qte_duration: float = 2.0
+@export var qte_prompt_count_override: int = 0 # If 0, uses start_air-based dynamic count (1 to 4)
+@export var qte_target_zone_size: float = 0.0 # If 0.0, uses default difficulty-scaled size
+@export var qte_show_progress_bar: bool = false
+@export var superpump_hold_duration: float = 0.6
+ 
 func _enter() -> void:
 	_exited = false
+	_time_in_state = 0.0
 	stop_moving()
 	owner.is_aimming = false
 	owner.aim_blocked_until_release = true
@@ -32,6 +42,17 @@ func _enter() -> void:
 	if gun and (gun.gun_name == "Water pistol" or owner.gun_controller.current_gun_index == 0):
 		# Start QTE reload hud for pistol
 		qte_hud = load("res://scripts/ui/reload_qte_hud.gd").new(gun.air, gun.max_air)
+		
+		# Assign custom inspector settings dynamically
+		qte_hud.duration = qte_duration
+		qte_hud.prompt_count_override = qte_prompt_count_override
+		qte_hud.prompt_size_override = qte_target_zone_size
+		qte_hud.show_progress_bar = qte_show_progress_bar
+		qte_hud.superpump_required_hold = superpump_hold_duration
+		
+		# Run parameters initialization
+		qte_hud.setup()
+		
 		qte_hud.qte_hit.connect(_on_qte_hit)
 		qte_hud.finished.connect(_on_reload_finished)
 		qte_hud.cancelled.connect(_on_reload_cancelled)
@@ -59,13 +80,17 @@ func _exit() -> void:
 		qte_hud.cancel()
 		qte_hud = null
 	if is_instance_valid(owner):
-		owner.aim_blocked_until_release = false
 		if owner.anim and is_instance_valid(owner.anim):
 			if owner.anim.animation_finished.is_connected(anim_done):
 				owner.anim.animation_finished.disconnect(anim_done)
 			owner.anim.set("parameters/Main/Reload/Reload/TimeScale/scale", 1.0)
 			owner.anim.set("parameters/Main/Reload/Reload 2/TimeScale/scale", 1.0)
 			owner.anim.set("parameters/Main/Reload/Reload_Quick/TimeScale/scale", 1.5)
+			
+			# Cleanly reset the reload sub-state machine to avoid T-posing
+			var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
+			if sub_pb:
+				sub_pb.travel("End")
 			
 		# Transition camera out of aim mode if we are not aiming
 		if not owner.is_aimming:
@@ -82,17 +107,34 @@ func _update(_delta: float) -> void:
 		finished.emit("Die")
 		return
 		
+	_time_in_state += _delta
 	if _pump_cooldown_timer > 0.0:
 		_pump_cooldown_timer -= _delta
 		
-	# QoL: Aim cancels reload (unless blocked by setting)
+	# QoL: Aim cancels reload (unless blocked by setting and within 0.3s guard)
 	if Input.is_action_pressed("aim"):
 		var is_pistol_qte = is_instance_valid(qte_hud) and qte_hud.mode == "qte"
-		var should_block_aim = is_pistol_qte and block_aiming_during_qte
-		
-		if not should_block_aim:
+		if is_pistol_qte:
+			if can_cancel_qte_via_aim and _time_in_state >= 0.3:
+				owner.is_aimming = true
+				finished.emit("Aim")
+				return
+		else:
 			owner.is_aimming = true
 			finished.emit("Aim")
+			return
+			
+	# QoL: Movement cancels reload (if enabled and within 0.3s guard)
+	var up = Input.is_action_pressed("ui_up")
+	var down = Input.is_action_pressed("ui_down")
+	var left = Input.is_action_pressed("ui_left")
+	var right = Input.is_action_pressed("ui_right")
+	var has_movement_input = up or down or left or right
+	
+	if has_movement_input:
+		var is_pistol_qte = is_instance_valid(qte_hud) and qte_hud.mode == "qte"
+		if is_pistol_qte and can_cancel_qte_via_movement and _time_in_state >= 0.3:
+			finished.emit("Run")
 			return
 			
 	# Gradually fill gun air for water pistol based on HUD progress
@@ -104,10 +146,6 @@ func _update(_delta: float) -> void:
 		# If movement is allowed, process movement input and apply velocity
 		if not block_movement_during_qte:
 			var input_dir = Vector2.ZERO
-			var up = Input.is_action_pressed("ui_up")
-			var down = Input.is_action_pressed("ui_down")
-			var left = Input.is_action_pressed("ui_left")
-			var right = Input.is_action_pressed("ui_right")
 			
 			var horizontal = 0.0
 			if right: horizontal += 1.0

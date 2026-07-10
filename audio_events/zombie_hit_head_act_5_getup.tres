@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://8qel2ph5hmeu"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_4vpuj"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Zombie/zombie_hit_head_act_5_getup.ogg" id="2_143k7"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_4vpuj"]
+[ext_resource type="AudioStream" uid="uid://deh3f2rcnj3l2" path="res://Audio-Sfx-Music/SFXs/Zombie/zombie_hit_head_act_5_getup.ogg" id="2_143k7"]
 
 [resource]
 script = ExtResource("1_4vpuj")

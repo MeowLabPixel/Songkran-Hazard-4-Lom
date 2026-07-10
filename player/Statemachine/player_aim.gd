@@ -42,7 +42,7 @@ func _state_input(_event: InputEvent) -> void:
 	if Input.is_action_just_released("aim") :
 		owner.is_aimming = false
 		finished.emit("Idle")
-	if Input.is_action_pressed("Reload") :
+	if Input.is_action_just_pressed("Reload") :
 		finished.emit("Reload")
 	if Input.is_action_pressed("Gun1"):
 		switch_gun(0)

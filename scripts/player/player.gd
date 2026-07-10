@@ -61,7 +61,7 @@ func _get_footstep_markers(anim_player: AnimationPlayer, anim_name: String) -> A
 	return result
 
 @export_group("Data setting")
-@export var MaxHP = 1000
+@export var MaxHP = 150
 @export var hitboxF: Area3D
 @export var hitboxB: Area3D
 @export var stun_detect: Area3D
@@ -177,6 +177,26 @@ const JUMP_VELOCITY = 4.5
 func _ready() -> void:
 	if not GameManager.movement_type_selected:
 		GameManager.movement_type = movement_type_override
+	
+	# Adjust player movement speed and animation scale based on movement control type
+	var speed_mult := 1.0
+	match GameManager.movement_type:
+		GameManager.MovementType.HYBRID_RETRO: # Type A
+			speed_mult = 1.3
+		GameManager.MovementType.MODERN:       # Type B
+			speed_mult = 1.0
+		GameManager.MovementType.TANK:         # Type C
+			speed_mult = 1.5
+
+	walk_speed *= speed_mult
+	walk_Back_speed *= speed_mult
+	run_speed *= speed_mult
+	
+	walk_anim_speed *= speed_mult
+	walk_back_anim_speed *= speed_mult
+	walk_side_anim_speed *= speed_mult
+	sprint_anim_speed *= speed_mult
+
 	if anim:
 		anim.active = true
 		var anim_player = anim.get_node_or_null(anim.anim_player) as AnimationPlayer
@@ -602,6 +622,7 @@ func spawn_damage_popup(text_content: String, color: Color) -> void:
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color.BLACK)
 	label.add_theme_constant_override("outline_size", 6)
+	label.add_theme_font_override("font", preload("res://scenes/font/iannnnnVCD 2007 Bold.ttf"))
 	
 	# Position: randomly left or right of the crosshair center
 	var offset_x = randf_range(45.0, 75.0)

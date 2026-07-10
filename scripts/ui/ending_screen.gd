@@ -7,6 +7,29 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	SoundManager.stop_music()
 
+	var lang = "en"
+	if get_tree().root.has_node("GameManager"):
+		lang = get_tree().root.get_node("GameManager").selected_language
+		
+	var header_font = preload("res://scenes/font/iannnnn-DOG-Bold.ttf") if lang == "th" else preload("res://scenes/font/lazy_dog.ttf")
+	var subheader_font = preload("res://scenes/font/iannnnn-DOG-Bold.ttf")
+	
+	var ending_text = get_node_or_null("CenterContainer/VBoxContainer/EndingText")
+	if ending_text:
+		ending_text.add_theme_font_override("font", header_font)
+		if lang == "th":
+			ending_text.text = "ขอบคุณที่ร่วมเล่นเกมเดโม!"
+		else:
+			ending_text.text = "Thank you for playing!"
+			
+	var prompt_lbl = get_node_or_null("CenterContainer/VBoxContainer/PromptLabel")
+	if prompt_lbl:
+		prompt_lbl.add_theme_font_override("font", subheader_font)
+		if lang == "th":
+			prompt_lbl.text = "กดปุ่ม Escape เพื่อออกจากเกม"
+		else:
+			prompt_lbl.text = "Press Escape to exit"
+
 	# Set up initial state for pop-in animation
 	container.scale = Vector2.ZERO
 	container.modulate.a = 0.0

@@ -372,8 +372,12 @@ func _trigger_defeat() -> void:
 	enemy_defeated.emit()
 	_spawn_drops()
 	_check_stop_combat_music()
-	if is_inside_tree() and get_tree().root.has_node("GameManager"):
-		get_tree().root.get_node("GameManager").register_kill()
+	if is_inside_tree():
+		var ui = get_tree().get_first_node_in_group("player_ui")
+		if ui and ui.has_method("spawn_kill_projectile"):
+			ui.spawn_kill_projectile(global_position)
+		if get_tree().root.has_node("GameManager"):
+			get_tree().root.get_node("GameManager").register_kill()
 
 # --- Animation Event Hooks ---
 # Call these from AnimationPlayer Method Tracks on the root node

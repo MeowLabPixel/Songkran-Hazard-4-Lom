@@ -50,10 +50,19 @@ func _ready() -> void:
 	
 	if get_tree().root.has_node("GameManager"):
 		get_tree().root.get_node("GameManager").reset_game()
+		selected_lang = get_tree().root.get_node("GameManager").selected_language
+	else:
+		selected_lang = "en"
 
-	selected_lang = "en"
-	pages = pages_en
+	if selected_lang == "th":
+		pages = pages_th
+	else:
+		pages = pages_en
+		
 	language_selected = true
+	
+	# Override prompt label font
+	prompt_label.add_theme_font_override("font", preload("res://scenes/font/iannnnn-DOG-Bold.ttf"))
 	
 	# Show the tutorial content container immediately
 	container.show()
@@ -147,6 +156,8 @@ func _switch_language(lang: String) -> void:
 	
 	tween.finished.connect(func():
 		selected_lang = lang
+		if get_tree().root.has_node("GameManager"):
+			get_tree().root.get_node("GameManager").selected_language = lang
 		if lang == "th":
 			pages = pages_th
 		else:
@@ -326,7 +337,10 @@ func _show_movement_selection() -> void:
 	title_lbl.text = movement_texts["title"][selected_lang]
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_lbl.add_theme_font_size_override("font_size", 42)
-	title_lbl.add_theme_font_override("font", preload("res://addons/phantom_camera/fonts/Nunito-Black.ttf"))
+	
+	# Header font: lazy_dog for Eng, iannnnn-DOG-Bold for Thai
+	var title_font = preload("res://scenes/font/iannnnn-DOG-Bold.ttf") if selected_lang == "th" else preload("res://scenes/font/lazy_dog.ttf")
+	title_lbl.add_theme_font_override("font", title_font)
 	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3)) # Golden text
 	vbox.add_child(title_lbl)
 	
@@ -346,7 +360,7 @@ func _show_movement_selection() -> void:
 	back_prompt.text = "[ Press Q to go back ]" if selected_lang == "en" else "[ กดปุ่ม Q เพื่อย้อนกลับ ]"
 	back_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	back_prompt.add_theme_font_size_override("font_size", 24)
-	back_prompt.add_theme_font_override("font", preload("res://addons/phantom_camera/fonts/Nunito-Black.ttf"))
+	back_prompt.add_theme_font_override("font", preload("res://scenes/font/iannnnn-DOG-Bold.ttf"))
 	back_prompt.add_theme_color_override("font_color", Color(0.6, 0.6, 0.7, 1))
 	vbox.add_child(back_prompt)
 

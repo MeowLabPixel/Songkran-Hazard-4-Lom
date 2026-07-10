@@ -4,3 +4,6 @@
 
 - **Godot Editor Operations**: If a task requires modifying scene layouts, attaching scripts in scenes, or configuring inspector values, do NOT write external scripts (like Python or GDScript run scripts) or try complex scene-file hacks to automate it. Instead, **directly describe the steps and instruct the user to make the modification manually in the Godot Editor UI** to conserve token/quota usage.
 
+- **CRITICAL - Implementation Planning**: For every prompt or task requested by the user, you **MUST** create a detailed implementation plan first and obtain the user's explicit confirmation/approval **BEFORE** writing or modifying any code. Do NOT skip the planning step. Do NOT start coding immediately. Always plan first, wait for approval, then execute.
+
+

@@ -49,8 +49,13 @@ extends Node
 @export_group("Sound Event Bank")
 @export var sound_bank: Array[SoundEvent] = []
 
+@export_group("Voiceline Control Settings")
+@export_range(0.0, 1.0) var voiceline_play_chance: float = 0.5
+@export var voiceline_cooldown_min: float = 3.0
+@export var voiceline_cooldown_max: float = 5.0
 
 var _events: Dictionary = {}
+var _voiceline_cooldowns: Dictionary = {}
 var _active_instances: Dictionary = {} # event_name -> Array[Node] (players)
 var _muffle_tweens: Dictionary = {} # bus_name -> Tween
 var _muffle_linger_tweens: Dictionary = {} # bus_name -> Tween
@@ -285,8 +290,54 @@ func _on_player_finished(player: Node, event: SoundEvent, parallel_player: Node 
 	if is_instance_valid(parallel_player):
 		parallel_player.queue_free()
 
+func _should_block_voiceline(event_name: String, source = null) -> bool:
+	# Only apply to zombie and Anchalee voicelines (excluding breathing sounds)
+	var is_zombie = event_name.begins_with("vo_zombie_")
+	var is_anchalee = event_name.begins_with("vo_anchalee_") and not event_name.begins_with("vo_anchalee_Exhausted") and not event_name.begins_with("vo_anchalee_Panting")
+	
+	if not is_zombie and not is_anchalee:
+		return false
+		
+	var time_now = Time.get_ticks_msec() / 1000.0
+	
+	# Clean up expired cooldown entries to prevent memory growth
+	var expired_keys = []
+	for key in _voiceline_cooldowns:
+		if time_now >= _voiceline_cooldowns[key]:
+			expired_keys.append(key)
+	for key in expired_keys:
+		_voiceline_cooldowns.erase(key)
+		
+	# Determine the tracking key: instance_id of source if valid node, otherwise generic string prefix
+	var tracking_key = ""
+	if typeof(source) == TYPE_OBJECT and is_instance_valid(source):
+		tracking_key = str(source.get_instance_id())
+	else:
+		tracking_key = "zombie" if is_zombie else "anchalee"
+		
+	# 1. Cooldown Check
+	if _voiceline_cooldowns.has(tracking_key):
+		var cooldown_end = _voiceline_cooldowns[tracking_key]
+		if time_now < cooldown_end:
+			# Cooldown active, block playing
+			return true
+			
+	# 2. Play Chance Check
+	if randf() > voiceline_play_chance:
+		# Block playing but do not trigger full 3-5s cooldown (so it can try next time)
+		return true
+		
+	# Passed both checks! We will play the voiceline.
+	# Set a new random cooldown between min and max settings.
+	var cooldown_duration = randf_range(voiceline_cooldown_min, voiceline_cooldown_max)
+	_voiceline_cooldowns[tracking_key] = time_now + cooldown_duration
+	return false
+
 # Plays a 2D Sound Event (returns the main player node)
 func play_2d(event_name: String, start_offset: float = 0.0, duration: float = -1.0, alternative: bool = false) -> AudioStreamPlayer2D:
+	if _should_block_voiceline(event_name, null):
+		return null
+		
 	var event: SoundEvent = _events.get(event_name)
 	if not event:
 		push_warning("[SoundManager] SoundEvent '%s' not found." % event_name)
@@ -371,6 +422,9 @@ func play_2d(event_name: String, start_offset: float = 0.0, duration: float = -1
 # source can be a Vector3 (position) or a Node3D (attaches to it)
 # source can be a Vector3 (position) or a Node3D (attaches to it)
 func play_3d(event_name: String, source = null, start_offset: float = 0.0, duration: float = -1.0, pitch_multiplier: float = 1.0, alternative: bool = false) -> AudioStreamPlayer3D:
+	if _should_block_voiceline(event_name, source):
+		return null
+		
 	var event: SoundEvent = _events.get(event_name)
 	if not event:
 		push_warning("[SoundManager] SoundEvent '%s' not found." % event_name)

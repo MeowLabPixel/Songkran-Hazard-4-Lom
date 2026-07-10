@@ -1,9 +1,9 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://bt8hb3qq3bbi2"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_4kqer"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Zombie/ZombieGetHitTakedown_Part1_Add_1.wav" id="2_m0ami"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Zombie/ZombieGetHitTakedown_Part1_Add_2.wav" id="3_16ada"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Zombie/ZombieGetHitTakedown_Part1_Add_3.wav" id="4_h5mhs"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_4kqer"]
+[ext_resource type="AudioStream" uid="uid://brpbjxg83tsqr" path="res://Audio-Sfx-Music/SFXs/Zombie/ZombieGetHitTakedown_Part1_Add_1.wav" id="2_m0ami"]
+[ext_resource type="AudioStream" uid="uid://20okggdutve1" path="res://Audio-Sfx-Music/SFXs/Zombie/ZombieGetHitTakedown_Part1_Add_2.wav" id="3_16ada"]
+[ext_resource type="AudioStream" uid="uid://c2sx5kwgsif3l" path="res://Audio-Sfx-Music/SFXs/Zombie/ZombieGetHitTakedown_Part1_Add_3.wav" id="4_h5mhs"]
 
 [resource]
 script = ExtResource("1_4kqer")

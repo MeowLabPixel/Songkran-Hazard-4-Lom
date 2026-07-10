@@ -50,18 +50,25 @@ func _process(delta: float) -> void:
 func _splash() -> void:
 	_active = false
 
+	var tree = get_tree()
+	if not tree:
+		if splash_particles:
+			splash_particles.queue_free()
+		queue_free()
+		return
+
 	# Detach and trigger splash particles in world space before freeing
 	if splash_particles:
-		var current_scene = get_tree().current_scene
+		var current_scene = tree.current_scene
 		if is_instance_valid(current_scene):
 			splash_particles.reparent(current_scene)
 			splash_particles.emitting = true
-			get_tree().create_timer(splash_particles.lifetime).timeout.connect(splash_particles.queue_free)
+			tree.create_timer(splash_particles.lifetime).timeout.connect(splash_particles.queue_free)
 		else:
 			splash_particles.queue_free()
 
 	if _damage > 0.0:
-		for player in get_tree().get_nodes_in_group("player"):
+		for player in tree.get_nodes_in_group("player"):
 			if player.global_position.distance_to(global_position) <= _radius:
 				player.take_damage(int(_damage))
 				print("[WaterBalloon] Splash hit player for %d" % int(_damage))

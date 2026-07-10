@@ -95,7 +95,7 @@ func _state_input(_event: InputEvent) -> void:
 		finished.emit("Quick_turn")
 	if Input.is_action_pressed("sprint") and input_dir.y < -0.1:
 		finished.emit("Sprint")
-	if Input.is_action_pressed("Reload") :
+	if Input.is_action_just_pressed("Reload") :
 		finished.emit("Reload")
 	if Input.is_action_pressed("Gun1"):
 		switch_gun(0)

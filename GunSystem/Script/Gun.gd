@@ -116,7 +116,10 @@ func fire_pellet():
 	var from: Vector3 = camera.global_transform.origin
 	var direction: Vector3 = -camera.global_transform.basis.z
 	
-	var player = get_tree().get_first_node_in_group("player")
+	var tree := get_tree()
+	if not tree:
+		return
+	var player = tree.get_first_node_in_group("player")
 	if player and "true_aim_position" in player:
 		direction = (player.true_aim_position - from).normalized()
 		
@@ -157,26 +160,29 @@ func fire_pellet():
 	# Muzzle Flash
 	if muzzle_vfx_scene and spawn_point:
 		var muzzle_vfx: Node3D = muzzle_vfx_scene.instantiate()
-		get_tree().current_scene.add_child(muzzle_vfx)
-		muzzle_vfx.global_transform = spawn_point.global_transform
-		muzzle_vfx.position += spawn_point.global_transform.basis * muzzle_offset
-		muzzle_vfx.scale = muzzle_scale
-		
-		# Play Animation
-		if muzzle_vfx is GPUParticles3D:
-			muzzle_vfx.emitting = true
-		
-		var anim_player = muzzle_vfx.get_node_or_null("AnimationPlayer")
-		if anim_player and anim_player is AnimationPlayer:
-			if muzzle_animation_name != "" and anim_player.has_animation(muzzle_animation_name):
-				anim_player.play(muzzle_animation_name)
-			else:
-				anim_player.play(anim_player.get_animation_list()[0])
-		
-		get_tree().create_timer(0.5).timeout.connect(func():
-			if is_instance_valid(muzzle_vfx):
-				muzzle_vfx.queue_free()
-		)
+		if tree.current_scene:
+			tree.current_scene.add_child(muzzle_vfx)
+			muzzle_vfx.global_transform = spawn_point.global_transform
+			muzzle_vfx.position += spawn_point.global_transform.basis * muzzle_offset
+			muzzle_vfx.scale = muzzle_scale
+			
+			# Play Animation
+			if muzzle_vfx is GPUParticles3D:
+				muzzle_vfx.emitting = true
+			
+			var anim_player = muzzle_vfx.get_node_or_null("AnimationPlayer")
+			if anim_player and anim_player is AnimationPlayer:
+				if muzzle_animation_name != "" and anim_player.has_animation(muzzle_animation_name):
+					anim_player.play(muzzle_animation_name)
+				else:
+					anim_player.play(anim_player.get_animation_list()[0])
+			
+			tree.create_timer(0.5).timeout.connect(func():
+				if is_instance_valid(muzzle_vfx):
+					muzzle_vfx.queue_free()
+			)
+		else:
+			muzzle_vfx.queue_free()
 
 	if shot_vfx_scene:
 		var shot_vfx = _get_pooled_shot_vfx()
@@ -197,38 +203,41 @@ func fire_pellet():
 		SoundManager.play_3d("watergun_hit", result.position, 0.0, -1.0, 1.0, alt)
 		
 		var hit_vfx: Node3D = hit_vfx_scene.instantiate()
-		get_tree().current_scene.add_child(hit_vfx)
-		
-		# Position and Align with Normal
-		var normal = result.normal
-		if normal.length_squared() < 0.01:
-			normal = Vector3.UP
-		hit_vfx.global_position = result.position + (normal * 0.01) # Slight offset to prevent clipping
-
-		var up_dir = Vector3.UP
-		if abs(normal.dot(Vector3.UP)) > 0.999:
-			up_dir = Vector3.FORWARD
-		hit_vfx.look_at(hit_vfx.global_position + normal, up_dir)
-		
-		# Apply custom offset (local to the hit orientation) and scale
-		hit_vfx.position += hit_vfx.global_transform.basis * impact_offset
-		hit_vfx.scale = impact_scale
-		
-		# Play Animation
-		if hit_vfx is GPUParticles3D:
-			hit_vfx.emitting = true
+		if tree.current_scene:
+			tree.current_scene.add_child(hit_vfx)
 			
-		var anim_player = hit_vfx.get_node_or_null("AnimationPlayer")
-		if anim_player and anim_player is AnimationPlayer:
-			if impact_animation_name != "" and anim_player.has_animation(impact_animation_name):
-				anim_player.play(impact_animation_name)
-			else:
-				anim_player.play(anim_player.get_animation_list()[0])
-		
-		get_tree().create_timer(3.0).timeout.connect(func():
-			if is_instance_valid(hit_vfx):
-				hit_vfx.queue_free()
-		)
+			# Position and Align with Normal
+			var normal = result.normal
+			if normal.length_squared() < 0.01:
+				normal = Vector3.UP
+			hit_vfx.global_position = result.position + (normal * 0.01) # Slight offset to prevent clipping
+
+			var up_dir = Vector3.UP
+			if abs(normal.dot(Vector3.UP)) > 0.999:
+				up_dir = Vector3.FORWARD
+			hit_vfx.look_at(hit_vfx.global_position + normal, up_dir)
+			
+			# Apply custom offset (local to the hit orientation) and scale
+			hit_vfx.position += hit_vfx.global_transform.basis * impact_offset
+			hit_vfx.scale = impact_scale
+			
+			# Play Animation
+			if hit_vfx is GPUParticles3D:
+				hit_vfx.emitting = true
+				
+			var anim_player = hit_vfx.get_node_or_null("AnimationPlayer")
+			if anim_player and anim_player is AnimationPlayer:
+				if impact_animation_name != "" and anim_player.has_animation(impact_animation_name):
+					anim_player.play(impact_animation_name)
+				else:
+					anim_player.play(anim_player.get_animation_list()[0])
+			
+			tree.create_timer(3.0).timeout.connect(func():
+				if is_instance_valid(hit_vfx):
+					hit_vfx.queue_free()
+			)
+		else:
+			hit_vfx.queue_free()
 
 
 func update_accuracy():
@@ -240,7 +249,8 @@ func _apply_damage_to_result(result: Dictionary) -> void:
 		return
 
 	var final_damage = damage
-	var player = get_tree().get_first_node_in_group("player")
+	var tree := get_tree()
+	var player = tree.get_first_node_in_group("player") if tree else null
 	if player and player.has_method("get_damage_multiplier"):
 		final_damage = damage * player.get_damage_multiplier()
 
@@ -312,7 +322,10 @@ func reload_water(water_gain):
 		water_tank.current_water = clamp(water_tank.current_water, 0.0, water_tank.max_water)
 
 func _update_player_exclude_cache() -> void:
-	var player = get_tree().get_first_node_in_group("player")
+	var tree := get_tree()
+	if not tree:
+		return
+	var player = tree.get_first_node_in_group("player")
 	if player != _cached_player_node or _cached_player_rids.is_empty() or not is_instance_valid(_cached_player_node):
 		_cached_player_node = player
 		_cached_player_rids.clear()
@@ -334,9 +347,11 @@ func _get_pooled_shot_vfx() -> Node:
 			
 	if shot_vfx_scene:
 		var vfx = shot_vfx_scene.instantiate()
-		var scene = get_tree().current_scene
-		if scene:
-			scene.add_child(vfx)
+		var tree := get_tree()
+		if tree and tree.current_scene:
+			tree.current_scene.add_child(vfx)
 			_shot_vfx_pool.append(vfx)
 			return vfx
+		else:
+			vfx.queue_free()
 	return null

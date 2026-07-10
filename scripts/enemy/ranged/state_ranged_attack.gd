@@ -125,10 +125,14 @@ func _fire_water_gun(player: Node3D) -> void:
 
 	if water_stream_scene:
 		var stream: Node = water_stream_scene.instantiate()
-		enemy.get_tree().current_scene.add_child(stream)
-		if stream.has_method("set_line"):
-			stream.set_line(from, end_pos)
-		get_tree().create_timer(0.5).timeout.connect(stream.queue_free)
+		var tree := enemy.get_tree()
+		if tree and tree.current_scene:
+			tree.current_scene.add_child(stream)
+			if stream.has_method("set_line"):
+				stream.set_line(from, end_pos)
+			tree.create_timer(0.5).timeout.connect(stream.queue_free)
+		else:
+			stream.queue_free()
 
 	if result:
 		var collider = result.collider
@@ -152,8 +156,11 @@ func _throw_balloon(player: Node3D) -> void:
 		player.take_damage(attack_damage)
 		return
 
+	var tree := enemy.get_tree()
+	if not tree or not tree.current_scene:
+		return
 	var balloon: Node3D = balloon_scene.instantiate()
-	enemy.get_tree().current_scene.add_child(balloon)
+	tree.current_scene.add_child(balloon)
 
 	var spawn_pos: Vector3 = balloon_spawn_point.global_position if balloon_spawn_point \
 		else enemy.global_position + Vector3.UP * 1.8
@@ -166,5 +173,8 @@ func _throw_balloon(player: Node3D) -> void:
 		push_warning("[StateRangedAttack] Balloon scene has no launch() method")
 
 func _get_player() -> Node3D:
-	var players: Array = enemy.get_tree().get_nodes_in_group("player")
+	var tree := enemy.get_tree()
+	if not tree:
+		return null
+	var players: Array = tree.get_nodes_in_group("player")
 	return players[0] as Node3D if players.size() > 0 else null

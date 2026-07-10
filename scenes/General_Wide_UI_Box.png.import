@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cxlr1a18s0ipc"
-path="res://.godot/imported/Zombie_Counting_UI.png-3491a00420c7f9c168438e966d6e274a.ctex"
+uid="uid://be54mwe7sgnf6"
+path="res://.godot/imported/General_Wide_UI_Box.png-36a79eeb3979954ec84fa972dadd31a1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://scenes/Zombie_Counting_UI.png"
-dest_files=["res://.godot/imported/Zombie_Counting_UI.png-3491a00420c7f9c168438e966d6e274a.ctex"]
+source_file="res://scenes/General_Wide_UI_Box.png"
+dest_files=["res://.godot/imported/General_Wide_UI_Box.png-36a79eeb3979954ec84fa972dadd31a1.ctex"]
 
 [params]
 

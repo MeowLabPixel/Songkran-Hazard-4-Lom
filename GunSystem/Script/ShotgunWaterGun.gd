@@ -17,7 +17,11 @@ func fire_projectiles():
 			fire_pellet()
 
 		# Wait
-		await get_tree().create_timer(0.2).timeout
+		var tree := get_tree()
+		if tree:
+			await tree.create_timer(0.2).timeout
+		else:
+			return
 		current_spread = min_spread * 0.5
 
 		# Second burst

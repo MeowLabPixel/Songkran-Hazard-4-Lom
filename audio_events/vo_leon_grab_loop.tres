@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://da0r71a35f786"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_yb87a"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_grab_loop_1.ogg" id="2_co3je"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_grab_loop_2.ogg" id="3_el7bf"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_yb87a"]
+[ext_resource type="AudioStream" uid="uid://dnmam5w4ycrvl" path="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_grab_loop_1.ogg" id="2_co3je"]
+[ext_resource type="AudioStream" uid="uid://dv433otm8qfxx" path="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_grab_loop_2.ogg" id="3_el7bf"]
 
 [resource]
 script = ExtResource("1_yb87a")

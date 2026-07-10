@@ -2,13 +2,13 @@
 
 importer="font_data_dynamic"
 type="FontFile"
-uid="uid://bgpvn7wogo8fp"
-path="res://.godot/imported/lazy_dog.ttf-2e093e0985b791593feb1e6532a37ffd.fontdata"
+uid="uid://ou8xc5g0xeno"
+path="res://.godot/imported/iannnnnVCD 2007 Bold.ttf-deb297bdffa9a499177ef79d356a54f6.fontdata"
 
 [deps]
 
-source_file="res://scenes/lazy_dog.ttf"
-dest_files=["res://.godot/imported/lazy_dog.ttf-2e093e0985b791593feb1e6532a37ffd.fontdata"]
+source_file="res://scenes/font/iannnnnVCD 2007 Bold.ttf"
+dest_files=["res://.godot/imported/iannnnnVCD 2007 Bold.ttf-deb297bdffa9a499177ef79d356a54f6.fontdata"]
 
 [params]
 

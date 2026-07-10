@@ -70,14 +70,21 @@ func _build_ui() -> void:
 	border.position = Vector2(0, 0)
 	_root_panel.add_child(border)
 
+	var lang = "en"
+	if get_tree().root.has_node("GameManager"):
+		lang = GameManager.selected_language
+		
+	var subheader_font = preload("res://scenes/font/iannnnn-DOG-Bold.ttf")
+
 	# Prompt label.
 	_label_prompt = Label.new()
-	_label_prompt.text = "SHAKE MOUSE TO BREAK FREE"
+	_label_prompt.text = "สลัดเมาส์เพื่อหลุดพ้น" if lang == "th" else "SHAKE MOUSE TO BREAK FREE"
 	_label_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_label_prompt.position = Vector2(0, 20)
 	_label_prompt.size = Vector2(320, 30)
 	_label_prompt.add_theme_font_size_override("font_size", 16)
 	_label_prompt.add_theme_color_override("font_color", Color(1, 0.85, 0.2))
+	_label_prompt.add_theme_font_override("font", subheader_font)
 	_root_panel.add_child(_label_prompt)
 
 	# Shake-dot indicators (unfilled circles, filled as player shakes).
@@ -114,6 +121,7 @@ func _build_ui() -> void:
 	_label_result.position = Vector2(0, 145)
 	_label_result.size = Vector2(320, 28)
 	_label_result.add_theme_font_size_override("font_size", 18)
+	_label_result.add_theme_font_override("font", subheader_font)
 	_label_result.visible = false
 	_root_panel.add_child(_label_result)
 
@@ -162,12 +170,16 @@ func _resolve(player_escaped: bool) -> void:
 	for dot in _shake_dots.get_children():
 		dot.visible = false
 
+	var lang = "en"
+	if get_tree().root.has_node("GameManager"):
+		lang = GameManager.selected_language
+
 	if player_escaped:
-		_label_result.text = "ESCAPED!"
+		_label_result.text = "หลุดพ้นสำเร็จ!" if lang == "th" else "ESCAPED!"
 		_label_result.add_theme_color_override("font_color", Color(0.3, 1.0, 0.4))
 		escaped.emit()
 	else:
-		_label_result.text = "GRABBED!"
+		_label_result.text = "โดนจับตัว!" if lang == "th" else "GRABBED!"
 		_label_result.add_theme_color_override("font_color", Color(1.0, 0.2, 0.2))
 		caught.emit()
 

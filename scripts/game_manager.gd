@@ -3,7 +3,7 @@ extends Node
 signal game_ended
 
 const SURVIVAL_LIMIT: float = 600.0 # 10 minutes
-const KILL_LIMIT: int = 21
+const KILL_LIMIT: int = 15
 
 var survival_time_elapsed: float = 0.0
 var kill_count: int = 0
@@ -14,8 +14,11 @@ var is_game_active: bool = false
 enum MovementType { HYBRID_RETRO, MODERN, TANK }
 var movement_type: MovementType = MovementType.HYBRID_RETRO
 var movement_type_selected: bool = false
+var selected_language: String = "en"
+
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	# Reset state when autoload loads
 	reset_game()
 
@@ -43,7 +46,8 @@ func _process(delta: float) -> void:
 		return
 		
 	# Only tick time if the timer has been activated and we are in the gameplay world scene
-	if is_timer_active and get_tree().current_scene and get_tree().current_scene.scene_file_path.ends_with("world.tscn"):
+	var tree := get_tree()
+	if tree and tree.current_scene and is_timer_active and tree.current_scene.scene_file_path.ends_with("world.tscn"):
 		survival_time_elapsed += delta
 		if survival_time_elapsed >= SURVIVAL_LIMIT:
 			print("[GameManager] Time limit reached! Ending game.")
@@ -67,4 +71,21 @@ func end_game() -> void:
 	game_ended.emit()
 	
 	# Load the ending screen
-	get_tree().change_scene_to_file("res://scenes/ending_screen.tscn")
+	var tree := get_tree()
+	if tree:
+		tree.change_scene_to_file("res://scenes/ending_screen.tscn")
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.is_echo():
+		if event.keycode == KEY_BACKSPACE:
+			restart_game_to_disclaimer()
+
+func restart_game_to_disclaimer() -> void:
+	print("[GameManager] Backspace pressed. Resetting game and restarting to disclaimer scene.")
+	reset_game()
+	movement_type_selected = false
+	if has_node("/root/ItemManager"):
+		get_node("/root/ItemManager").reset()
+	var tree := get_tree()
+	if tree:
+		tree.change_scene_to_file("res://scenes/disclaimer.tscn")

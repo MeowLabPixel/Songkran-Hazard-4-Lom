@@ -5037,7 +5037,7 @@ input_2/break_loop_at_end = false
 input_2/reset = true
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_fjxoa"]
-graph_offset = Vector2(-39.397804, 25.86106)
+graph_offset = Vector2(-228.10657, -98.5962)
 nodes/output/position = Vector2(960, 80)
 nodes/OneShot/node = SubResource("AnimationNodeOneShot_art4l")
 nodes/OneShot/position = Vector2(368, -16)
@@ -5060,7 +5060,7 @@ advance_mode = 2
 
 [sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_pnw6m"]
 states/BlendTree/node = SubResource("AnimationNodeBlendTree_fjxoa")
-states/BlendTree/position = Vector2(472.4, 108)
+states/BlendTree/position = Vector2(472.4, 106.4)
 states/Start/position = Vector2(202.4, 100)
 transitions = ["Start", "BlendTree", SubResource("AnimationNodeStateMachineTransition_fmu53"), "BlendTree", "End", SubResource("AnimationNodeStateMachineTransition_vgvch")]
 graph_offset = Vector2(165, -24)
@@ -5326,6 +5326,7 @@ transitions = ["Start", "SuperPumpStart", SubResource("AnimationNodeStateMachine
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_w7j2h"]
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_7crtr"]
+xfade_time = 0.15
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_vhicv"]
 xfade_time = 0.1
@@ -5336,6 +5337,7 @@ switch_mode = 2
 advance_mode = 2
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_wsa1w"]
+xfade_time = 0.15
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_ds1xl"]
 xfade_time = 0.1
@@ -5344,6 +5346,7 @@ xfade_time = 0.1
 xfade_time = 0.1
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_2t3bg"]
+xfade_time = 0.15
 switch_mode = 2
 advance_mode = 2
 
@@ -5357,7 +5360,7 @@ states/Reload_Quick/position = Vector2(396.72, 250.99998)
 states/SuperPump/node = SubResource("AnimationNodeStateMachine_upxxc")
 states/SuperPump/position = Vector2(609.60004, 236.55998)
 transitions = ["Start", "Reload", SubResource("AnimationNodeStateMachineTransition_w7j2h"), "Reload", "End", SubResource("AnimationNodeStateMachineTransition_7crtr"), "Reload", "Reload_Quick", SubResource("AnimationNodeStateMachineTransition_vhicv"), "Reload_Quick", "Reload", SubResource("AnimationNodeStateMachineTransition_hrakr"), "Reload_Quick", "End", SubResource("AnimationNodeStateMachineTransition_wsa1w"), "Reload", "SuperPump", SubResource("AnimationNodeStateMachineTransition_ds1xl"), "Reload_Quick", "SuperPump", SubResource("AnimationNodeStateMachineTransition_1u1sw"), "SuperPump", "End", SubResource("AnimationNodeStateMachineTransition_2t3bg"), "Start", "SuperPump", SubResource("AnimationNodeStateMachineTransition_jrbya")]
-graph_offset = Vector2(89, 57)
+graph_offset = Vector2(343, 54)
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_xcnuv"]
 animation = &"Gun_idle/pis_idle"
@@ -5530,10 +5533,10 @@ reset = false
 xfade_time = 0.1
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_s3g0c"]
-xfade_time = 0.3
+xfade_time = 0.15
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_7l6ig"]
-xfade_time = 0.1
+xfade_time = 0.15
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_utr5e"]
 xfade_time = 0.2
@@ -5566,9 +5569,12 @@ xfade_time = 0.15
 xfade_time = 0.15
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_2s0vo"]
-xfade_time = 0.2
+xfade_time = 0.15
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_hgm8h"]
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_upxxc"]
+xfade_time = 0.15
 
 [sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_7l6ig"]
 states/Aim/node = SubResource("AnimationNodeStateMachine_pnw6m")
@@ -5584,8 +5590,8 @@ states/Run/position = Vector2(375.28003, 248.8)
 states/Start/position = Vector2(67.2, 55.2)
 states/Takedown/node = SubResource("AnimationNodeStateMachine_a1u5o")
 states/Takedown/position = Vector2(675.2, 130.064)
-transitions = ["Start", "Idle", SubResource("AnimationNodeStateMachineTransition_35wys"), "Idle", "Run", SubResource("AnimationNodeStateMachineTransition_pjwc4"), "Run", "Idle", SubResource("AnimationNodeStateMachineTransition_or4qq"), "Idle", "Aim", SubResource("AnimationNodeStateMachineTransition_hggc2"), "Aim", "Idle", SubResource("AnimationNodeStateMachineTransition_b2j0d"), "QT", "Idle", SubResource("AnimationNodeStateMachineTransition_55jnj"), "Idle", "QT", SubResource("AnimationNodeStateMachineTransition_xcnuv"), "Aim", "Reload", SubResource("AnimationNodeStateMachineTransition_s3g0c"), "Run", "Reload", SubResource("AnimationNodeStateMachineTransition_7l6ig"), "Idle", "Reload", SubResource("AnimationNodeStateMachineTransition_utr5e"), "Reload", "Idle", SubResource("AnimationNodeStateMachineTransition_kewli"), "Idle", "Takedown", SubResource("AnimationNodeStateMachineTransition_kcq4v"), "Run", "Takedown", SubResource("AnimationNodeStateMachineTransition_qavcc"), "Takedown", "Idle", SubResource("AnimationNodeStateMachineTransition_bd26m"), "Run", "Aim", SubResource("AnimationNodeStateMachineTransition_237xx"), "Aim", "QT", SubResource("AnimationNodeStateMachineTransition_gswnw"), "Run", "QT", SubResource("AnimationNodeStateMachineTransition_j55il"), "QT", "Run", SubResource("AnimationNodeStateMachineTransition_wpyo2"), "QT", "Aim", SubResource("AnimationNodeStateMachineTransition_a1u5o"), "Reload", "Aim", SubResource("AnimationNodeStateMachineTransition_2s0vo"), "Start", "Aim", SubResource("AnimationNodeStateMachineTransition_hgm8h")]
-graph_offset = Vector2(40.862427, -66.03647)
+transitions = ["Start", "Idle", SubResource("AnimationNodeStateMachineTransition_35wys"), "Idle", "Run", SubResource("AnimationNodeStateMachineTransition_pjwc4"), "Run", "Idle", SubResource("AnimationNodeStateMachineTransition_or4qq"), "Idle", "Aim", SubResource("AnimationNodeStateMachineTransition_hggc2"), "Aim", "Idle", SubResource("AnimationNodeStateMachineTransition_b2j0d"), "QT", "Idle", SubResource("AnimationNodeStateMachineTransition_55jnj"), "Idle", "QT", SubResource("AnimationNodeStateMachineTransition_xcnuv"), "Aim", "Reload", SubResource("AnimationNodeStateMachineTransition_s3g0c"), "Run", "Reload", SubResource("AnimationNodeStateMachineTransition_7l6ig"), "Idle", "Reload", SubResource("AnimationNodeStateMachineTransition_utr5e"), "Reload", "Idle", SubResource("AnimationNodeStateMachineTransition_kewli"), "Idle", "Takedown", SubResource("AnimationNodeStateMachineTransition_kcq4v"), "Run", "Takedown", SubResource("AnimationNodeStateMachineTransition_qavcc"), "Takedown", "Idle", SubResource("AnimationNodeStateMachineTransition_bd26m"), "Run", "Aim", SubResource("AnimationNodeStateMachineTransition_237xx"), "Aim", "QT", SubResource("AnimationNodeStateMachineTransition_gswnw"), "Run", "QT", SubResource("AnimationNodeStateMachineTransition_j55il"), "QT", "Run", SubResource("AnimationNodeStateMachineTransition_wpyo2"), "QT", "Aim", SubResource("AnimationNodeStateMachineTransition_a1u5o"), "Reload", "Aim", SubResource("AnimationNodeStateMachineTransition_2s0vo"), "Start", "Aim", SubResource("AnimationNodeStateMachineTransition_hgm8h"), "Reload", "Run", SubResource("AnimationNodeStateMachineTransition_upxxc")]
+graph_offset = Vector2(26.862427, 11.9635315)
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_j3r50"]
 priority = 0
@@ -5630,7 +5636,6 @@ floor_stop_on_slope = false
 floor_max_angle = 1.2217305
 floor_snap_length = 0.5
 script = ExtResource("1_4eg07")
-movement_type_override = 2
 walk_Back_speed = 2.0
 quick_turn_speed = 0.4
 quick_turn_cooldown_duration = 0.33
@@ -7864,7 +7869,7 @@ reticle_line_length = 15.0
 reticle_line_thickness = 3.0
 reticle_outline_thickness = 5.0
 center_dot_outline = 0.0
-focused_color = Color(1.3528494, 1.3528494, 1.3528494, 0.9019608)
+focused_color = Color(0.7418742, 1.353, 1.1900506, 0.902)
 gauge_offset_radius = 28.0
 gauge_thickness = 10.0
 shrink_speed = 10.0

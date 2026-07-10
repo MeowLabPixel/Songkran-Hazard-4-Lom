@@ -30,7 +30,10 @@ func fire_sniper_super_shot():
 		if node is CollisionObject3D:
 			exclude_nodes.append(node)
 		node = node.get_parent()
-	for player_node in get_tree().get_nodes_in_group("player"):
+	var tree := get_tree()
+	if not tree:
+		return
+	for player_node in tree.get_nodes_in_group("player"):
 		_add_collision_objects_recursive(player_node, exclude_nodes)
 	for n in exclude_nodes:
 		exclude.append(n.get_rid())
@@ -49,22 +52,26 @@ func fire_sniper_super_shot():
 		# Spawn hit VFX
 		if hit_vfx_scene:
 			var hit_vfx: Node3D = hit_vfx_scene.instantiate()
-			get_tree().current_scene.add_child(hit_vfx)
-			var normal = result.normal
-			if normal.length_squared() < 0.01:
-				normal = Vector3.UP
-			hit_vfx.global_position = result.position + (normal * 0.01)
-			var up_dir = Vector3.UP
-			if abs(normal.dot(Vector3.UP)) > 0.999:
-				up_dir = Vector3.FORWARD
-			hit_vfx.look_at(hit_vfx.global_position + normal, up_dir)
-			hit_vfx.scale = impact_scale
-			if hit_vfx is GPUParticles3D:
-				hit_vfx.emitting = true
-			get_tree().create_timer(3.0).timeout.connect(func():
-				if is_instance_valid(hit_vfx):
-					hit_vfx.queue_free()
-			)
+			var tree_vfx := get_tree()
+			if tree_vfx and tree_vfx.current_scene:
+				tree_vfx.current_scene.add_child(hit_vfx)
+				var normal = result.normal
+				if normal.length_squared() < 0.01:
+					normal = Vector3.UP
+				hit_vfx.global_position = result.position + (normal * 0.01)
+				var up_dir = Vector3.UP
+				if abs(normal.dot(Vector3.UP)) > 0.999:
+					up_dir = Vector3.FORWARD
+				hit_vfx.look_at(hit_vfx.global_position + normal, up_dir)
+				hit_vfx.scale = impact_scale
+				if hit_vfx is GPUParticles3D:
+					hit_vfx.emitting = true
+				tree_vfx.create_timer(3.0).timeout.connect(func():
+					if is_instance_valid(hit_vfx):
+						hit_vfx.queue_free()
+				)
+			else:
+				hit_vfx.queue_free()
 
 		exclude.append(result.rid)
 		final_pos = result.position

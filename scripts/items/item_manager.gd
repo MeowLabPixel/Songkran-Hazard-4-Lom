@@ -13,6 +13,11 @@ var inventory: Dictionary = {}
 func _ready() -> void:
 	pass
 
+func reset() -> void:
+	inventory.clear()
+	inventory_changed.emit(inventory)
+	coins_changed.emit(0)
+
 ## Called by ItemPickup when the player collects an item.
 func add_item(item_type: String, value: int) -> void:
 	if item_type == "coin":

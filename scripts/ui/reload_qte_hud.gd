@@ -22,14 +22,18 @@ var mode: String = "qte" # "qte" or "superpump"
 # QTE variables
 var num_prompts: int = 4
 var prompt_size: float = 0.05
-var duration: float = 2.0 # The needle sweep duration is always exactly 2.0s
+var prompt_size_override: float = 0.0 # Configurable on the fly
+var prompt_count_override: int = 0    # Configurable on the fly
+var duration: float = 2.0
 var actual_time: float = 0.0 # Actual time elapsed in reload (max 2.0s)
-var time_skipped: float = 0.0 # Time skipped from QTE hits
+var successful_qtes: int = 0  # Number of QTE prompts successfully hit
 var current_progress: float = 0.0 # Needle progress (0.0 to 1.0)
 var reload_progress: float = 0.0 # Conveyed by the progress line (0.0 to 1.0)
 var prompts: Array = [] # Array of Dictionary: { center: float, hit: bool, missed: bool }
 var resolved: bool = false
+var failed: bool = false
 var progress_segments: Array = [] # Array of Dictionary: { start: float, end: float, is_skipped: bool }
+var elapsed_time: float = 0.0
 
 # Superpump hold variables
 var superpump_hold_time: float = 0.0
@@ -48,11 +52,15 @@ func _init(p_current_air: float, p_max_air: float) -> void:
 	start_air = p_current_air
 	max_air = p_max_air
 	layer = 128 # Always draw on top of everything
+	elapsed_time = 0.0
 	
 	if start_air >= max_air:
 		mode = "superpump"
 	else:
 		mode = "qte"
+
+func setup() -> void:
+	if mode == "qte":
 		_setup_qte_parameters()
 
 func _ready() -> void:
@@ -62,7 +70,8 @@ func _setup_qte_parameters() -> void:
 	# Needle sweep duration is always exactly 2.0 seconds
 	duration = 2.0
 	actual_time = 0.0
-	time_skipped = 0.0
+	successful_qtes = 0
+	elapsed_time = 0.0
 	
 	var air_pct = clampf(start_air / max_air, 0.0, 1.0)
 	reload_progress = 0.0
@@ -71,30 +80,29 @@ func _setup_qte_parameters() -> void:
 	]
 	
 	# Determine number of QTE prompts based on remaining air
-	if start_air >= 75.0:
-		num_prompts = 1
-	elif start_air >= 50.0:
-		num_prompts = 2
-	elif start_air >= 25.0:
-		num_prompts = 3
+	if prompt_count_override > 0:
+		num_prompts = prompt_count_override
 	else:
-		num_prompts = 4
+		var air_ratio = start_air / max_air
+		if air_ratio <= 0.0:
+			num_prompts = 4
+		elif air_ratio <= 0.30:
+			num_prompts = 3
+		elif air_ratio <= 0.50:
+			num_prompts = 2
+		else:
+			num_prompts = 1
 		
 	# Interpolate prompt size between 0.05 (hard at 0 air) and 0.14 (easy at 100 air)
-	prompt_size = lerp(0.05, 0.14, air_pct) * 0.75
+	if prompt_size_override > 0.0:
+		prompt_size = prompt_size_override
+	else:
+		prompt_size = lerp(0.05, 0.14, air_pct) * 0.75
 	
-	# Generate randomized non-overlapping prompt centers inside [0.12, 0.88]
+	# Generate prompts based on scaled phantom segment timing (starts earlier)
 	prompts.clear()
-	var seg_start_pct = 0.12
-	var seg_end_pct = 0.88
-	var total_span = seg_end_pct - seg_start_pct
-	var segment_size = total_span / num_prompts
-	
 	for i in range(num_prompts):
-		var s_min = seg_start_pct + i * segment_size
-		var s_max = s_min + segment_size
-		# Pick a random center inside the middle portion of the segment
-		var center = s_min + segment_size * randf_range(0.25, 0.75)
+		var center = 0.05 + 0.70 * (float(i + 1) / float(num_prompts + 1))
 		prompts.append({
 			"center": center,
 			"hit": false,
@@ -138,6 +146,13 @@ func _build_ui() -> void:
 	_center_circle.add_theme_stylebox_override("panel", style)
 	_container.add_child(_center_circle)
 	
+	var lang = "en"
+	if get_tree().root.has_node("GameManager"):
+		lang = GameManager.selected_language
+		
+	var subheader_font = preload("res://scenes/font/iannnnn-DOG-Bold.ttf")
+	var body_font = preload("res://scenes/font/iannnnnVCD 2007 Bold.ttf")
+
 	_center_label = Label.new()
 	_center_label.text = "R"
 	_center_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -145,11 +160,15 @@ func _build_ui() -> void:
 	_center_label.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_center_label.add_theme_font_size_override("font_size", 22)
 	_center_label.add_theme_color_override("font_color", Color.WHITE)
+	_center_label.add_theme_font_override("font", subheader_font)
 	_center_circle.add_child(_center_label)
 	
 	# 5. Text prompt below the gauge and progress line
 	_prompt_label = Label.new()
-	_prompt_label.text = "" if mode == "qte" else "HOLD [R] TO SUPERPUMP"
+	if mode == "qte":
+		_prompt_label.text = ""
+	else:
+		_prompt_label.text = "กด [R] ค้างเพื่อปั๊มน้ำเพิ่มแรงดัน" if lang == "th" else "HOLD [R] TO SUPERPUMP"
 	_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_prompt_label.position = Vector2(0, 235)
 	_prompt_label.size = Vector2(250, 24)
@@ -157,17 +176,22 @@ func _build_ui() -> void:
 	_prompt_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2) if mode == "qte" else Color(1.0, 0.5, 0.1))
 	_prompt_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	_prompt_label.add_theme_constant_override("outline_size", 5)
+	_prompt_label.add_theme_font_override("font", subheader_font)
 	_container.add_child(_prompt_label)
 	
 	# 6. Small helper text above the gauge
 	_instruction_label = Label.new()
-	_instruction_label.text = "" if mode == "qte" else "PRESSURE STABLE"
+	if mode == "qte":
+		_instruction_label.text = ""
+	else:
+		_instruction_label.text = "แรงดันคงที่" if lang == "th" else "PRESSURE STABLE"
 	_instruction_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_instruction_label.position = Vector2(0, 30)
 	_instruction_label.size = Vector2(250, 20)
 	_instruction_label.add_theme_font_size_override("font_size", 11)
 	_instruction_label.add_theme_color_override("font_color", Color(0.6, 0.8, 1.0, 0.8))
 	_instruction_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_instruction_label.add_theme_font_override("font", body_font)
 	_instruction_label.add_theme_constant_override("outline_size", 3)
 	_container.add_child(_instruction_label)
 
@@ -175,6 +199,8 @@ func _process(delta: float) -> void:
 	if resolved:
 		return
 		
+	elapsed_time += delta
+	
 	if mode == "qte":
 		_process_qte(delta)
 	else:
@@ -183,38 +209,26 @@ func _process(delta: float) -> void:
 func _process_qte(delta: float) -> void:
 	actual_time += delta
 	
-	# Needle sweeps steadily over 2.0s duration without jumping
+	# Clock hand (outer ring needle) sweeps steadily over base duration
 	current_progress = clampf(actual_time / duration, 0.0, 1.0)
 	
 	# Count hits and check if all hit
-	var hit_count = 0
+	successful_qtes = 0
 	var all_hit = true
 	for p in prompts:
 		if p.hit:
-			hit_count += 1
+			successful_qtes += 1
 		else:
 			all_hit = false
 			
-	# Determine skip percent per hit
-	var skip_percent = 0.20
-	if num_prompts == 4:
-		skip_percent = 0.20
-	elif num_prompts == 3:
-		skip_percent = 0.25
-	elif num_prompts == 2:
-		skip_percent = 0.40
-	elif num_prompts == 1:
-		skip_percent = 1.00
-		
-	var hit_ratio = float(hit_count) * skip_percent
-	var time_ratio = clampf(actual_time / duration, 0.0, 1.0)
-	
-	# Calculate reload progress (interpolates to 1.0 at actual_time = 2.0s, with jumps on hits)
-	reload_progress = time_ratio * (1.0 - hit_ratio) + hit_ratio
+	# Calculate reload progress based on effective duration
+	var skip_time = (duration * 0.5) * (float(successful_qtes) / float(num_prompts))
+	var effective_duration = duration - skip_time
+	reload_progress = clampf(actual_time / effective_duration, 0.0, 1.0)
 	
 	# Update the current elapsed progress segment's end value
 	if progress_segments.size() > 0:
-		progress_segments[-1].end = clampf(reload_progress, 0.0, 1.0)
+		progress_segments[-1].end = reload_progress
 	
 	# Check for missed prompts that the needle has passed
 	for p in prompts:
@@ -224,11 +238,11 @@ func _process_qte(delta: float) -> void:
 	# Redraw the UI
 	_gauge.queue_redraw()
 	
-	# End condition checks: Only resolve early if ALL prompts are hit!
+	# End condition checks
 	if all_hit:
 		_resolve(true)
-	elif actual_time >= duration:
-		_resolve(reload_progress >= 1.0)
+	elif reload_progress >= 1.0:
+		_resolve(true)
 
 func _process_superpump(delta: float) -> void:
 	if Input.is_action_pressed("Reload"):
@@ -240,8 +254,9 @@ func _process_superpump(delta: float) -> void:
 		if superpump_hold_time >= superpump_required_hold:
 			_resolve(true)
 	else:
-		superpump_hold_time = maxf(superpump_hold_time - delta * 2.0, 0.0)
-		_center_circle.position = Vector2(101, 101)
+		# Immediately cancel super pump if player stops holding R key (after 0.3s guard)
+		if elapsed_time >= 0.3:
+			cancel()
 		
 	_gauge.queue_redraw()
 
@@ -261,22 +276,6 @@ func _check_qte_input() -> void:
 			
 		# Check if current needle progress falls inside the target range
 		if current_progress >= (p.center - prompt_size) and current_progress <= (p.center + prompt_size):
-			# Calculate current hit count before adding this hit
-			var old_hit_count = 0
-			for other_p in prompts:
-				if other_p.hit:
-					old_hit_count += 1
-					
-			var skip_pct = 0.20
-			if num_prompts == 4: skip_pct = 0.20
-			elif num_prompts == 3: skip_pct = 0.25
-			elif num_prompts == 2: skip_pct = 0.40
-			elif num_prompts == 1: skip_pct = 1.00
-			
-			var old_hit_ratio = float(old_hit_count) * skip_pct
-			var time_ratio = clampf(actual_time / duration, 0.0, 1.0)
-			var val_before = time_ratio * (1.0 - old_hit_ratio) + old_hit_ratio
-			
 			# Register the hit
 			p.hit = true
 			hit_any = true
@@ -292,21 +291,30 @@ func _check_qte_input() -> void:
 			_container.scale = Vector2(1.12, 1.12)
 			pop_tween.tween_property(_container, "scale", Vector2.ONE, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 			
-			# Calculate new hit ratio
-			var new_hit_ratio = float(old_hit_count + 1) * skip_pct
-			var val_after = time_ratio * (1.0 - new_hit_ratio) + new_hit_ratio
+			# Count hit prompts including this one
+			var hits = 0
+			for other_p in prompts:
+				if other_p.hit:
+					hits += 1
+					
+			var val_before = reload_progress
+			
+			# Calculate reload progress based on effective duration
+			var skip_time = (duration * 0.5) * (float(hits) / float(num_prompts))
+			var effective_dur = duration - skip_time
+			var val_after = clampf(actual_time / effective_dur, 0.0, 1.0)
 			
 			# Close the current elapsed segment at val_before
 			if progress_segments.size() > 0:
-				progress_segments[-1].end = clampf(val_before, 0.0, 1.0)
+				progress_segments[-1].end = val_before
 				
 			# Add skipped segment
-			progress_segments.append({"start": clampf(val_before, 0.0, 1.0), "end": clampf(val_after, 0.0, 1.0), "is_skipped": true})
+			progress_segments.append({"start": val_before, "end": val_after, "is_skipped": true})
 			# Add new elapsed segment
-			progress_segments.append({"start": clampf(val_after, 0.0, 1.0), "end": clampf(val_after, 0.0, 1.0), "is_skipped": false})
+			progress_segments.append({"start": val_after, "end": val_after, "is_skipped": false})
 			
 			# Update reload_progress instantly to prevent any single-frame lag
-			reload_progress = clampf(val_after, 0.0, 1.0)
+			reload_progress = val_after
 			break
 			
 	if hit_any:
@@ -319,9 +327,10 @@ func _check_qte_input() -> void:
 		if all_hit:
 			_resolve(true)
 	else:
-		# Miss penalty: flash red, play click
+		# Miss penalty: flash red, play click, and trigger immediate QTE failure
 		_flash_center_failure()
-		SoundManager.play_2d("watergun_pistol_reload")
+		failed = true
+		_resolve(false)
 		
 	_gauge.queue_redraw()
 
@@ -364,8 +373,13 @@ func _draw_gauge() -> void:
 			var max_radius = 60.0
 			
 			if resolved:
-				# Paint the entire progress circle green on resolution!
-				_gauge.draw_circle(center, max_radius * reload_progress, Color(0.2, 0.85, 0.4, 0.25))
+				# Paint the entire progress circle based on QTE success level
+				if failed:
+					_gauge.draw_circle(center, max_radius * reload_progress, Color(0.8, 0.2, 0.2, 0.25)) # Red failure
+				elif successful_qtes == num_prompts and successful_qtes > 0:
+					_gauge.draw_circle(center, max_radius * reload_progress, Color(0.2, 0.85, 0.4, 0.25)) # Green perfect
+				else:
+					_gauge.draw_circle(center, max_radius * reload_progress, Color(0.2, 0.65, 0.95, 0.25)) # Blue/Cyan partial or missed
 			else:
 				for segment in progress_segments:
 					var r_start = segment.start * max_radius
@@ -390,10 +404,17 @@ func _draw_gauge() -> void:
 			# Line background (dark grey track)
 			_gauge.draw_line(Vector2(line_left, line_y), Vector2(line_right, line_y), Color(0.12, 0.12, 0.15, 0.85), 6.0, true)
 			
-			# Line fill (cyan/blue reload fill)
+			# Line fill (reload fill)
 			var fill_x = line_left + line_width * clampf(reload_progress, 0.0, 1.0)
 			if fill_x > line_left:
-				_gauge.draw_line(Vector2(line_left, line_y), Vector2(fill_x, line_y), Color(0.3, 0.75, 1.0, 0.95), 6.0, true)
+				var line_color = Color(0.3, 0.75, 1.0, 0.95)
+				if resolved:
+					if failed:
+						line_color = Color(0.8, 0.2, 0.2, 0.95) # Red failure
+					elif successful_qtes == num_prompts and successful_qtes > 0:
+						line_color = Color(0.2, 0.85, 0.4, 0.95) # Green perfect
+				
+				_gauge.draw_line(Vector2(line_left, line_y), Vector2(fill_x, line_y), line_color, 6.0, true)
 				# Small glowing tip on progress line
 				_gauge.draw_circle(Vector2(fill_x, line_y), 4.5, Color.WHITE)
 
@@ -463,16 +484,36 @@ func _resolve(success: bool) -> void:
 			progress_segments[-1].end = 1.0
 		_gauge.queue_redraw()
 		
-		if success:
+		# Count successful QTE hits dynamically at resolution time
+		var hit_count = 0
+		for p in prompts:
+			if p.hit:
+				hit_count += 1
+				
+		var lang = "en"
+		if get_tree().root.has_node("GameManager"):
+			lang = GameManager.selected_language
+			
+		if failed:
 			final_air = max_air
-			_prompt_label.text = "PERFECT RELOAD!"
-			_prompt_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5))
+			_prompt_label.text = "การรีโหลดล้มเหลว" if lang == "th" else "RELOAD FAILED"
+			_prompt_label.add_theme_color_override("font_color", Color(0.8, 0.2, 0.2)) # Red
+			SoundManager.play_2d("watergun_pistol_reload")
+		elif hit_count == prompts.size() and hit_count > 0:
+			final_air = max_air
+			_prompt_label.text = "จังหวะสมบูรณ์แบบ!" if lang == "th" else "PERFECT QTE!"
+			_prompt_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5)) # Green
 			SoundManager.play_2d("Superpump_Ready_FullAir")
+		elif hit_count > 0:
+			final_air = max_air
+			_prompt_label.text = "จังหวะดี!" if lang == "th" else "PARTIAL QTE!"
+			_prompt_label.add_theme_color_override("font_color", Color(0.3, 0.8, 1.0)) # Cyan
+			SoundManager.play_2d("watergun_pistol_reload")
 		else:
 			# Refills to 100% on standard completed reload timer
 			final_air = max_air
-			_prompt_label.text = "RELOAD COMPLETE"
-			_prompt_label.add_theme_color_override("font_color", Color(0.2, 0.9, 0.5))
+			_prompt_label.text = "รีโหลดสำเร็จ" if lang == "th" else "RELOAD COMPLETE"
+			_prompt_label.add_theme_color_override("font_color", Color(0.2, 0.9, 0.5)) # Standard green/cyan
 			SoundManager.play_2d("watergun_pistol_reload")
 			
 		_prompt_label.scale = Vector2.ZERO
@@ -491,7 +532,10 @@ func _resolve(success: bool) -> void:
 		
 	elif mode == "superpump":
 		if success:
-			_prompt_label.text = "SUPERPUMP ACTIVATED!"
+			var lang = "en"
+			if get_tree().root.has_node("GameManager"):
+				lang = GameManager.selected_language
+			_prompt_label.text = "เปิดใช้งานซูเปอร์ปั๊มสำเร็จ!" if lang == "th" else "SUPERPUMP ACTIVATED!"
 			_prompt_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2))
 			SoundManager.play_2d("watergun_pistol_reload_Superpump")
 			

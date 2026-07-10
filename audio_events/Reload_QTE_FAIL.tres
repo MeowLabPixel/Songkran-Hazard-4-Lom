@@ -1,9 +1,9 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://dm62qc4ybbx2o"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_j3h1p"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Reload_QTE_FAIL_1.wav" id="2_xbey3"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Reload_QTE_FAIL_2.wav" id="3_mxp00"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Reload_QTE_FAIL_3.wav" id="4_0xk3u"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_j3h1p"]
+[ext_resource type="AudioStream" uid="uid://cfqf2qbijl8tw" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Reload_QTE_FAIL_1.wav" id="2_xbey3"]
+[ext_resource type="AudioStream" uid="uid://bkxesjnilcodt" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Reload_QTE_FAIL_2.wav" id="3_mxp00"]
+[ext_resource type="AudioStream" uid="uid://di1btivd0bbjx" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Reload_QTE_FAIL_3.wav" id="4_0xk3u"]
 
 [resource]
 script = ExtResource("1_j3h1p")

@@ -1,9 +1,9 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cofdfdjw8telq"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_w3ikk"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_player_gethit_01.ogg" id="2_mjjni"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_player_gethit_02.ogg" id="3_dq45y"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_player_gethit_03.ogg" id="4_nkcm5"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_w3ikk"]
+[ext_resource type="AudioStream" uid="uid://ckacc1gri5lvu" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_player_gethit_01.ogg" id="2_mjjni"]
+[ext_resource type="AudioStream" uid="uid://d2dotq6w3hgdu" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_player_gethit_02.ogg" id="3_dq45y"]
+[ext_resource type="AudioStream" uid="uid://pjmgr5ybjk6i" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_player_gethit_03.ogg" id="4_nkcm5"]
 
 [resource]
 script = ExtResource("1_w3ikk")
