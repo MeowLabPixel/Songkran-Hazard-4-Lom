@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cakuiupqguyt8"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://8eu4jsd5ymul"]
 
 [ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_3f4d2"]
 [ext_resource type="AudioStream" uid="uid://b1aeeeupp8tit" path="res://Audio-Sfx-Music/Voicelines/Zombie Melee (M)/vo_zombie_m_melee_attack_1.ogg" id="2_w6kf4"]

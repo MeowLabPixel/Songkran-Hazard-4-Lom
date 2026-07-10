@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://baorajyyw1f3r"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://ce716vbrcmjny"]
 
 [ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_mh4km"]
 [ext_resource type="AudioStream" uid="uid://d2ae3bfqwhcvy" path="res://Audio-Sfx-Music/SFXs/Zombie/zombie_melee_hit_1.ogg" id="2_ufgyh"]

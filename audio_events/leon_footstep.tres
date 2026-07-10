@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://c5wdrplxrd78a"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://dnuju83y7ee8n"]
 
 [ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_b66ni"]
 [ext_resource type="AudioStream" uid="uid://bofte524tkjb7" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_footstep_1.ogg" id="2_emnmm"]

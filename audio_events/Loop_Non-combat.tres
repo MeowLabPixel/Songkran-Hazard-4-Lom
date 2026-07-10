@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cpy8xvyb5tsws"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://byn1e6nak05cv"]
 
 [ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_jm6cd"]
 [ext_resource type="AudioStream" uid="uid://bfaqlyxhpf1re" path="res://Audio-Sfx-Music/Musics/Loop_Non-combat.ogg" id="2_4pdpf"]

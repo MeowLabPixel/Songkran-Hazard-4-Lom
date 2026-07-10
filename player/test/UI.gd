@@ -96,8 +96,10 @@ func _ready() -> void:
 	kill_rect.name = "KillCountHUD"
 	var kill_tex = preload("res://scenes/Kill_Count_Ui.png")
 	kill_rect.texture = kill_tex
-	kill_rect.expand_mode = TextureRect.EXPAND_KEEP_SIZE
-	var kill_size = kill_tex.get_size()
+	kill_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	kill_rect.stretch_mode = TextureRect.STRETCH_SCALE
+	var target_height = 200.0
+	var kill_size = kill_tex.get_size() * (target_height / kill_tex.get_size().y)
 	kill_rect.size = kill_size
 	
 	# Position at top right
@@ -106,55 +108,56 @@ func _ready() -> void:
 	kill_rect.anchor_top = 0.0
 	kill_rect.anchor_right = 1.0
 	kill_rect.anchor_bottom = 0.0
-	kill_rect.offset_left = -kill_size.x - 30
+	kill_rect.offset_left = -kill_size.x - 75
 	kill_rect.offset_top = 30
-	kill_rect.offset_right = -30
+	kill_rect.offset_right = -75
 	kill_rect.offset_bottom = 30 + kill_size.y
 	kill_rect.pivot_offset = kill_size / 2.0
 	add_child(kill_rect)
 
-	# Create Kill Count Label
+	# Create Kill Count Label (larger text)
 	kill_label = Label.new()
 	kill_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	kill_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	kill_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	kill_label.add_theme_font_size_override("font_size", 24)
+	kill_label.add_theme_font_size_override("font_size", 22)
 	kill_label.add_theme_font_override("font", subheader_font)
 	kill_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	kill_label.add_theme_constant_override("outline_size", 6)
+	kill_label.add_theme_constant_override("outline_size", 5)
 	kill_rect.add_child(kill_label)
 
-	# Dynamically create Time Limit HUD Rect
+	# Dynamically create Time Limit HUD Rect (aligned beside kill count)
 	time_rect = TextureRect.new()
 	time_rect.name = "TimeLimitHUD"
 	var time_tex = preload("res://scenes/General_Wide_UI_Box.png")
 	time_rect.texture = time_tex
-	time_rect.expand_mode = TextureRect.EXPAND_KEEP_SIZE
-	var time_size = time_tex.get_size()
+	time_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	time_rect.stretch_mode = TextureRect.STRETCH_SCALE
+	var time_size = time_tex.get_size() * (target_height / time_tex.get_size().y) * 0.3
 	time_rect.size = time_size
 	
-	# Position at top center
-	time_rect.anchors_preset = Control.PRESET_CENTER_TOP
-	time_rect.anchor_left = 0.5
+	# Position beside Kill Count HUD box (with a 15px gap)
+	time_rect.anchors_preset = Control.PRESET_TOP_RIGHT
+	time_rect.anchor_left = 1.0
 	time_rect.anchor_top = 0.0
-	time_rect.anchor_right = 0.5
+	time_rect.anchor_right = 1.0
 	time_rect.anchor_bottom = 0.0
-	time_rect.offset_left = -time_size.x / 2.0
+	time_rect.offset_right = -kill_size.x - 100
+	time_rect.offset_left = -kill_size.x - 100 - time_size.x
 	time_rect.offset_top = 30
-	time_rect.offset_right = time_size.x / 2.0
 	time_rect.offset_bottom = 30 + time_size.y
 	time_rect.pivot_offset = time_size / 2.0
 	add_child(time_rect)
 
-	# Create Time Limit Label
+	# Create Time Limit Label (larger text)
 	time_label = Label.new()
 	time_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	time_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	time_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	time_label.add_theme_font_size_override("font_size", 24)
+	time_label.add_theme_font_size_override("font_size", 22)
 	time_label.add_theme_font_override("font", subheader_font)
 	time_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	time_label.add_theme_constant_override("outline_size", 6)
+	time_label.add_theme_constant_override("outline_size", 5)
 	time_rect.add_child(time_label)
 
 	if not player: return
@@ -208,9 +211,9 @@ func _update_hud_counters() -> void:
 	var kills = GameManager.kill_count
 	var limit = GameManager.KILL_LIMIT
 	if lang == "th":
-		kill_label.text = "กำจัด: %d / %d" % [kills, limit]
+		kill_label.text = "กำจัด: %d/%d" % [kills, limit]
 	else:
-		kill_label.text = "Kills: %d / %d" % [kills, limit]
+		kill_label.text = "Kills: %d/%d" % [kills, limit]
 
 	# Update Time Limit UI
 	var time_elapsed = GameManager.survival_time_elapsed
@@ -221,9 +224,9 @@ func _update_hud_counters() -> void:
 	var time_str = "%02d:%02d" % [minutes, seconds]
 	
 	if lang == "th":
-		time_label.text = "เวลาที่เหลือ: " + time_str
+		time_label.text = "เวลา: " + time_str
 	else:
-		time_label.text = "TIME LEFT: " + time_str
+		time_label.text = "TIME: " + time_str
 
 func spawn_kill_projectile(zombie_3d_pos: Vector3) -> void:
 	var camera = get_viewport().get_camera_3d()
@@ -241,18 +244,18 @@ func spawn_kill_projectile(zombie_3d_pos: Vector3) -> void:
 	proj.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	
 	# Style the +1 label
-	proj.add_theme_font_size_override("font_size", 38)
+	proj.add_theme_font_size_override("font_size", 28)
 	proj.add_theme_color_override("font_color", Color(0.2, 1.0, 0.5)) # Bright green
 	proj.add_theme_color_override("font_outline_color", Color.BLACK)
-	proj.add_theme_constant_override("outline_size", 8)
+	proj.add_theme_constant_override("outline_size", 6)
 	proj.add_theme_font_override("font", preload("res://scenes/font/iannnnn-DOG-Bold.ttf"))
 	
 	add_child(proj)
-	proj.global_position = screen_pos - Vector2(25, 20)
+	proj.global_position = screen_pos - Vector2(18, 15)
 	proj.scale = Vector2.ZERO
 	
 	# Target position: center of the kill HUD box
-	var target_pos = kill_rect.global_position + kill_rect.size / 2.0 - Vector2(25, 20)
+	var target_pos = kill_rect.global_position + kill_rect.size / 2.0 - Vector2(18, 15)
 	
 	# Tween: pop in, fly to target, fade out
 	var tween = create_tween().set_parallel(true)

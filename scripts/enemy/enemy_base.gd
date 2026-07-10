@@ -91,6 +91,8 @@ var _smoothed_angular_velocity: float = 0.0
 @export var flipflop_blend_rot_speed: float = 10.0
 var rig: Node3D
 var _walk_markers: Array[float] = [0.5, 1.0]
+var _enemy_meshes: Array[MeshInstance3D] = []
+var _takedown_aura_material: ShaderMaterial = null
 var _dead_walk_markers: Array[float] = [0.5, 1.0]
 var _last_norm_pos: float = -1.0
 var _last_step_time: int = 0
@@ -268,6 +270,9 @@ func _ready() -> void:
 			node.set_script(scale_fix_script)
 			node.set_physics_process(true)
 
+	# Cache all MeshInstance3Ds for shader effects
+	_find_meshes_recursive(self, _enemy_meshes)
+
 	state_machine.initialize("StateIdle")
 	state_machine.state_changed.connect(_on_state_changed)
 	if debug_label:
@@ -443,6 +448,34 @@ func _on_state_changed(old_state: String, new_state: String) -> void:
 		print("[EnemyBase] State: %s → %s  |  HP: %d/%d" % [old_state, new_state, current_hp, MAX_HP])
 	if debug_label:
 		debug_label.text = "State: %s\n(%s → %s)" % [new_state, old_state, new_state]
+
+	if new_state == "StateTakedownable":
+		set_takedown_aura(true)
+	elif old_state == "StateTakedownable":
+		set_takedown_aura(false)
+
+func set_takedown_aura(enabled: bool) -> void:
+	if enabled:
+		if not _takedown_aura_material:
+			var shader = load("res://shaders/takedown_aura.gdshader")
+			if shader:
+				_takedown_aura_material = ShaderMaterial.new()
+				_takedown_aura_material.shader = shader
+		
+		if _takedown_aura_material:
+			for mesh in _enemy_meshes:
+				if is_instance_valid(mesh):
+					mesh.material_overlay = _takedown_aura_material
+	else:
+		for mesh in _enemy_meshes:
+			if is_instance_valid(mesh):
+				mesh.material_overlay = null
+
+func _find_meshes_recursive(node: Node, meshes: Array[MeshInstance3D]) -> void:
+	if node is MeshInstance3D:
+		meshes.append(node)
+	for child in node.get_children():
+		_find_meshes_recursive(child, meshes)
 
 # ─── Navigation ────────────────────────────────────────────────────────────
 func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://by5mmv37jk63"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cba5sxxlwasiq"]
 
 [ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_d56p5"]
 [ext_resource type="AudioStream" uid="uid://c6vc0gelu4yqe" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/Superpump_Ready_FullAir_1.wav" id="2_fj15v"]

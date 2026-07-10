@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cf21qgv2ta5lp"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://bsddkqnfn52qc"]
 
 [ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_xuqf1"]
 [ext_resource type="AudioStream" uid="uid://cxj07gxw57ibx" path="res://Audio-Sfx-Music/SFXs/Zombie/zombie_grab.ogg" id="2_0q7sc"]

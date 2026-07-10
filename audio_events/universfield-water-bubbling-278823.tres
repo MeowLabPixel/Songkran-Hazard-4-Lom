@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://dmv4542fm0tld"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://bdtsja01c8qe5"]
 
 [ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_je8c4"]
 [ext_resource type="AudioStream" uid="uid://duy5m7mgdp1bl" path="res://Audio-Sfx-Music/Uis/Merchant Shop/universfield-water-bubbling-278823.mp3" id="2_b6u7t"]
