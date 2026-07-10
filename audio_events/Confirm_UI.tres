@@ -1,12 +1,12 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://vsn1i0478g0k"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
 
-[ext_resource type="AudioStream" uid="uid://bbhn6u5vs4cih" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_Add_1.wav" id="1_asf7u"]
-[ext_resource type="AudioStream" uid="uid://s00gebx7s80d" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_Add_2.wav" id="2_11ew2"]
-[ext_resource type="AudioStream" uid="uid://bkfmnw7nlf8yk" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_Add_3.wav" id="3_6lk77"]
-[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="4_e3elp"]
-[ext_resource type="AudioStream" uid="uid://br1kjgv5wci5v" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_1.wav" id="5_lp8o7"]
-[ext_resource type="AudioStream" uid="uid://mgvg2ymagwwb" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_2.wav" id="6_p06si"]
-[ext_resource type="AudioStream" uid="uid://bciowc4t2j5f7" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_3.wav" id="7_qbahh"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_Add_1.wav" id="1_asf7u"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_Add_2.wav" id="2_11ew2"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_Add_3.wav" id="3_6lk77"]
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="4_e3elp"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_1.wav" id="5_lp8o7"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_2.wav" id="6_p06si"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_3.wav" id="7_qbahh"]
 
 [resource]
 script = ExtResource("4_e3elp")

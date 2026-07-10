@@ -44,7 +44,12 @@ func _state_input(_event: InputEvent) -> void:
 	if Input.is_action_pressed("aim") and not owner.aim_blocked_until_release and owner.can_aim():
 		finished.emit("Aim")
 	if Input.is_action_just_pressed("Reload") :
-		finished.emit("Reload")
+		var gun = owner.gun_controller.current_gun
+		var is_pistol = gun and (gun.gun_name == "Water pistol" or owner.gun_controller.current_gun_index == 0)
+		var is_superpump_attempt = is_pistol and gun.air >= gun.max_air
+		if not (is_superpump_attempt and owner.superpump_cooldown > 0.0):
+			get_viewport().set_input_as_handled()
+			finished.emit("Reload")
 	if Input.is_action_pressed("Gun1"):
 		switch_gun(0)
 	if Input.is_action_pressed("Gun2"):

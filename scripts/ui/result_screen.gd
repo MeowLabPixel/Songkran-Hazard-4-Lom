@@ -210,15 +210,29 @@ func _calculate_results() -> void:
 			"name_en": "Crowd Cleaner",
 			"name_th": "นักกวาดล้าง",
 			"desc_en": "Defeated every single zombie",
-			"desc_th": "กำจัดซอมบี้ทุกตัวในฉาก"
+			"desc_th": "เอาชนะซอมบี้ทุกตัวในฉาก"
 		})
 
 func _build_ui() -> void:
-	# 1. Dark Vignette Background
-	var bg_rect = ColorRect.new()
-	bg_rect.color = Color(0.03, 0.03, 0.05, 0.95)
-	bg_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(bg_rect)
+	# 1. MainMenu BG as background (behind the control viewport canvas)
+	var bg_scene = load("res://scenes/MainMenu_BG.tscn")
+	if bg_scene:
+		var bg_instance = bg_scene.instantiate()
+		if bg_instance is CanvasLayer:
+			bg_instance.layer = -1
+		add_child(bg_instance)
+		
+	# 2. Blurred ColorRect overlay
+	var blur_rect = ColorRect.new()
+	blur_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var blur_shader = load("res://shaders/screen_blur.gdshader") as Shader
+	if blur_shader:
+		var mat = ShaderMaterial.new()
+		mat.shader = blur_shader
+		blur_rect.material = mat
+	else:
+		blur_rect.color = Color(0.02, 0.02, 0.03, 0.8)
+	add_child(blur_rect)
 	
 	# Radial glow background (subtle gradient vibe)
 	var panel_glow = Panel.new()
@@ -364,11 +378,11 @@ func _build_ui() -> void:
 	var accuracy_formatted = "%d%%" % int(accuracy_val * 100.0)
 	
 	_add_stat_row("Time Remaining" if lang != "th" else "เวลาที่เหลือ", time_formatted)
-	_add_stat_row("Villagers Defeated" if lang != "th" else "ชาวบ้านที่ถูกปราบ", kills_formatted + " (" + kill_pct_formatted + ")")
+	_add_stat_row("Songkarner Defeated" if lang != "th" else "ซอมบี้ที่ถูกปราบ", kills_formatted + " (" + kill_pct_formatted + ")")
 	_add_stat_row("Takedowns Executed" if lang != "th" else "ท่าพิเศษที่ใช้ (Takedown)", str(takedown_count_val))
 	_add_stat_row("Player Damage Taken" if lang != "th" else "ความเสียหายที่ผู้เล่นได้รับ", "%d HP" % int(damage_taken_val))
 	_add_stat_row("Water Gun Accuracy" if lang != "th" else "ความแม่นยำปืนฉีดน้ำ", accuracy_formatted)
-	_add_stat_row("Highest Kill Combo" if lang != "th" else "การกำจัดคอมโบสูงสุด", str(highest_combo_val) + " Kills")
+	_add_stat_row("Highest Defeat Combo" if lang != "th" else "การกำจัดคอมโบสูงสุด", str(highest_combo_val) + " Kills")
 	
 	# RIGHT PANEL: Grade and Badges
 	var right_panel = PanelContainer.new()
@@ -653,7 +667,7 @@ func _on_menu_pressed() -> void:
 	if get_tree().root.has_node("GameManager"):
 		get_tree().root.get_node("GameManager").restart_game_to_disclaimer()
 	else:
-		get_tree().change_scene_to_file("res://scenes/disclaimer.tscn")
+		get_tree().change_scene_to_file("res://scenes/startup.tscn")
 
 func _on_exit_pressed() -> void:
 	SoundManager.play_2d("Cancel_UI")

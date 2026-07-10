@@ -18,6 +18,7 @@ var start_air: float = 0.0
 var max_air: float = 100.0
 var mode: String = "qte" # "qte" or "superpump"
 @export var show_progress_bar: bool = false
+var fail_ends_reload: bool = true
 
 # QTE variables
 var num_prompts: int = 4
@@ -234,6 +235,9 @@ func _process_qte(delta: float) -> void:
 	for p in prompts:
 		if not p.hit and not p.missed and current_progress > (p.center + prompt_size):
 			p.missed = true
+			failed = true
+			if fail_ends_reload:
+				_resolve(false)
 			
 	# Redraw the UI
 	_gauge.queue_redraw()
@@ -269,6 +273,7 @@ func _input(event: InputEvent) -> void:
 
 func _check_qte_input() -> void:
 	var hit_any = false
+	var is_early = false
 	
 	for p in prompts:
 		if p.hit or p.missed:
@@ -316,6 +321,9 @@ func _check_qte_input() -> void:
 			# Update reload_progress instantly to prevent any single-frame lag
 			reload_progress = val_after
 			break
+		elif current_progress < (p.center - prompt_size):
+			# Needle has not reached this prompt's active zone yet (early press)
+			is_early = true
 			
 	if hit_any:
 		var all_hit = true
@@ -327,10 +335,15 @@ func _check_qte_input() -> void:
 		if all_hit:
 			_resolve(true)
 	else:
-		# Miss penalty: flash red, play click, and trigger immediate QTE failure
+		# Miss penalty: flash red and play click
 		_flash_center_failure()
-		failed = true
-		_resolve(false)
+		
+		# If it is early, we don't fail immediately, letting the player try again.
+		# If it is late (not early), we register QTE failure.
+		if not is_early:
+			failed = true
+			if fail_ends_reload:
+				_resolve(false)
 		
 	_gauge.queue_redraw()
 
@@ -375,7 +388,7 @@ func _draw_gauge() -> void:
 			if resolved:
 				# Paint the entire progress circle based on QTE success level
 				if failed:
-					_gauge.draw_circle(center, max_radius * reload_progress, Color(0.8, 0.2, 0.2, 0.25)) # Red failure
+					_gauge.draw_circle(center, max_radius, Color(0.8, 0.2, 0.2, 0.25)) # Red failure
 				elif successful_qtes == num_prompts and successful_qtes > 0:
 					_gauge.draw_circle(center, max_radius * reload_progress, Color(0.2, 0.85, 0.4, 0.25)) # Green perfect
 				else:
@@ -481,9 +494,10 @@ func _resolve(success: bool) -> void:
 		var final_air = start_air
 		print("[ReloadQteHud debug] _resolve called. success: ", success, ", failed: ", failed, ", start_air: ", start_air, ", reload_progress: ", reload_progress, ", current_air_at_resolve: ", current_air_at_resolve)
 		# Force full progress and redraw circle fill on resolution
-		reload_progress = 1.0
-		if progress_segments.size() > 0:
-			progress_segments[-1].end = 1.0
+		if not failed:
+			reload_progress = 1.0
+			if progress_segments.size() > 0:
+				progress_segments[-1].end = 1.0
 		_gauge.queue_redraw()
 		
 		# Count successful QTE hits dynamically at resolution time

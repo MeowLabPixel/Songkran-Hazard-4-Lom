@@ -47,10 +47,10 @@ func _ready() -> void:
 	# Dynamically instantiate and style the debuff label next to the Air resource label
 	debuff_label = Label.new()
 	debuff_label.text = ""
-	debuff_label.add_theme_font_size_override("font_size", debuff_font_size)
+	debuff_label.add_theme_font_size_override("font_size", round(debuff_font_size * 0.8))
 	debuff_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3)) # Red color for debuff
 	debuff_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	debuff_label.add_theme_constant_override("outline_size", 6)
+	debuff_label.add_theme_constant_override("outline_size", 5)
 	debuff_label.add_theme_font_override("font", body_font)
 	
 	# Position to the left of the Air label (which is bottom-right anchored)
@@ -62,19 +62,23 @@ func _ready() -> void:
 	
 	# Air offset is: left = -205, top = -85, right = -42, bottom = -28
 	# We place debuff_label left of it: left = -420, top = -85, right = -215, bottom = -28
-	debuff_label.offset_left = -420
-	debuff_label.offset_top = -85
-	debuff_label.offset_right = -215
-	debuff_label.offset_bottom = -28
+	debuff_label.offset_left = -420 * 0.8
+	debuff_label.offset_top = -85 * 0.8
+	debuff_label.offset_right = -215 * 0.8
+	debuff_label.offset_bottom = -28 * 0.8
 	debuff_label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	debuff_label.grow_vertical = Control.GROW_DIRECTION_BOTH
 	
 	add_child(debuff_label)
 
 	# Shift Player HP label up to prevent overlapping
-	hp.offset_top = -240
-	hp.offset_bottom = -183
+	hp.offset_left = -205.0 * 0.8
+	hp.offset_right = -42.0 * 0.8
+	hp.offset_top = -240 * 0.8
+	hp.offset_bottom = -183 * 0.8
 	hp.add_theme_font_override("font", subheader_font)
+	hp.add_theme_font_size_override("font_size", 33)
+	hp.add_theme_constant_override("outline_size", 6)
 
 	# Dynamically instantiate Follower HP label
 	follower_hp_label = Label.new()
@@ -84,16 +88,16 @@ func _ready() -> void:
 	follower_hp_label.anchor_top = 1.0
 	follower_hp_label.anchor_right = 1.0
 	follower_hp_label.anchor_bottom = 1.0
-	follower_hp_label.offset_left = -205.0
-	follower_hp_label.offset_top = -185.0
-	follower_hp_label.offset_right = -42.0
-	follower_hp_label.offset_bottom = -128.0
+	follower_hp_label.offset_left = -205.0 * 0.8
+	follower_hp_label.offset_top = -185.0 * 0.8
+	follower_hp_label.offset_right = -42.0 * 0.8
+	follower_hp_label.offset_bottom = -128.0 * 0.8
 	follower_hp_label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	follower_hp_label.grow_vertical = Control.GROW_DIRECTION_BOTH
-	follower_hp_label.add_theme_font_size_override("font_size", 41)
+	follower_hp_label.add_theme_font_size_override("font_size", 33)
 	follower_hp_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
 	follower_hp_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	follower_hp_label.add_theme_constant_override("outline_size", 8)
+	follower_hp_label.add_theme_constant_override("outline_size", 6)
 	follower_hp_label.add_theme_font_override("font", subheader_font)
 	follower_hp_label.visible = false
 	add_child(follower_hp_label)
@@ -101,8 +105,20 @@ func _ready() -> void:
 	# Apply fonts to other exported labels
 	if water:
 		water.add_theme_font_override("font", subheader_font)
+		water.add_theme_font_size_override("font_size", 33)
+		water.add_theme_constant_override("outline_size", 6)
+		water.offset_left = -205.0 * 0.8
+		water.offset_right = -42.0 * 0.8
+		water.offset_top = -133.0 * 0.8
+		water.offset_bottom = -76.0 * 0.8
 	if air:
 		air.add_theme_font_override("font", subheader_font)
+		air.add_theme_font_size_override("font_size", 33)
+		air.add_theme_constant_override("outline_size", 6)
+		air.offset_left = -205.0 * 0.8
+		air.offset_right = -42.0 * 0.8
+		air.offset_top = -85.0 * 0.8
+		air.offset_bottom = -28.0 * 0.8
 
 	# Dynamically create Kill Count HUD Rect
 	kill_rect = TextureRect.new()
@@ -111,7 +127,7 @@ func _ready() -> void:
 	kill_rect.texture = kill_tex
 	kill_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	kill_rect.stretch_mode = TextureRect.STRETCH_SCALE
-	var target_height = 200.0
+	var target_height = 160.0
 	var kill_size = kill_tex.get_size() * (target_height / kill_tex.get_size().y)
 	kill_rect.size = kill_size
 	
@@ -121,10 +137,10 @@ func _ready() -> void:
 	kill_rect.anchor_top = 0.0
 	kill_rect.anchor_right = 1.0
 	kill_rect.anchor_bottom = 0.0
-	kill_rect.offset_left = -kill_size.x - 75
-	kill_rect.offset_top = 30
-	kill_rect.offset_right = -75
-	kill_rect.offset_bottom = 30 + kill_size.y
+	kill_rect.offset_left = -kill_size.x - 60
+	kill_rect.offset_top = 24
+	kill_rect.offset_right = -60
+	kill_rect.offset_bottom = 24 + kill_size.y
 	kill_rect.pivot_offset = kill_size / 2.0
 	add_child(kill_rect)
 
@@ -133,10 +149,10 @@ func _ready() -> void:
 	kill_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	kill_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	kill_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	kill_label.add_theme_font_size_override("font_size", 22)
+	kill_label.add_theme_font_size_override("font_size", 18)
 	kill_label.add_theme_font_override("font", subheader_font)
 	kill_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	kill_label.add_theme_constant_override("outline_size", 5)
+	kill_label.add_theme_constant_override("outline_size", 4)
 	kill_rect.add_child(kill_label)
 
 	# Dynamically create Time Limit HUD Rect (aligned beside kill count)
@@ -155,10 +171,10 @@ func _ready() -> void:
 	time_rect.anchor_top = 0.0
 	time_rect.anchor_right = 1.0
 	time_rect.anchor_bottom = 0.0
-	time_rect.offset_right = -kill_size.x - 90
-	time_rect.offset_left = -kill_size.x - 90 - time_size.x
-	time_rect.offset_top = 80
-	time_rect.offset_bottom = 80 + time_size.y
+	time_rect.offset_right = -kill_size.x - 72
+	time_rect.offset_left = -kill_size.x - 72 - time_size.x
+	time_rect.offset_top = 64
+	time_rect.offset_bottom = 64 + time_size.y
 	time_rect.pivot_offset = time_size / 2.0
 	add_child(time_rect)
 
@@ -167,10 +183,10 @@ func _ready() -> void:
 	time_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	time_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	time_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	time_label.add_theme_font_size_override("font_size", 22)
+	time_label.add_theme_font_size_override("font_size", 18)
 	time_label.add_theme_font_override("font", subheader_font)
 	time_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	time_label.add_theme_constant_override("outline_size", 5)
+	time_label.add_theme_constant_override("outline_size", 4)
 	time_rect.add_child(time_label)
 
 	if not player: return

@@ -36,7 +36,7 @@ func _ready() -> void:
 
 func _on_restart_pressed() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	get_tree().change_scene_to_file("res://scenes/disclaimer.tscn")
+	get_tree().change_scene_to_file("res://scenes/startup.tscn")
 
 func _on_exit_pressed() -> void:
 	get_tree().quit()

@@ -1,0 +1,152 @@
+[gd_scene format=3 uid="uid://dwitgtpws4qyx"]
+
+[ext_resource type="Texture2D" uid="uid://clexeavqx61ca" path="res://scenes/mainmenu/23.Layer-33.png" id="1_ltfwk"]
+[ext_resource type="Texture2D" uid="uid://b8gjc2i1anvhp" path="res://scenes/mainmenu/22.Cloud.png" id="2_r4lvh"]
+[ext_resource type="Texture2D" uid="uid://2eqrri33subl" path="res://scenes/mainmenu/21.Sunlight.png" id="3_22ypp"]
+[ext_resource type="Texture2D" uid="uid://6pmxvopmt6g5" path="res://scenes/mainmenu/20.dust-4.png" id="4_w6vxw"]
+[ext_resource type="Texture2D" uid="uid://mqj6tflmh7ef" path="res://scenes/mainmenu/19.Bomb-3.png" id="5_7xd8a"]
+[ext_resource type="Texture2D" uid="uid://dgug4g1715f6m" path="res://scenes/mainmenu/18.Bomb-2.png" id="6_qbgnh"]
+[ext_resource type="Texture2D" uid="uid://bwjb5nxtlt3ff" path="res://scenes/mainmenu/17.Bomb-Splash-2.png" id="7_epskl"]
+[ext_resource type="Texture2D" uid="uid://ca55wolt3s3i6" path="res://scenes/mainmenu/16.dust-3.png" id="8_k13eu"]
+[ext_resource type="Texture2D" uid="uid://dmirl5dewkgv5" path="res://scenes/mainmenu/15.Zombies-4-7.png" id="9_ustmw"]
+[ext_resource type="Texture2D" uid="uid://dof20bpk5i13k" path="res://scenes/mainmenu/14.Merchant-Water.png" id="10_ism5a"]
+[ext_resource type="Texture2D" uid="uid://cj3jpqe0l5lqq" path="res://scenes/mainmenu/13.Zombie-3.png" id="11_evmcn"]
+[ext_resource type="Texture2D" uid="uid://deawd2l2nearm" path="res://scenes/mainmenu/12.Zombie-2.png" id="12_qv3u8"]
+[ext_resource type="Texture2D" uid="uid://bdvxylv0gt02o" path="res://scenes/mainmenu/11.Zombie-1.png" id="13_30jct"]
+[ext_resource type="Texture2D" uid="uid://c3cmx761efum0" path="res://scenes/mainmenu/10.Bomb-Splash-1.png" id="14_55kty"]
+[ext_resource type="Texture2D" uid="uid://dkndph5spydp" path="res://scenes/mainmenu/9.Dust-3.png" id="15_6gdt0"]
+[ext_resource type="Texture2D" uid="uid://d3aboliq03suj" path="res://scenes/mainmenu/8.MCs.png" id="16_spra3"]
+[ext_resource type="Texture2D" uid="uid://jv78laepyjdn" path="res://scenes/mainmenu/7.Sparkle-2.png" id="17_pwn17"]
+[ext_resource type="Texture2D" uid="uid://cptapqyskdbo" path="res://scenes/mainmenu/6.Sun-Ray-2.png" id="18_ewvhs"]
+[ext_resource type="Texture2D" uid="uid://bkvqeakagjqn" path="res://scenes/mainmenu/5.Sun-Ray-1.png" id="19_wnbct"]
+[ext_resource type="Texture2D" uid="uid://7mtbi58605py" path="res://scenes/mainmenu/4.Sparkle.png" id="20_tsq3n"]
+[ext_resource type="Texture2D" uid="uid://dv43d07qu44ey" path="res://scenes/mainmenu/3.Logo.png" id="21_sysnv"]
+[ext_resource type="Texture2D" uid="uid://qecobrcswqht" path="res://scenes/mainmenu/2.color-correction.png" id="22_pamqq"]
+[ext_resource type="Texture2D" uid="uid://c1wyg0x2k3dm0" path="res://scenes/mainmenu/1.texture-overlay.png" id="23_xco5o"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_r4lvh"]
+light_mode = 2
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_ltfwk"]
+blend_mode = 2
+
+[node name="Layered Wallpaper" type="CanvasLayer" unique_id=1271253935]
+follow_viewport_enabled = true
+
+[node name="23_BG" type="Sprite2D" parent="." unique_id=833838052]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("1_ltfwk")
+
+[node name="21_sunlight" type="Sprite2D" parent="." unique_id=1275923194]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("3_22ypp")
+
+[node name="22_cloud" type="Sprite2D" parent="." unique_id=1792874403]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("2_r4lvh")
+
+[node name="20_dust4" type="Sprite2D" parent="." unique_id=1981464209]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("4_w6vxw")
+
+[node name="19_bomb3" type="Sprite2D" parent="." unique_id=1239223959]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("5_7xd8a")
+
+[node name="18_bomb2" type="Sprite2D" parent="." unique_id=130864283]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("6_qbgnh")
+
+[node name="17_bombSplash2" type="Sprite2D" parent="." unique_id=1589198370]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("7_epskl")
+
+[node name="16_dust3" type="Sprite2D" parent="." unique_id=252033598]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("8_k13eu")
+
+[node name="15_zombies47" type="Sprite2D" parent="." unique_id=2123186040]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("9_ustmw")
+
+[node name="14_merchantWater" type="Sprite2D" parent="." unique_id=809218713]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("10_ism5a")
+
+[node name="13_zombie3" type="Sprite2D" parent="." unique_id=1870838442]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("11_evmcn")
+
+[node name="12_zombie2" type="Sprite2D" parent="." unique_id=811949062]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("12_qv3u8")
+
+[node name="11_zombie1" type="Sprite2D" parent="." unique_id=63005855]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("13_30jct")
+
+[node name="10_bombSplash1" type="Sprite2D" parent="." unique_id=1979851291]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("14_55kty")
+
+[node name="9_dust3" type="Sprite2D" parent="." unique_id=1779661198]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("15_6gdt0")
+
+[node name="8_mCs" type="Sprite2D" parent="." unique_id=1043311382]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("16_spra3")
+
+[node name="7_sparkle2" type="Sprite2D" parent="." unique_id=2146882966]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("17_pwn17")
+
+[node name="6_sunRay2" type="Sprite2D" parent="." unique_id=1271009219]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("18_ewvhs")
+
+[node name="5_sunRay1" type="Sprite2D" parent="." unique_id=1826609981]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("19_wnbct")
+
+[node name="4_sparkle" type="Sprite2D" parent="." unique_id=401886877]
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("20_tsq3n")
+
+[node name="3_logo" type="Sprite2D" parent="." unique_id=1951026316]
+position = Vector2(657, 372.13998)
+scale = Vector2(0.426, 0.426)
+texture = ExtResource("21_sysnv")
+
+[node name="2_colorCorrection" type="Sprite2D" parent="." unique_id=1652681793]
+material = SubResource("CanvasItemMaterial_r4lvh")
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("22_pamqq")
+
+[node name="1_textureOverlay" type="Sprite2D" parent="." unique_id=1557583334]
+modulate = Color(0.078330286, 0.078330286, 0.078330286, 1)
+material = SubResource("CanvasItemMaterial_ltfwk")
+position = Vector2(638, 361.13998)
+scale = Vector2(0.44, 0.44)
+texture = ExtResource("23_xco5o")

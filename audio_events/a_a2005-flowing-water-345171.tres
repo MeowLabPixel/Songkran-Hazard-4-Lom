@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://xh8ax54e7ud7"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
 
-[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_yq152"]
-[ext_resource type="AudioStream" uid="uid://bmi1owqyp30ov" path="res://Audio-Sfx-Music/Uis/Merchant Shop/a_a2005-flowing-water-345171.mp3" id="2_bymp1"]
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_yq152"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Merchant Shop/a_a2005-flowing-water-345171.mp3" id="2_bymp1"]
 
 [resource]
 script = ExtResource("1_yq152")

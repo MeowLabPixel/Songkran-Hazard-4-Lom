@@ -178,7 +178,7 @@ func end_game() -> void:
 					enemy._trigger_defeat()
 
 	# Wait 3 seconds before transitioning to the result screen
-	await tree.create_timer(3.0).timeout
+	await tree.create_timer(6.0).timeout
 	
 	# If the game was reset or restarted during the wait, do not transition
 	if not is_game_ended:
@@ -193,11 +193,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			restart_game_to_disclaimer()
 
 func restart_game_to_disclaimer() -> void:
-	print("[GameManager] Backspace pressed. Resetting game and restarting to disclaimer scene.")
+	print("[GameManager] Backspace pressed. Resetting game and restarting to startup main menu.")
 	reset_game()
 	movement_type_selected = false
 	if has_node("/root/ItemManager"):
 		get_node("/root/ItemManager").reset()
 	var tree := get_tree()
 	if tree:
-		tree.change_scene_to_file("res://scenes/disclaimer.tscn")
+		tree.change_scene_to_file("res://scenes/startup.tscn")

@@ -5,6 +5,7 @@ var _exited: bool = false
 var _pump_cooldown_timer: float = 0.2
 var qte_hud = null
 var _time_in_state: float = 0.0
+var _is_superpump_active: bool = false
 
 @export_group("QTE Customization")
 @export var block_movement_during_qte: bool = true
@@ -16,13 +17,13 @@ var _time_in_state: float = 0.0
 @export var qte_target_zone_size: float = 0.0 # If 0.0, uses default difficulty-scaled size
 @export var qte_show_progress_bar: bool = false
 @export var superpump_hold_duration: float = 0.6
+@export var fail_ends_reload: bool = true
  
 func _enter() -> void:
 	_exited = false
 	_time_in_state = 0.0
 	stop_moving()
 	owner.is_aimming = false
-	owner.aim_blocked_until_release = true
 	owner.aim_bone_on(false)
 	
 
@@ -49,6 +50,7 @@ func _enter() -> void:
 		qte_hud.prompt_size_override = qte_target_zone_size
 		qte_hud.show_progress_bar = qte_show_progress_bar
 		qte_hud.superpump_required_hold = superpump_hold_duration
+		qte_hud.fail_ends_reload = fail_ends_reload
 		
 		# Run parameters initialization
 		qte_hud.setup()
@@ -68,18 +70,26 @@ func _enter() -> void:
 		var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
 		if sub_pb:
 			if gun.air >= gun.max_air:
-				sub_pb.travel("SuperPump")
+				_is_superpump_active = true
+				var superpump_pb = owner.anim.get("parameters/Main/Reload/SuperPump/playback")
+				if superpump_pb:
+					superpump_pb.start("SuperPumpStart")
+				sub_pb.start("SuperPump")
 			else:
-				sub_pb.travel("Reload")
+				_is_superpump_active = false
+				sub_pb.start("Reload")
 	else:
 		reloading()
 
 func _exit() -> void:
 	_exited = true
+	var was_superpump = false
 	if is_instance_valid(qte_hud):
 		qte_hud.cancel()
 		qte_hud = null
 	if is_instance_valid(owner):
+		if _is_superpump_active:
+			owner.superpump_cooldown = 0.3
 		if owner.anim and is_instance_valid(owner.anim):
 			if owner.anim.animation_finished.is_connected(anim_done):
 				owner.anim.animation_finished.disconnect(anim_done)
@@ -91,6 +101,9 @@ func _exit() -> void:
 			var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
 			if sub_pb:
 				sub_pb.travel("End")
+			var superpump_pb = owner.anim.get("parameters/Main/Reload/SuperPump/playback")
+			if superpump_pb:
+				superpump_pb.start("SuperPumpStart")
 			
 		# Transition camera out of aim mode if we are not aiming
 		if not owner.is_aimming:
@@ -112,7 +125,7 @@ func _update(_delta: float) -> void:
 		_pump_cooldown_timer -= _delta
 		
 	# QoL: Aim cancels reload (unless blocked by setting and within 0.3s guard)
-	if Input.is_action_pressed("aim"):
+	if Input.is_action_just_pressed("aim"):
 		var is_pistol_qte = is_instance_valid(qte_hud) and qte_hud.mode == "qte"
 		if is_pistol_qte:
 			if can_cancel_qte_via_aim and _time_in_state >= 0.3:
@@ -129,9 +142,14 @@ func _update(_delta: float) -> void:
 	var down = Input.is_action_pressed("ui_down")
 	var left = Input.is_action_pressed("ui_left")
 	var right = Input.is_action_pressed("ui_right")
-	var has_movement_input = up or down or left or right
 	
-	if has_movement_input:
+	var just_up = Input.is_action_just_pressed("ui_up")
+	var just_down = Input.is_action_just_pressed("ui_down")
+	var just_left = Input.is_action_just_pressed("ui_left")
+	var just_right = Input.is_action_just_pressed("ui_right")
+	var has_new_movement_input = just_up or just_down or just_left or just_right
+	
+	if has_new_movement_input:
 		var is_pistol_qte = is_instance_valid(qte_hud) and qte_hud.mode == "qte"
 		if is_pistol_qte and can_cancel_qte_via_movement and _time_in_state >= 0.3:
 			finished.emit("Run")

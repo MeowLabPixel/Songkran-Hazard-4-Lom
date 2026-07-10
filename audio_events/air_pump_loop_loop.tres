@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://dvxyp6dro0th8"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
 
-[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_ox046"]
-[ext_resource type="AudioStream" uid="uid://brsagum68x0re" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/air_pump_loop_loop.wav" id="2_g1odb"]
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_ox046"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/air_pump_loop_loop.wav" id="2_g1odb"]
 
 [resource]
 script = ExtResource("1_ox046")

@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://criyk74ag3w1v"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
 
-[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_1q14p"]
-[ext_resource type="AudioStream" uid="uid://cbbrf22enyp03" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_1.ogg" id="2_1uagl"]
-[ext_resource type="AudioStream" uid="uid://b4lqr38yhpju6" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_2.ogg" id="3_yw5ow"]
-[ext_resource type="AudioStream" uid="uid://colw14uampv2x" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_3.ogg" id="4_hmoan"]
-[ext_resource type="AudioStream" uid="uid://bb0fy7xuata43" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_4.ogg" id="5_kya2e"]
-[ext_resource type="AudioStream" uid="uid://cpjn4rvg8ujig" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_5.ogg" id="6_u1m06"]
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_1q14p"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_1.ogg" id="2_1uagl"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_2.ogg" id="3_yw5ow"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_3.ogg" id="4_hmoan"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_4.ogg" id="5_kya2e"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_warning_5.ogg" id="6_u1m06"]
 
 [resource]
 script = ExtResource("1_1q14p")

@@ -1,0 +1,223 @@
+%!Adobe-FontList 1.24
+%Locale:0x409
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:TrueType
+FontName:iannnnnDOG-Bold
+FamilyName:iannnnn-DOG
+StyleName:Bold
+FullName:iannnnn-DOG Bold
+MenuName:iannnnn-DOG
+StyleBits:2
+WritingScript:Thai
+OutlineFileName:C:\Users\n2EIm\OneDrive\Desktop\SummerJam 2026\Songkran-Hazard-4-Lom\scenes\Font\iannnnn-DOG-Bold.ttf
+DataFormat:sfntData
+hasSVG:no
+hasCOLR:no
+VariableFontType:NonVariableFont
+FileLength:105224
+FileModTime:1629482763
+WeightClass:700
+WidthClass:5
+AngleClass:0
+NameArray:0,Mac,4,iannnnn-DOG Bold
+NameArray:0,Win,1,iannnnn-DOG
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Invalid
+OutlineFileName:C:\Users\n2EIm\OneDrive\Desktop\SummerJam 2026\Songkran-Hazard-4-Lom\scenes\Font\iannnnn-DOG-Bold.ttf.import
+FileModTime:1783642191
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:TrueType
+FontName:iannnnnDOG-Light
+FamilyName:iannnnn-DOG
+StyleName:Light
+FullName:iannnnn-DOG Light
+MenuName:iannnnn-DOG
+StyleBits:0
+WritingScript:Thai
+OutlineFileName:C:\Users\n2EIm\OneDrive\Desktop\SummerJam 2026\Songkran-Hazard-4-Lom\scenes\Font\iannnnn-DOG-Light.ttf
+DataFormat:sfntData
+hasSVG:no
+hasCOLR:no
+VariableFontType:NonVariableFont
+FileLength:108640
+FileModTime:1629482764
+WeightClass:300
+WidthClass:5
+AngleClass:0
+NameArray:0,Mac,4,iannnnn-DOG Light
+NameArray:0,Win,1,iannnnn-DOG
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Invalid
+OutlineFileName:C:\Users\n2EIm\OneDrive\Desktop\SummerJam 2026\Songkran-Hazard-4-Lom\scenes\Font\iannnnn-DOG-Light.ttf.import
+FileModTime:1783642191
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:TrueType
+FontName:iannnnnDOG-Regular
+FamilyName:iannnnn-DOG
+StyleName:Regular
+FullName:iannnnn-DOG Regular
+MenuName:iannnnn-DOG
+StyleBits:0
+WritingScript:Thai
+OutlineFileName:C:\Users\n2EIm\OneDrive\Desktop\SummerJam 2026\Songkran-Hazard-4-Lom\scenes\Font\iannnnn-DOG-Regular.ttf
+DataFormat:sfntData
+hasSVG:no
+hasCOLR:no
+VariableFontType:NonVariableFont
+FileLength:115288
+FileModTime:1629482763
+WeightClass:400
+WidthClass:5
+AngleClass:0
+NameArray:0,Mac,4,iannnnn-DOG Regular
+NameArray:0,Win,1,iannnnn-DOG
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Invalid
+OutlineFileName:C:\Users\n2EIm\OneDrive\Desktop\SummerJam 2026\Songkran-Hazard-4-Lom\scenes\Font\iannnnn-DOG-Regular.ttf.import
+FileModTime:1783642191
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:TrueType
+FontName:iannnnnVCD2007-Bold
+FamilyName:iannnnnVCD 2007
+StyleName:Bold
+FullName:iannnnnVCD 2007 Bold
+MenuName:iannnnnVCD 2007
+StyleBits:2
+WritingScript:Roman
+OutlineFileName:C:\Users\n2EIm\OneDrive\Desktop\SummerJam 2026\Songkran-Hazard-4-Lom\scenes\Font\iannnnnVCD 2007 Bold.ttf
+DataFormat:sfntData
+hasSVG:no
+hasCOLR:no
+VariableFontType:NonVariableFont
+FileLength:104984
+FileModTime:1188826562
+WeightClass:700
+WidthClass:5
+AngleClass:1
+NameArray:0,Mac,18,iannnnnVCD 2007 Bold
+NameArray:0,Mac,4,iannnnnVCD 2007 Bold
+NameArray:0,Win,1,iannnnnVCD 2007
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Invalid
+OutlineFileName:C:\Users\n2EIm\OneDrive\Desktop\SummerJam 2026\Songkran-Hazard-4-Lom\scenes\Font\iannnnnVCD 2007 Bold.ttf.import
+FileModTime:1783642191
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:TrueType
+FontName:iannnnnVCD2007-Light
+FamilyName:iannnnnVCD 2007 Light
+StyleName:Regular
+FullName:iannnnnVCD 2007 Light
+MenuName:iannnnnVCD 2007 Light
+StyleBits:0
+WritingScript:Roman
+OutlineFileName:C:\Users\n2EIm\OneDrive\Desktop\SummerJam 2026\Songkran-Hazard-4-Lom\scenes\Font\iannnnnVCD 2007 Light.ttf
+DataFormat:sfntData
+hasSVG:no
+hasCOLR:no
+VariableFontType:NonVariableFont
+FileLength:113556
+FileModTime:1188826540
+WeightClass:300
+WidthClass:0
+AngleClass:0
+NameArray:0,Mac,18,iannnnnVCD 2007 Light
+NameArray:0,Mac,4,iannnnnVCD 2007 Light
+NameArray:0,Win,1,iannnnnVCD 2007 Light
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Invalid
+OutlineFileName:C:\Users\n2EIm\OneDrive\Desktop\SummerJam 2026\Songkran-Hazard-4-Lom\scenes\Font\iannnnnVCD 2007 Light.ttf.import
+FileModTime:1783642191
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:TrueType
+FontName:iannnnnVCD2007
+FamilyName:iannnnnVCD 2007
+StyleName:Regular
+FullName:iannnnnVCD 2007
+MenuName:iannnnnVCD 2007
+StyleBits:0
+WritingScript:Roman
+OutlineFileName:C:\Users\n2EIm\OneDrive\Desktop\SummerJam 2026\Songkran-Hazard-4-Lom\scenes\Font\iannnnnVCD 2007.ttf
+DataFormat:sfntData
+hasSVG:no
+hasCOLR:no
+VariableFontType:NonVariableFont
+FileLength:101084
+FileModTime:1188826524
+WeightClass:400
+WidthClass:5
+AngleClass:1
+NameArray:0,Mac,18,iannnnnVCD 2007
+NameArray:0,Mac,4,iannnnnVCD 2007
+NameArray:0,Win,1,iannnnnVCD 2007
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Invalid
+OutlineFileName:C:\Users\n2EIm\OneDrive\Desktop\SummerJam 2026\Songkran-Hazard-4-Lom\scenes\Font\iannnnnVCD 2007.ttf.import
+FileModTime:1783642191
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:TrueType
+FontName:LazyDog
+FamilyName:Lazy Dog
+StyleName:Regular
+FullName:Lazy Dog
+MenuName:Lazy Dog
+StyleBits:0
+WritingScript:Roman
+OutlineFileName:C:\Users\n2EIm\OneDrive\Desktop\SummerJam 2026\Songkran-Hazard-4-Lom\scenes\Font\lazy_dog.ttf
+DataFormat:sfntData
+hasSVG:no
+hasCOLR:no
+VariableFontType:NonVariableFont
+FileLength:49624
+FileModTime:1527578920
+WeightClass:400
+WidthClass:5
+AngleClass:0
+NameArray:0,Mac,4,Lazy Dog
+NameArray:0,Win,1,Lazy Dog
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Invalid
+OutlineFileName:C:\Users\n2EIm\OneDrive\Desktop\SummerJam 2026\Songkran-Hazard-4-Lom\scenes\Font\lazy_dog.ttf.import
+FileModTime:1783642191
+%EndFont
+

@@ -1,19 +1,19 @@
 extends Control
 
 @export_group("Reticle Settings")
-@export var min_reticle_radius: float = 10.0
-@export var max_reticle_radius: float = 45.0
-@export var reticle_line_length: float = 12.0
+@export var min_reticle_radius: float = 7.5
+@export var max_reticle_radius: float = 33.75
+@export var reticle_line_length: float = 9.0
 @export var reticle_line_thickness: float = 2.0
 @export var reticle_outline_thickness: float = 4.0
-@export var center_dot_radius: float = 2.0
-@export var center_dot_outline: float = 3.5
+@export var center_dot_radius: float = 1.5
+@export var center_dot_outline: float = 2.625
 @export var default_color: Color = Color(1.0, 1.0, 1.0, 0.75)
 @export var focused_color: Color = Color(1.0, 0.8, 0.1, 0.95)
 
 @export_group("Air Gauge Settings")
 @export var gauge_on_left: bool = true
-@export var gauge_offset_radius: float = 20.0 # visual_r + gauge_offset_radius (Makes the arc UI bigger)
+@export var gauge_offset_radius: float = 15.0 # visual_r + gauge_offset_radius (Makes the arc UI bigger)
 @export var gauge_thickness: float = 3.0
 @export var gauge_outline_thickness: float = 5.0
 @export var gauge_cyan_color: Color = Color(0.2, 0.8, 1.0, 0.85)
@@ -27,7 +27,7 @@ extends Control
 var player: Node = null
 
 # Dynamic visual state
-var visual_r: float = 45.0
+var visual_r: float = 33.75
 var was_visible: bool = false
 var pop_scale: float = 1.0
 var was_fully_focused: bool = false

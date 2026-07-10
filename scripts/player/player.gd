@@ -104,6 +104,7 @@ var is_aimming:bool = false
 var focus_progress: float = 0.0
 var aim_blocked_until_release: bool = false
 var is_reload:bool = false
+var superpump_cooldown: float = 0.0
 var is_grab:bool = false
 var is_knockdown:bool = false
 var is_near_stunt:bool = false
@@ -333,6 +334,8 @@ func _ready() -> void:
 var current_aim_influence: float = 0.25
 
 func _process(delta: float) -> void:
+	if superpump_cooldown > 0.0:
+		superpump_cooldown -= delta
 	update_crosshair_accuracy(delta)
 	
 	if cross_hair and camera:
@@ -860,7 +863,7 @@ func is_dead() -> bool:
 
 func _on_restart_pressed() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	get_tree().call_deferred("change_scene_to_file", "res://scenes/disclaimer.tscn")
+	get_tree().call_deferred("change_scene_to_file", "res://scenes/startup.tscn")
 
 func _on_exit_pressed() -> void:
 	get_tree().quit()

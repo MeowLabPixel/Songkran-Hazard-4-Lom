@@ -46,7 +46,6 @@ var btn_th: TextureButton
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	SoundManager.stop_music()
 	
 	if get_tree().root.has_node("GameManager"):
 		get_tree().root.get_node("GameManager").reset_game()
@@ -60,6 +59,13 @@ func _ready() -> void:
 		pages = pages_en
 		
 	language_selected = true
+	
+	# Apply screen blur shader to Background ColorRect
+	var blur_shader = load("res://shaders/screen_blur.gdshader") as Shader
+	if blur_shader and has_node("Background"):
+		var mat = ShaderMaterial.new()
+		mat.shader = blur_shader
+		$Background.material = mat
 	
 	# Override prompt label font
 	prompt_label.add_theme_font_override("font", preload("res://scenes/font/iannnnn-DOG-Bold.ttf"))
@@ -77,6 +83,11 @@ func _ready() -> void:
 	container.resized.connect(func():
 		container.pivot_offset = container.size / 2.0
 	)
+	
+	# Initial modulate alpha set to 0 to prevent snap/pop, then fade in smoothly
+	modulate.a = 0.0
+	var fade_in = create_tween()
+	fade_in.tween_property(self, "modulate:a", 1.0, 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _create_language_changer() -> void:
 	lang_changer_container = HBoxContainer.new()
@@ -316,9 +327,15 @@ func _show_movement_selection() -> void:
 	move_selection_container.anchor_right = 1.0
 	move_selection_container.anchor_bottom = 1.0
 	
-	# Background style matching disclaimer
+	# Background style matching disclaimer (with blur shader)
 	var bg = ColorRect.new()
-	bg.color = Color(0.02, 0.02, 0.03, 1)
+	var blur_shader = load("res://shaders/screen_blur.gdshader") as Shader
+	if blur_shader:
+		var mat = ShaderMaterial.new()
+		mat.shader = blur_shader
+		bg.material = mat
+	else:
+		bg.color = Color(0.02, 0.02, 0.03, 0.8)
 	move_selection_container.add_child(bg)
 	bg.anchor_right = 1.0
 	bg.anchor_bottom = 1.0
