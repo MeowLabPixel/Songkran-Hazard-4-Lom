@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://on6160rrj6my"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://p4j3hvdjsg7e"]
 
 [ext_resource type="AudioStream" uid="uid://b68neg6ag7ytf" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_hit_Add_Alternative_001.wav" id="1_iqpej"]
 [ext_resource type="AudioStream" uid="uid://17ylpto1o8ps" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_hit_Add_Alternative_002.wav" id="2_lqmk0"]

@@ -9,6 +9,12 @@ func _enter() -> void:
 	if owner.has_method("force_die"):
 		owner.force_die()
 
+	# If outcome wasn't already set to DEFEAT_ANCHALEE, set it to DEFEAT_PLAYER
+	if get_tree().root.has_node("GameManager"):
+		var gm = get_tree().root.get_node("GameManager")
+		if gm.game_outcome != gm.Outcome.DEFEAT_ANCHALEE:
+			gm.game_outcome = gm.Outcome.DEFEAT_PLAYER
+
 	# Disable all enemy attacks and force them back to hunt/idle
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		if is_instance_valid(enemy):
@@ -32,7 +38,15 @@ func _enter() -> void:
 		var tween = owner.create_tween()
 		tween.tween_property(color_rect, "modulate:a", 1.0, 1.0)
 		tween.finished.connect(func():
-			get_tree().change_scene_to_file("res://scenes/defeated_scene.tscn")
+			if get_tree().root.has_node("GameManager"):
+				var gm = get_tree().root.get_node("GameManager")
+				if gm.game_outcome == gm.Outcome.DEFEAT_ANCHALEE:
+					get_tree().change_scene_to_file("res://scenes/result_screen_defeat_anchalee.tscn")
+				else:
+					get_tree().change_scene_to_file("res://scenes/result_screen_defeat_player.tscn")
+			else:
+				# Fallback if GameManager is not found
+				get_tree().change_scene_to_file("res://scenes/result_screen_defeat_player.tscn")
 		)
 	)
 

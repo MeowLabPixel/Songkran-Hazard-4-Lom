@@ -29,10 +29,14 @@ var player: Node = null
 # Dynamic visual state
 var visual_r: float = 45.0
 var was_visible: bool = false
+var pop_scale: float = 1.0
+var was_fully_focused: bool = false
 
 func _ready() -> void:
 	scale = Vector2.ONE
 	visual_r = max_reticle_radius
+	pop_scale = 1.0
+	was_fully_focused = false
 
 func get_player() -> Node:
 	if player and is_instance_valid(player):
@@ -59,6 +63,8 @@ func _process(delta: float) -> void:
 		if not was_visible:
 			visual_r = max_reticle_radius
 			scale = Vector2.ONE
+			pop_scale = 1.0
+			was_fully_focused = false
 			was_visible = true
 			
 		var p = get_player()
@@ -69,11 +75,25 @@ func _process(delta: float) -> void:
 			var lerp_speed = shrink_speed if target_r < visual_r else expand_speed
 			visual_r = lerpf(visual_r, target_r, delta * lerp_speed)
 			
+			# Trigger focus pop when progress hits 100%
+			if focus_prog >= 1.0:
+				if not was_fully_focused:
+					pop_scale = 1.35
+					was_fully_focused = true
+			else:
+				was_fully_focused = false
+				
+			# Smoothly bounce scale back to 1.0
+			pop_scale = lerpf(pop_scale, 1.0, delta * 12.0)
+			scale = Vector2(pop_scale, pop_scale)
+			
 		queue_redraw()
 	else:
 		was_visible = false
 		visual_r = max_reticle_radius
 		scale = Vector2.ONE
+		pop_scale = 1.0
+		was_fully_focused = false
 
 func _draw() -> void:
 	var p = get_player()

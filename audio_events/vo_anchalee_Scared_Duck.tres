@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://crrqjhc3ovy0f"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cxaaejggtcm4a"]
 
 [ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_5y04d"]
 [ext_resource type="AudioStream" uid="uid://drwvqigxn2ug8" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_Scared_Duck_01.ogg" id="2_b5h4y"]

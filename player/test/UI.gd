@@ -3,6 +3,7 @@ extends CanvasLayer
 @export var water: Label
 @export var air: Label
 @export var player: Player 
+@export var debuff_font_size: int = 32
 @onready var hp: Label = $HP
 
 var debuff_label: Label
@@ -19,6 +20,10 @@ var kill_label: Label
 var time_rect: TextureRect
 var time_label: Label
 
+# Takedown Shockwave elements
+var shockwave_drawer: Control
+var active_shockwaves: Array = []
+
 func _ready() -> void:
 	add_to_group("player_ui")
 	
@@ -27,6 +32,14 @@ func _ready() -> void:
 		if players.size() > 0:
 			player = players[0]
 
+	# Setup full-screen shockwave drawing canvas
+	shockwave_drawer = Control.new()
+	shockwave_drawer.name = "ShockwaveDrawer"
+	shockwave_drawer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	shockwave_drawer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	shockwave_drawer.draw.connect(_draw_shockwaves)
+	add_child(shockwave_drawer)
+
 	# Preload fonts
 	var subheader_font = preload("res://scenes/font/iannnnn-DOG-Bold.ttf")
 	var body_font = preload("res://scenes/font/iannnnnVCD 2007 Bold.ttf")
@@ -34,7 +47,7 @@ func _ready() -> void:
 	# Dynamically instantiate and style the debuff label next to the Air resource label
 	debuff_label = Label.new()
 	debuff_label.text = ""
-	debuff_label.add_theme_font_size_override("font_size", 24)
+	debuff_label.add_theme_font_size_override("font_size", debuff_font_size)
 	debuff_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3)) # Red color for debuff
 	debuff_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	debuff_label.add_theme_constant_override("outline_size", 6)
@@ -142,10 +155,10 @@ func _ready() -> void:
 	time_rect.anchor_top = 0.0
 	time_rect.anchor_right = 1.0
 	time_rect.anchor_bottom = 0.0
-	time_rect.offset_right = -kill_size.x - 100
-	time_rect.offset_left = -kill_size.x - 100 - time_size.x
-	time_rect.offset_top = 30
-	time_rect.offset_bottom = 30 + time_size.y
+	time_rect.offset_right = -kill_size.x - 90
+	time_rect.offset_left = -kill_size.x - 90 - time_size.x
+	time_rect.offset_top = 80
+	time_rect.offset_bottom = 80 + time_size.y
 	time_rect.pivot_offset = time_size / 2.0
 	add_child(time_rect)
 
@@ -165,7 +178,7 @@ func _ready() -> void:
 	update_display()
 	_update_hp_display()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not player:
 		if owner is Player:
 			player = owner as Player
@@ -178,6 +191,19 @@ func _process(_delta: float) -> void:
 			
 	if player.HP <= 0:
 		self.visible = false
+		
+	# Update active takedown shockwaves
+	if active_shockwaves.size() > 0:
+		var i = active_shockwaves.size() - 1
+		while i >= 0:
+			var sw = active_shockwaves[i]
+			sw.radius += delta * 300.0  # Expand the shockwave ring
+			sw.alpha -= delta * 2.8     # Fade out the ring
+			if sw.alpha <= 0.0:
+				active_shockwaves.remove_at(i)
+			i -= 1
+		if is_instance_valid(shockwave_drawer):
+			shockwave_drawer.queue_redraw()
 		
 	update_display()
 	_update_debuff_display()
@@ -351,3 +377,30 @@ func _update_debuff_display() -> void:
 			# Fade out
 			var tween = create_tween()
 			tween.tween_property(debuff_label, "modulate:a", 0.0, 0.2)
+
+func spawn_takedown_shockwave(zombie_3d_pos: Vector3) -> void:
+	active_shockwaves.append({
+		"pos_3d": zombie_3d_pos,
+		"radius": 15.0,
+		"alpha": 1.0
+	})
+	if is_instance_valid(shockwave_drawer):
+		shockwave_drawer.queue_redraw()
+
+func _draw_shockwaves() -> void:
+	var camera = get_viewport().get_camera_3d()
+	if not camera:
+		return
+		
+	for sw in active_shockwaves:
+		if camera.is_position_behind(sw.pos_3d):
+			continue
+		var screen_pos = camera.unproject_position(sw.pos_3d)
+		
+		# Draw the expanding circle/shockwave
+		var ring_color = Color(1.0, 0.8, 0.1, sw.alpha * 0.95)
+		shockwave_drawer.draw_arc(screen_pos, sw.radius, 0.0, 2.0 * PI, 32, ring_color, 4.0, true)
+		
+		# Draw a cool black shadow outline for contrast
+		shockwave_drawer.draw_arc(screen_pos, sw.radius - 2.0, 0.0, 2.0 * PI, 32, Color(0, 0, 0, sw.alpha * 0.5), 1.5, true)
+		shockwave_drawer.draw_arc(screen_pos, sw.radius + 2.0, 0.0, 2.0 * PI, 32, Color(0, 0, 0, sw.alpha * 0.5), 1.5, true)

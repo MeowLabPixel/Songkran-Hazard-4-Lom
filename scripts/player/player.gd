@@ -795,8 +795,8 @@ func is_invulnerable() -> bool:
 				
 	return false
 
-func take_damage(amount: int) -> void:
-	if is_stunned or is_invulnerable():
+func take_damage(amount: int, ignore_stun_and_invulnerable: bool = false) -> void:
+	if not ignore_stun_and_invulnerable and (is_stunned or is_invulnerable()):
 		return
 	lost_HP(amount)
 	print("[Player] Took %d damage — HP: %d/%d" % [amount, HP, MaxHP])
@@ -834,6 +834,8 @@ func take_damage(amount: int) -> void:
 		sm._change_state("Get_hit")
 
 func lost_HP(amount):
+	if get_tree().root.has_node("GameManager"):
+		get_tree().root.get_node("GameManager").register_player_damage(amount)
 	if HP -amount <= 0:
 		HP = 0
 	else:

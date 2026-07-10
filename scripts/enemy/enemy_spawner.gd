@@ -35,6 +35,10 @@ func _ready() -> void:
 		push_error("[EnemySpawner] Missing TriggerArea or SpawnPoints children.")
 		return
 	
+	# Register with GameManager
+	if get_tree().root.has_node("GameManager"):
+		get_tree().root.get_node("GameManager").register_spawner(self)
+		
 	# Gather all Marker3D or Node3D spawn points
 	for child in spawn_points_container.get_children():
 		if child is Node3D:

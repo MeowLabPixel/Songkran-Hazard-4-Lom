@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cntngcksd78jx"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://b6jampook743t"]
 
 [ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_7idai"]
 [ext_resource type="AudioStream" uid="uid://dtaxmwpwge68v" path="res://Audio-Sfx-Music/SFXs/Anchalee/anchalee_ducking_getup.ogg" id="2_2r04g"]

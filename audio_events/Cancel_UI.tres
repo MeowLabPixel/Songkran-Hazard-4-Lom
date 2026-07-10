@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://bm5j2b3otwgdh"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://b5752dlm2vcfd"]
 
 [ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_k7vne"]
 [ext_resource type="AudioStream" uid="uid://c6t72dt551i6e" path="res://Audio-Sfx-Music/Uis/Menu/Cancel_UI_1.wav" id="2_tisfd"]

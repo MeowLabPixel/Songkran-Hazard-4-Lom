@@ -477,7 +477,9 @@ func _resolve(success: bool) -> void:
 	resolved = true
 	
 	if mode == "qte":
+		var current_air_at_resolve = clampf(start_air + (max_air - start_air) * reload_progress, 0.0, max_air)
 		var final_air = start_air
+		print("[ReloadQteHud debug] _resolve called. success: ", success, ", failed: ", failed, ", start_air: ", start_air, ", reload_progress: ", reload_progress, ", current_air_at_resolve: ", current_air_at_resolve)
 		# Force full progress and redraw circle fill on resolution
 		reload_progress = 1.0
 		if progress_segments.size() > 0:
@@ -495,7 +497,8 @@ func _resolve(success: bool) -> void:
 			lang = GameManager.selected_language
 			
 		if failed:
-			final_air = max_air
+			final_air = current_air_at_resolve
+			print("[ReloadQteHud debug] Failed. Setting final_air = current_air_at_resolve: ", final_air)
 			_prompt_label.text = "การรีโหลดล้มเหลว" if lang == "th" else "RELOAD FAILED"
 			_prompt_label.add_theme_color_override("font_color", Color(0.8, 0.2, 0.2)) # Red
 			SoundManager.play_2d("watergun_pistol_reload")

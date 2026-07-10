@@ -162,6 +162,10 @@ func kill_anchalee() -> void:
 	health = 0
 	is_dead = true
 	print("[Anchalee] Force Dead.")
+	
+	if get_tree().root.has_node("GameManager"):
+		get_tree().root.get_node("GameManager").game_outcome = GameManager.Outcome.DEFEAT_ANCHALEE
+		
 	state_machine.transition_to("AnchaleeStateDie")
 	
 	# Kill player
@@ -176,6 +180,8 @@ func take_damage(amount: int, _hit_data: Dictionary = {}) -> void:
 		
 	# Immunity is now fully handled by physics layers via set_immune().
 	# If the hitboxes are hit, she takes damage.
+	if get_tree().root.has_node("GameManager"):
+		get_tree().root.get_node("GameManager").register_anchalee_damage(amount)
 		
 	health -= amount
 	print("[Anchalee] Took %d damage -- HP: %d/%d" % [amount, health, max_health])
@@ -188,6 +194,10 @@ func take_damage(amount: int, _hit_data: Dictionary = {}) -> void:
 func take_hit(hit_data: Dictionary) -> void:
 	if is_dead: return
 	var amount = hit_data.get("damage", 10)
+	
+	if get_tree().root.has_node("GameManager"):
+		get_tree().root.get_node("GameManager").register_anchalee_damage(amount)
+		
 	health -= amount
 	print("[Anchalee] Friendly Fire! Took %d damage -- HP: %d/%d" % [amount, health, max_health])
 	if health <= 0:

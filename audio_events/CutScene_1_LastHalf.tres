@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://dcd5vay0al8wi"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://depy18d3dty1u"]
 
 [ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_ji5a6"]
 [ext_resource type="AudioStream" uid="uid://dmfp3pi0h2i1d" path="res://Audio-Sfx-Music/Musics/CutScene_1_LastHalf.ogg" id="2_0hlai"]

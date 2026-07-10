@@ -88,6 +88,8 @@ func enter() -> void:
 		attack_to_run = enemy.selected_attack_type
 		# Consume the selection
 		enemy.selected_attack_type = ""
+		if "current_attack_type" in enemy:
+			enemy.current_attack_type = attack_to_run
 
 	var token_manager = enemy.get_node("/root/AttackTokenManager")
 	var player := _get_player()
@@ -182,6 +184,8 @@ func exit() -> void:
 	if enemy:
 		var token_manager = enemy.get_node("/root/AttackTokenManager")
 		token_manager.release_token(enemy)
+		if "current_attack_type" in enemy:
+			enemy.current_attack_type = ""
 		if enemy.anim_tree and enemy.anim_tree.active:
 			if "parameters/Walk Zombie/Transition/transition_request" in enemy.anim_tree:
 				enemy.anim_tree.set("parameters/Walk Zombie/Transition/transition_request", "default")
@@ -195,6 +199,8 @@ func _start_attack_with_index(index: int) -> void:
 	var anim: String = enemy.anim_set.attack_1 if index == 0 else enemy.anim_set.attack_2
 	_current_target_anim = anim
 	_current_attack_is_1 = (index == 0)
+	if enemy and "current_attack_type" in enemy:
+		enemy.current_attack_type = "attack_1" if index == 0 else "attack_2"
 	_force_anim(anim, "attack")
 	_anim_duration = _anim_length(anim, "attack")
 	print("[StateAttack] Attack (index %d): %s (%.2fs)" % [index, anim, _anim_duration])
@@ -239,6 +245,8 @@ func _start_attack() -> void:
 	var anim: String = enemy.anim_set.get_attack_anim(_attack_index)
 	_current_target_anim = anim
 	_current_attack_is_1 = (anim == enemy.anim_set.attack_1)
+	if enemy and "current_attack_type" in enemy:
+		enemy.current_attack_type = "attack_1" if _current_attack_is_1 else "attack_2"
 	_attack_index += 1
 	_force_anim(anim, "attack")
 	_anim_duration = _anim_length(anim, "attack")
@@ -279,6 +287,8 @@ func _start_grab_reach() -> void:
 	_current_target_anim = "grab"
 	if _grab_hitbox and _grab_hitbox is AttackHitbox:
 		_grab_hitbox.attack_type = "grab"
+	if enemy and "current_attack_type" in enemy:
+		enemy.current_attack_type = "attack_grab"
 		
 	# Play zombie grab lunge growl
 	if enemy:
@@ -671,7 +681,10 @@ func _hand_touches_player() -> bool:
 
 func _deal_damage(entity: Node3D, amount: int, source: String) -> void:
 	if entity and entity.has_method("take_damage"):
-		entity.take_damage(amount)
+		if entity.is_in_group("player") and source == "grab":
+			entity.take_damage(amount, true)
+		else:
+			entity.take_damage(amount)
 		print("[StateAttack] %s hit %s for %d damage" % [source, entity.name, amount])
 		
 		# Play melee hit impact sound

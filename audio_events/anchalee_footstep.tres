@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://vcdkjnnsrs8e"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cyoy50pe8asv5"]
 
 [ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_3cfvm"]
 [ext_resource type="AudioStream" uid="uid://cijjexirnuhko" path="res://Audio-Sfx-Music/SFXs/Anchalee/anchalee_footstep_1.ogg" id="2_8dwre"]

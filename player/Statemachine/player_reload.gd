@@ -9,8 +9,8 @@ var _time_in_state: float = 0.0
 @export_group("QTE Customization")
 @export var block_movement_during_qte: bool = true
 @export var block_aiming_during_qte: bool = true
-@export var can_cancel_qte_via_aim: bool = true
-@export var can_cancel_qte_via_movement: bool = true
+@export var can_cancel_qte_via_aim: bool = false
+@export var can_cancel_qte_via_movement: bool = false
 @export var qte_duration: float = 2.0
 @export var qte_prompt_count_override: int = 0 # If 0, uses start_air-based dynamic count (1 to 4)
 @export var qte_target_zone_size: float = 0.0 # If 0.0, uses default difficulty-scaled size

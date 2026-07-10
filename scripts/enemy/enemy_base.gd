@@ -92,7 +92,15 @@ var _smoothed_angular_velocity: float = 0.0
 var rig: Node3D
 var _walk_markers: Array[float] = [0.5, 1.0]
 var _enemy_meshes: Array[MeshInstance3D] = []
+var _takedown_aura_alpha: float = 0.0
+var _left_hand_aura_alpha: float = 0.0
+var _right_hand_aura_alpha: float = 0.0
+var _aura_fade_speed: float = 4.0
+
 var _takedown_aura_material: ShaderMaterial = null
+var _left_hand_aura_material: ShaderMaterial = null
+var _right_hand_aura_material: ShaderMaterial = null
+var current_attack_type: String = ""
 var _dead_walk_markers: Array[float] = [0.5, 1.0]
 var _last_norm_pos: float = -1.0
 var _last_step_time: int = 0
@@ -382,7 +390,7 @@ func _trigger_defeat() -> void:
 		if ui and ui.has_method("spawn_kill_projectile"):
 			ui.spawn_kill_projectile(global_position)
 		if get_tree().root.has_node("GameManager"):
-			get_tree().root.get_node("GameManager").register_kill()
+			get_tree().root.get_node("GameManager").register_kill(is_takedown_defeat)
 
 # --- Animation Event Hooks ---
 # Call these from AnimationPlayer Method Tracks on the root node
@@ -450,32 +458,111 @@ func _on_state_changed(old_state: String, new_state: String) -> void:
 		debug_label.text = "State: %s\n(%s → %s)" % [new_state, old_state, new_state]
 
 	if new_state == "StateTakedownable":
-		set_takedown_aura(true)
-	elif old_state == "StateTakedownable":
-		set_takedown_aura(false)
-
-func set_takedown_aura(enabled: bool) -> void:
-	if enabled:
-		if not _takedown_aura_material:
-			var shader = load("res://shaders/takedown_aura.gdshader")
-			if shader:
-				_takedown_aura_material = ShaderMaterial.new()
-				_takedown_aura_material.shader = shader
-		
-		if _takedown_aura_material:
-			for mesh in _enemy_meshes:
-				if is_instance_valid(mesh):
-					mesh.material_overlay = _takedown_aura_material
-	else:
-		for mesh in _enemy_meshes:
-			if is_instance_valid(mesh):
-				mesh.material_overlay = null
+		var ui = get_tree().get_first_node_in_group("player_ui")
+		if ui and ui.has_method("spawn_takedown_shockwave"):
+			ui.spawn_takedown_shockwave(global_position)
 
 func _find_meshes_recursive(node: Node, meshes: Array[MeshInstance3D]) -> void:
 	if node is MeshInstance3D:
 		meshes.append(node)
 	for child in node.get_children():
 		_find_meshes_recursive(child, meshes)
+
+func _update_aura_overlays(delta: float) -> void:
+	# 1. Update targets based on current state
+	var target_takedown = 1.0 if (state_machine and state_machine.current_state and state_machine.current_state.name == "StateTakedownable") else 0.0
+	
+	var active_attack = get_active_attack_type()
+	var target_left = 1.0 if (active_attack == "attack_2" or active_attack == "attack_grab") else 0.0
+	var target_right = 1.0 if (active_attack == "attack_1" or active_attack == "attack_grab") else 0.0
+	
+	# 2. Interpolate alphas
+	_takedown_aura_alpha = move_toward(_takedown_aura_alpha, target_takedown, delta * _aura_fade_speed)
+	_left_hand_aura_alpha = move_toward(_left_hand_aura_alpha, target_left, delta * _aura_fade_speed)
+	_right_hand_aura_alpha = move_toward(_right_hand_aura_alpha, target_right, delta * _aura_fade_speed)
+	
+	# 3. Create materials on demand
+	var shader = null
+	if _takedown_aura_alpha > 0.0 and not _takedown_aura_material:
+		shader = load("res://shaders/takedown_aura.gdshader")
+		if shader:
+			_takedown_aura_material = ShaderMaterial.new()
+			_takedown_aura_material.shader = shader
+			_takedown_aura_material.set_shader_parameter("pink_color", Color(1.0, 1.0, 1.0, 1.0))
+			_takedown_aura_material.set_shader_parameter("blue_color", Color(0.8, 0.85, 0.95, 1.0))
+	if _left_hand_aura_alpha > 0.0 and not _left_hand_aura_material:
+		if not shader:
+			shader = load("res://shaders/takedown_aura.gdshader")
+		if shader:
+			_left_hand_aura_material = ShaderMaterial.new()
+			_left_hand_aura_material.shader = shader
+			_left_hand_aura_material.set_shader_parameter("pink_color", Color(1.0, 0.07, 0.57, 1.0))
+			_left_hand_aura_material.set_shader_parameter("blue_color", Color(0.0, 0.75, 1.0, 1.0))
+	if _right_hand_aura_alpha > 0.0 and not _right_hand_aura_material:
+		if not shader:
+			shader = load("res://shaders/takedown_aura.gdshader")
+		if shader:
+			_right_hand_aura_material = ShaderMaterial.new()
+			_right_hand_aura_material.shader = shader
+			_right_hand_aura_material.set_shader_parameter("pink_color", Color(1.0, 0.07, 0.57, 1.0))
+			_right_hand_aura_material.set_shader_parameter("blue_color", Color(0.0, 0.75, 1.0, 1.0))
+			
+	# Update Shader uniform alpha values
+	if _takedown_aura_material:
+		_takedown_aura_material.set_shader_parameter("alpha_val", _takedown_aura_alpha)
+	if _left_hand_aura_material:
+		_left_hand_aura_material.set_shader_parameter("alpha_val", _left_hand_aura_alpha)
+	if _right_hand_aura_material:
+		_right_hand_aura_material.set_shader_parameter("alpha_val", _right_hand_aura_alpha)
+		
+	# 4. Assign overlays based on priorities
+	for mesh in _enemy_meshes:
+		if not is_instance_valid(mesh):
+			continue
+			
+		var is_left = _is_left_hand_mesh(mesh)
+		var is_right = _is_right_hand_mesh(mesh)
+		
+		if is_left:
+			if _takedown_aura_alpha > 0.0:
+				mesh.material_overlay = _takedown_aura_material
+			elif _left_hand_aura_alpha > 0.0:
+				mesh.material_overlay = _left_hand_aura_material
+			else:
+				mesh.material_overlay = null
+		elif is_right:
+			if _takedown_aura_alpha > 0.0:
+				mesh.material_overlay = _takedown_aura_material
+			elif _right_hand_aura_alpha > 0.0:
+				mesh.material_overlay = _right_hand_aura_material
+			else:
+				mesh.material_overlay = null
+		else:
+			# Non-hand body parts
+			if _takedown_aura_alpha > 0.0:
+				mesh.material_overlay = _takedown_aura_material
+			else:
+				mesh.material_overlay = null
+
+func get_active_attack_type() -> String:
+	# If in StateAttack, check current_attack_type
+	if state_machine and state_machine.current_state and state_machine.current_state.name == "StateAttack":
+		return current_attack_type
+	
+	# If preparing (has token in StateHunt)
+	var token_manager = get_node_or_null("/root/AttackTokenManager")
+	if token_manager and token_manager.has_token(self):
+		return selected_attack_type
+		
+	return ""
+
+func _is_left_hand_mesh(mesh: MeshInstance3D) -> bool:
+	var name_lower = mesh.name.to_lower()
+	return "left_hand" in name_lower or "left_ hand" in name_lower
+
+func _is_right_hand_mesh(mesh: MeshInstance3D) -> bool:
+	var name_lower = mesh.name.to_lower()
+	return "right_hand" in name_lower or "right_ hand" in name_lower
 
 # ─── Navigation ────────────────────────────────────────────────────────────
 func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
@@ -513,6 +600,7 @@ func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
 
 # ─── Procedural Animation ──────────────────────────────────────────────────
 func _physics_process(delta: float) -> void:
+	_update_aura_overlays(delta)
 	_update_skeleton_tilt(delta)
 	
 	target_update_timer -= delta

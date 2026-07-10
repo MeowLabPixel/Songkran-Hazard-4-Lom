@@ -79,6 +79,10 @@ func shoot():
 	if not can_shoot():
 		return
 		
+	# Register shot fired in GameManager
+	if get_tree().root.has_node("GameManager"):
+		get_tree().root.get_node("GameManager").register_shot_fired(water_consumption)
+
 	# Play watergun shoot sounds
 	var shoot_pos = spawn_point.global_position if spawn_point else global_position
 	
@@ -265,6 +269,8 @@ func _apply_damage_to_result(result: Dictionary) -> void:
 			var target = enemy if enemy else anchalee
 			
 			if target:
+				if enemy and get_tree().root.has_node("GameManager"):
+					get_tree().root.get_node("GameManager").register_shot_hit()
 				target.take_hit({
 					"damage": final_damage,
 					"hit_zone": hitbox_zone.zone_name,
@@ -278,6 +284,9 @@ func _apply_damage_to_result(result: Dictionary) -> void:
 		node = node.get_parent()
 
 	if node:
+		if get_tree().root.has_node("GameManager"):
+			if not node.is_in_group("player") and not node.is_in_group("anchalee") and not ("Anchalee" in node.name):
+				get_tree().root.get_node("GameManager").register_shot_hit()
 		node.take_hit({
 			"damage": final_damage,
 			"hit_zone": "body",

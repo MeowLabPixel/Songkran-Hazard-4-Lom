@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cfaatn4gw2wnd"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://dlr32ukmmvgrd"]
 
 [ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_x3lu8"]
 [ext_resource type="AudioStream" uid="uid://dpeq6jytmmel4" path="res://Audio-Sfx-Music/Uis/Merchant Shop/universfield-water-splash-199583_clip.wav" id="2_v1rlm"]

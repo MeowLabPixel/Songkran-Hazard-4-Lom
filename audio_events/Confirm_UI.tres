@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://csgr6v76esup1"]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://vsn1i0478g0k"]
 
 [ext_resource type="AudioStream" uid="uid://bbhn6u5vs4cih" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_Add_1.wav" id="1_asf7u"]
 [ext_resource type="AudioStream" uid="uid://s00gebx7s80d" path="res://Audio-Sfx-Music/Uis/Menu/Confirm_UI_Add_2.wav" id="2_11ew2"]
