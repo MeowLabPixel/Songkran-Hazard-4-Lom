@@ -11,7 +11,10 @@ uniform float alpha_val : hint_range(0.0, 1.0) = 1.0;
 uniform float height_mask_y : hint_range(0.0, 3.0) = 0.85;
 uniform int mask_direction : hint_range(0, 2) = 0; // 0: None, 1: Upper half only, 2: Lower half only
 
+varying vec3 local_pos;
+
 void vertex() {
+	local_pos = VERTEX;
 	float speed = TIME * aura_speed;
 	
 	// Create organic undulating waves along the mesh normals
@@ -20,7 +23,7 @@ void vertex() {
 	float undulation = (wave_x + wave_y) * 0.02;
 	
 	// Taper displacement slightly at the very top of the character
-	float height_taper = clamp(1.0 - (VERTEX.y - 1.0) * 0.3, 0.3, 1.0);
+	float height_taper = clamp(1.0 - (VERTEX.y - 1.5) * 0.3, 0.6, 1.0);
 	
 	// Calculate height-based mask
 	float mask = 1.0;
@@ -40,12 +43,11 @@ void vertex() {
 
 void fragment() {
 	float speed = TIME * aura_speed;
-	vec3 pos = VERTEX;
 	
 	// Layered 3D sine-based noise to simulate rising tongues of fire
-	float wave1 = sin(pos.x * 4.0) * cos(pos.y * 3.0 - speed * 1.5) * sin(pos.z * 4.0);
-	float wave2 = sin(pos.x * 8.0 + speed * 0.5) * cos(pos.y * 6.0 - speed * 2.2) * sin(pos.z * 8.0) * 0.5;
-	float wave3 = sin(pos.x * 2.0 - speed * 0.5) * cos(pos.y * 1.5 - speed * 0.8) * sin(pos.z * 2.0) * 0.25;
+	float wave1 = sin(local_pos.x * 4.0) * cos(local_pos.y * 3.0 - speed * 1.5) * sin(local_pos.z * 4.0);
+	float wave2 = sin(local_pos.x * 8.0 + speed * 0.5) * cos(local_pos.y * 6.0 - speed * 2.2) * sin(local_pos.z * 8.0) * 0.5;
+	float wave3 = sin(local_pos.x * 2.0 - speed * 0.5) * cos(local_pos.y * 1.5 - speed * 0.8) * sin(local_pos.z * 2.0) * 0.25;
 	
 	float combined = (wave1 + wave2 + wave3) / 1.75; // Normalized to [-1, 1]
 	float flame = combined * 0.5 + 0.5; // Map to [0, 1]
@@ -53,8 +55,8 @@ void fragment() {
 	// Sharpen the noise to form distinct tongues of flame
 	float flame_tongues = smoothstep(0.3, 0.7, flame);
 	
-	// Taper the flames as they go above the head/torso (starts tapering around 0.8m)
-	float taper = clamp(1.0 - (pos.y - 0.8) * 0.8, 0.0, 1.0);
+	// Taper the flames as they go above the head/torso (starts tapering around 1.5m)
+	float taper = clamp(1.0 - (local_pos.y - 1.5) * 0.8, 0.0, 1.0);
 	
 	// Dynamic flicker
 	float flicker = 1.0 - (sin(TIME * 25.0) * cos(TIME * 18.0) * aura_flicker);
@@ -62,9 +64,9 @@ void fragment() {
 	// Calculate height-based mask
 	float mask = 1.0;
 	if (mask_direction == 1) {
-		mask = smoothstep(height_mask_y - 0.15, height_mask_y + 0.15, pos.y);
+		mask = smoothstep(height_mask_y - 0.15, height_mask_y + 0.15, local_pos.y);
 	} else if (mask_direction == 2) {
-		mask = 1.0 - smoothstep(height_mask_y - 0.15, height_mask_y + 0.15, pos.y);
+		mask = 1.0 - smoothstep(height_mask_y - 0.15, height_mask_y + 0.15, local_pos.y);
 	}
 	
 	// Alpha is determined by the flame tongues, vertical taper, flicker, and height mask
@@ -72,7 +74,7 @@ void fragment() {
 	
 	// Complex color mix: Pink/White inside the hotter cores, Blue/Grey at the outer edges
 	float core_mix = clamp(flame_tongues * 1.5 - 0.2, 0.0, 1.0);
-	float height_mix = clamp((pos.y + 0.2) / 1.8, 0.0, 1.0);
+	float height_mix = clamp((local_pos.y + 0.2) / 1.8, 0.0, 1.0);
 	float blend_factor = clamp(core_mix * 0.65 + (1.0 - height_mix) * 0.35, 0.0, 1.0);
 	
 	vec4 aura_color = mix(blue_color, pink_color, blend_factor);

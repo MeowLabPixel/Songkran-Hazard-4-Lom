@@ -256,12 +256,12 @@ func _build_ui() -> void:
 	main_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	main_margin.add_theme_constant_override("margin_left", 80)
 	main_margin.add_theme_constant_override("margin_right", 80)
-	main_margin.add_theme_constant_override("margin_top", 60)
-	main_margin.add_theme_constant_override("margin_bottom", 60)
+	main_margin.add_theme_constant_override("margin_top", 40)
+	main_margin.add_theme_constant_override("margin_bottom", 40)
 	add_child(main_margin)
 	
 	var main_vbox = VBoxContainer.new()
-	main_vbox.add_theme_constant_override("separation", 30)
+	main_vbox.add_theme_constant_override("separation", 15)
 	main_margin.add_child(main_vbox)
 	
 	# TITLE & SUBTITLE
@@ -271,7 +271,7 @@ func _build_ui() -> void:
 	
 	title_lbl = Label.new()
 	title_lbl.add_theme_font_override("font", font_lazy_dog)
-	title_lbl.add_theme_font_size_override("font_size", 72)
+	title_lbl.add_theme_font_size_override("font_size", 60)
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	
 	# Configure Title text and colors
@@ -340,14 +340,14 @@ func _build_ui() -> void:
 	left_panel.add_theme_stylebox_override("panel", glass_left)
 	
 	var left_margin = MarginContainer.new()
-	left_margin.add_theme_constant_override("margin_left", 30)
-	left_margin.add_theme_constant_override("margin_right", 30)
-	left_margin.add_theme_constant_override("margin_top", 30)
-	left_margin.add_theme_constant_override("margin_bottom", 30)
+	left_margin.add_theme_constant_override("margin_left", 24)
+	left_margin.add_theme_constant_override("margin_right", 24)
+	left_margin.add_theme_constant_override("margin_top", 24)
+	left_margin.add_theme_constant_override("margin_bottom", 24)
 	left_panel.add_child(left_margin)
 	
 	var left_vbox = VBoxContainer.new()
-	left_vbox.add_theme_constant_override("separation", 20)
+	left_vbox.add_theme_constant_override("separation", 12)
 	left_margin.add_child(left_vbox)
 	
 	var stats_title = Label.new()
@@ -368,7 +368,7 @@ func _build_ui() -> void:
 	stats_grid.columns = 2
 	stats_grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	stats_grid.add_theme_constant_override("h_separation", 20)
-	stats_grid.add_theme_constant_override("v_separation", 16)
+	stats_grid.add_theme_constant_override("v_separation", 10)
 	left_vbox.add_child(stats_grid)
 	
 	# Populate Stats List
@@ -395,14 +395,14 @@ func _build_ui() -> void:
 	right_panel.add_theme_stylebox_override("panel", glass_right)
 	
 	var right_margin = MarginContainer.new()
-	right_margin.add_theme_constant_override("margin_left", 30)
-	right_margin.add_theme_constant_override("margin_right", 30)
-	right_margin.add_theme_constant_override("margin_top", 30)
-	right_margin.add_theme_constant_override("margin_bottom", 30)
+	right_margin.add_theme_constant_override("margin_left", 24)
+	right_margin.add_theme_constant_override("margin_right", 24)
+	right_margin.add_theme_constant_override("margin_top", 24)
+	right_margin.add_theme_constant_override("margin_bottom", 24)
 	right_panel.add_child(right_margin)
 	
 	var right_vbox = VBoxContainer.new()
-	right_vbox.add_theme_constant_override("separation", 24)
+	right_vbox.add_theme_constant_override("separation", 12)
 	right_margin.add_child(right_vbox)
 	
 	# Title for Grade
@@ -426,7 +426,7 @@ func _build_ui() -> void:
 	# Massive Grade Label
 	grade_lbl = Label.new()
 	grade_lbl.add_theme_font_override("font", font_lazy_dog)
-	grade_lbl.add_theme_font_size_override("font_size", 144)
+	grade_lbl.add_theme_font_size_override("font_size", 120)
 	grade_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	grade_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	grade_lbl.text = "-"

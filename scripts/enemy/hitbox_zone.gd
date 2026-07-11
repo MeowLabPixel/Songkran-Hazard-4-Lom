@@ -82,6 +82,16 @@ func _ready() -> void:
 			area.add_to_group("enemy")
 		elif _anchalee:
 			area.add_to_group("anchalee_hitbox")
+			
+		# Reparent to BoneAttachment3D at runtime to eliminate one-frame lag
+		if not Engine.is_editor_hint() and _attachment and area.get_parent() != _attachment:
+			var old_global_trans = area.global_transform
+			var old_parent = area.get_parent()
+			if old_parent:
+				old_parent.remove_child(area)
+			_attachment.add_child(area)
+			area.global_transform = old_global_trans
+			_attachment = null
 	else:
 		push_error("[HitboxZone] Parent must be Area3D (zone '%s')" % zone_name)
 
