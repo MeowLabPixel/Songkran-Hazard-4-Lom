@@ -37,11 +37,11 @@ func initialize(starting_state_name: String) -> void:
 	current_state.enter()
 
 ## Transition to a new state by name. Safe to call from within a state.
-func transition_to(new_state_name: String) -> void:
+func transition_to(new_state_name: String, force_reenter: bool = false) -> void:
 	if not _states.has(new_state_name):
 		push_error("EnemyStateMachine: unknown state '%s'" % new_state_name)
 		return
-	if current_state != null and current_state.name == new_state_name:
+	if not force_reenter and current_state != null and current_state.name == new_state_name:
 		return  # Already in this state, no-op.
 
 	var old_name: String = current_state.name as String if current_state else ""
@@ -82,9 +82,16 @@ func handle_hit(hit_data: Dictionary) -> void:
 	var hit_type = hit_data.get("hit_type", "")
 	if hit_type == "push":
 		if not current_state.name in ["StateKnockdown", "StateGetUp", "StateDefeated"]:
-			if _states.has("StateHitPush"):
+			if current_state.name == "StateTakedownable":
+				if _states.has("StateKnockdown"):
+					_states["StateKnockdown"].knockdown_mode = "NORMAL"
+					_states["StateKnockdown"].stun_type = current_state.stun_type
+					transition_to("StateKnockdown")
+					return
+			elif _states.has("StateHitPush"):
 				_states["StateHitPush"].push_direction = hit_data.get("hit_direction", Vector3.ZERO)
-				transition_to("StateHitPush")
+				var force = (current_state.name == "StateHitPush")
+				transition_to("StateHitPush", force)
 				return
 	elif hit_type == "takedown_splash":
 		if not current_state.name in ["StateKnockdown", "StateGetUp", "StateDefeated"]:

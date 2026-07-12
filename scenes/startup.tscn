@@ -1,15 +1,17 @@
 [gd_scene format=3 uid="uid://c6f2a78b5n4m8"]
 
-[ext_resource type="Script" path="res://scripts/ui/startup.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://cd32hna5pk0om" path="res://scripts/ui/startup.gd" id="1_script"]
 
-[node name="Startup" type="CanvasLayer"]
+[node name="Startup" type="CanvasLayer" unique_id=1626165567]
 layer = 2
 script = ExtResource("1_script")
+disclaimer_prompt_en = "[ PRESS E TO START! ]"
+disclaimer_prompt_th = "[ กดปุ่ม E เพื่อเริ่มเกม! ]"
 
-[node name="BaseBackground" type="CanvasLayer" parent="."]
+[node name="BaseBackground" type="CanvasLayer" parent="." unique_id=1891796387]
 layer = 0
 
-[node name="ColorRect" type="ColorRect" parent="BaseBackground"]
+[node name="ColorRect" type="ColorRect" parent="BaseBackground" unique_id=30132479]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -17,9 +19,9 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.02, 0.02, 0.03, 1)
 
-[node name="BackgroundContainer" type="Node2D" parent="."]
+[node name="BackgroundContainer" type="Node2D" parent="." unique_id=890054555]
 
-[node name="PromptLabel" type="Label" parent="."]
+[node name="PromptLabel" type="Label" parent="." unique_id=789969837]
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
@@ -31,7 +33,7 @@ offset_right = 300.0
 offset_bottom = -70.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.85, 0.85, 0.9, 0.0)
+theme_override_colors/font_color = Color(0.85, 0.85, 0.9, 0)
 theme_override_font_sizes/font_size = 28
 text = "[ PRESS E ]"
 horizontal_alignment = 1

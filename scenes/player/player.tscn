@@ -5318,13 +5318,16 @@ xfade_time = 0.15
 switch_mode = 2
 advance_mode = 2
 
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_ln3h3"]
+xfade_time = 0.2
+
 [sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_upxxc"]
 allow_transition_to_self = true
 states/SuperPumpEnd/node = SubResource("AnimationNodeBlendTree_ahqnk")
 states/SuperPumpEnd/position = Vector2(662.8, 73.472)
 states/SuperPumpStart/node = SubResource("AnimationNodeBlendTree_upxxc")
-states/SuperPumpStart/position = Vector2(397.2, 54.399998)
-transitions = ["Start", "SuperPumpStart", SubResource("AnimationNodeStateMachineTransition_ahqnk"), "SuperPumpStart", "SuperPumpEnd", SubResource("AnimationNodeStateMachineTransition_vb1ce"), "SuperPumpEnd", "End", SubResource("AnimationNodeStateMachineTransition_0ncpa")]
+states/SuperPumpStart/position = Vector2(446.80002, 229.59999)
+transitions = ["Start", "SuperPumpStart", SubResource("AnimationNodeStateMachineTransition_ahqnk"), "SuperPumpStart", "SuperPumpEnd", SubResource("AnimationNodeStateMachineTransition_vb1ce"), "SuperPumpEnd", "End", SubResource("AnimationNodeStateMachineTransition_0ncpa"), "SuperPumpStart", "End", SubResource("AnimationNodeStateMachineTransition_ln3h3")]
 graph_offset = Vector2(301, -55)
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_w7j2h"]

@@ -120,7 +120,21 @@ func _force_anim_ext(anim_name: String, sub_machine: String = "", custom_speed: 
 					else:
 						sub_playback.travel(anim_name)
 				else:
-					push_warning("[EnemyState] _force_anim: sub_playback not found at " + sub_path)
+					# The sub-state machine was just started and its playback parameter
+					# is not yet active in the AnimationTree. Wait one frame and retry.
+					var tree_ref = enemy.get_tree()
+					if tree_ref:
+						tree_ref.process_frame.connect(func():
+							if is_instance_valid(enemy) and is_instance_valid(tree):
+								var p = tree.get(sub_path) as AnimationNodeStateMachinePlayback
+								if p:
+									if start_instant:
+										p.start(anim_name)
+									else:
+										p.travel(anim_name)
+								else:
+									push_warning("[EnemyState] _force_anim: sub_playback still not found after 1 frame at " + sub_path)
+						, CONNECT_ONE_SHOT)
 			else:
 				if start_instant:
 					root_playback.start(anim_name)

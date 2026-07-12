@@ -12,6 +12,10 @@ var current_phase: Phase = Phase.INIT
 var bg_scene = preload("res://scenes/MainMenu_BG.tscn")
 var bg_instance: Node = null
 
+@export var auto_transition: bool = false
+@export var disclaimer_prompt_en: String = "[ PRESS E TO ENTER ]"
+@export var disclaimer_prompt_th: String = "[ กดปุ่ม E เพื่อดำเนินต่อ ]"
+
 @onready var bg_container: Node2D = $BackgroundContainer
 @onready var prompt_label: Label = $PromptLabel
 
@@ -22,13 +26,25 @@ var sway_weight: float = 0.0
 var sway_configs: Dictionary = {}
 var original_positions: Dictionary = {}
 var original_scales: Dictionary = {}
+var can_transition: bool = false
+
+# Startup language changer state
+var selected_lang: String = "en"
+var lang_changer_container: HBoxContainer
+var btn_en: TextureButton
+var btn_th: TextureButton
+var img_thai_btn = preload("res://scenes/Thai.png")
+var img_english_btn = preload("res://scenes/English.png")
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	
-	# Reset game manager state
+	# Reset game manager state and get language
 	if get_tree().root.has_node("GameManager"):
 		get_tree().root.get_node("GameManager").reset_game()
+		selected_lang = get_tree().root.get_node("GameManager").selected_language
+	else:
+		selected_lang = "en"
 	
 	if not SoundManager.is_playing_main_theme():
 		SoundManager.stop_music()
@@ -40,6 +56,8 @@ func _ready() -> void:
 	prompt_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9, 1.0))
 	prompt_label.text = _get_continue_text()
 	prompt_label.modulate.a = 0.0
+	
+	_create_language_changer()
 	
 	# Instantiate background
 	bg_instance = bg_scene.instantiate()
@@ -90,6 +108,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if is_e_pressed:
 		if current_phase == Phase.PRESS_E:
 			_start_reveal()
+		elif current_phase == Phase.IDLE and can_transition:
+			_start_transition()
 	elif is_backspace_pressed:
 		if current_phase == Phase.IDLE or current_phase == Phase.REVEAL:
 			_reset_to_press_e()
@@ -109,6 +129,12 @@ func _get_continue_text() -> String:
 	if get_tree().root.has_node("GameManager"):
 		selected_lang = get_tree().root.get_node("GameManager").selected_language
 	return "[ กดปุ่ม E เพื่อดำเนินต่อ ]" if selected_lang == "th" else "[ PRESS E TO CONTINUE ]"
+
+func _get_disclaimer_prompt() -> String:
+	var selected_lang = "en"
+	if get_tree().root.has_node("GameManager"):
+		selected_lang = get_tree().root.get_node("GameManager").selected_language
+	return disclaimer_prompt_th if selected_lang == "th" else disclaimer_prompt_en
 
 func _start_prompt_pulse() -> void:
 	if pulse_tween:
@@ -135,6 +161,10 @@ func _start_reveal() -> void:
 	_change_phase(Phase.REVEAL)
 	_stop_prompt_pulse(0.2)
 	SoundManager.play_main_theme()
+	
+	if lang_changer_container:
+		var fade_out_lang = create_tween()
+		fade_out_lang.tween_property(lang_changer_container, "modulate:a", 0.0, 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	
 	var children = bg_instance.get_children()
 	reveal_tween = create_tween().set_parallel(true)
@@ -292,7 +322,12 @@ func _on_reveal_finished() -> void:
 	# Auto-trigger disclaimer page transition after 1.5s in sway mode
 	get_tree().create_timer(1.5).timeout.connect(func():
 		if current_phase == Phase.IDLE:
-			_start_transition()
+			if auto_transition:
+				_start_transition()
+			else:
+				can_transition = true
+				prompt_label.text = _get_disclaimer_prompt()
+				_start_prompt_pulse()
 	)
 
 func _init_sway_configs() -> void:
@@ -393,6 +428,9 @@ func _start_transition() -> void:
 	)
 
 func _reset_to_press_e() -> void:
+	can_transition = false
+	if lang_changer_container:
+		lang_changer_container.modulate.a = 1.0
 	SoundManager.stop_music()
 	if reveal_tween:
 		reveal_tween.kill()
@@ -423,3 +461,105 @@ func _reset_to_press_e() -> void:
 					child.modulate.a = 1.0
 					
 	_change_phase(Phase.PRESS_E)
+
+func _create_language_changer() -> void:
+	lang_changer_container = HBoxContainer.new()
+	lang_changer_container.alignment = BoxContainer.ALIGNMENT_END
+	lang_changer_container.add_theme_constant_override("separation", 15)
+	
+	# English button
+	btn_en = TextureButton.new()
+	btn_en.texture_normal = img_english_btn
+	btn_en.ignore_texture_size = true
+	btn_en.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_en.custom_minimum_size = Vector2(160, 100)
+	btn_en.pressed.connect(func(): _switch_language("en"))
+	
+	# Thai button
+	btn_th = TextureButton.new()
+	btn_th.texture_normal = img_thai_btn
+	btn_th.ignore_texture_size = true
+	btn_th.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	btn_th.custom_minimum_size = Vector2(160, 100)
+	btn_th.pressed.connect(func(): _switch_language("th"))
+	
+	lang_changer_container.add_child(btn_en)
+	lang_changer_container.add_child(btn_th)
+	
+	# Set up hover and exited effects
+	btn_en.mouse_entered.connect(func():
+		if selected_lang != "en":
+			btn_en.modulate = Color(0.8, 0.8, 0.8, 0.9)
+	)
+	btn_en.mouse_exited.connect(func():
+		_update_language_buttons_style()
+	)
+	btn_th.mouse_entered.connect(func():
+		if selected_lang != "th":
+			btn_th.modulate = Color(0.8, 0.8, 0.8, 0.9)
+	)
+	btn_th.mouse_exited.connect(func():
+		_update_language_buttons_style()
+	)
+	
+	# Position at top right
+	add_child(lang_changer_container)
+	lang_changer_container.anchor_left = 1.0
+	lang_changer_container.anchor_right = 1.0
+	lang_changer_container.anchor_top = 0.0
+	lang_changer_container.anchor_bottom = 0.0
+	
+	# Adjust top right offset
+	lang_changer_container.offset_left = -370
+	lang_changer_container.offset_right = -35
+	lang_changer_container.offset_top = 35
+	lang_changer_container.offset_bottom = 135
+	
+	_update_language_buttons_style()
+
+func _update_language_buttons_style() -> void:
+	if btn_en and btn_th:
+		if selected_lang == "en":
+			btn_en.modulate = Color(1.0, 1.0, 1.0, 1.0)
+			btn_th.modulate = Color(0.5, 0.5, 0.5, 0.7)
+		else:
+			btn_en.modulate = Color(0.5, 0.5, 0.5, 0.7)
+			btn_th.modulate = Color(1.0, 1.0, 1.0, 1.0)
+
+func _switch_language(lang: String) -> void:
+	if lang == selected_lang:
+		return
+		
+	selected_lang = lang
+	if get_tree().root.has_node("GameManager"):
+		get_tree().root.get_node("GameManager").selected_language = lang
+		get_tree().root.get_node("GameManager").save_settings()
+		
+	_update_language_buttons_style()
+	
+	# Instantly update prompt label text depending on active phase
+	if current_phase == Phase.PRESS_E:
+		prompt_label.text = _get_continue_text()
+	elif current_phase == Phase.IDLE and can_transition:
+		prompt_label.text = _get_disclaimer_prompt()
+
+func return_to_swaymode() -> void:
+	_change_phase(Phase.IDLE)
+	can_transition = true
+	
+	# Reset prompt text and pulse animation
+	prompt_label.text = _get_disclaimer_prompt()
+	_start_prompt_pulse()
+	
+	# Fade back in the logo's shader Alpha parameter
+	if bg_instance:
+		var logo_node = bg_instance.find_child("3_logo", true, false)
+		if logo_node and logo_node.material and logo_node.material is ShaderMaterial:
+			var mat = logo_node.material as ShaderMaterial
+			var fade_in = create_tween()
+			fade_in.tween_method(
+				func(val: float): mat.set_shader_parameter("Alpha", val),
+				0.0,
+				1.0,
+				0.6
+			).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)

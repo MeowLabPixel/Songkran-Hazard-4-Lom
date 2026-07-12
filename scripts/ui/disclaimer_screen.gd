@@ -51,6 +51,15 @@ var difficulty_selection_container: Control
 var btn_en: TextureButton
 var btn_th: TextureButton
 
+# Hold skip tutorial state
+var is_holding_e := false
+var e_hold_time := 0.0
+const E_HOLD_REQUIRED := 1.2 # seconds to hold
+
+var skip_container: HBoxContainer
+var skip_lbl: Label
+var skip_bar: ProgressBar
+
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	if not SoundManager.is_playing_main_theme():
@@ -86,7 +95,9 @@ func _ready() -> void:
 		texture_rect.texture = pages[current_step]
 	
 	_create_language_changer()
+	_create_skip_button()
 	update_prompt()
+	_update_skip_indicator()
 	
 	# Set pivot to center so scaling is centered
 	container.resized.connect(func():
@@ -97,6 +108,90 @@ func _ready() -> void:
 	modulate.a = 0.0
 	var fade_in = create_tween()
 	fade_in.tween_property(self, "modulate:a", 1.0, 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+func _create_skip_button() -> void:
+	skip_container = HBoxContainer.new()
+	skip_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	skip_container.add_theme_constant_override("separation", 10)
+	add_child(skip_container)
+	
+	skip_lbl = Label.new()
+	skip_lbl.text = "Hold [E] to skip tutorials" if selected_lang == "en" else "กด [E] ค้างเพื่อข้ามคำแนะนำ"
+	skip_lbl.add_theme_font_override("font", preload("res://scenes/font/iannnnn-DOG-Regular.ttf"))
+	skip_lbl.add_theme_font_size_override("font_size", 18)
+	skip_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.7, 0.8))
+	skip_container.add_child(skip_lbl)
+	
+	skip_bar = ProgressBar.new()
+	skip_bar.custom_minimum_size = Vector2(120, 10)
+	skip_bar.show_percentage = false
+	
+	var sb_bg = StyleBoxFlat.new()
+	sb_bg.bg_color = Color(0.1, 0.1, 0.12, 0.6)
+	sb_bg.corner_radius_top_left = 6
+	sb_bg.corner_radius_top_right = 6
+	sb_bg.corner_radius_bottom_left = 6
+	sb_bg.corner_radius_bottom_right = 6
+	
+	var sb_fg = StyleBoxFlat.new()
+	sb_fg.bg_color = Color(1.0, 0.85, 0.3, 0.9)
+	sb_fg.corner_radius_top_left = 6
+	sb_fg.corner_radius_top_right = 6
+	sb_fg.corner_radius_bottom_left = 6
+	sb_fg.corner_radius_bottom_right = 6
+	
+	skip_bar.add_theme_stylebox_override("background", sb_bg)
+	skip_bar.add_theme_stylebox_override("fill", sb_fg)
+	skip_bar.max_value = E_HOLD_REQUIRED
+	skip_bar.value = 0.0
+	skip_container.add_child(skip_bar)
+	
+	# Position anchors at bottom right
+	skip_container.anchor_left = 1.0
+	skip_container.anchor_top = 1.0
+	skip_container.anchor_right = 1.0
+	skip_container.anchor_bottom = 1.0
+	
+	skip_container.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	skip_container.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	
+	skip_container.offset_left = -380
+	skip_container.offset_right = -40
+	skip_container.offset_top = -60
+	skip_container.offset_bottom = -20
+
+func _update_skip_indicator() -> void:
+	if not skip_container or not is_instance_valid(skip_container):
+		return
+	
+	var should_be_visible = current_step < pages.size()
+	skip_container.visible = should_be_visible
+	
+	if should_be_visible and skip_bar and skip_lbl:
+		skip_bar.value = e_hold_time
+		skip_lbl.text = "Hold [E] to skip tutorials" if selected_lang == "en" else "กด [E] ค้างเพื่อข้ามคำแนะนำ"
+
+func _process(delta: float) -> void:
+	if is_holding_e and current_step < pages.size():
+		e_hold_time += delta
+		_update_skip_indicator()
+		if e_hold_time >= E_HOLD_REQUIRED:
+			is_holding_e = false
+			e_hold_time = 0.0
+			_update_skip_indicator()
+			_skip_to_controls()
+	else:
+		if e_hold_time > 0.0:
+			e_hold_time = max(0.0, e_hold_time - delta * 3.0)
+			_update_skip_indicator()
+
+func _skip_to_controls() -> void:
+	if is_transitioning:
+		return
+	print("[Disclaimer] Skipping tutorials directly to movement control selection.")
+	if current_step == 0:
+		SoundManager.play_main_theme()
+	transition_to_page(pages.size())
 
 func _create_language_changer() -> void:
 	lang_changer_container = HBoxContainer.new()
@@ -190,6 +285,7 @@ func _switch_language(lang: String) -> void:
 			pages = pages_en
 			
 		_update_language_buttons_style()
+		_update_skip_indicator()
 		
 		# Update current UI state
 		if current_step == pages.size():
@@ -254,21 +350,38 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not language_selected or is_transitioning:
 		return
 		
-	var is_forward = event.is_action_pressed("takedown") or (
+	# Handle hold E skipping
+	if event is InputEventKey and event.keycode == KEY_E and current_step < pages.size():
+		if event.pressed and not event.is_echo():
+			is_holding_e = true
+			e_hold_time = 0.0
+		elif not event.pressed:
+			if is_holding_e:
+				is_holding_e = false
+				if e_hold_time < E_HOLD_REQUIRED:
+					if current_step == 0:
+						SoundManager.play_main_theme()
+					transition_to_page(current_step + 1)
+				e_hold_time = 0.0
+				_update_skip_indicator()
+		return
+
+	# Instant forward keys (not E)
+	var is_forward_instant = event.is_action_pressed("takedown") or (
 		event is InputEventKey and event.pressed and (
-			event.keycode == KEY_E or 
 			event.keycode == KEY_D or 
 			event.keycode == KEY_RIGHT
 		)
 	)
 	
+	# Instant backward keys
 	var is_backward = event is InputEventKey and event.pressed and (
 		event.keycode == KEY_Q or 
 		event.keycode == KEY_A or 
 		event.keycode == KEY_LEFT
 	)
 	
-	if is_forward:
+	if is_forward_instant:
 		if current_step < pages.size():
 			if current_step == 0:
 				SoundManager.play_main_theme()
@@ -276,6 +389,46 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif is_backward:
 		if current_step > 0:
 			transition_to_page(current_step - 1)
+		elif current_step == 0:
+			_transition_back_to_intro()
+
+func _transition_back_to_intro() -> void:
+	if is_transitioning:
+		return
+	is_transitioning = true
+	
+	# Play pop-out/down animations for container
+	var tween = create_tween().set_parallel(true)
+	tween.tween_property(container, "scale", Vector2.ZERO, 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tween.tween_property(container, "modulate:a", 0.0, 0.3)
+	
+	# Turn off/fade out screen blur on Background ColorRect
+	if has_node("Background"):
+		var bg_node = get_node("Background") as ColorRect
+		if bg_node.material and bg_node.material is ShaderMaterial:
+			# Fade screen blur LOD to 0 to unblur smoothly
+			tween.tween_method(
+				func(val: float): bg_node.material.set_shader_parameter("lod", val),
+				2.0,
+				0.0,
+				0.4
+			).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(bg_node, "modulate:a", 0.0, 0.4)
+		
+	# Fade out the language changer if it exists
+	if lang_changer_container:
+		tween.tween_property(lang_changer_container, "modulate:a", 0.0, 0.3)
+
+	# Fade out the skip button container if it exists
+	if skip_container:
+		tween.tween_property(skip_container, "modulate:a", 0.0, 0.3)
+
+	tween.finished.connect(func():
+		var parent_node = get_parent()
+		if parent_node and parent_node.has_method("return_to_swaymode"):
+			parent_node.return_to_swaymode()
+		queue_free()
+	)
 
 func transition_to_page(next_page_index: int) -> void:
 	is_transitioning = true
@@ -295,6 +448,7 @@ func transition_to_page(next_page_index: int) -> void:
 	
 	tween.finished.connect(func():
 		current_step = next_page_index
+		_update_skip_indicator()
 		
 		# Clean up UI containers if transitioning
 		if difficulty_selection_container and current_step != pages.size() + 1:
