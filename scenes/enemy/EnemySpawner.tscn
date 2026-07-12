@@ -1,16 +1,16 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://b5kpl5gx88blr"]
 
-[ext_resource type="Script" path="res://scripts/enemy/enemy_spawner.gd" id="1_spwn"]
+[ext_resource type="Script" uid="uid://csb5rjr8osoa3" path="res://scripts/enemy/enemy_spawner.gd" id="1_spwn"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_spwn"]
 size = Vector3(5, 5, 5)
 
-[node name="EnemySpawner" type="Node3D"]
+[node name="EnemySpawner" type="Node3D" unique_id=1208398293]
 script = ExtResource("1_spwn")
 
-[node name="TriggerArea" type="Area3D" parent="."]
+[node name="TriggerArea" type="Area3D" parent="." unique_id=2015816658]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="TriggerArea"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TriggerArea" unique_id=920524496]
 shape = SubResource("BoxShape3D_spwn")
 
-[node name="SpawnPoints" type="Node3D" parent="."]
+[node name="SpawnPoints" type="Node3D" parent="." unique_id=1215876000]

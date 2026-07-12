@@ -40,8 +40,8 @@ func _ready() -> void:
 		var gm = get_tree().root.get_node("GameManager")
 		gm.register_spawner(self)
 		if gm.difficulty == gm.Difficulty.CASUAL:
-			max_concurrent_enemies = 4
-			spawn_cooldown = 1.5
+			max_concurrent_enemies = 5
+			spawn_cooldown = 0.5
 		elif gm.difficulty == gm.Difficulty.EXPERT:
 			spawn_cooldown = 0.5
 		
