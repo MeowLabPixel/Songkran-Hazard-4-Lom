@@ -401,6 +401,8 @@ func spawn_takedown_shockwave(zombie_3d_pos: Vector3) -> void:
 		"alpha": 1.0,
 		"color": Color(1.0, 0.8, 0.1) # Yellow
 	})
+	if active_shockwaves.size() > 8:
+		active_shockwaves.remove_at(0)
 	if is_instance_valid(shockwave_drawer):
 		shockwave_drawer.queue_redraw()
 
@@ -411,6 +413,8 @@ func spawn_defeat_shockwave(zombie_3d_pos: Vector3) -> void:
 		"alpha": 1.0,
 		"color": Color(0.2, 0.85, 0.3) # Green
 	})
+	if active_shockwaves.size() > 8:
+		active_shockwaves.remove_at(0)
 	if is_instance_valid(shockwave_drawer):
 		shockwave_drawer.queue_redraw()
 
@@ -424,11 +428,10 @@ func _draw_shockwaves() -> void:
 			continue
 		var screen_pos = camera.unproject_position(sw.pos_3d)
 		
-		# Draw the expanding circle/shockwave
+		# Draw a single thick black shadow outline underneath
+		shockwave_drawer.draw_arc(screen_pos, sw.radius, 0.0, 2.0 * PI, 24, Color(0, 0, 0, sw.alpha * 0.5), 6.0, true)
+		
+		# Draw the expanding circle/shockwave on top
 		var base_color = sw.get("color", Color(1.0, 0.8, 0.1))
 		var ring_color = Color(base_color.r, base_color.g, base_color.b, sw.alpha * 0.95)
-		shockwave_drawer.draw_arc(screen_pos, sw.radius, 0.0, 2.0 * PI, 32, ring_color, 4.0, true)
-		
-		# Draw a cool black shadow outline for contrast
-		shockwave_drawer.draw_arc(screen_pos, sw.radius - 2.0, 0.0, 2.0 * PI, 32, Color(0, 0, 0, sw.alpha * 0.5), 1.5, true)
-		shockwave_drawer.draw_arc(screen_pos, sw.radius + 2.0, 0.0, 2.0 * PI, 32, Color(0, 0, 0, sw.alpha * 0.5), 1.5, true)
+		shockwave_drawer.draw_arc(screen_pos, sw.radius, 0.0, 2.0 * PI, 24, ring_color, 4.0, true)
