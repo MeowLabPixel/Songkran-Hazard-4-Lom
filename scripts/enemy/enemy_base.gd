@@ -13,6 +13,7 @@ var current_hp: float = MAX_HP
 var _second_chance_used: bool = false
 var is_defeated: bool = false
 var is_takedown_defeat: bool = false
+var last_hit_zone: String = "body"
 var attack_blocked: bool = false  # Set true to prevent this zombie from entering attack state
 var last_attack_time: float = -100.0
 
@@ -343,6 +344,7 @@ func take_hit(hit_data: Dictionary) -> void:
 	var dmg: float = float(hit_data.get("damage", 1.0))
 	var zone: String = hit_data.get("hit_zone", "body")
 	var hit_type: String = hit_data.get("hit_type", "")
+	last_hit_zone = zone
 
 	# Apply zone multiplier only for gunshots
 	if hit_type != "takedown" and hit_type != "takedown_splash" and hit_type != "push":
@@ -394,8 +396,12 @@ func _trigger_defeat() -> void:
 		_check_stop_combat_music()
 		if is_inside_tree():
 			var ui = get_tree().get_first_node_in_group("player_ui")
-			if ui and ui.has_method("spawn_kill_projectile"):
-				ui.spawn_kill_projectile(global_position)
+			var spawn_pos = _get_zone_bone_position(last_hit_zone)
+			if ui:
+				if ui.has_method("spawn_defeat_shockwave"):
+					ui.spawn_defeat_shockwave(spawn_pos)
+				if ui.has_method("spawn_kill_projectile"):
+					ui.spawn_kill_projectile(spawn_pos)
 			if get_tree().root.has_node("GameManager"):
 				get_tree().root.get_node("GameManager").register_kill(is_takedown_defeat)
 	else:
@@ -709,6 +715,25 @@ func _update_skeleton_tilt(delta: float) -> void:
 	var rotation_delta = angle_difference(last_y_rotation, current_y_rot)
 	last_y_rotation = current_y_rot
 	
+	# Determine if we should suppress tilt during rapid/instant rotations
+	var suppress_tilt = false
+	if state_machine and state_machine.current_state:
+		var state_name = state_machine.current_state.name
+		if state_name in ["StateTurnBack", "StateKnockdown"]:
+			suppress_tilt = true
+			
+	# Also suppress on huge single-frame rotation snaps (e.g. grab alignment)
+	if abs(rotation_delta) > deg_to_rad(15.0):
+		suppress_tilt = true
+		
+	if suppress_tilt:
+		# Smoothly relax existing tilt back to zero
+		rig.rotation.z = lerp_angle(rig.rotation.z, 0.0, delta * tilt_speed)
+		# Reset tracking variables to prevent spikes upon exiting suppression
+		_smoothed_turn_speed = 0.0
+		_smoothed_angular_velocity = 0.0
+		return
+		
 	var angular_velocity = 0.0
 	if delta > 0.0:
 		angular_velocity = rotation_delta / delta
@@ -795,3 +820,52 @@ func step_1() -> void:
 func step_2() -> void:
 	if not is_defeated:
 		SoundManager.play_3d("zombie_footstep", self, 0.0, -1.0, custom_pitch_scale)
+
+
+func _get_zone_bone_position(zone: String) -> Vector3:
+	var skeleton = _find_skeleton(self)
+	if not skeleton:
+		return global_position
+		
+	var target_bone = ""
+	match zone:
+		"head":
+			target_bone = "DEF-spine.006"
+		"left_foot":
+			target_bone = "DEF-foot.L"
+		"right_foot":
+			target_bone = "DEF-foot.R"
+		"left_leg":
+			target_bone = "DEF-shin.L.001"
+		"right_leg":
+			target_bone = "DEF-shin.R.001"
+		"left_arm":
+			target_bone = "DEF-hand.L"
+		"right_arm":
+			target_bone = "DEF-hand.R"
+		"body":
+			target_bone = "DEF-spine.003"
+		_:
+			target_bone = "DEF-spine.003"
+			
+	var bone_idx = skeleton.find_bone(target_bone)
+	# Alternate bone fallbacks if specific bones don't exist in the skeleton
+	if bone_idx == -1:
+		if "left_leg" in zone:
+			bone_idx = skeleton.find_bone("DEF-thigh.L.001")
+		elif "right_leg" in zone:
+			bone_idx = skeleton.find_bone("DEF-thigh.R.001")
+		elif "left_arm" in zone:
+			bone_idx = skeleton.find_bone("DEF-forearm.L.001")
+		elif "right_arm" in zone:
+			bone_idx = skeleton.find_bone("DEF-forearm.R.001")
+		elif "body" in zone or target_bone == "DEF-spine.003":
+			bone_idx = skeleton.find_bone("DEF-spine.001")
+			if bone_idx == -1:
+				bone_idx = skeleton.find_bone("DEF-spine")
+			if bone_idx == -1:
+				bone_idx = skeleton.find_bone("Hips")
+				
+	if bone_idx != -1:
+		return skeleton.global_transform * skeleton.get_bone_global_pose(bone_idx).origin
+	return global_position

@@ -285,19 +285,19 @@ func spawn_kill_projectile(zombie_3d_pos: Vector3) -> void:
 	proj.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	proj.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	
-	# Style the +1 label
-	proj.add_theme_font_size_override("font_size", 28)
+	# Style the +1 label (25% bigger: 28 * 1.25 = 35)
+	proj.add_theme_font_size_override("font_size", 35)
 	proj.add_theme_color_override("font_color", Color(0.2, 1.0, 0.5)) # Bright green
 	proj.add_theme_color_override("font_outline_color", Color.BLACK)
 	proj.add_theme_constant_override("outline_size", 6)
 	proj.add_theme_font_override("font", preload("res://scenes/font/iannnnn-DOG-Bold.ttf"))
 	
 	add_child(proj)
-	proj.global_position = screen_pos - Vector2(18, 15)
+	proj.global_position = screen_pos - Vector2(22, 18)
 	proj.scale = Vector2.ZERO
 	
 	# Target position: center of the kill HUD box
-	var target_pos = kill_rect.global_position + kill_rect.size / 2.0 - Vector2(18, 15)
+	var target_pos = kill_rect.global_position + kill_rect.size / 2.0 - Vector2(22, 18)
 	
 	# Tween: pop in, fly to target, fade out
 	var tween = create_tween().set_parallel(true)
@@ -398,7 +398,18 @@ func spawn_takedown_shockwave(zombie_3d_pos: Vector3) -> void:
 	active_shockwaves.append({
 		"pos_3d": zombie_3d_pos,
 		"radius": 15.0,
-		"alpha": 1.0
+		"alpha": 1.0,
+		"color": Color(1.0, 0.8, 0.1) # Yellow
+	})
+	if is_instance_valid(shockwave_drawer):
+		shockwave_drawer.queue_redraw()
+
+func spawn_defeat_shockwave(zombie_3d_pos: Vector3) -> void:
+	active_shockwaves.append({
+		"pos_3d": zombie_3d_pos,
+		"radius": 15.0,
+		"alpha": 1.0,
+		"color": Color(0.2, 0.85, 0.3) # Green
 	})
 	if is_instance_valid(shockwave_drawer):
 		shockwave_drawer.queue_redraw()
@@ -414,7 +425,8 @@ func _draw_shockwaves() -> void:
 		var screen_pos = camera.unproject_position(sw.pos_3d)
 		
 		# Draw the expanding circle/shockwave
-		var ring_color = Color(1.0, 0.8, 0.1, sw.alpha * 0.95)
+		var base_color = sw.get("color", Color(1.0, 0.8, 0.1))
+		var ring_color = Color(base_color.r, base_color.g, base_color.b, sw.alpha * 0.95)
 		shockwave_drawer.draw_arc(screen_pos, sw.radius, 0.0, 2.0 * PI, 32, ring_color, 4.0, true)
 		
 		# Draw a cool black shadow outline for contrast
