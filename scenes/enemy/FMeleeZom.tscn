@@ -17507,10 +17507,10 @@ _data = {
 radius = 0.17520592
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_lim6u"]
-size = Vector3(0.2784729, 0.4985867, 0.16199934)
+size = Vector3(0.29988098, 0.4985867, 0.16199934)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_t2tt0"]
-size = Vector3(0.2784729, 0.4985867, 0.16199934)
+size = Vector3(0.30036926, 0.4985867, 0.16199934)
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_8g3c7"]
 radius = 0.080566406
@@ -18323,9 +18323,9 @@ deterministic = false
 tree_root = ExtResource("29_ylyjn")
 anim_player = NodePath("../AnimationPlayer")
 parameters/conditions/defeated = false
-"parameters/Walk Zombie/Transition/current_state" = "attack_grab"
+"parameters/Walk Zombie/Transition/current_state" = "default"
 "parameters/Walk Zombie/Transition/transition_request" = ""
-"parameters/Walk Zombie/Transition/current_index" = 3
+"parameters/Walk Zombie/Transition/current_index" = 0
 "parameters/Walk Zombie/Blend2/blend_amount" = 0.45
 "parameters/Walk Zombie/TimeScale/scale" = 1.0
 "parameters/Walk Zombie/TimeScale 2/scale" = 0.10000000000000142
@@ -18430,7 +18430,7 @@ collision_layer = 8196
 collision_mask = 4
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Hitboxes/HitboxLeftFoot" unique_id=98891039]
-transform = Transform3D(1.0000008, 3.1245872e-07, -2.0443622e-07, -3.7252903e-07, 0.99619585, 0.087155744, -8.2014594e-08, -0.087155364, 0.9961993, -0.015782863, 0.110692546, -0.011227712)
+transform = Transform3D(0.9999991, 3.054738e-07, -2.0432162e-07, -3.73926e-07, 0.99619323, 0.08715561, -8.3469786e-08, -0.08715531, 0.9961967, -0.026486889, 0.11069252, -0.011227697)
 shape = SubResource("BoxShape3D_lim6u")
 
 [node name="HitboxZone" type="Node" parent="Hitboxes/HitboxLeftFoot" unique_id=2072393801]
@@ -18444,7 +18444,7 @@ collision_layer = 8196
 collision_mask = 4
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Hitboxes/HitboxRightFoot" unique_id=543235335]
-transform = Transform3D(1.0000029, 9.84408e-07, -3.9231963e-08, -2.682209e-07, 0.99619794, 0.08715588, 4.854519e-08, -0.087155946, 0.99619436, 0.014747158, 0.11018541, -0.011234328)
+transform = Transform3D(1.0000029, 9.960495e-07, -4.0114173e-08, -2.7706847e-07, 0.99619794, 0.08715596, 5.0640665e-08, -0.087155946, 0.99619275, 0.025695398, 0.110185385, -0.011234328)
 shape = SubResource("BoxShape3D_t2tt0")
 
 [node name="HitboxZone" type="Node" parent="Hitboxes/HitboxRightFoot" unique_id=2073273643]

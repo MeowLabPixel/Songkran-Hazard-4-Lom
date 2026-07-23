@@ -1,7 +1,11 @@
 class_name StateHunt
 extends EnemyState
 
+@export_group("Movement & Acceleration")
 @export var move_speed: float = 2.0
+@export var initial_move_speed: float = 1.5
+@export var move_acceleration: float = 0.3
+
 @export var attack_cone_half_angle: float = 45.0
 @export var attack_range: float = 1.8
 @export var attack_cooldown: float = 1.3
@@ -38,6 +42,7 @@ var nav_agent: NavigationAgent3D:
 var _walk_anim: String = ""
 var _is_fleeing: bool = false
 var _is_fleeing_grab: bool = false
+var _current_speed: float = 1.0
 var trigger_stun_recovery: bool = false
 var trigger_attack_recovery: bool = false
 var _stun_recovery_timer: float = 0.0
@@ -96,6 +101,7 @@ func enter() -> void:
 	print("[StateHunt] Entered Hunt.")
 	_is_fleeing = false
 	is_sprinting = false
+	_current_speed = initial_move_speed
 	_sprint_timer = 0.0
 	_sprint_duration = 0.0
 	_has_token = false
@@ -385,11 +391,11 @@ func physics_update(_delta: float) -> void:
 					enemy.last_normal_attack = attack_choice
 			else:
 				# Normal player selection
-				if enemy and enemy.guaranteed_grab_next_attack:
+				var wants_grab = (enemy and enemy.guaranteed_grab_next_attack) or (randf() < 0.25)
+				if wants_grab and token_manager.request_grab_token(enemy):
 					attack_choice = "attack_grab"
-					enemy.guaranteed_grab_next_attack = false
-				elif randf() < 0.25:
-					attack_choice = "attack_grab"
+					if enemy and enemy.guaranteed_grab_next_attack:
+						enemy.guaranteed_grab_next_attack = false
 				else:
 					var last_attack = enemy.last_normal_attack if enemy else ""
 					if last_attack == "attack_1":
@@ -406,16 +412,8 @@ func physics_update(_delta: float) -> void:
 			if enemy:
 				enemy.selected_attack_type = _selected_attack
 			
-			# Set the animation tree Transition parameter
-			# Always use attack_1 or attack_2 walk variant (never attack_grab)
+			# Set the animation tree Transition parameter directly (including attack_grab)
 			var walk_transition = _selected_attack
-			if walk_transition == "attack_grab":
-				# Use a normal attack walk animation for grab prep
-				var last_attack = enemy.last_normal_attack if enemy else ""
-				if last_attack == "attack_1":
-					walk_transition = "attack_2"
-				else:
-					walk_transition = "attack_1"
 			if enemy.anim_tree and enemy.anim_tree.active:
 				if "parameters/Walk Zombie/Transition/transition_request" in enemy.anim_tree:
 					enemy.anim_tree.set("parameters/Walk Zombie/Transition/transition_request", "default")
@@ -500,16 +498,21 @@ func physics_update(_delta: float) -> void:
 		move_dir.y = 0.0
 
 	var is_circling = player and not _has_token and dist_to_player <= _my_circling_radius and not _is_fleeing_grab
-	var current_speed = move_speed
+	var target_speed = move_speed
 	if is_sprinting:
-		current_speed = sprint_speed
+		target_speed = sprint_speed
 	elif is_circling:
-		current_speed = circling_move_speed
+		target_speed = circling_move_speed
 	else:
-		current_speed = move_speed
+		target_speed = move_speed
+
+	if move_dir.length() > 0.01:
+		_current_speed = move_toward(_current_speed, target_speed, move_acceleration * _delta)
+	else:
+		_current_speed = initial_move_speed
 
 	if nav_agent:
-		nav_agent.max_speed = current_speed
+		nav_agent.max_speed = _current_speed
 
 	if move_dir.length() > 0.01:
 		# First, calculate the target direction and snap it to 15-degree increments
@@ -529,8 +532,8 @@ func physics_update(_delta: float) -> void:
 		# Increase rotation speed when blocked/colliding to turn away faster ("slippery" collision turn)
 		var rot_weight = 6.0
 		var actual_speed = enemy.get_real_velocity().slide(Vector3.UP).length()
-		if actual_speed < current_speed * 0.5:
-			var block_factor = 1.0 - (actual_speed / (current_speed * 0.5))
+		if actual_speed < _current_speed * 0.5:
+			var block_factor = 1.0 - (actual_speed / (_current_speed * 0.5))
 			rot_weight = lerpf(6.0, 12.0, block_factor)
 
 		enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, rot_weight * enemy.get_physics_process_delta_time())
@@ -538,7 +541,7 @@ func physics_update(_delta: float) -> void:
 		# Set the movement velocity to be exactly in the direction the zombie is currently facing
 		# This prevents any sliding walk look since they will always walk where they face.
 		var forward_dir = -enemy.global_transform.basis.z.normalized()
-		var target_vel = forward_dir * current_speed
+		var target_vel = forward_dir * _current_speed
 		
 		if nav_agent and nav_agent.avoidance_enabled:
 			nav_agent.set_velocity(target_vel)
@@ -548,7 +551,7 @@ func physics_update(_delta: float) -> void:
 			enemy.move_and_slide()
 			
 		_play_anim(_walk_anim)
-		_apply_timescale_for_speed(current_speed)
+		_apply_timescale_for_speed(_current_speed)
 
 		# Check if they are stuck (trying to move but actual speed is almost 0)
 		actual_speed = enemy.get_real_velocity().slide(Vector3.UP).length()
@@ -561,6 +564,7 @@ func physics_update(_delta: float) -> void:
 			_stuck_timer = 0.0
 	else:
 		_stuck_timer = 0.0
+		_current_speed = initial_move_speed
 		if nav_agent and nav_agent.avoidance_enabled:
 			nav_agent.set_velocity(Vector3.ZERO)
 		else:
@@ -685,16 +689,7 @@ func _update_walk_timescale() -> void:
 
 func _apply_walk_timescale_for_current_state() -> void:
 	if not _is_fleeing:
-		var speed = move_speed
-		if is_sprinting:
-			speed = sprint_speed
-		else:
-			var player = _get_player()
-			if player and not _has_token:
-				var dist = enemy.global_position.distance_to(player.global_position)
-				if dist <= _my_circling_radius and not _is_fleeing_grab:
-					speed = circling_move_speed
-		_apply_timescale_for_speed(speed)
+		_apply_timescale_for_speed(_current_speed)
 
 func _apply_timescale_for_speed(speed: float) -> void:
 	if enemy and enemy.anim_tree and enemy.anim_tree.active:

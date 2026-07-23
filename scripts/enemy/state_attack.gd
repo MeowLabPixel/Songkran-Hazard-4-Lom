@@ -101,71 +101,34 @@ func enter() -> void:
 		if "parameters/attack/grab/conditions/Success" in enemy.anim_tree:
 			enemy.anim_tree.set("parameters/attack/grab/conditions/Success", false)
 	print("[StateAttack] Grab check for ", enemy.name, " | player: ", player, " | player.is_grab: ", player.is_grab if player else "null", " | attack_to_run: ", attack_to_run)
-	if player and "is_grab" in player and player.is_grab:
-		_start_attack_with_index(0)
-	elif attack_to_run == "attack_grab":
-		var can_grab = token_manager.request_grab_token(enemy)
-		print("[StateAttack] Grab token request for ", enemy.name, ": ", can_grab, " | active_grabbers: ", token_manager._active_grabbers.map(func(e): return e.name if is_instance_valid(e) else "null"))
-		if can_grab:
+	
+	var has_grab = token_manager.has_grab_token(enemy) or attack_to_run == "attack_grab"
+	if has_grab and not (player and "is_grab" in player and player.is_grab and not token_manager.has_grab_token(enemy)):
+		if token_manager.request_grab_token(enemy):
+			if "current_attack_type" in enemy:
+				enemy.current_attack_type = "attack_grab"
 			_start_grab_reach()
-		else:
-			# Fallback if grab token denied
-			_start_attack_with_index(0)
+			return
+
+	if attack_to_run == "attack_2":
+		_start_attack_with_index(1)
 	elif attack_to_run == "attack_1":
 		_start_attack_with_index(0)
-	elif attack_to_run == "attack_2":
-		_start_attack_with_index(1)
 	else:
-		# Fallback if no pre-selected attack is set
-		if enemy and "guaranteed_grab_next_attack" in enemy and enemy.guaranteed_grab_next_attack:
-			enemy.guaranteed_grab_next_attack = false
-			if token_manager.request_grab_token(enemy):
-				_start_grab_reach()
-			else:
-				var index := 0
-				var last_attack = enemy.last_normal_attack if enemy else ""
-				if last_attack == "attack_1":
-					index = 1
-				elif last_attack == "attack_2":
-					index = 0
-				else:
-					index = randi() % 2
-				
-				var attack_name = "attack_1" if index == 0 else "attack_2"
-				if enemy:
-					enemy.last_normal_attack = attack_name
-				_start_attack_with_index(index)
-		elif randf() < grab_chance:
-			if token_manager.request_grab_token(enemy):
-				_start_grab_reach()
-			else:
-				var index := 0
-				var last_attack = enemy.last_normal_attack if enemy else ""
-				if last_attack == "attack_1":
-					index = 1
-				elif last_attack == "attack_2":
-					index = 0
-				else:
-					index = randi() % 2
-				
-				var attack_name = "attack_1" if index == 0 else "attack_2"
-				if enemy:
-					enemy.last_normal_attack = attack_name
-				_start_attack_with_index(index)
+		# Fallback if no pre-selected attack was set
+		var index := 0
+		var last_attack = enemy.last_normal_attack if enemy else ""
+		if last_attack == "attack_1":
+			index = 1
+		elif last_attack == "attack_2":
+			index = 0
 		else:
-			var index := 0
-			var last_attack = enemy.last_normal_attack if enemy else ""
-			if last_attack == "attack_1":
-				index = 1
-			elif last_attack == "attack_2":
-				index = 0
-			else:
-				index = randi() % 2
-			
-			var attack_name = "attack_1" if index == 0 else "attack_2"
-			if enemy:
-				enemy.last_normal_attack = attack_name
-			_start_attack_with_index(index)
+			index = randi() % 2
+		
+		var attack_name = "attack_1" if index == 0 else "attack_2"
+		if enemy:
+			enemy.last_normal_attack = attack_name
+		_start_attack_with_index(index)
 
 func exit() -> void:
 	print("[StateAttack] Exit called for: ", enemy.name if enemy else "null")

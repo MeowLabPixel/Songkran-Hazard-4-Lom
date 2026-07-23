@@ -99,6 +99,16 @@ func _ready() -> void:
 	var skeleton = get_skeleton()
 	if skeleton:
 		call_deferred("_setup_attachments", skeleton)
+	reset_flipflop()
+
+func reset_flipflop() -> void:
+	var skeleton = get_skeleton()
+	if _slid_flipflop != "" and skeleton:
+		_restore_flipflop(_slid_flipflop, skeleton)
+	_slid_flipflop = ""
+	_flipflop_offset = 0.0
+	_flipflop_target_offset = 0.0
+	_return_time_elapsed = 0.0
 
 func _on_enemy_hit(hit_data: Dictionary) -> void:
 	var skeleton = get_skeleton()
@@ -196,6 +206,19 @@ func _on_enemy_hit(hit_data: Dictionary) -> void:
 		zone, enemy.name, hit_dir, local_hit_dir, perturbed_axis, force_mult
 	])
 	
+	# Check if this hit is fatal to a foot/shin zone, and trigger the flip-flop slide for defeat
+	if _slid_flipflop == "" and enemy:
+		var hp = enemy.current_hp if "current_hp" in enemy else 1.0
+		var is_def = enemy.is_defeated if "is_defeated" in enemy else false
+		var dmg = float(hit_data.get("damage", 1.0))
+		if is_def or hp <= dmg:
+			if zone == "left_foot":
+				_slid_flipflop = "left"
+				_detach_flipflop(_slid_flipflop, skeleton)
+			elif zone == "right_foot":
+				_slid_flipflop = "right"
+				_detach_flipflop(_slid_flipflop, skeleton)
+
 	for bone_name in target_bones:
 		_trigger_reaction(skeleton, bone_name, perturbed_axis, stiffness_val, damping_val, force_val * force_mult)
 
@@ -299,8 +322,8 @@ func _process_modification() -> void:
 	var in_return_phase = false
 	var return_duration = 0.0
 	
-	# Reset _slid_flipflop when returning to normal state (not takedownable or knockdown)
-	if current_state_name not in ["StateTakedownable", "StateKnockdown"]:
+	# Reset _slid_flipflop when returning to normal state (not takedownable, knockdown, or defeated)
+	if current_state_name not in ["StateTakedownable", "StateKnockdown", "StateDefeated"]:
 		if _slid_flipflop != "":
 			_restore_flipflop(_slid_flipflop, skeleton)
 			_slid_flipflop = ""
@@ -334,7 +357,7 @@ func _process_modification() -> void:
 		if _slid_flipflop != "":
 			if current_state_name == "StateTakedownable" and not current_state._in_act1:
 				in_return_phase = true
-				return_duration = current_state.takedown_window
+				return_duration = current_state.get_stun_duration() if current_state.has_method("get_stun_duration") else current_state.takedown_window
 			elif current_state_name == "StateKnockdown" and current_state._phase >= 2: # ACT 4 & ACT 5
 				in_return_phase = true
 				return_duration = current_state.knockdown_duration
@@ -346,7 +369,18 @@ func _process_modification() -> void:
 	if _slid_flipflop != "":
 		var current_depth = flipflop_slide_depth
 		
-		if in_return_phase:
+		if current_state_name == "StateDefeated":
+			if _return_time_elapsed >= (flipflop_slide_duration + flipflop_blend_duration):
+				_flipflop_offset = flipflop_blend_min_height
+				current_depth = flipflop_blend_min_depth
+				rot_progress = 0.0
+				blend_weight = 1.0
+			else:
+				_flipflop_offset = 0.35
+				current_depth = 0.04
+				rot_progress = 1.0
+				blend_weight = 0.0
+		elif in_return_phase:
 			_return_time_elapsed += delta
 			
 			if _return_time_elapsed <= flipflop_slide_duration:

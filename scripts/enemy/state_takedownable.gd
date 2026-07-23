@@ -2,6 +2,8 @@ class_name StateTakedownable
 extends EnemyState
 
 @export var takedown_window: float = 2.0
+@export var head_stun_duration: float = 2.0
+@export var foot_stun_duration: float = 2.0
 @export var head_hit_move_speed: float = 2.0
 
 var _act2_timer: float = 0.0
@@ -118,11 +120,16 @@ func physics_update(delta: float) -> void:
 			if "parameters/hit/Getup_End/conditions/act2_skip" in enemy.anim_tree:
 				enemy.anim_tree.set("parameters/hit/Getup_End/conditions/act2_skip", true)
 		_act2_timer += delta
-		if _act2_timer >= takedown_window:
+		if _act2_timer >= get_stun_duration():
 			var hunt = state_machine._states.get("StateHunt")
 			if hunt:
 				hunt.trigger_stun_recovery = true
 			state_machine.transition_to("StateHunt")
+
+func get_stun_duration() -> float:
+	if stun_type == "head":
+		return head_stun_duration
+	return foot_stun_duration
 
 func handle_hit(hit_data: Dictionary) -> String:
 	var zone = hit_data.get("hit_zone", "body")

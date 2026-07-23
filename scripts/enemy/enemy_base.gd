@@ -593,8 +593,11 @@ func get_active_attack_type() -> String:
 	
 	# If preparing (has token in StateHunt)
 	var token_manager = get_node_or_null("/root/AttackTokenManager")
-	if token_manager and token_manager.has_token(self):
-		return selected_attack_type
+	if token_manager:
+		if token_manager.has_grab_token(self):
+			return "attack_grab"
+		if token_manager.has_token(self):
+			return selected_attack_type
 		
 	return ""
 

@@ -158,7 +158,13 @@ func _is_grabber_active(e: Node) -> bool:
 	if not is_instance_valid(e) or e.is_defeated:
 		return false
 	var sm = e.state_machine
-	if not sm or not sm.current_state or sm.current_state.name != "StateAttack":
+	if not sm or not sm.current_state:
+		return false
+	if sm.current_state.name == "StateHunt":
+		var hunt = sm.current_state
+		if "_has_token" in hunt and hunt._has_token and "_selected_attack" in hunt and hunt._selected_attack == "attack_grab":
+			return true
+	if sm.current_state.name != "StateAttack":
 		return false
 	var attack_state = sm.current_state
 	if "_phase" in attack_state:
@@ -167,6 +173,11 @@ func _is_grabber_active(e: Node) -> bool:
 		if phase == 0 or phase == 4:
 			return false
 	return true
+
+## Checks if an enemy currently holds a grab token.
+func has_grab_token(enemy: EnemyBase) -> bool:
+	_active_grabbers = _active_grabbers.filter(_is_grabber_active)
+	return is_instance_valid(enemy) and _active_grabbers.has(enemy)
 
 ## Requests a grab token specifically (1 concurrent grab max).
 func request_grab_token(enemy: EnemyBase) -> bool:
@@ -218,3 +229,4 @@ func release_token(enemy: EnemyBase) -> void:
 	if _active_grabbers.has(enemy):
 		_active_grabbers.erase(enemy)
 		print("[AttackTokenManager] Explicitly released grab token from: ", enemy.name, " | Active grabbers count: ", _active_grabbers.size())
+
