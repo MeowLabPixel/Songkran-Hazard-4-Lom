@@ -22,10 +22,14 @@ var _attachment: BoneAttachment3D = null
 
 func _ready() -> void:
 	var parent_name = get_parent().name
-	if parent_name in ["HitboxLeftThigh", "HitboxLeftShin"]:
+	if parent_name == "HitboxLeftThigh":
 		zone_name = "left_leg"
-	elif parent_name in ["HitboxRightThigh", "HitboxRightShin"]:
+	elif parent_name == "HitboxLeftShin":
+		zone_name = "left_foot"
+	elif parent_name == "HitboxRightThigh":
 		zone_name = "right_leg"
+	elif parent_name == "HitboxRightShin":
+		zone_name = "right_foot"
 
 	# Walk up the full tree, crossing sub-scene boundaries, to find EnemyBase or AnchaleeBase.
 	var node: Node = get_parent()
@@ -85,12 +89,7 @@ func _ready() -> void:
 			
 		# Reparent to BoneAttachment3D at runtime to eliminate one-frame lag
 		if not Engine.is_editor_hint() and _attachment and area.get_parent() != _attachment:
-			var old_global_trans = area.global_transform
-			var old_parent = area.get_parent()
-			if old_parent:
-				old_parent.remove_child(area)
-			_attachment.add_child(area)
-			area.global_transform = old_global_trans
+			_reparent_to_attachment.call_deferred(area, _attachment)
 			_attachment = null
 	else:
 		push_error("[HitboxZone] Parent must be Area3D (zone '%s')" % zone_name)
@@ -138,3 +137,13 @@ func _on_body_entered(body: Node3D) -> void:
 			"source": body,
 			"hit_direction": hit_dir,
 		})
+
+func _reparent_to_attachment(area: Area3D, attachment: BoneAttachment3D) -> void:
+	if not is_instance_valid(area) or not is_instance_valid(attachment):
+		return
+	var old_global_trans = area.global_transform
+	var old_parent = area.get_parent()
+	if old_parent:
+		old_parent.remove_child(area)
+	attachment.add_child(area)
+	area.global_transform = old_global_trans

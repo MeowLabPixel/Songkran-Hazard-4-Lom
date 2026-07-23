@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cvctj7idiknih"
 path.s3tc="res://.godot/imported/Buildings_Modular_Iron_Gate.png-c2e36c439173630b1246111cb47148ff.s3tc.ctex"
+path.etc2="res://.godot/imported/Buildings_Modular_Iron_Gate.png-c2e36c439173630b1246111cb47148ff.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://map/Buildings_Modular_Iron_Gate.png"
-dest_files=["res://.godot/imported/Buildings_Modular_Iron_Gate.png-c2e36c439173630b1246111cb47148ff.s3tc.ctex"]
+dest_files=["res://.godot/imported/Buildings_Modular_Iron_Gate.png-c2e36c439173630b1246111cb47148ff.s3tc.ctex", "res://.godot/imported/Buildings_Modular_Iron_Gate.png-c2e36c439173630b1246111cb47148ff.etc2.ctex"]
 
 [params]
 

@@ -6,6 +6,7 @@
 [resource]
 script = ExtResource("1_37xyf")
 name = "leon_grab_fail"
+volume_db = 5.0
 volume_randomness_db = 0.5
 is_3d = true
 streams = Array[AudioStream]([ExtResource("2_8i38i")])

@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://crlqd2lh71i1k"
 path.s3tc="res://.godot/imported/UV_switch_baseColor.png-1a90f687e1e42f214f331785b532a66b.s3tc.ctex"
+path.etc2="res://.godot/imported/UV_switch_baseColor.png-1a90f687e1e42f214f331785b532a66b.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://addons/spatial_audio_extended/demo/models/scifi_button/textures/UV_switch_baseColor.png"
-dest_files=["res://.godot/imported/UV_switch_baseColor.png-1a90f687e1e42f214f331785b532a66b.s3tc.ctex"]
+dest_files=["res://.godot/imported/UV_switch_baseColor.png-1a90f687e1e42f214f331785b532a66b.s3tc.ctex", "res://.godot/imported/UV_switch_baseColor.png-1a90f687e1e42f214f331785b532a66b.etc2.ctex"]
 
 [params]
 

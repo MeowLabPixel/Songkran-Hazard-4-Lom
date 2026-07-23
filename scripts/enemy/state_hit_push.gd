@@ -44,8 +44,6 @@ func physics_update(delta: float) -> void:
 	# Timeout fallback
 	if _grace_timer >= 2.0:
 		var hunt = state_machine._states.get("StateHunt")
-		if hunt:
-			hunt.trigger_stun_recovery = true
 		state_machine.transition_to("StateHunt")
 		return
 
@@ -56,13 +54,14 @@ func physics_update(delta: float) -> void:
 			var current = String(pb.get_current_node())
 			if current == "End" or current == "":
 				var hunt = state_machine._states.get("StateHunt")
-				if hunt:
-					hunt.trigger_stun_recovery = true
 				state_machine.transition_to("StateHunt")
 
 func handle_hit(hit_data: Dictionary) -> String:
 	# If hit while pushed, can transition to Takedownable or standard stun
 	var zone: String = hit_data.get("hit_zone", "body")
+	_current_push_speed = 0.0
+	if enemy:
+		enemy.velocity = Vector3.ZERO
 	match zone:
 		"head", "foot", "left_foot", "right_foot":
 			return "StateTakedownable"

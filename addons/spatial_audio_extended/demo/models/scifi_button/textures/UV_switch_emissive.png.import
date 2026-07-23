@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dfl4gt1pi00ri"
 path.s3tc="res://.godot/imported/UV_switch_emissive.png-57a8e94124d225372491b6b9417aca16.s3tc.ctex"
+path.etc2="res://.godot/imported/UV_switch_emissive.png-57a8e94124d225372491b6b9417aca16.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://addons/spatial_audio_extended/demo/models/scifi_button/textures/UV_switch_emissive.png"
-dest_files=["res://.godot/imported/UV_switch_emissive.png-57a8e94124d225372491b6b9417aca16.s3tc.ctex"]
+dest_files=["res://.godot/imported/UV_switch_emissive.png-57a8e94124d225372491b6b9417aca16.s3tc.ctex", "res://.godot/imported/UV_switch_emissive.png-57a8e94124d225372491b6b9417aca16.etc2.ctex"]
 
 [params]
 

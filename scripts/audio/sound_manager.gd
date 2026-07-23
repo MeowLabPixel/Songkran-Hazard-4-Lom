@@ -77,9 +77,10 @@ func _physics_process(_delta: float) -> void:
 	for p in _all_spatial_players:
 		if is_instance_valid(p):
 			alive.append(p)
-			var target = p.get_meta("follow_target", null)
-			if is_instance_valid(target):
-				p.global_position = target.global_position
+			if p.has_meta("follow_target"):
+				var target = p.get_meta("follow_target")
+				if is_instance_valid(target):
+					p.global_position = target.global_position
 	_all_spatial_players = alive
 
 	# Track player node and camera to update the global unscaled audio listener

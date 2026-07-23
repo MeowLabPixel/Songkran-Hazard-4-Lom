@@ -7,6 +7,7 @@
 [resource]
 script = ExtResource("1_yb87a")
 name = "vo_leon_grab_loop"
+volume_db = 5.0
 pitch_range = Vector2(1, 1)
 is_3d = true
 category = "Voiceline"

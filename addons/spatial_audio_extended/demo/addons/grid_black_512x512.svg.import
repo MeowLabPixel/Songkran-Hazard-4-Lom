@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://j6l2ds1eiw6b"
 path.s3tc="res://.godot/imported/grid_black_512x512.svg-fb4dbd426f91450bb49cf375f30cbb75.s3tc.ctex"
+path.etc2="res://.godot/imported/grid_black_512x512.svg-fb4dbd426f91450bb49cf375f30cbb75.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://addons/spatial_audio_extended/demo/addons/grid_black_512x512.svg"
-dest_files=["res://.godot/imported/grid_black_512x512.svg-fb4dbd426f91450bb49cf375f30cbb75.s3tc.ctex"]
+dest_files=["res://.godot/imported/grid_black_512x512.svg-fb4dbd426f91450bb49cf375f30cbb75.s3tc.ctex", "res://.godot/imported/grid_black_512x512.svg-fb4dbd426f91450bb49cf375f30cbb75.etc2.ctex"]
 
 [params]
 

@@ -8,6 +8,7 @@
 [resource]
 script = ExtResource("1_314lh")
 name = "vo_leon_attack"
+volume_db = 5.0
 pitch_range = Vector2(1, 1)
 is_3d = true
 category = "Voiceline"

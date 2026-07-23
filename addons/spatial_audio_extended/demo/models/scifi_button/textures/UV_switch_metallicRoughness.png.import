@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://q62yymmq1cet"
 path.s3tc="res://.godot/imported/UV_switch_metallicRoughness.png-f1c4c1feaace4cc36226835dd42dd18a.s3tc.ctex"
+path.etc2="res://.godot/imported/UV_switch_metallicRoughness.png-f1c4c1feaace4cc36226835dd42dd18a.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://addons/spatial_audio_extended/demo/models/scifi_button/textures/UV_switch_metallicRoughness.png"
-dest_files=["res://.godot/imported/UV_switch_metallicRoughness.png-f1c4c1feaace4cc36226835dd42dd18a.s3tc.ctex"]
+dest_files=["res://.godot/imported/UV_switch_metallicRoughness.png-f1c4c1feaace4cc36226835dd42dd18a.s3tc.ctex", "res://.godot/imported/UV_switch_metallicRoughness.png-f1c4c1feaace4cc36226835dd42dd18a.etc2.ctex"]
 
 [params]
 

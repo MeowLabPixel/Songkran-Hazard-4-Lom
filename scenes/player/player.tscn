@@ -5694,6 +5694,7 @@ script = ExtResource("9_kb6p2")
 [node name="Reload" type="Node" parent="Statemachine" unique_id=906216806]
 script = ExtResource("8_kb6p2")
 superpump_hold_duration = 0.5
+fail_ends_reload = false
 
 [node name="Aim" type="Node" parent="Statemachine" unique_id=1671472409]
 script = ExtResource("9_wodsf")

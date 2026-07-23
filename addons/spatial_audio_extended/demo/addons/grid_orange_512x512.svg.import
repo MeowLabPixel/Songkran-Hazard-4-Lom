@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://4kj13u8exyxf"
 path.s3tc="res://.godot/imported/grid_orange_512x512.svg-8267a81600518db91d92b2402b29ef23.s3tc.ctex"
+path.etc2="res://.godot/imported/grid_orange_512x512.svg-8267a81600518db91d92b2402b29ef23.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://addons/spatial_audio_extended/demo/addons/grid_orange_512x512.svg"
-dest_files=["res://.godot/imported/grid_orange_512x512.svg-8267a81600518db91d92b2402b29ef23.s3tc.ctex"]
+dest_files=["res://.godot/imported/grid_orange_512x512.svg-8267a81600518db91d92b2402b29ef23.s3tc.ctex", "res://.godot/imported/grid_orange_512x512.svg-8267a81600518db91d92b2402b29ef23.etc2.ctex"]
 
 [params]
 

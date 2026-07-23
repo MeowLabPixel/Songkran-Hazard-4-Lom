@@ -116,7 +116,9 @@ func handle_hit(hit_data: Dictionary) -> void:
 			var td = _states.get("StateTakedownable")
 			if td:
 				_states["StateKnockdown"].stun_type = td.stun_type
-		transition_to(next)
+		# Force re-enter when transitioning from hit-reaction states so animations restart cleanly
+		var force = current_state.name in ["StateHitPush", "StateStun"]
+		transition_to(next, force)
 
 ## Returns the name of the current state, or "" if uninitialised.
 func get_current_state_name() -> String:
