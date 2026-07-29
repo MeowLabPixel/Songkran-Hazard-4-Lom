@@ -297,6 +297,18 @@ func _on_player_finished(player: Node, event: SoundEvent, parallel_player: Node 
 	if is_instance_valid(parallel_player):
 		parallel_player.queue_free()
 
+# Immediately stops all active zombie voiceline instances attached to a specific source object
+func stop_voicelines_for_source(source) -> void:
+	if typeof(source) != TYPE_OBJECT or not is_instance_valid(source):
+		return
+	for p in _all_spatial_players:
+		if is_instance_valid(p) and p.playing:
+			if p.has_meta("follow_target") and p.get_meta("follow_target") == source:
+				var ev_name = p.get_meta("event_name") if p.has_meta("event_name") else ""
+				if ev_name.begins_with("vo_zombie_"):
+					p.stop()
+					p.queue_free()
+
 func _should_block_voiceline(event_name: String, source = null) -> bool:
 	# Only apply to zombie and Anchalee voicelines (excluding breathing sounds)
 	var is_zombie = event_name.begins_with("vo_zombie_")
@@ -307,6 +319,26 @@ func _should_block_voiceline(event_name: String, source = null) -> bool:
 		
 	var time_now = Time.get_ticks_msec() / 1000.0
 	
+	# Determine the tracking key: instance_id of source if valid node, otherwise generic string prefix
+	var tracking_key = ""
+	if typeof(source) == TYPE_OBJECT and is_instance_valid(source):
+		tracking_key = str(source.get_instance_id())
+	else:
+		tracking_key = "zombie" if is_zombie else "anchalee"
+		
+	# Check if this is a Zombie Get-Hit voiceline
+	var is_zombie_gethit = is_zombie and "gethit" in event_name
+	if is_zombie_gethit:
+		# Immediately interrupt and stop any active voicelines on this zombie
+		stop_voicelines_for_source(source)
+		
+		# Set/refresh cooldown for this zombie so standard ambient voicelines won't play right over the hit reaction
+		var cooldown_duration = randf_range(voiceline_cooldown_min, voiceline_cooldown_max)
+		_voiceline_cooldowns[tracking_key] = time_now + cooldown_duration
+		
+		# Always allow Get-Hit voiceline to play (bypasses ambient cooldown and play chance)
+		return false
+
 	# Clean up expired cooldown entries to prevent memory growth
 	var expired_keys = []
 	for key in _voiceline_cooldowns:
@@ -315,21 +347,14 @@ func _should_block_voiceline(event_name: String, source = null) -> bool:
 	for key in expired_keys:
 		_voiceline_cooldowns.erase(key)
 		
-	# Determine the tracking key: instance_id of source if valid node, otherwise generic string prefix
-	var tracking_key = ""
-	if typeof(source) == TYPE_OBJECT and is_instance_valid(source):
-		tracking_key = str(source.get_instance_id())
-	else:
-		tracking_key = "zombie" if is_zombie else "anchalee"
-		
-	# 1. Cooldown Check
+	# 1. Cooldown Check (for non-GetHit voicelines)
 	if _voiceline_cooldowns.has(tracking_key):
 		var cooldown_end = _voiceline_cooldowns[tracking_key]
 		if time_now < cooldown_end:
 			# Cooldown active, block playing
 			return true
 			
-	# 2. Play Chance Check
+	# 2. Play Chance Check (for non-GetHit voicelines)
 	if randf() > voiceline_play_chance:
 		# Block playing but do not trigger full 3-5s cooldown (so it can try next time)
 		return true
