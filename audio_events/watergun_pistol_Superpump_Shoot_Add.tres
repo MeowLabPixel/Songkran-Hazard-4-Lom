@@ -1,9 +1,9 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://db7oetuq8261t"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_ckn54"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_pistol_Superpump_Shoot_Add_1.wav" id="2_4pm35"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_pistol_Superpump_Shoot_Add_2.wav" id="3_e0fla"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_pistol_Superpump_Shoot_Add_3.wav" id="4_pp74y"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_ckn54"]
+[ext_resource type="AudioStream" uid="uid://dqvpvmoqv0nrg" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_pistol_Superpump_Shoot_Add_1.wav" id="2_4pm35"]
+[ext_resource type="AudioStream" uid="uid://ors3rdgrvvk" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_pistol_Superpump_Shoot_Add_2.wav" id="3_e0fla"]
+[ext_resource type="AudioStream" uid="uid://cwtwd8k5bcg3k" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_pistol_Superpump_Shoot_Add_3.wav" id="4_pp74y"]
 
 [resource]
 script = ExtResource("1_ckn54")

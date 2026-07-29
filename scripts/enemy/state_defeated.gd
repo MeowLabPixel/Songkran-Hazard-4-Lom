@@ -334,6 +334,16 @@ func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 	if not is_blocked.call(base_dir):
 		return base_dir
 		
+	# Check if environment wall blocked base_dir
+	var env_hit_pos: Vector3 = Vector3.ZERO
+	var env_hit_normal: Vector3 = Vector3.ZERO
+	var env_query = PhysicsRayQueryParameters3D.create(start, start + base_dir * 1.5)
+	env_query.exclude = [enemy.get_rid()]
+	var env_result = space_state.intersect_ray(env_query)
+	if not env_result.is_empty():
+		env_hit_pos = env_result.position
+		env_hit_normal = env_result.normal
+		
 	# Find closest blocking zombie to decide which way to turn first
 	var min_dist = 999.0
 	var closest_other = null
@@ -348,8 +358,11 @@ func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 					min_dist = dist
 					closest_other = other
 					
+	var zombie_dist = min_dist
+	var env_dist = start.distance_to(env_hit_pos) if env_hit_pos != Vector3.ZERO else 999.0
+
 	var steer_left_first = true
-	if closest_other:
+	if closest_other and zombie_dist <= env_dist:
 		var to_other = (closest_other.global_position - enemy.global_position).normalized()
 		var cross = base_dir.cross(to_other)
 		if abs(cross.y) < 0.1:
@@ -360,11 +373,38 @@ func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 				_last_steer_side = 1.0
 		else:
 			if cross.y > 0:
-				steer_left_first = false # Steer right first
+				steer_left_first = false # Steer right first away from zombie on left
 				_last_steer_side = -1.0
 			else:
-				steer_left_first = true
+				steer_left_first = true # Steer left first away from zombie on right
 				_last_steer_side = 1.0
+	elif env_hit_pos != Vector3.ZERO:
+		var to_wall = (env_hit_pos - start)
+		to_wall.y = 0.0
+		if to_wall.length() > 0.01:
+			to_wall = to_wall.normalized()
+			var cross = base_dir.cross(to_wall)
+			if abs(cross.y) < 0.1 and env_hit_normal != Vector3.ZERO:
+				var cross_norm = base_dir.cross(env_hit_normal)
+				if cross_norm.y > 0:
+					steer_left_first = false # Wall normal leans right, steer right
+					_last_steer_side = -1.0
+				elif cross_norm.y < 0:
+					steer_left_first = true # Wall normal leans left, steer left
+					_last_steer_side = 1.0
+				else:
+					if _last_steer_side != 0.0:
+						steer_left_first = (_last_steer_side > 0.0)
+					else:
+						steer_left_first = true
+						_last_steer_side = 1.0
+			else:
+				if cross.y > 0:
+					steer_left_first = false # Wall hit is on the left, steer right away from it
+					_last_steer_side = -1.0
+				else:
+					steer_left_first = true # Wall hit is on the right, steer left away from it
+					_last_steer_side = 1.0
 	else:
 		_last_steer_side = 0.0
 

@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://rf7hyxxmkhg8"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_cilvx"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Menu/Press E to continue SFX.wav" id="2_g7j5p"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_cilvx"]
+[ext_resource type="AudioStream" uid="uid://c5hqt4c3h6qdg" path="res://Audio-Sfx-Music/Uis/Menu/Press E to continue SFX.wav" id="2_g7j5p"]
 
 [resource]
 script = ExtResource("1_cilvx")

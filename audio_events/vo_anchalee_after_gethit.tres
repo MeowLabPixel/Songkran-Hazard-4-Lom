@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cugqwhuke0v8h"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_vppxc"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_after_gethit_01.ogg" id="2_ija3h"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_after_gethit_02.ogg" id="3_ohicu"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_vppxc"]
+[ext_resource type="AudioStream" uid="uid://cwhifsfepmfca" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_after_gethit_01.ogg" id="2_ija3h"]
+[ext_resource type="AudioStream" uid="uid://b4vjms4ecqhlv" path="res://Audio-Sfx-Music/Voicelines/Anchalee/SFX/vo_anchalee_after_gethit_02.ogg" id="3_ohicu"]
 
 [resource]
 script = ExtResource("1_vppxc")

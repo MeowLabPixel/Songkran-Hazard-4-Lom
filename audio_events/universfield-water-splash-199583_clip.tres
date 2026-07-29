@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://bk7xlusnotay5"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_x3lu8"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Uis/Merchant Shop/universfield-water-splash-199583_clip.wav" id="2_v1rlm"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_x3lu8"]
+[ext_resource type="AudioStream" uid="uid://dpeq6jytmmel4" path="res://Audio-Sfx-Music/Uis/Merchant Shop/universfield-water-splash-199583_clip.wav" id="2_v1rlm"]
 
 [resource]
 script = ExtResource("1_x3lu8")

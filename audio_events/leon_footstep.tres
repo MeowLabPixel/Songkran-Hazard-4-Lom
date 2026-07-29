@@ -1,10 +1,10 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://b7lgtoixy26aj"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_b66ni"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_footstep_Alternative_1.ogg" id="1_emnmm"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_footstep_Alternative_2.ogg" id="2_b66ni"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_footstep_1.ogg" id="2_js63y"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_footstep_2.ogg" id="3_pud4e"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_b66ni"]
+[ext_resource type="AudioStream" uid="uid://bxkigo8l1c0df" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_footstep_Alternative_1.ogg" id="1_emnmm"]
+[ext_resource type="AudioStream" uid="uid://di6wlt640duvb" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_footstep_Alternative_2.ogg" id="2_b66ni"]
+[ext_resource type="AudioStream" uid="uid://bofte524tkjb7" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_footstep_1.ogg" id="2_js63y"]
+[ext_resource type="AudioStream" uid="uid://dyollvotqf5y2" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_footstep_2.ogg" id="3_pud4e"]
 
 [resource]
 script = ExtResource("1_b66ni")

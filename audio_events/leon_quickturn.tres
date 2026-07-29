@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cn2a3cbylnfm"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_8jvh2"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_quickturn_1.wav" id="2_wav1"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_quickturn_2.wav" id="3_wav2"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_8jvh2"]
+[ext_resource type="AudioStream" uid="uid://c7tjpu0e7qyd2" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_quickturn_1.wav" id="2_wav1"]
+[ext_resource type="AudioStream" uid="uid://sv8kiyo2vi6s" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_quickturn_2.wav" id="3_wav2"]
 
 [resource]
 script = ExtResource("1_8jvh2")

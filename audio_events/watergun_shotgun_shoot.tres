@@ -1,12 +1,12 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://bqsiolnnfgnbe"]
 
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_add_1.wav" id="1_84m5u"]
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_rwj2u"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_add_2.wav" id="2_7xppu"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_1.wav" id="2_ec8dt"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_add_3.wav" id="3_2rtua"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_2.wav" id="3_fk6dn"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_3.wav" id="4_84m5u"]
+[ext_resource type="AudioStream" uid="uid://ec6wkcrkch2u" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_add_1.wav" id="1_84m5u"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_rwj2u"]
+[ext_resource type="AudioStream" uid="uid://if2y8n51yksh" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_add_2.wav" id="2_7xppu"]
+[ext_resource type="AudioStream" uid="uid://dmeyhdfup102u" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_1.wav" id="2_ec8dt"]
+[ext_resource type="AudioStream" uid="uid://cny5m02orjeiw" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_add_3.wav" id="3_2rtua"]
+[ext_resource type="AudioStream" uid="uid://u7h26ewl5j1k" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_2.wav" id="3_fk6dn"]
+[ext_resource type="AudioStream" uid="uid://jait13chvh0x" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_3.wav" id="4_84m5u"]
 
 [resource]
 script = ExtResource("1_rwj2u")

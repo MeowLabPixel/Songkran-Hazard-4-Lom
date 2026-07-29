@@ -438,7 +438,7 @@ func is_takedownable() -> bool:
 		return false
 	var current_state = state_machine.current_state
 	if current_state == state_machine._states.get("StateTakedownable"):
-		return true
+		return current_state.is_takedown_window_active() if current_state.has_method("is_takedown_window_active") else true
 	# Also takedownable during the vulnerable getup recovery phase
 	var hunt = state_machine._states.get("StateHunt")
 	if hunt and current_state == hunt and hunt.has_method("is_in_vulnerable_getup") and hunt.is_in_vulnerable_getup():

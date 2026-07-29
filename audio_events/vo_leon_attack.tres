@@ -1,9 +1,9 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://c7twqw6n7vqwj"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_314lh"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_attack_1.ogg" id="2_1ap7u"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_attack_2.ogg" id="3_bmdbm"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_attack_3.ogg" id="4_hrdl5"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_314lh"]
+[ext_resource type="AudioStream" uid="uid://blqpf7anp0wvy" path="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_attack_1.ogg" id="2_1ap7u"]
+[ext_resource type="AudioStream" uid="uid://d16mknqybilik" path="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_attack_2.ogg" id="3_bmdbm"]
+[ext_resource type="AudioStream" uid="uid://cwrvjxplqhylt" path="res://Audio-Sfx-Music/Voicelines/Rookie Lee/vo_leon_attack_3.ogg" id="4_hrdl5"]
 
 [resource]
 script = ExtResource("1_314lh")

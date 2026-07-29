@@ -3,7 +3,7 @@ extends EnemyState
 
 @export var takedown_window: float = 2.0
 @export var head_stun_duration: float = 2.0
-@export var foot_stun_duration: float = 2.0
+@export var foot_stun_duration: float = 3.0
 @export var head_hit_move_speed: float = 2.0
 
 var _act2_timer: float = 0.0
@@ -16,15 +16,19 @@ var takedown_triggered: bool = false
 func enter() -> void:
 	_act2_timer = 0.0
 	takedown_triggered = false
+	takedown_window = get_stun_duration()
 	if enemy:
 		enemy.velocity = Vector3.ZERO
 		enemy.move_and_slide()
-	print("[StateTakedownable] TAKEDOWN-able! Type: %s" % stun_type)
+	print("[StateTakedownable] TAKEDOWN-able! Type: %s (Duration: %.1fs)" % [stun_type, takedown_window])
 	_start_act1()
 
 func _start_act1() -> void:
 	_in_act1 = true
 	_act1_timer = 0.0
+	_act2_timer = 0.0
+	takedown_triggered = false
+	takedown_window = get_stun_duration()
 	_act1_velocity = Vector3.ZERO
 	var anim = enemy.anim_set.hit_reaction(stun_type)
 	
@@ -120,7 +124,9 @@ func physics_update(delta: float) -> void:
 			if "parameters/hit/Getup_End/conditions/act2_skip" in enemy.anim_tree:
 				enemy.anim_tree.set("parameters/hit/Getup_End/conditions/act2_skip", true)
 		_act2_timer += delta
-		if _act2_timer >= get_stun_duration():
+
+		var is_exiting_act2 = (current_node == "End" or "act 3" in current_node.to_lower() or "act3" in current_node.to_lower())
+		if get_elapsed_time() >= get_stun_duration() or is_exiting_act2:
 			var hunt = state_machine._states.get("StateHunt")
 			if hunt:
 				hunt.trigger_stun_recovery = true
@@ -130,6 +136,22 @@ func get_stun_duration() -> float:
 	if stun_type == "head":
 		return head_stun_duration
 	return foot_stun_duration
+
+func get_elapsed_time() -> float:
+	return _act1_timer + _act2_timer
+
+func is_takedown_window_active() -> bool:
+	if takedown_triggered:
+		return false
+	if get_elapsed_time() >= get_stun_duration():
+		return false
+	if enemy and enemy.anim_tree:
+		var pb = enemy.anim_tree.get("parameters/hit/hit_takedown/playback")
+		if pb:
+			var node = String(pb.get_current_node())
+			if node == "End" or "act 3" in node.to_lower() or "act3" in node.to_lower() or "special" in node.to_lower():
+				return false
+	return true
 
 func handle_hit(hit_data: Dictionary) -> String:
 	var zone = hit_data.get("hit_zone", "body")

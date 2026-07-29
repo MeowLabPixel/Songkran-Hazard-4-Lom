@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="SoundEvent" format=3]
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://c6sekfvbprh6i"]
 
-[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_irqyj"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/grab_sucess_loop.ogg" id="2_xdcn5"]
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_irqyj"]
+[ext_resource type="AudioStream" uid="uid://bbsehha11o745" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/grab_sucess_loop.ogg" id="2_xdcn5"]
 
 [resource]
 script = ExtResource("1_irqyj")
