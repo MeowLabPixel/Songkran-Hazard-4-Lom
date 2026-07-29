@@ -72,7 +72,7 @@ func enter() -> void:
 	if not skip_act3 and enemy:
 		if knockdown_mode == "NORMAL":
 			# Normal player-triggered takedown sequence
-			SoundManager.play_3d("Region_ZombieGetHitTakedown_Part1", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+			SoundManager.play_3d("ZombieGetHitTakedown", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
 		else:
 			# Non-normal knockdown (stumble, leg shot, swing shot)
 			if stun_type == "head":

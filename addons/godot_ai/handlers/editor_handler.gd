@@ -425,7 +425,9 @@ func take_screenshot(params: Dictionary) -> Dictionary:
 		"viewport":
 			viewport = EditorInterface.get_editor_viewport_3d()
 			if viewport == null:
-				return ErrorCodes.make(ErrorCodes.EDITOR_NOT_READY, "No 3D viewport available")
+				return ErrorCodes.make_not_ready(
+					ErrorCodes.SUB_EDITOR_VIEWPORT_UNAVAILABLE,
+					"No 3D viewport available", false)
 			## The 3D viewport's texture is empty when the edited scene
 			## has no Node3D content (2D-only scene, or no scene open),
 			## and the empty-image guard further down used to surface
@@ -438,7 +440,13 @@ func take_screenshot(params: Dictionary) -> Dictionary:
 				return precheck
 		"game":
 			if not EditorInterface.is_playing_scene():
-				return ErrorCodes.make(ErrorCodes.INVALID_PARAMS, "Game is not running — use source='viewport' or start the project first")
+				## Same editor state as game_eval/game_command's gate below —
+				## same EDITOR_NOT_READY shape, not INVALID_PARAMS (the params
+				## were fine; the editor just isn't in the required state).
+				return ErrorCodes.make_not_ready(
+					ErrorCodes.SUB_EDITOR_GAME_NOT_RUNNING,
+					"Game is not running — start the project first", false,
+					"Use source='viewport' for the editor viewport, or start the game with project_run and retry.")
 			## The game is always a separate OS process (embedded mode just
 			## reparents its window into the editor). Reach the framebuffer
 			## via the debugger channel: the `_mcp_game_helper` autoload
@@ -457,11 +465,15 @@ func take_screenshot(params: Dictionary) -> Dictionary:
 		"viewport_2d":
 			viewport = EditorInterface.get_editor_viewport_2d()
 			if viewport == null:
-				return ErrorCodes.make(ErrorCodes.EDITOR_NOT_READY, "No 2D viewport available")
+				return ErrorCodes.make_not_ready(
+					ErrorCodes.SUB_EDITOR_VIEWPORT_UNAVAILABLE,
+					"No 2D viewport available", false)
 			var scene_root_2d := EditorInterface.get_edited_scene_root()
 			if scene_root_2d == null:
-				return ErrorCodes.make(ErrorCodes.EDITOR_NOT_READY,
-					"No scene open — open a scene first")
+				return ErrorCodes.make_not_ready(
+					ErrorCodes.SUB_EDITOR_NO_SCENE,
+					"No scene open — open a scene first", false,
+					"Call scene_open with a scene path (e.g. \"res://main.tscn\") first.")
 			if not view_target.is_empty() or coverage or custom_elevation != null or custom_azimuth != null or custom_fov != null:
 				return ErrorCodes.make(
 					ErrorCodes.INVALID_PARAMS,
@@ -514,7 +526,9 @@ func take_screenshot(params: Dictionary) -> Dictionary:
 
 		var cam := viewport.get_camera_3d()
 		if cam == null:
-			return ErrorCodes.make(ErrorCodes.EDITOR_NOT_READY, "No camera in 3D viewport")
+			return ErrorCodes.make_not_ready(
+				ErrorCodes.SUB_EDITOR_VIEWPORT_UNAVAILABLE,
+				"No camera in 3D viewport", false)
 
 		## Merge AABBs from all targets
 		var combined_aabb := _get_visual_aabb(targets[0])
@@ -687,6 +701,12 @@ func _take_cinematic_screenshot(max_resolution: int) -> Dictionary:
 	## global_transform is resolved against the ancestor Node3D chain, so it
 	## must be set after parenting — otherwise the camera ends up at origin.
 	cam.global_transform = scene_camera.global_transform
+	## NOTIFICATION_TRANSFORM_CHANGED is delivered deferred (next frame's
+	## flush_transform_notifications), but force_draw renders immediately —
+	## without this flush the RenderingServer still has the identity
+	## transform pushed at ENTER_WORLD and the capture shows only sky
+	## instead of the camera's actual view (issue #650).
+	cam.force_update_transform()
 
 	RenderingServer.force_draw(false)
 	var image: Image = sub_vp.get_texture().get_image()
@@ -718,10 +738,15 @@ func _take_cinematic_screenshot(max_resolution: int) -> Dictionary:
 ## without driving the editor.
 static func viewport_screenshot_precheck(scene_root: Node) -> Dictionary:
 	if scene_root == null:
-		return _make_viewport_not_3d_error(
+		var no_scene_err := _make_viewport_not_3d_error(
 			"",
 			"The editor 3D viewport is empty because no scene is open. Open a scene with `scene_open` first."
 		)
+		## The honest state here is "no scene", not "scene lacks 3D content"
+		## — relabel the sub-code so telemetry doesn't conflate the two.
+		## `editor_state` stays "viewport_not_3d" for pre-#651 consumers.
+		no_scene_err["error"]["data"]["sub_code"] = ErrorCodes.SUB_EDITOR_NO_SCENE
+		return no_scene_err
 	## A scene with any Node3D content — root or descendant — has
 	## something the 3D viewport can render. Walking the tree (rather
 	## than only checking the root type) avoids a false reject on the
@@ -771,11 +796,10 @@ static func _make_viewport_not_3d_error(scene_root_type: String, hint: String) -
 	## `hint` becomes `error.message`; not duplicated into `data` because
 	## `GodotCommandError`'s string form already appends every `data` key
 	## as a suffix on the agent-visible error.
-	var err := ErrorCodes.make(ErrorCodes.EDITOR_NOT_READY, hint)
-	err["error"]["data"] = {
-		"editor_state": "viewport_not_3d",
-		"scene_root_type": scene_root_type,
-	}
+	var err := ErrorCodes.make_not_ready(
+		ErrorCodes.SUB_EDITOR_VIEWPORT_NOT_3D, hint, false)
+	err["error"]["data"]["editor_state"] = "viewport_not_3d"
+	err["error"]["data"]["scene_root_type"] = scene_root_type
 	return err
 
 
@@ -783,11 +807,13 @@ static func _make_viewport_not_3d_error(scene_root_type: String, hint: String) -
 ## back empty — headless rendering, a freshly opened editor whose 3D
 ## viewport hasn't drawn a frame, or a SubViewport that lost its target.
 static func _empty_image_error(source: String, hint: String) -> Dictionary:
-	var err := ErrorCodes.make(ErrorCodes.EDITOR_NOT_READY, hint)
-	err["error"]["data"] = {
-		"editor_state": "viewport_empty",
-		"source": source,
-	}
+	## retryable=false: an empty capture is usually headless mode, where a
+	## retry loops forever — the not-yet-drawn-frame case is transient but
+	## indistinguishable from here, so don't invite a retry loop.
+	var err := ErrorCodes.make_not_ready(
+		ErrorCodes.SUB_EDITOR_VIEWPORT_EMPTY, hint, false)
+	err["error"]["data"]["editor_state"] = "viewport_empty"
+	err["error"]["data"]["source"] = source
 	return err
 
 
@@ -810,31 +836,17 @@ func _find_current_camera_3d(root: Node) -> Camera3D:
 
 
 func _finalize_image(image: Image, source: String, max_resolution: int) -> Dictionary:
-	var original_width := image.get_width()
-	var original_height := image.get_height()
-
-	if max_resolution > 0:
-		var longest := maxi(original_width, original_height)
-		if longest > max_resolution:
-			var scale := float(max_resolution) / float(longest)
-			## Clamp to 1px min: extreme aspect ratios at very small max_resolution
-			## could otherwise compute a zero dimension and crash image.resize().
-			var new_w := maxi(1, int(original_width * scale))
-			var new_h := maxi(1, int(original_height * scale))
-			image.resize(new_w, new_h, Image.INTERPOLATE_LANCZOS)
-
-	var img_bytes := image.save_png_to_buffer()
-	var base64_str := Marshalls.raw_to_base64(img_bytes)
-
+	## Shared with the game-process copy in runtime/game_helper.gd (#716).
+	var encoded := McpScreenshotEncode.downscale_and_encode(image, max_resolution)
 	return {
 		"data": {
 			"source": source,
-			"width": image.get_width(),
-			"height": image.get_height(),
-			"original_width": original_width,
-			"original_height": original_height,
+			"width": encoded.width,
+			"height": encoded.height,
+			"original_width": encoded.original_width,
+			"original_height": encoded.original_height,
 			"format": "png",
-			"image_base64": base64_str,
+			"image_base64": encoded.base64,
 		}
 	}
 
@@ -938,7 +950,11 @@ func reload_plugin(_params: Dictionary) -> Dictionary:
 ## fail with "Could not find type X" when new class_name scripts are on disk
 ## but not yet registered, leaving the plugin disabled with no recovery path
 ## short of killing the editor. See issue #83.
-func _do_reload_plugin() -> void:
+# `static` is load-bearing: the deferred coroutine captures no `self`, so
+# it survives even if the EditorHandler RefCounted is freed mid-await —
+# which is exactly what reload does to this handler's owner. An instance
+# coroutine here resumes on a freed object under reload churn.
+static func _do_reload_plugin() -> void:
 	var fs := EditorInterface.get_resource_filesystem()
 	fs.scan()
 	var tree := Engine.get_main_loop() as SceneTree
@@ -967,8 +983,10 @@ func game_eval(params: Dictionary) -> Dictionary:
 			"Debugger bridge unavailable — plugin may not be fully initialised")
 
 	if not EditorInterface.is_playing_scene():
-		return ErrorCodes.make(ErrorCodes.EDITOR_NOT_READY,
-			"Game is not running — start the project first")
+		return ErrorCodes.make_not_ready(
+			ErrorCodes.SUB_EDITOR_GAME_NOT_RUNNING,
+			"Game is not running — start the project first", false,
+			"Start the game with project_run (or wait for the user to run it), then retry.")
 
 	var request_id: String = params.get("_request_id", "")
 	if request_id.is_empty():
@@ -989,8 +1007,10 @@ func game_command(params: Dictionary) -> Dictionary:
 			"Debugger bridge unavailable — plugin may not be fully initialised")
 
 	if not EditorInterface.is_playing_scene():
-		return ErrorCodes.make(ErrorCodes.EDITOR_NOT_READY,
-			"Game is not running — start the project first")
+		return ErrorCodes.make_not_ready(
+			ErrorCodes.SUB_EDITOR_GAME_NOT_RUNNING,
+			"Game is not running — start the project first", false,
+			"Start the game with project_run (or wait for the user to run it), then retry.")
 
 	var request_id: String = params.get("_request_id", "")
 	if request_id.is_empty():

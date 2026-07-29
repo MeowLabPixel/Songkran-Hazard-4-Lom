@@ -9,7 +9,6 @@ func _init() -> void:
 	id = "cline"
 	display_name = "Cline"
 	config_type = "json"
-	doc_url = "https://github.com/cline/cline"
 	path_template = {
 		"darwin": "~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json",
 		"windows": "$APPDATA/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json",
@@ -26,4 +25,3 @@ func _init() -> void:
 	## entry off, or auto-approved specific tools). Seed on first Configure
 	## but preserve across reconfigure — see `entry_initial_fields` in `_base.gd`.
 	entry_initial_fields = {"disabled": false, "autoApprove": []}
-	detect_paths = PackedStringArray(path_template.values())

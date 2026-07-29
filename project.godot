@@ -40,7 +40,6 @@ settings/physics_interpolation/enable_warnings=false
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
-window/size/mode=4
 window/size/initial_position_type=4
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"

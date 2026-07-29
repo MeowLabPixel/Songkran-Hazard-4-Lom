@@ -36,6 +36,7 @@ var _turn_markers: Array[float] = [0.5, 1.0]
 var _last_norm_pos: float = -1.0
 var _turn_last_norm_pos: float = -1.0
 var _last_step_time: int = 0
+var _pending_stop_footstep: bool = false
 
 func _get_footstep_markers(anim_player: AnimationPlayer, anim_name: String) -> Array[float]:
 	var result: Array[float] = [0.5, 1.0]
@@ -692,90 +693,61 @@ func _physics_process(_delta: float) -> void:
 			var pb = anim.get(anim_playback)
 			if pb:
 				var current_node = pb.get_current_node()
-				if current_node == "Run" or current_node == "Aim":
-					var is_moving = Vector2(velocity.x, velocity.z).length_squared() > 0.05
-					if is_moving:
-						# Walking or sprinting
-						_turn_last_norm_pos = -1.0 # reset turn pos
-						var length = 0.8 if Input.is_action_pressed("sprint") and not is_aimming else 1.0
-						var play_pos = pb.get_current_play_position()
-						var norm_pos = fmod(play_pos / length, 1.0)
-						
-						# Check crossings for each marker
-						if _last_norm_pos >= 0.0:
-							for marker_ratio in _walk_markers:
-								if _last_norm_pos > norm_pos: # Wrap around!
-									if _last_norm_pos < marker_ratio or norm_pos >= marker_ratio:
-										var now = Time.get_ticks_msec()
-										if now - _last_step_time > 220:
-											_last_step_time = now
-											SoundManager.play_3d("leon_footstep", self)
-										break
-								else:
-									if _last_norm_pos < marker_ratio and norm_pos >= marker_ratio:
-										var now = Time.get_ticks_msec()
-										if now - _last_step_time > 220:
-											_last_step_time = now
-											SoundManager.play_3d("leon_footstep", self)
-										break
-						_last_norm_pos = norm_pos
-					elif _is_turning and abs(_current_turn_anim_scale) > 0.01:
-						# Rotating in place
-						_last_norm_pos = -1.0 # reset walk pos
-						var length = 1.06
-						var norm_pos = fmod(_anim_time / length, 1.0)
-						if norm_pos < 0.0:
-							norm_pos += 1.0
-							
-						# Check crossings for each marker
-						if _turn_last_norm_pos >= 0.0:
-							for marker_ratio in _turn_markers:
-								if _turn_last_norm_pos > norm_pos: # Wrap around!
-									if _turn_last_norm_pos < marker_ratio or norm_pos >= marker_ratio:
-										var now = Time.get_ticks_msec()
-										if now - _last_step_time > 220:
-											_last_step_time = now
-											SoundManager.play_3d("leon_footstep", self)
-										break
-								else:
-									if _turn_last_norm_pos < marker_ratio and norm_pos >= marker_ratio:
-										var now = Time.get_ticks_msec()
-										if now - _last_step_time > 220:
-											_last_step_time = now
-											SoundManager.play_3d("leon_footstep", self)
-										break
-						_turn_last_norm_pos = norm_pos
-					else:
-						# Stopped moving and stopped rotating
-						if _last_norm_pos >= 0.0 or _turn_last_norm_pos >= 0.0:
-							var now = Time.get_ticks_msec()
-							if now - _last_step_time > 220:
-								_last_step_time = now
-								SoundManager.play_3d("leon_footstep", self)
-						_last_norm_pos = -1.0
-						_turn_last_norm_pos = -1.0
+				var is_moving = Vector2(velocity.x, velocity.z).length_squared() > 0.05 or Motion.input_dir != Vector2.ZERO
+				var is_sprinting = (statemachine.current_state.name == "Sprint") or (Input.is_action_pressed("sprint") and not is_aimming)
+				var min_cooldown = 110 if is_sprinting else 200
+
+				if is_moving and (current_node == "Run" or current_node == "Aim" or current_node == "Sprint"):
+					# Walking or sprinting
+					_turn_last_norm_pos = -1.0 # reset turn pos
+					_pending_stop_footstep = true
+					var length = 0.8 if is_sprinting else 1.0
+					var play_pos = pb.get_current_play_position()
+					var norm_pos = fmod(play_pos / length, 1.0)
+					
+					# Check crossings for each marker
+					if _last_norm_pos >= 0.0:
+						for marker_ratio in _walk_markers:
+							if _last_norm_pos > norm_pos: # Wrap around!
+								if _last_norm_pos < marker_ratio or norm_pos >= marker_ratio:
+									var now = Time.get_ticks_msec()
+									if now - _last_step_time > min_cooldown:
+										_last_step_time = now
+										SoundManager.play_3d("leon_footstep", self)
+									break
+							else:
+								if _last_norm_pos < marker_ratio and norm_pos >= marker_ratio:
+									var now = Time.get_ticks_msec()
+									if now - _last_step_time > min_cooldown:
+										_last_step_time = now
+										SoundManager.play_3d("leon_footstep", self)
+									break
+					_last_norm_pos = norm_pos
+				elif _is_turning and abs(_current_turn_anim_scale) > 0.01:
+					# Rotating in place
+					_last_norm_pos = -1.0 # reset walk pos
+					_pending_stop_footstep = false
 				else:
-					if _last_norm_pos >= 0.0 or _turn_last_norm_pos >= 0.0:
+					# Stopped moving and stopped rotating
+					if _pending_stop_footstep and current_node == "Idle":
 						var now = Time.get_ticks_msec()
-						if now - _last_step_time > 220:
+						if now - _last_step_time > min_cooldown:
 							_last_step_time = now
 							SoundManager.play_3d("leon_footstep", self)
+						_pending_stop_footstep = false
 					_last_norm_pos = -1.0
-					_turn_last_norm_pos = -1.0
+					_turn_last_norm_pos = fmod(_anim_time / 1.06, 1.0)
+
 			else:
 				_last_norm_pos = -1.0
-				_turn_last_norm_pos = -1.0
+				_turn_last_norm_pos = fmod(_anim_time / 1.06, 1.0)
 		else:
-			if _last_norm_pos >= 0.0 or _turn_last_norm_pos >= 0.0:
-				var now = Time.get_ticks_msec()
-				if now - _last_step_time > 220:
-					_last_step_time = now
-					SoundManager.play_3d("leon_footstep", self)
 			_last_norm_pos = -1.0
-			_turn_last_norm_pos = -1.0
+			_turn_last_norm_pos = fmod(_anim_time / 1.06, 1.0)
 	else:
 		_last_norm_pos = -1.0
 		_turn_last_norm_pos = -1.0
+
 
 	
 
@@ -1330,16 +1302,48 @@ func _update_idle_turn_blend(delta: float) -> void:
 		if anim:
 			_smoothed_turn_speed = 0.0
 
-	# Accumulate animation time
+	# Accumulate animation time and evaluate RealTime boundary footstep triggers
 	var prev_anim_time = _anim_time
 	if _is_turning and target_scale != 0.0:
 		_anim_time += delta * target_scale
+		var unwrapped_anim_time = _anim_time
+		
 		# Wrap strictly since returning to neutral can cross boundaries now
 		if _anim_time > 1.06:
 			_anim_time -= 1.06
 		elif _anim_time < 0.0:
 			_anim_time += 1.06
+			
 		print("[AnimTime RealTime] ", snapped(_anim_time, 0.001), " | TargetScale: ", snapped(target_scale, 0.01), " | Returning: ", _is_returning_to_neutral)
+
+		# RealTime Footstep Trigger Detection for turning
+		var turn_cooldown = clamp(200.0 / max(abs(target_scale), 0.5), 80.0, 250.0)
+		var crossed_turn_step = false
+		
+		if target_scale > 0.0:
+			# Forward Playback (Turning Right)
+			# Check crossing 1.06 (or loop wrap)
+			if (prev_anim_time < 1.06 and unwrapped_anim_time >= 1.06) or (unwrapped_anim_time < prev_anim_time and prev_anim_time > 0.8):
+				crossed_turn_step = true
+			# Check crossing 0.53
+			elif prev_anim_time < 0.53 and _anim_time >= 0.53:
+				crossed_turn_step = true
+		else:
+			# Backward Playback (Turning Left)
+			# Check crossing 0.00 (or loop wrap)
+			if (prev_anim_time > 0.00 and unwrapped_anim_time <= 0.00) or (unwrapped_anim_time > prev_anim_time and prev_anim_time < 0.2):
+				crossed_turn_step = true
+			# Check crossing 0.53
+			elif prev_anim_time > 0.53 and _anim_time <= 0.53:
+				crossed_turn_step = true
+				
+		if crossed_turn_step:
+			var now = Time.get_ticks_msec()
+			if now - _last_step_time > turn_cooldown:
+				_last_step_time = now
+				SoundManager.play_3d("leon_footstep", self)
+
+
 
 	# Check for 0.53 boundary crossing while returning to neutral
 	if _is_returning_to_neutral:
@@ -1421,6 +1425,9 @@ func _trigger_turn_seek() -> void:
 		return
 	print("[TurnSeek] Seeking walk_side to 0.53s")
 	_anim_time = 0.53
+	_turn_last_norm_pos = 0.50
+	_last_step_time = 0
+	_pending_stop_footstep = false
 	var paths = [
 		"parameters/Main/Idle/Pis/TimeSeek/seek_request",
 		"parameters/Main/Idle/Shot/TimeSeek/seek_request",
@@ -1430,13 +1437,3 @@ func _trigger_turn_seek() -> void:
 	for path in paths:
 		if anim.get(path) != null:
 			anim.set(path, 0.53)
-
-
-func step_1() -> void:
-	if HP > 0:
-		SoundManager.play_3d("leon_footstep", self)
-
-
-func step_2() -> void:
-	if HP > 0:
-		SoundManager.play_3d("leon_footstep", self)

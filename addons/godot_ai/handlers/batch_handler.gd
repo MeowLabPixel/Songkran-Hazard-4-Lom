@@ -7,7 +7,18 @@ const ErrorCodes := preload("res://addons/godot_ai/utils/error_codes.gd")
 ## semantics. When undo=true (default), any successful sub-commands are rolled
 ## back via the scene's UndoRedo history if a later sub-command fails.
 
-const FORBIDDEN_SUBCOMMANDS := ["batch_execute"]
+## run_tests is forbidden because a batch executes synchronously inside one
+## dispatcher tick with NO transport servicing: a full suite in a batch
+## starves the WebSocket heartbeat (the exact disconnect the serviced
+## test_run path exists to prevent) and the Python batch handler only
+## allows 30s anyway. Use the test_run tool directly.
+const FORBIDDEN_SUBCOMMANDS := ["batch_execute", "run_tests"]
+
+## The whole batch executes synchronously inside one dispatcher tick,
+## outside the 4ms frame budget — an unbounded array freezes the editor
+## for the batch's full duration. 500 is far above any legitimate scene
+## edit while keeping worst-case stalls in check.
+const MAX_BATCH_COMMANDS := 500
 
 var _dispatcher: McpDispatcher
 var _undo_redo: EditorUndoRedoManager
@@ -24,6 +35,11 @@ func batch_execute(params: Dictionary) -> Dictionary:
 		return ErrorCodes.make(ErrorCodes.WRONG_TYPE, "commands must be a list")
 	if commands.is_empty():
 		return ErrorCodes.make(ErrorCodes.MISSING_REQUIRED_PARAM, "commands must not be empty")
+	if commands.size() > MAX_BATCH_COMMANDS:
+		return ErrorCodes.make(
+			ErrorCodes.VALUE_OUT_OF_RANGE,
+			"commands exceeds the %d-command batch cap (got %d) — split into multiple batches" % [MAX_BATCH_COMMANDS, commands.size()]
+		)
 
 	var undo: bool = params.get("undo", true)
 
@@ -35,9 +51,18 @@ func batch_execute(params: Dictionary) -> Dictionary:
 		if cmd_name.is_empty():
 			return ErrorCodes.make(ErrorCodes.MISSING_REQUIRED_PARAM, "commands[%d] missing 'command' field" % idx)
 		if cmd_name in FORBIDDEN_SUBCOMMANDS:
-			return ErrorCodes.make(ErrorCodes.VALUE_OUT_OF_RANGE, "commands[%d]: '%s' is not allowed as a sub-command" % [idx, cmd_name])
+			var forbidden_msg := "commands[%d]: '%s' is not allowed as a sub-command" % [idx, cmd_name]
+			if cmd_name == "run_tests":
+				forbidden_msg += " — a batch runs synchronously with no transport servicing; call the test_run tool directly"
+			return ErrorCodes.make(ErrorCodes.VALUE_OUT_OF_RANGE, forbidden_msg)
 		if not _dispatcher.has_command(cmd_name):
 			return _unknown_command_error(idx, cmd_name)
+		## Pre-validate params type: the execution loop's typed Dictionary
+		## local would hard-error on a non-dict mid-batch, aborting AFTER
+		## earlier mutations committed. Catching it here keeps the
+		## all-or-nothing contract for malformed input.
+		if typeof(item.get("params", {})) != TYPE_DICTIONARY:
+			return ErrorCodes.make(ErrorCodes.WRONG_TYPE, "commands[%d].params must be a dict" % idx)
 
 	var results: Array = []
 	var succeeded := 0

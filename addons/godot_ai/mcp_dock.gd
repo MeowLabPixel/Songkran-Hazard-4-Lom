@@ -48,6 +48,9 @@ const DEV_MODE_SETTING := "godot_ai/dev_mode"
 ## not tip-of-main, which may have drifted from that build's UI.
 const PORT_CONFLICT_DOCS_PATH := "docs/port-conflicts.md"
 const REPO_BLOB_BASE := "https://github.com/hi-godot/godot-ai/blob"
+## Opened by the "How to install uv" button. See _on_install_uv for why the
+## dock links here instead of running an installer itself.
+const UV_INSTALL_DOCS_URL := "https://docs.astral.sh/uv/getting-started/installation/"
 const CLIENT_STATUS_REFRESH_COOLDOWN_MSEC := 15 * 1000
 const CLIENT_STATUS_REFRESH_TIMEOUT_MSEC := 30 * 1000
 const CLIENT_ACTION_TIMEOUT_MSEC := 30 * 1000
@@ -67,6 +70,8 @@ var _plugin: EditorPlugin
 var _redock_btn: Button
 var _status_icon: ColorRect
 var _status_label: Label
+var _body_scroll: ScrollContainer
+var _body: VBoxContainer
 var _client_grid: VBoxContainer
 var _client_configure_all_btn: Button
 var _client_empty_cta_btn: Button
@@ -92,8 +97,21 @@ var _telemetry_toggle: CheckButton
 var _telemetry_pending_enabled: bool = true
 var _telemetry_saved_enabled: bool = true
 
+# Settings tab (secondary window, Tab 3) — LAN opt-in (#507). Developer-
+# mode-gated "Allow remote hosts (CIDR)" field whose value feeds
+# `--allow-host` at server spawn (see plugin.gd::_build_server_flags).
+# The LineEdit's live text is the pending state; `_allow_hosts_saved`
+# mirrors the persisted EditorSetting, same pending/saved shape as the
+# Tools tab above.
+var _allow_hosts_section: VBoxContainer
+var _allow_hosts_dev_gate_label: Label
+var _allow_hosts_edit: LineEdit
+var _allow_hosts_hint: Label
+var _allow_hosts_apply_btn: Button
+var _allow_hosts_saved: String = ""
+
 ## Per-client UI handles, keyed by client id. Each entry holds the row's
-## status dot, configure button, remove button, manual-command panel + text.
+## status dot, configure/remove buttons, config-file buttons, and manual panel.
 var _client_rows: Dictionary = {}
 
 # Drift banner — surfaced near the Clients section when one or more clients
@@ -105,6 +123,13 @@ var _client_rows: Dictionary = {}
 # during tab-away/tab-back churn. See #166 and #226.
 var _drift_banner: VBoxContainer
 var _drift_label: Label
+## Set when the user clicks "How to install uv"; consumed by the next
+## application focus-in so the uv row is re-probed after the user has had a
+## chance to install, not immediately. See _on_install_uv and _notification.
+## (Deliberately spelled without the focus-in constant name: the guard in
+## tests/unit/test_editor_focus_refocus.py locates the notification handler
+## by first occurrence of that token.)
+var _uv_recheck_pending := false
 ## Handles for the Setup section's "Server" row. `_update_status` keeps
 ## the label text/color in sync with `McpConnection.server_version` so the
 ## dock reports the TRUE running server version, not the plugin's
@@ -435,6 +460,15 @@ func _notification(what: int) -> void:
 	elif what == NOTIFICATION_APPLICATION_FOCUS_IN:
 		if _should_refresh_client_statuses_on_focus_in():
 			_request_client_status_refresh(false)
+		## Re-probe uv only when the user actually went off to install it
+		## (see _on_install_uv). `check_uv_version()` is cached, so an
+		## ungated refresh here would usually be free — but after the
+		## button invalidated that cache it costs one blocking
+		## `uvx --version`, and this notification must not grow a probe on
+		## the common focus-in path. One-shot: clear before refreshing.
+		if _uv_recheck_pending:
+			_uv_recheck_pending = false
+			_refresh_setup_status.call_deferred()
 
 
 func _should_refresh_client_statuses_on_focus_in() -> bool:
@@ -524,6 +558,20 @@ func _build_ui() -> void:
 	_install_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_install_label)
 
+	_body_scroll = ScrollContainer.new()
+	_body_scroll.name = "DockBodyScroll"
+	_body_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_body_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_body_scroll.custom_minimum_size = Vector2(0, 48)
+	_body_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	add_child(_body_scroll)
+
+	_body = VBoxContainer.new()
+	_body.name = "DockBody"
+	_body.add_theme_constant_override("separation", 8)
+	_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_body_scroll.add_child(_body)
+
 	# --- Spawn-failure panel (shown when `_start_server` reports a non-OK
 	# state via `get_server_status`). One body paragraph + the matching
 	# action; the top status label already carries the state headline.
@@ -570,7 +618,7 @@ func _build_ui() -> void:
 	_crash_panel.add_child(_crash_docs_btn)
 
 	_crash_panel.add_child(HSeparator.new())
-	add_child(_crash_panel)
+	_body.add_child(_crash_panel)
 
 	_build_mixed_state_banner()
 	_refresh_mixed_state_banner()
@@ -608,20 +656,20 @@ func _build_ui() -> void:
 	_update_banner.add_child(update_btn_row)
 	_update_banner.add_child(HSeparator.new())
 
-	add_child(_update_banner)
+	_body.add_child(_update_banner)
 
 	if _update_manager == null:
 		_update_manager = UpdateManagerScript.new()
 		_update_manager.setup(_plugin, self)
 		_update_manager.update_check_completed.connect(_on_update_check_result)
 		_update_manager.install_state_changed.connect(_on_install_state_changed)
-		add_child(_update_manager)
+		_body.add_child(_update_manager)
 	_update_manager.check_for_updates.call_deferred()
 
 	# --- Dev-only connection extras (server label + reload button) ---
 	_dev_section = VBoxContainer.new()
 	_dev_section.add_theme_constant_override("separation", 6)
-	add_child(_dev_section)
+	_body.add_child(_dev_section)
 
 	_server_label = Label.new()
 	_server_label.add_theme_color_override("font_color", COLOR_MUTED)
@@ -643,7 +691,7 @@ func _build_ui() -> void:
 	# --- Setup section (dev-only or when uv missing) ---
 	_setup_section = VBoxContainer.new()
 	_setup_section.add_theme_constant_override("separation", 6)
-	add_child(_setup_section)
+	_body.add_child(_setup_section)
 
 	_setup_section.add_child(HSeparator.new())
 	_setup_section.add_child(_make_header("Setup"))
@@ -651,7 +699,7 @@ func _build_ui() -> void:
 	_setup_container.add_theme_constant_override("separation", 6)
 	_setup_section.add_child(_setup_container)
 
-	add_child(HSeparator.new())
+	_body.add_child(HSeparator.new())
 
 	# --- Clients ---
 	var clients_header_row := HBoxContainer.new()
@@ -683,8 +731,8 @@ func _build_ui() -> void:
 	clients_open_btn.pressed.connect(_on_open_clients_window)
 	clients_actions.add_child(clients_open_btn)
 
-	add_child(clients_header_row)
-	add_child(clients_actions)
+	_body.add_child(clients_header_row)
+	_body.add_child(clients_actions)
 
 	_client_empty_cta_btn = Button.new()
 	_client_empty_cta_btn.text = "Configure an AI client ->"
@@ -692,7 +740,7 @@ func _build_ui() -> void:
 	_client_empty_cta_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_client_empty_cta_btn.visible = false
 	_client_empty_cta_btn.pressed.connect(_on_open_clients_window)
-	add_child(_client_empty_cta_btn)
+	_body.add_child(_client_empty_cta_btn)
 
 	# Drift banner — hidden until a sweep finds at least one mismatched client.
 	_drift_banner = VBoxContainer.new()
@@ -708,20 +756,21 @@ func _build_ui() -> void:
 	drift_btn.tooltip_text = "Re-run Configure on every client whose stored URL doesn't match the current server URL."
 	drift_btn.pressed.connect(_on_reconfigure_mismatched)
 	_drift_banner.add_child(drift_btn)
-	add_child(_drift_banner)
+	_body.add_child(_drift_banner)
 
 	_clients_window = Window.new()
-	_clients_window.title = "Godot AI"
+	_clients_window.title = "Godot AI Settings"
 	## `Vector2i * float` yields Vector2; wrap the result back to Vector2i.
 	_clients_window.min_size = Vector2i(Vector2(560, 460) * EditorInterface.get_editor_scale())
 	_clients_window.visible = false
 	_clients_window.close_requested.connect(_on_clients_window_close_requested)
 	add_child(_clients_window)
 
-	## Two-tab secondary window: Clients (existing per-client rows) and Tools
-	## (domain-exclusion checkboxes for clients that cap total tool count,
-	## like Antigravity at 100). Adding a third tab is one more _build_*_tab
-	## call and a set_tab_title line — no surgery on the rest of the window.
+	## Tabbed secondary window: Clients (per-client rows), Tools (domain-
+	## exclusion checkboxes for clients that cap total tool count, like
+	## Antigravity at 100), and Settings (allow-host LAN opt-in, #507).
+	## Adding another tab is one more _build_*_tab call — no surgery on the
+	## rest of the window.
 	var tabs := TabContainer.new()
 	tabs.anchor_right = 1.0
 	tabs.anchor_bottom = 1.0
@@ -756,8 +805,9 @@ func _build_ui() -> void:
 		_build_client_row(client_id)
 
 	_build_tools_tab(tabs)
+	_build_settings_tab(tabs)
 
-	add_child(HSeparator.new())
+	_body.add_child(HSeparator.new())
 
 	# --- Dev mode toggle (always visible) ---
 	var dev_toggle_row := HBoxContainer.new()
@@ -770,13 +820,13 @@ func _build_ui() -> void:
 	_dev_mode_toggle.button_pressed = _load_dev_mode()
 	_dev_mode_toggle.toggled.connect(_on_dev_mode_toggled)
 	dev_toggle_row.add_child(_dev_mode_toggle)
-	add_child(dev_toggle_row)
+	_body.add_child(dev_toggle_row)
 
 	# --- Log section (dev-only) ---
 	_log_viewer = LogViewerScript.new()
 	_log_viewer.setup(_log_buffer)
 	_log_viewer.logging_enabled_changed.connect(_on_log_logging_enabled_changed)
-	add_child(_log_viewer)
+	_body.add_child(_log_viewer)
 
 	# Apply initial dev-mode visibility
 	_apply_dev_mode_visibility()
@@ -831,6 +881,21 @@ func _build_client_row(client_id: String) -> void:
 	remove_btn.pressed.connect(_on_remove_client.bind(client_id))
 	row.add_child(remove_btn)
 
+	var config_path := ClientConfigurator.config_path(client_id)
+	var open_config_btn := Button.new()
+	_apply_editor_icon(open_config_btn, "ExternalLink", "Open")
+	open_config_btn.custom_minimum_size = Vector2(28, 28)
+	open_config_btn.visible = not config_path.is_empty()
+	open_config_btn.pressed.connect(_on_open_config_file.bind(client_id))
+	row.add_child(open_config_btn)
+
+	var reveal_btn := Button.new()
+	_apply_editor_icon(reveal_btn, "Folder", "Reveal")
+	reveal_btn.custom_minimum_size = Vector2(28, 28)
+	reveal_btn.visible = not config_path.is_empty()
+	reveal_btn.pressed.connect(_on_reveal_config_folder.bind(client_id))
+	row.add_child(reveal_btn)
+
 	_client_grid.add_child(row)
 
 	var manual_panel := VBoxContainer.new()
@@ -861,9 +926,20 @@ func _build_client_row(client_id: String) -> void:
 		"name_label": name_label,
 		"configure_btn": configure_btn,
 		"remove_btn": remove_btn,
+		"open_config_btn": open_config_btn,
+		"reveal_btn": reveal_btn,
+		"config_path": config_path,
 		"manual_panel": manual_panel,
 		"manual_text": manual_text,
 	}
+	_refresh_client_config_file_buttons(client_id)
+
+
+func _apply_editor_icon(button: Button, icon_name: String, fallback_text: String) -> void:
+	if has_theme_icon(icon_name, "EditorIcons"):
+		button.icon = get_theme_icon(icon_name, "EditorIcons")
+	else:
+		button.text = fallback_text
 
 
 # --- Status updates ---
@@ -909,7 +985,12 @@ func _update_status() -> void:
 		status_text = "Incompatible server on port %d" % ClientConfigurator.http_port()
 		status_color = Color.RED
 	elif state == ServerStateScript.FOREIGN_PORT:
-		status_text = "Port %d held by another process" % ClientConfigurator.http_port()
+		## #647: the post-crash probe names the actual conflicting port
+		## (HTTP or WS) — don't blame port 8000 when 9500 is the occupant.
+		var conflict_port: int = int(server_status.get("conflict_port", 0))
+		if conflict_port <= 0:
+			conflict_port = ClientConfigurator.http_port()
+		status_text = "Port %d held by another process" % conflict_port
 		status_color = Color.RED
 	elif state == ServerStateScript.NO_COMMAND:
 		status_text = "No server command found"
@@ -923,16 +1004,37 @@ func _update_status() -> void:
 		status_text = "Disconnected"
 		status_color = Color.RED
 
+	## keep_server_on_exit (#800): the reaper env opt-outs are staged at
+	## spawn, so a mid-session toggle only lands on the next server start —
+	## say so while the running server still carries the old behavior.
+	if connected and ClientConfigurator.keep_server_on_exit() != bool(server_status.get("keep_alive", false)):
+		status_text += " — keep-server-on-exit applies after Restart"
+
 	_update_crash_panel(server_status)
 	_refresh_server_version_label(server_status)
 
 	var changed: bool = connected != _last_connected or status_text != _last_status_text
 	if not changed:
 		return
+	var just_connected: bool = connected and not _last_connected
 	_last_connected = connected
 	_last_status_text = status_text
 	_status_icon.color = status_color
 	_status_label.text = status_text
+	if just_connected:
+		## #739: the server just came up. If the startup uv probe failed
+		## (the reporter's screenshot: green "Server connected" beside a
+		## red "uv: not found" row), the failure was transient — re-probe
+		## instead of pinning the red row for the whole session. Runs
+		## AFTER the label writes above and via the deferred queue, so the
+		## status-machine state is committed before the probe can block.
+		_schedule_uv_reprobe()
+
+	## Status transitions are exactly when "is the launch still settling?"
+	## can change (Starting server… -> connected / Disconnected / terminal
+	## diagnosis), so re-evaluate the Setup section's visibility here (#744).
+	## Cheap: runs only on `changed`, and the uv probe result is cached.
+	_apply_dev_mode_visibility()
 
 	_update_dev_section_buttons()
 
@@ -979,9 +1081,14 @@ func _update_crash_panel(server_status: Dictionary) -> void:
 			and not bool(server_status.get("can_recover_incompatible", false))
 		)
 
+	## #647: the quick picker only moves `godot_ai/http_port`, so hide it
+	## when the diagnosed conflict is on the WebSocket port — the crash
+	## body already points at `godot_ai/ws_port` in Editor Settings.
+	var conflict_port := int(server_status.get("conflict_port", 0))
+	var http_conflict := conflict_port <= 0 or conflict_port == ClientConfigurator.http_port()
 	var port_picker_visible := (
 		state == ServerStateScript.PORT_EXCLUDED
-		or state == ServerStateScript.FOREIGN_PORT
+		or (state == ServerStateScript.FOREIGN_PORT and http_conflict)
 	)
 	_port_picker_panel.visible = port_picker_visible
 	if port_picker_visible:
@@ -1018,15 +1125,44 @@ static func _crash_body_for_state(state: int, server_status: Dictionary = {}) ->
 				return "%s %s" % [message, hint]
 			return "Port %d is occupied by an incompatible server. %s" % [port, hint]
 		ServerStateScript.FOREIGN_PORT:
+			## #647: prefer the lifecycle's diagnosis (it names the right
+			## port — HTTP vs WS — and the Editor Setting to change) over
+			## the generic HTTP-port fallback.
+			var foreign_message := str(server_status.get("message", ""))
+			if not foreign_message.is_empty():
+				return foreign_message
 			return "Another process is already bound to port %d. Pick a free port or stop the other process." % port
 		ServerStateScript.CRASHED:
-			## Both spawn attempts failed on the uvx tier — almost always
-			## means PyPI hasn't propagated this version yet (~10 min after
-			## publish). `_start_server` already tried `--refresh` once, so
-			## the next realistic move is to wait and reload.
+			## #805: a specific crash diagnosis from the lifecycle (e.g. the
+			## flapping-occupant latch) beats the generic launch-mode copy.
+			## Generic crash paths clear the message, so stale text from an
+			## earlier state can't leak in here.
+			var crash_message := str(server_status.get("message", ""))
+			if not crash_message.is_empty():
+				return crash_message
+			## Both spawn attempts failed on the uvx tier — stock releases:
+			## PyPI lag. Local builds (version with +metadata): almost always the
+			## dev venv was not found (unresolved junction/symlink) so uvx tried
+			## a pin that may lack checkout-local extras.
 			if ClientConfigurator.get_server_launch_mode() == "uvx":
 				var version := ClientConfigurator.get_plugin_version()
-				return "The server exited before the WebSocket handshake, even after a `uvx --refresh` retry. If this is a brand-new release, PyPI's index may still be propagating (~10 min). Wait a moment and click Reload Plugin to retry, or check Godot's output log for Python's traceback. Target: godot-ai==%s." % version
+				var pin := ClientConfigurator._pypi_pin_version(version)
+				if pin != version:
+					## `%` binds tighter than `+` in GDScript — format the fully
+					## concatenated string, never the last fragment alone.
+					return (
+						"The server exited before the WebSocket handshake. "
+						+ "Local plugin version is %s (PEP 440 local build metadata) — uvx pins PyPI godot-ai==%s. "
+						+ "If you need checkout-local server code, ensure addons/godot_ai resolves to your "
+						+ "dev tree (symlink/junction) with a `.venv`, or set GODOT_AI_VENV_PYTHON to that "
+						+ "venv's python binary, then Reload Plugin. Log should show 'MCP | using dev venv: ...'."
+					) % [version, pin]
+				return (
+					"The server exited before the WebSocket handshake, even after a `uvx --refresh` retry. "
+					+ "If this is a brand-new release, PyPI's index may still be propagating (~10 min). "
+					+ "Wait a moment and click Reload Plugin to retry, or check Godot's output log for Python's traceback. "
+					+ "Target: godot-ai==%s."
+				) % pin
 			return "The server exited before the WebSocket handshake. Check Godot's output log (bottom panel) for Python's traceback."
 		ServerStateScript.NO_COMMAND:
 			return "No godot-ai server found. Install `uv` via the Setup panel above, or run `pip install godot-ai`."
@@ -1095,7 +1231,7 @@ func _build_mixed_state_banner() -> void:
 	_mixed_state_banner.add_child(_mixed_state_rescan_btn)
 
 	_mixed_state_banner.add_child(HSeparator.new())
-	add_child(_mixed_state_banner)
+	_body.add_child(_mixed_state_banner)
 
 
 func _refresh_mixed_state_banner(force: bool = false) -> void:
@@ -1257,16 +1393,55 @@ func _on_dev_mode_toggled(enabled: bool) -> void:
 
 
 func _apply_dev_mode_visibility() -> void:
+	if _dev_mode_toggle == null:
+		return  ## dock UI not built yet (unit tests, teardown window)
 	var dev := _dev_mode_toggle.button_pressed
 	_dev_section.visible = dev
 	if _log_viewer != null:
 		_log_viewer.visible = dev
+	## Settings tab's allow-host controls are dev-gated too (#507) — same
+	## single source of truth as the sections above.
+	_apply_allow_hosts_dev_gate(dev)
 
 	# Setup section: visible in dev mode, OR in user mode when uv is missing
-	# (so users can install uv from the dock).
+	# (so users can install uv from the dock) — but not while the server
+	# launch is still settling (#744): mid-launch a red "uv: not found" row
+	# is usually a transient probe failure (#739) or irrelevant because the
+	# launch is succeeding via the .venv or system tiers. `_update_status`
+	# re-applies visibility on every status transition, so the section
+	# appears the moment the launch outcome makes it relevant.
 	var is_dev := ClientConfigurator.is_dev_checkout()
 	var uv_missing := not is_dev and ClientConfigurator.check_uv_version().is_empty()
-	_setup_section.visible = dev or uv_missing
+	_setup_section.visible = _setup_section_should_show(dev, uv_missing, _server_launch_pending())
+
+
+## Pure visibility decision for the Setup section (#744). Split out so the
+## truth table is unit-testable without faking the uv probe or a dev
+## checkout: dev toggle always shows the section; a missing uv only shows
+## it once the server launch has settled.
+static func _setup_section_should_show(
+	dev_toggle: bool, uv_missing: bool, launch_pending: bool
+) -> bool:
+	return dev_toggle or (uv_missing and not launch_pending)
+
+
+## True while the server launch outcome is still unknown: not connected,
+## no terminal diagnosis yet, and the startup grace window ("Starting
+## server…" in the status row) is still running. Mirrors the status-label
+## logic in `_update_status` so the Setup section and the amber status
+## text agree on what "still launching" means.
+func _server_launch_pending() -> bool:
+	if _last_connected:
+		return false
+	var server_status: Dictionary = (
+		_plugin.get_server_status()
+		if _plugin != null and _plugin.has_method("get_server_status")
+		else {}
+	)
+	var state: int = int(server_status.get("state", ServerStateScript.UNINITIALIZED))
+	if ServerStateScript.is_terminal_diagnosis(state):
+		return false
+	return Time.get_ticks_msec() < _startup_grace_until_msec
 
 
 # --- Button handlers ---
@@ -1386,7 +1561,7 @@ func _on_restart_stale_server() -> void:
 	_last_rendered_server_text = ""
 	_refresh_server_version_label()
 	if not is_inside_tree():
-		_dispatch_stale_server_restart()
+		await _dispatch_stale_server_restart()
 		_server_restart_in_progress = false
 		_last_rendered_server_text = ""
 		_refresh_server_version_label()
@@ -1396,7 +1571,7 @@ func _on_restart_stale_server() -> void:
 
 func _restart_stale_server_after_feedback() -> void:
 	await get_tree().create_timer(0.15).timeout
-	if not _dispatch_stale_server_restart():
+	if not await _dispatch_stale_server_restart():
 		_server_restart_in_progress = false
 		_last_rendered_server_text = ""
 		_refresh_server_version_label()
@@ -1412,7 +1587,9 @@ func _dispatch_stale_server_restart() -> bool:
 	)
 	if int(status.get("state", ServerStateScript.UNINITIALIZED)) == ServerStateScript.INCOMPATIBLE:
 		if _plugin.has_method("recover_incompatible_server"):
-			return bool(_plugin.recover_incompatible_server())
+			## Coroutine in production (#678): recovery reports success only
+			## after the respawn walk completes and the connection unblocks.
+			return bool(await _plugin.recover_incompatible_server())
 	elif _plugin.has_method("force_restart_server"):
 		_plugin.force_restart_server()
 		return true
@@ -1420,6 +1597,38 @@ func _dispatch_stale_server_restart() -> bool:
 
 
 # --- Setup section ---
+
+## #739: a `uvx --version` probe that failed once at editor startup used
+## to pin "uv: not found" for the whole session — the Install-uv click
+## was the only invalidation path, so the fix users discovered was
+## re-clicking Install on every launch. Re-probe on events that suggest
+## the failure was transient (server-connect transition, manual Refresh).
+## No-op once uv has been found, so this costs nothing in the healthy
+## steady state; when uv is genuinely absent, the re-probe is a fast
+## negative (CliFinder's well-known-dir walk plus one bounded `where`).
+## Runs on the main thread like the initial probe — same wall-clock
+## bound, and the triggering events are rare (once per connect / click).
+##
+## Callers go through _schedule_uv_reprobe() rather than calling this
+## inline: the cache-miss probe shells out (bounded at 3s) on the
+## calling thread, and both call sites sit mid-flow in UI handlers —
+## the connect transition wants its status-label writes committed
+## first, and the Refresh click wants the client sweep dispatched
+## without waiting on the probe. Same deferred convention as
+## _on_install_uv. (The deferred queue still flushes on the main
+## thread, so a worst-case 3s probe delays that frame — acceptable for
+## a rare, bounded event; a worker thread would be the heavier cure.)
+func _schedule_uv_reprobe() -> void:
+	_reprobe_uv_if_negative.call_deferred()
+
+
+func _reprobe_uv_if_negative() -> void:
+	if not ClientConfigurator.uv_probe_negative():
+		return
+	ClientConfigurator.invalidate_uv_detection()
+	_refresh_setup_status()
+	_apply_dev_mode_visibility()
+
 
 func _refresh_setup_status() -> void:
 	if _setup_container == null:
@@ -1486,7 +1695,11 @@ func _refresh_setup_status() -> void:
 	else:
 		_setup_container.add_child(_make_status_row("uv", "not found", Color.RED))
 		var install_btn := Button.new()
-		install_btn.text = "Install uv"
+		install_btn.text = "How to install uv"
+		install_btn.tooltip_text = (
+			"Opens the official uv installation docs. Godot AI deliberately does "
+			+ "not run the installer for you — see _on_install_uv."
+		)
 		install_btn.pressed.connect(_on_install_uv)
 		_setup_container.add_child(install_btn)
 
@@ -1507,16 +1720,11 @@ func _install_mode_tooltip() -> String:
 
 
 func _resolve_plugin_symlink_target() -> String:
-	var addons_path := ProjectSettings.globalize_path("res://addons/godot_ai")
-	var dir := DirAccess.open(addons_path.get_base_dir())
-	if dir == null or not dir.is_link(addons_path):
+	var logical := ProjectSettings.globalize_path("res://addons/godot_ai").rstrip("/").rstrip("\\")
+	var resolved := ClientConfigurator.resolve_addons_realpath()
+	if resolved.is_empty() or resolved == logical:
 		return ""
-	var target := dir.read_link(addons_path)
-	if target.is_empty():
-		return ""
-	if target.is_relative_path():
-		target = addons_path.get_base_dir().path_join(target).simplify_path()
-	return target
+	return resolved
 
 
 static func _compact_uv_version_text(uv_version: String) -> String:
@@ -1669,22 +1877,42 @@ func _connected_status_text() -> String:
 	return "Server connected"
 
 
+## Open uv's official install documentation rather than executing an
+## installer on the user's behalf.
+##
+## This used to shell out to `curl -LsSf https://astral.sh/uv/install.sh | sh`
+## (and the PowerShell `irm … | iex` equivalent). That is arbitrary remote
+## code execution as the editor user, one dock click deep, with no version
+## pin, no checksum, and no signature — while this same plugin verifies its
+## OWN updates with an RSA-4096 signature over a SHA-256 sidecar, pinned to a
+## GitHub host and this repo's release-asset path. Holding a third-party
+## installer to a weaker standard than our own payload is the wrong trade,
+## and pinning a digest here would only cover the bootstrap script, not the
+## uv binary it goes on to fetch.
+##
+## Opening the docs keeps the discovery value of the button (the user still
+## learns uv is missing and how to get it) while leaving the decision to
+## install — and the choice of install method — with the user. Mirrors the
+## dock's existing "Run this manually" fallback for client CLIs.
 func _on_install_uv() -> void:
-	match OS.get_name():
-		"Windows":
-			OS.execute("powershell", ["-ExecutionPolicy", "ByPass", "-c", "irm https://astral.sh/uv/install.ps1 | iex"], [], false)
-		_:
-			OS.execute("bash", ["-c", "curl -LsSf https://astral.sh/uv/install.sh | sh"], [], false)
-	## Drop the cached uvx path AND the cached `uvx --version` so the
-	## next `_refresh_setup_status` finds and reads the freshly-installed
-	## binary instead of returning the pre-install "not found" result.
-	## Routing through the configurator here matters on Windows, where
-	## the CLI-finder cache key is `uvx.exe` — invalidating just `"uvx"`
+	OS.shell_open(UV_INSTALL_DOCS_URL)
+	## Drop the cached uvx path AND the cached `uvx --version` so that once
+	## the user has installed uv (in a terminal, from the docs we just
+	## opened), the dock finds the new binary instead of replaying the
+	## cached "not found" result for the rest of the session.
+	## Routing through the configurator matters on Windows, where the
+	## CLI-finder cache key is `uvx.exe` — invalidating just `"uvx"`
 	## would leave the cache stale and the dock would keep showing
 	## "uv: not found" for the rest of the session.
-	ClientConfigurator.invalidate_uvx_cli_cache()
-	ClientConfigurator.invalidate_uv_version_cache()
-	_refresh_setup_status.call_deferred()
+	ClientConfigurator.invalidate_uv_detection()
+	## Deliberately do NOT refresh here. `OS.shell_open` returns as soon as
+	## the browser is handed the URL, so an immediate refresh would run long
+	## before the user could install anything and would simply re-cache
+	## "not found" — undoing the invalidation above. (The old shell-out was
+	## a blocking `OS.execute`, so refreshing straight after it was correct
+	## then; it stopped being correct when the installer call went away.)
+	## Re-probe when the editor regains focus instead — see _notification.
+	_uv_recheck_pending = true
 
 
 # --- Client section ---
@@ -1733,6 +1961,10 @@ func _dispatch_client_action(client_id: String, action: String) -> void:
 	## `_perform_initial_client_status_refresh` and
 	## `_request_client_status_refresh`.
 	var server_url := ClientConfigurator.http_url()
+	## #691: refresh the env snapshot on main before this worker starts —
+	## configure/remove resolve CLI + config paths off-thread and must not
+	## race a concurrent spawn window's setenv/unsetenv.
+	ClientConfigurator.warm_env_snapshot()
 	var generation := int(_client_action_generations.get(client_id, 0)) + 1
 	_client_action_generations[client_id] = generation
 	var thread := Thread.new()
@@ -1864,6 +2096,9 @@ func _finalize_action_buttons(client_id: String) -> void:
 
 
 func _on_refresh_clients_pressed() -> void:
+	## Explicit user action — also give a failed uv probe another chance
+	## (#739), mirroring how the same click already re-sweeps client CLIs.
+	_schedule_uv_reprobe()
 	_request_client_status_refresh(true)
 
 
@@ -1903,7 +2138,11 @@ func _on_open_clients_window() -> void:
 
 
 func _settings_are_dirty() -> bool:
-	return _tools_pending_excluded != _tools_saved_excluded or _telemetry_pending_enabled != _telemetry_saved_enabled
+	return (
+		_tools_pending_excluded != _tools_saved_excluded
+		or _telemetry_pending_enabled != _telemetry_saved_enabled
+		or _allow_hosts_is_dirty()
+	)
 
 
 func _on_clients_window_close_requested() -> void:
@@ -1990,10 +2229,13 @@ func _build_tools_tab(tabs: TabContainer) -> void:
 	core_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	core_row.add_child(core_label)
 	var core_count := Label.new()
-	core_count.text = "%d tools" % ToolCatalog.CORE_TOOLS.size()
+	core_count.text = "%d tools" % (ToolCatalog.CORE_TOOLS.size() + ToolCatalog.ALWAYS_ON_TOOLS.size())
 	core_count.add_theme_color_override("font_color", COLOR_MUTED)
 	core_row.add_child(core_count)
-	core_row.tooltip_text = ", ".join(ToolCatalog.CORE_TOOLS)
+	core_row.tooltip_text = "%s · always on: %s" % [
+		", ".join(ToolCatalog.CORE_TOOLS),
+		", ".join(ToolCatalog.ALWAYS_ON_TOOLS),
+	]
 	grid.add_child(core_row)
 
 	grid.add_child(HSeparator.new())
@@ -2037,9 +2279,12 @@ func _build_tools_tab(tabs: TabContainer) -> void:
 
 	_tools_close_confirm = ConfirmationDialog.new()
 	_tools_close_confirm.title = "Discard unapplied changes?"
+	## Generic wording: _settings_are_dirty() covers domain toggles, the
+	## telemetry switch, AND the Settings tab's allow-host field (#507) —
+	## the old "checked/unchecked domains" text misled non-domain edits.
 	_tools_close_confirm.dialog_text = (
-		"You've checked/unchecked domains but haven't clicked Apply.\n"
-		+ "Close the window and discard those changes?"
+		"You have unapplied changes in this window.\n"
+		+ "Close it and discard those changes?"
 	)
 	_tools_close_confirm.ok_button_text = "Discard"
 	_tools_close_confirm.confirmed.connect(_on_tools_discard_confirmed)
@@ -2083,8 +2328,11 @@ func _build_tools_domain_row(parent: VBoxContainer, entry: Dictionary) -> void:
 func _reset_tools_pending_from_setting() -> void:
 	## Read the saved setting → pending/saved arrays, then sync checkbox state.
 	## Unknown domain names in the setting (e.g. from an older plugin
-	## version) are silently dropped — matches the Python side's
-	## warn-and-continue behavior when it sees an unknown name.
+	## version) are dropped from the display here (only ids with a checkbox
+	## survive). The startup path is protected separately:
+	## `ClientConfigurator.excluded_domains()` filters unknown names before
+	## they reach `--exclude-domains`, whose `parse_exclude_list` hard-fails
+	## on them.
 	var saved_raw := ClientConfigurator.excluded_domains()
 	var saved := PackedStringArray()
 	if not saved_raw.is_empty():
@@ -2105,6 +2353,9 @@ func _reset_tools_pending_from_setting() -> void:
 	## Also reset telemetry pending state from the persisted setting.
 	if _telemetry_toggle != null:
 		_load_telemetry_setting()
+	## And the Settings tab's allow-host field (#507) — same window-open /
+	## discard-confirm re-sync contract as the tools checkboxes.
+	_reset_allow_hosts_from_setting()
 
 
 func _on_tools_domain_toggled(pressed: bool, domain_id: String) -> void:
@@ -2176,6 +2427,155 @@ func _on_tools_discard_confirmed() -> void:
 		_clients_window.hide()
 
 
+# --- Settings tab (allow-host LAN opt-in, #507) ---
+
+func _build_settings_tab(tabs: TabContainer) -> void:
+	## Tab 3 — settings-style controls that don't fit Clients or Tools.
+	## Currently houses the developer-mode-gated `--allow-host` LAN opt-in.
+	## Rendered once on dock construction, mirroring `_build_tools_tab`;
+	## `_reset_allow_hosts_from_setting()` re-syncs the field each time the
+	## window opens (via `_reset_tools_pending_from_setting`).
+	var settings_tab := VBoxContainer.new()
+	settings_tab.add_theme_constant_override("separation", 8)
+	var settings_margin := _build_margin_container()
+	settings_margin.name = "Settings"
+	settings_margin.add_child(settings_tab)
+	tabs.add_child(settings_margin)
+
+	## Shown in place of the gated controls when developer mode is off —
+	## same gate the dev section uses (see `_apply_dev_mode_visibility`).
+	_allow_hosts_dev_gate_label = Label.new()
+	_allow_hosts_dev_gate_label.text = (
+		"Enable Developer mode (bottom of the dock) to edit remote-access settings."
+	)
+	_allow_hosts_dev_gate_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_allow_hosts_dev_gate_label.add_theme_color_override("font_color", COLOR_MUTED)
+	_allow_hosts_dev_gate_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	settings_tab.add_child(_allow_hosts_dev_gate_label)
+
+	_allow_hosts_section = VBoxContainer.new()
+	_allow_hosts_section.add_theme_constant_override("separation", 6)
+	settings_tab.add_child(_allow_hosts_section)
+
+	_allow_hosts_section.add_child(_make_header("Allow remote hosts (CIDR)"))
+
+	var intro := Label.new()
+	intro.text = (
+		"Comma-separated CIDRs or bare IPs (e.g. 192.168.1.0/24, 10.0.0.5). "
+		+ "When non-empty, the server binds off loopback and accepts MCP "
+		+ "connections from these ranges (--allow-host)."
+	)
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	intro.add_theme_color_override("font_color", COLOR_MUTED)
+	intro.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_allow_hosts_section.add_child(intro)
+
+	## Warning banner — the DNS-rebinding guard is widened to every machine
+	## in the named ranges, so make the user name a network they trust
+	## instead of offering a blanket "expose everything" toggle (#507).
+	var warning := Label.new()
+	warning.text = (
+		"Warning: every machine in these ranges can drive this Godot editor, "
+		+ "and the DNS-rebinding guard's Host allowlist is widened to match. "
+		+ "Only name networks you trust. On untrusted or shared networks, "
+		+ "prefer an SSH tunnel or Tailscale instead of exposing the port."
+	)
+	warning.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	warning.add_theme_color_override("font_color", COLOR_AMBER)
+	warning.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_allow_hosts_section.add_child(warning)
+
+	_allow_hosts_edit = LineEdit.new()
+	_allow_hosts_edit.placeholder_text = "e.g. 192.168.1.0/24, 10.0.0.5 — empty = loopback only"
+	_allow_hosts_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_allow_hosts_edit.text_changed.connect(_on_allow_hosts_text_changed)
+	_allow_hosts_section.add_child(_allow_hosts_edit)
+
+	_allow_hosts_hint = Label.new()
+	_allow_hosts_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_allow_hosts_hint.add_theme_color_override("font_color", Color.RED)
+	_allow_hosts_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_allow_hosts_hint.visible = false
+	_allow_hosts_section.add_child(_allow_hosts_hint)
+
+	_allow_hosts_apply_btn = Button.new()
+	_allow_hosts_apply_btn.text = "Apply and Restart Server"
+	_allow_hosts_apply_btn.tooltip_text = (
+		"Save the allowlist to Editor Settings and reload the plugin so the "
+		+ "server respawns with --allow-host. Clear the field and Apply to "
+		+ "return to loopback-only."
+	)
+	_allow_hosts_apply_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_allow_hosts_apply_btn.pressed.connect(_on_allow_hosts_apply)
+	_allow_hosts_section.add_child(_allow_hosts_apply_btn)
+
+	_reset_allow_hosts_from_setting()
+	## Apply the current dev-mode gate — `_build_ui` runs
+	## `_apply_dev_mode_visibility()` after all tabs are built, but keep this
+	## self-consistent for any future caller that builds the tab alone.
+	_apply_allow_hosts_dev_gate(_dev_mode_toggle != null and _dev_mode_toggle.button_pressed)
+
+
+func _apply_allow_hosts_dev_gate(dev: bool) -> void:
+	if _allow_hosts_section != null:
+		_allow_hosts_section.visible = dev
+	if _allow_hosts_dev_gate_label != null:
+		_allow_hosts_dev_gate_label.visible = not dev
+
+
+func _reset_allow_hosts_from_setting() -> void:
+	_allow_hosts_saved = ClientConfigurator.allow_hosts()
+	if _allow_hosts_edit == null:
+		return
+	_allow_hosts_edit.text = _allow_hosts_saved
+	_refresh_allow_hosts_ui_state()
+
+
+func _allow_hosts_is_dirty() -> bool:
+	if _allow_hosts_edit == null:
+		return false
+	return McpAllowHosts.normalize(_allow_hosts_edit.text) != _allow_hosts_saved
+
+
+func _on_allow_hosts_text_changed(_new_text: String) -> void:
+	_refresh_allow_hosts_ui_state()
+
+
+func _refresh_allow_hosts_ui_state() -> void:
+	if _allow_hosts_edit == null or _allow_hosts_apply_btn == null:
+		return
+	var invalid := McpAllowHosts.invalid_tokens(_allow_hosts_edit.text)
+	if invalid.is_empty():
+		_allow_hosts_hint.visible = false
+	else:
+		## Name the accepted syntax in the hint — matches the server's
+		## `parse_allow_hosts` (CIDR / bare IP, comma-separated).
+		_allow_hosts_hint.text = (
+			"Invalid entries (must be a CIDR like 192.168.1.0/24 or a bare IP, comma-separated): %s"
+			% ", ".join(invalid)
+		)
+		_allow_hosts_hint.visible = true
+	_allow_hosts_apply_btn.disabled = not _allow_hosts_is_dirty() or not invalid.is_empty()
+
+
+func _on_allow_hosts_apply() -> void:
+	if _allow_hosts_edit == null:
+		return
+	var normalized := McpAllowHosts.normalize(_allow_hosts_edit.text)
+	if not McpAllowHosts.invalid_tokens(normalized).is_empty():
+		return
+	var es := EditorInterface.get_editor_settings()
+	if es != null:
+		es.set_setting(McpSettings.SETTING_ALLOW_HOSTS, normalized)
+	_allow_hosts_saved = normalized
+	_allow_hosts_edit.text = normalized
+	_refresh_allow_hosts_ui_state()
+	## Plugin reload respawns the server with the new `--allow-host` flag
+	## (see `plugin.gd::_build_server_flags`). Mirrors the Tools-tab Apply
+	## and port-change flows.
+	_on_reload_plugin()
+
+
 func _refresh_clients_summary() -> void:
 	# Count from cached row status values — `_apply_row_status` is the single
 	# source of truth, and reading cached status avoids re-running
@@ -2221,6 +2621,20 @@ func _show_manual_command_for(client_id: String) -> void:
 		return
 	row["manual_text"].text = cmd
 	row["manual_panel"].visible = true
+	## #680: for rows low in the list the panel materializes below the
+	## visible scroll area and the Configure click looks like a no-op.
+	## Deferred so the just-shown panel has a settled rect to scroll to.
+	_scroll_manual_panel_into_view.call_deferred(row["manual_panel"])
+
+
+func _scroll_manual_panel_into_view(panel: Control) -> void:
+	if panel == null or not panel.is_inside_tree():
+		return
+	var ancestor := panel.get_parent()
+	while ancestor != null and not (ancestor is ScrollContainer):
+		ancestor = ancestor.get_parent()
+	if ancestor != null:
+		(ancestor as ScrollContainer).ensure_control_visible(panel)
 
 
 func _on_copy_manual_command(client_id: String) -> void:
@@ -2228,6 +2642,37 @@ func _on_copy_manual_command(client_id: String) -> void:
 	if row.is_empty():
 		return
 	DisplayServer.clipboard_set(row["manual_text"].text)
+
+
+func _on_open_config_file(client_id: String) -> void:
+	var path := _client_config_path_for_row(client_id)
+	if path.is_empty():
+		return
+	if FileAccess.file_exists(path):
+		OS.shell_open(path)
+		return
+	_reveal_config_folder(path)
+
+
+func _on_reveal_config_folder(client_id: String) -> void:
+	var path := _client_config_path_for_row(client_id)
+	if path.is_empty():
+		return
+	_reveal_config_folder(path)
+
+
+func _client_config_path_for_row(client_id: String) -> String:
+	var row: Dictionary = _client_rows.get(client_id, {})
+	if row.is_empty():
+		return ""
+	return String(row.get("config_path", ""))
+
+
+func _reveal_config_folder(path: String) -> void:
+	var dir := path.get_base_dir()
+	if dir.is_empty():
+		return
+	OS.shell_open(dir)
 
 
 func _refresh_all_client_statuses() -> void:
@@ -2335,7 +2780,7 @@ func _perform_initial_client_status_refresh() -> void:
 		return
 	if _client_rows.is_empty():
 		return
-	if _refresh_state == ClientRefreshStateScript.SHUTTING_DOWN:
+	if ClientRefreshStateScript.is_blocked_for_spawn(_refresh_state):
 		return
 	if _is_self_update_in_progress():
 		return
@@ -2394,6 +2839,10 @@ func _warm_strategy_bytecode() -> void:
 		JsonStrategy.verify_entry(any_client, {}, "")
 	TomlStrategy.format_body(PackedStringArray(), "")
 	CliStrategy.format_args(PackedStringArray(), "", "")
+	## #691: refresh the env snapshot on main before the worker starts, so
+	## its config-path expansions read the snapshot instead of racing a
+	## concurrent spawn window's setenv/unsetenv.
+	ClientConfigurator.warm_env_snapshot()
 
 
 func _begin_client_status_refresh_run() -> int:
@@ -2446,7 +2895,7 @@ func _request_client_status_refresh(force: bool = false) -> bool:
 			_client_status_refresh_pending_force = _client_status_refresh_pending_force or force
 			_refresh_clients_summary()
 			return false
-	if _refresh_state == ClientRefreshStateScript.SHUTTING_DOWN:
+	if ClientRefreshStateScript.is_blocked_for_spawn(_refresh_state):
 		return false
 	if not force and _is_client_status_refresh_in_cooldown():
 		return false
@@ -2682,6 +3131,7 @@ func _apply_row_status(
 	var remove_btn: Button = row["remove_btn"]
 	var name_label: Label = row["name_label"]
 	var base_name := ClientConfigurator.client_display_name(client_id)
+	_refresh_client_config_file_buttons(client_id)
 	match status:
 		Client.Status.CONFIGURED:
 			dot.color = Color.GREEN
@@ -2706,6 +3156,26 @@ func _apply_row_status(
 			configure_btn.text = "Retry"
 			remove_btn.visible = false
 			name_label.text = "%s — %s" % [base_name, error_msg] if not error_msg.is_empty() else base_name
+
+
+func _refresh_client_config_file_buttons(client_id: String) -> void:
+	var row: Dictionary = _client_rows.get(client_id, {})
+	if row.is_empty():
+		return
+	var config_path := String(row.get("config_path", ""))
+	var has_path := not config_path.is_empty()
+	var open_config_btn: Button = row["open_config_btn"]
+	var reveal_btn: Button = row["reveal_btn"]
+	open_config_btn.visible = has_path
+	reveal_btn.visible = has_path
+	open_config_btn.disabled = not has_path
+	reveal_btn.disabled = not has_path
+	if has_path:
+		open_config_btn.tooltip_text = "Open config file:\n%s" % config_path
+		reveal_btn.tooltip_text = "Reveal in folder:\n%s" % config_path.get_base_dir()
+	else:
+		open_config_btn.tooltip_text = ""
+		reveal_btn.tooltip_text = ""
 
 
 # --- Update check & self-update ---

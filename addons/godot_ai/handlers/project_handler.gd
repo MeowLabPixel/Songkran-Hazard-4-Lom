@@ -8,6 +8,68 @@ const ErrorCodes := preload("res://addons/godot_ai/utils/error_codes.gd")
 const NodeHandler := preload("res://addons/godot_ai/handlers/node_handler.gd")
 const RUN_READY_WAIT_SEC := 3.0
 
+## ProjectSettings keys that decide what the engine EXECUTES at project
+## startup. `McpPathValidator._reject_sensitive_write` already refuses direct
+## writes to `res://project.godot`, `res://override.cfg` and `res://.godot/`
+## for exactly this reason — but `set_project_setting` writes that same
+## manifest through the settings API, so without this list the guard is
+## trivially side-steppable:
+##
+##     settings_set key="autoload/Boot" value="*res://../../evil.gd"
+##
+## would land arbitrary code on the next project open, and a `project.godot`
+## diff is easy to miss in review. Autoloads have a validated route of their
+## own (`autoload_handler.add_autoload`, which runs the path through
+## `McpPathValidator`); the rest are refused outright because there is no
+## legitimate agent workflow for repointing the engine's startup execution.
+##
+## Deliberately NARROW. A denylist that over-blocks turns settings_set into a
+## tool agents can't use, so only keys that actually carry code (or a command
+## line) are listed — not their whole section. `application/run/` is an exact
+## entry for `main_scene` precisely because its siblings (`max_fps`,
+## `low_processor_mode`, …) are inert and must stay writable; likewise
+## `application/boot_splash/image` is data, not code, and is NOT blocked.
+##
+## Prefix entries match the key and anything beneath it, and are used only
+## where every key under the prefix is code-bearing. Exact entries match only
+## themselves. Comparison is case-folded — ProjectSettings keys are
+## case-sensitive, but a case variant that Godot would reject is still a
+## clearer error coming from here than from a half-applied save.
+const STARTUP_EXECUTION_KEY_PREFIXES: Array[String] = [
+	"autoload/",      ## every key under it is a script path
+	"editor_plugins/",  ## enabled-plugin list; each entry is loaded as code
+]
+const STARTUP_EXECUTION_KEYS_EXACT: Array[String] = [
+	"application/run/main_scene",           ## the scene the game boots into
+	"editor/script/templates_search_path",  ## where the editor loads templates from
+	"editor/run/main_run_args",             ## command line for the run
+]
+
+
+## Returns "" when `key` may be written via set_project_setting, or a
+## human-readable refusal reason otherwise. Static so it is unit-testable
+## without instancing the handler.
+static func startup_execution_key_refusal(key: String) -> String:
+	var lowered := key.strip_edges().to_lower()
+	for prefix in STARTUP_EXECUTION_KEY_PREFIXES:
+		if lowered.begins_with(prefix):
+			if prefix == "autoload/":
+				return (
+					"Refusing to set '%s' — autoloads run code at project startup. " % key
+					+ "Use autoload_manage(op='add'), which validates the script path."
+				)
+			return (
+				"Refusing to set '%s' — keys under '%s' are loaded as code " % [key, prefix]
+				+ "at project startup."
+			)
+	for exact in STARTUP_EXECUTION_KEYS_EXACT:
+		if lowered == exact:
+			return (
+				"Refusing to set '%s' — this key controls what the engine loads " % key
+				+ "or executes at project startup."
+			)
+	return ""
+
 var _connection: McpConnection
 var _debugger_plugin
 var _editor_log_buffer
@@ -44,6 +106,13 @@ func set_project_setting(params: Dictionary) -> Dictionary:
 
 	if not params.has("value"):
 		return ErrorCodes.make(ErrorCodes.MISSING_REQUIRED_PARAM, "Missing required param: value")
+
+	## Refuse the startup-execution surface before touching ProjectSettings —
+	## see STARTUP_EXECUTION_KEY_PREFIXES for why this guard exists here and
+	## not only in McpPathValidator.
+	var refusal := startup_execution_key_refusal(key)
+	if not refusal.is_empty():
+		return ErrorCodes.make(ErrorCodes.VALUE_OUT_OF_RANGE, refusal)
 
 	var value = params.get("value")
 	var had_setting := ProjectSettings.has_setting(key)
@@ -99,6 +168,12 @@ func run_project(params: Dictionary) -> Dictionary:
 		var custom_scene: String = params.get("scene", "")
 		if custom_scene.is_empty():
 			validation_error = ErrorCodes.make(ErrorCodes.MISSING_REQUIRED_PARAM, "Missing required param: scene (required when mode='custom')")
+		else:
+			## play_custom_scene() was the last path-taking op in the plugin
+			## with no containment check; every sibling that accepts a scene
+			## path validates it (scene_handler.open_scene,
+			## node_handler.create_node's scene_path).
+			validation_error = McpPathValidator.loadable_error(custom_scene, "scene")
 	elif mode != "main" and mode != "current":
 		validation_error = ErrorCodes.make(ErrorCodes.VALUE_OUT_OF_RANGE, "Invalid mode '%s' — use 'main', 'current', or 'custom'" % mode)
 	if validation_error != null:
@@ -153,7 +228,7 @@ func run_project(params: Dictionary) -> Dictionary:
 	)
 	var request_id: String = params.get("_request_id", "")
 	if _connection != null and _debugger_plugin != null and not request_id.is_empty():
-		_finish_run_project_deferred(request_id, base_data)
+		_finish_run_project_deferred(request_id, base_data, _connection, _debugger_plugin)
 		return McpDispatcher.DEFERRED_RESPONSE
 
 	return _run_project_current_liveness_response(base_data)
@@ -167,7 +242,7 @@ func _game_helper_autoload_expected() -> bool:
 	return ProjectSettings.has_setting("autoload/_mcp_game_helper")
 
 
-func _run_project_base_data(
+static func _run_project_base_data(
 	mode: String,
 	scene: String,
 	autosave: bool,
@@ -194,21 +269,30 @@ func _run_project_current_liveness_response(base_data: Dictionary) -> Dictionary
 	return _run_project_response(base_data, _run_project_liveness_decision(status, errors_info))
 
 
-func _finish_run_project_deferred(request_id: String, base_data: Dictionary) -> void:
-	var tree := _connection.get_tree()
+## `static` is load-bearing (#712, same rationale as the script/filesystem
+## handlers and editor_handler._do_reload_plugin): this coroutine awaits
+## across frames, and a plugin reload frees this RefCounted handler
+## mid-await — resuming an instance coroutine on a freed object errors.
+## `connection` and `debugger_plugin` are parameterized explicitly and
+## re-validated after every await; the response is dropped silently when
+## either died (the server's command timeout surfaces the failure).
+static func _finish_run_project_deferred(
+	request_id: String, base_data: Dictionary, connection, debugger_plugin
+) -> void:
+	var tree: SceneTree = connection.get_tree()
 	while true:
 		await tree.process_frame
-		if not is_instance_valid(_connection):
+		if not is_instance_valid(connection) or not is_instance_valid(debugger_plugin):
 			return
-		var pre_status: Dictionary = _debugger_plugin.get_game_status(-1, RUN_READY_WAIT_SEC)
+		var pre_status: Dictionary = debugger_plugin.get_game_status(-1, RUN_READY_WAIT_SEC)
 		if (
 			not EditorInterface.is_playing_scene()
 			and int(pre_status.get("elapsed_msec", 0)) > 100
 			and str(pre_status.get("status", "stopped")) == "launching"
 		):
-			_debugger_plugin.end_game_run()
-		var status: Dictionary = _debugger_plugin.get_game_status(-1, RUN_READY_WAIT_SEC)
-		var errors_info: Dictionary = _debugger_plugin.recent_editor_errors_since(int(status.get("editor_log_cursor", 0)))
+			debugger_plugin.end_game_run()
+		var status: Dictionary = debugger_plugin.get_game_status(-1, RUN_READY_WAIT_SEC)
+		var errors_info: Dictionary = debugger_plugin.recent_editor_errors_since(int(status.get("editor_log_cursor", 0)))
 		var decision := _run_project_liveness_decision(status, errors_info)
 		if not bool(decision.get("resolve", false)):
 			continue
@@ -218,13 +302,13 @@ func _finish_run_project_deferred(request_id: String, base_data: Dictionary) -> 
 		## response reports them instead of leaving them to a later
 		## logs_read. Rebuilding the decision with strictly-more errors can
 		## only keep it resolved (errors never un-resolve a decision).
-		errors_info = _debugger_plugin.recent_editor_errors_since(int(status.get("editor_log_cursor", 0)), true)
+		errors_info = debugger_plugin.recent_editor_errors_since(int(status.get("editor_log_cursor", 0)), true)
 		decision = _run_project_liveness_decision(status, errors_info)
-		_connection.send_deferred_response(request_id, _run_project_response(base_data, decision))
+		connection.send_deferred_response(request_id, _run_project_response(base_data, decision))
 		return
 
 
-func _run_project_response(base_data: Dictionary, decision: Dictionary) -> Dictionary:
+static func _run_project_response(base_data: Dictionary, decision: Dictionary) -> Dictionary:
 	var data := base_data.duplicate(true)
 	var game_status: Dictionary = decision.get("game_status", {})
 	data["game_status"] = game_status
@@ -242,7 +326,7 @@ func _run_project_response(base_data: Dictionary, decision: Dictionary) -> Dicti
 	return {"data": data}
 
 
-func _run_project_already_running_message(decision: Dictionary) -> String:
+static func _run_project_already_running_message(decision: Dictionary) -> String:
 	var state := str(decision.get("liveness_status", "unknown"))
 	match state:
 		"live":
@@ -278,12 +362,26 @@ func _run_project_already_running_message(decision: Dictionary) -> String:
 			return "Project was already running; current liveness status is %s." % state
 
 
-func _run_project_liveness_decision(status: Dictionary, errors_info: Dictionary = {}) -> Dictionary:
+## Static (with the rest of the deferred-finisher chain) so the #712
+## load-bearing-static coroutines above can call it after their owner
+## handler was freed. Uses no instance state.
+static func _run_project_liveness_decision(status: Dictionary, errors_info: Dictionary = {}) -> Dictionary:
 	var enriched_status := McpDebuggerPlugin.with_liveness_flags(status)
 	var state := str(status.get("status", "stopped"))
 	var recent_errors: Array = errors_info.get("errors", [])
 	var errors_scope := str(errors_info.get("scope", "none"))
 	var truncated := bool(errors_info.get("truncated", false))
+	## Clear errors that predate this run's window — they don't belong in
+	## a successful launch response and only add noise. They remain
+	## reachable via logs_read(source='editor') and the retained buffer so
+	## failed-run debugging is unaffected.
+	## #635 tradeoff: a genuine in-run error whose Errors-tab row carries
+	## an empty or byte-identical time text can be misclassified as
+	## retained_recent and will be dropped here. Still reachable via
+	## logs_read.
+	if state == "live" and errors_scope == "retained_recent":
+		recent_errors = []
+		errors_scope = "none"
 	var correlated_error := not recent_errors.is_empty() and errors_scope == "run"
 	var elapsed_msec := int(status.get("elapsed_msec", 0))
 	var ready_wait_msec := int(status.get("ready_wait_msec", int(RUN_READY_WAIT_SEC * 1000.0)))
@@ -359,7 +457,7 @@ func _run_project_liveness_decision(status: Dictionary, errors_info: Dictionary 
 	return decision
 
 
-func _format_editor_error_summary(entry: Dictionary) -> String:
+static func _format_editor_error_summary(entry: Dictionary) -> String:
 	return McpSurfacedErrorTracker.format_editor_error_summary(entry)
 
 
@@ -388,7 +486,7 @@ func stop_project(params: Dictionary) -> Dictionary:
 	# the server poll for the event. Issue #29.
 	var request_id: String = params.get("_request_id", "")
 	if _connection != null and not request_id.is_empty():
-		_finish_stop_project_deferred(request_id)
+		_finish_stop_project_deferred(request_id, _connection)
 		return McpDispatcher.DEFERRED_RESPONSE
 
 	# Fallback for contexts without a connection (e.g. batch_execute via
@@ -403,18 +501,19 @@ func stop_project(params: Dictionary) -> Dictionary:
 	}
 
 
-func _finish_stop_project_deferred(request_id: String) -> void:
-	# Wait two frames so Godot can tick the stop-play state change. After this
-	# is_playing_scene() reflects truth and get_readiness() is authoritative.
-	# If the plugin tears down (_exit_tree frees _connection) during the await,
-	# is_instance_valid() goes false and we drop the response silently — the
-	# server's 5s request timeout will surface the failure to the caller.
-	var tree := _connection.get_tree()
+# Wait two frames so Godot can tick the stop-play state change. After this
+# is_playing_scene() reflects truth and get_readiness() is authoritative.
+# If the plugin tears down (_exit_tree frees _connection) during the await,
+# is_instance_valid() goes false and we drop the response silently — the
+# server's 5s request timeout will surface the failure to the caller.
+# `static` is load-bearing (#712): see _finish_run_project_deferred.
+static func _finish_stop_project_deferred(request_id: String, connection) -> void:
+	var tree: SceneTree = connection.get_tree()
 	await tree.process_frame
 	await tree.process_frame
-	if not is_instance_valid(_connection):
+	if not is_instance_valid(connection):
 		return
-	_connection.send_deferred_response(request_id, {
+	connection.send_deferred_response(request_id, {
 		"data": {
 			"stopped": true,
 			"was_running": true,
@@ -435,7 +534,9 @@ func search_filesystem(params: Dictionary) -> Dictionary:
 
 	var efs := EditorInterface.get_resource_filesystem()
 	if efs == null:
-		return ErrorCodes.make(ErrorCodes.EDITOR_NOT_READY, "EditorFileSystem not available")
+		return ErrorCodes.make_not_ready(
+			ErrorCodes.SUB_EDITOR_UNAVAILABLE,
+			"EditorFileSystem not available", false)
 
 	var results: Array[Dictionary] = []
 	_scan_directory(efs.get_filesystem(), name_filter, type_filter, path_filter, results)

@@ -24,10 +24,12 @@ const _SUPPORTED_SUFFIXES := [".tres", ".material", ".res"]
 
 
 var _undo_redo: EditorUndoRedoManager
+var _connection: McpConnection
 
 
-func _init(undo_redo: EditorUndoRedoManager) -> void:
+func _init(undo_redo: EditorUndoRedoManager, connection: McpConnection = null) -> void:
 	_undo_redo = undo_redo
+	_connection = connection
 
 
 # ============================================================================
@@ -85,7 +87,7 @@ func create_material(params: Dictionary) -> Dictionary:
 			"Failed to create directory: %s (error %d)" % [dir_path, mkdir_err]
 		)
 
-	var save_err := ResourceSaver.save(mat, path)
+	var save_err := McpResourceIO.guarded_save(mat, path, _connection)
 	if save_err != OK:
 		return ErrorCodes.make(
 			ErrorCodes.INTERNAL_ERROR,
@@ -306,7 +308,9 @@ func list_materials(params: Dictionary) -> Dictionary:
 
 	var efs := EditorInterface.get_resource_filesystem()
 	if efs == null:
-		return ErrorCodes.make(ErrorCodes.EDITOR_NOT_READY, "EditorFileSystem not available")
+		return ErrorCodes.make_not_ready(
+			ErrorCodes.SUB_EDITOR_UNAVAILABLE,
+			"EditorFileSystem not available", false)
 
 	var results: Array[Dictionary] = []
 	var start_dir := efs.get_filesystem_path(root)
@@ -469,15 +473,27 @@ func apply_to_node(params: Dictionary) -> Dictionary:
 
 	var save_to: String = params.get("save_to", "")
 	var saved := false
+	var overwritten := false
 	if not save_to.is_empty():
 		var save_err_validation := _validate_material_path(save_to, "save_to", true)
 		if save_err_validation != null:
 			return save_err_validation
+		# Same clobber guard as create_material/apply_preset: agents reuse
+		# names like res://materials/metal.tres, and a silent save here
+		# destroys a hand-authored file that undo can't restore (undo only
+		# reverts the node's slot assignment, not file contents). See #685.
+		var existed_before := FileAccess.file_exists(save_to)
+		if existed_before and not params.get("overwrite", false):
+			return ErrorCodes.make(
+				ErrorCodes.INVALID_PARAMS,
+				"Material already exists at %s (pass overwrite=true to replace)" % save_to
+			)
+		overwritten = existed_before
 		var dir_path := save_to.get_base_dir()
 		var mkdir_err := DirAccess.make_dir_recursive_absolute(dir_path)
 		if mkdir_err != OK and mkdir_err != ERR_ALREADY_EXISTS:
 			return ErrorCodes.make(ErrorCodes.INTERNAL_ERROR, "Failed to create directory: %s" % dir_path)
-		var save_err := ResourceSaver.save(mat, save_to)
+		var save_err := McpResourceIO.guarded_save(mat, save_to, _connection)
 		if save_err != OK:
 			return ErrorCodes.make(ErrorCodes.INTERNAL_ERROR, "Failed to save material to %s (error %d)" % [save_to, save_err])
 		var efs := EditorInterface.get_resource_filesystem()
@@ -509,6 +525,7 @@ func apply_to_node(params: Dictionary) -> Dictionary:
 			"applied_params": applied,
 			"material_created": true,
 			"saved_to": save_to if saved else "",
+			"overwritten": overwritten,
 			"undoable": true,
 		}
 	}
@@ -563,17 +580,19 @@ func apply_preset(params: Dictionary) -> Dictionary:
 			inline_result.data["reason"] = "Inline material assigned to node"
 		return inline_result
 
-	# Save-to-disk path.
+	# Save-to-disk path. Validate the path BEFORE the exists/overwrite
+	# check, matching create_material's order — an invalid path should
+	# always be reported as invalid, not as an overwrite conflict.
+	var path_err := _validate_material_path(path, "path", true)
+	if path_err != null:
+		return path_err
+
 	var existed_before := FileAccess.file_exists(path)
 	if existed_before and not params.get("overwrite", false):
 		return ErrorCodes.make(
 			ErrorCodes.INVALID_PARAMS,
 			"Material already exists at %s (pass overwrite=true to replace)" % path
 		)
-
-	var path_err := _validate_material_path(path, "path", true)
-	if path_err != null:
-		return path_err
 
 	var mat := _instantiate_material(type_str)
 	for prop_name in preset_params:
@@ -586,7 +605,7 @@ func apply_preset(params: Dictionary) -> Dictionary:
 	if mkdir_err != OK and mkdir_err != ERR_ALREADY_EXISTS:
 		return ErrorCodes.make(ErrorCodes.INTERNAL_ERROR, "Failed to create directory: %s" % dir_path)
 
-	var save_err := ResourceSaver.save(mat, path)
+	var save_err := McpResourceIO.guarded_save(mat, path, _connection)
 	if save_err != OK:
 		return ErrorCodes.make(ErrorCodes.INTERNAL_ERROR, "Failed to save material: %s" % path)
 
@@ -635,17 +654,19 @@ func apply_preset(params: Dictionary) -> Dictionary:
 func _apply_param(mat_path: String, property: String, value: Variant, _is_shader: bool) -> void:
 	var mat: Material = ResourceLoader.load(mat_path)
 	if mat == null:
+		push_warning("MCP: Failed to load material for undo/redo: %s" % mat_path)
 		return
 	mat.set(property, value)
-	ResourceSaver.save(mat, mat_path)
+	McpResourceIO.guarded_save(mat, mat_path, _connection)
 
 
 func _apply_shader_param(mat_path: String, param_name: String, value: Variant) -> void:
 	var mat: Material = ResourceLoader.load(mat_path)
 	if mat == null or not (mat is ShaderMaterial):
+		push_warning("MCP: Failed to load shader material for undo/redo: %s" % mat_path)
 		return
 	(mat as ShaderMaterial).set_shader_parameter(param_name, value)
-	ResourceSaver.save(mat, mat_path)
+	McpResourceIO.guarded_save(mat, mat_path, _connection)
 
 
 # ============================================================================

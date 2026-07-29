@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://jait13chvh0x"
+path="res://.godot/imported/watergun_shotgun_shoot_3.wav-c4ce599afc088a7f6c5f918c22e2dd33.sample"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_3.wav"
+dest_files=["res://.godot/imported/watergun_shotgun_shoot_3.wav-c4ce599afc088a7f6c5f918c22e2dd33.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

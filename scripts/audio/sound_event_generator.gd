@@ -56,17 +56,17 @@ func generate_all_events() -> void:
 		var type = "normal"
 		
 		# Determine if suffix stripping is appropriate (does the base name exist in raw_basenames?)
-		var check_alternative_add = event_name.replace("_Add_Alternative", "").replace("_Alternative_Add", "")
-		var check_add = event_name.replace("_Add", "")
-		var check_alternative = event_name.replace("_Alternative", "")
+		var check_alternative_add = event_name.replace("_Add_Alternative", "").replace("_Alternative_Add", "").replace("_add_alternative", "").replace("_alternative_add", "")
+		var check_add = event_name.replace("_Add", "").replace("_add", "")
+		var check_alternative = event_name.replace("_Alternative", "").replace("_alternative", "")
 		
-		if ("_Add_Alternative" in event_name or "_Alternative_Add" in event_name) and raw_basenames.has(check_alternative_add):
+		if ("_Add_Alternative" in event_name or "_Alternative_Add" in event_name or "_add_alternative" in event_name or "_alternative_add" in event_name) and raw_basenames.has(check_alternative_add):
 			event_name = check_alternative_add
 			type = "alternative_add"
-		elif "_Add" in event_name and raw_basenames.has(check_add):
+		elif ("_Add" in event_name or "_add" in event_name) and raw_basenames.has(check_add):
 			event_name = check_add
 			type = "add"
-		elif "_Alternative" in event_name and raw_basenames.has(check_alternative):
+		elif ("_Alternative" in event_name or "_alternative" in event_name) and raw_basenames.has(check_alternative):
 			event_name = check_alternative
 			type = "alternative"
 		
@@ -166,9 +166,8 @@ func generate_all_events() -> void:
 				default_max = 15.0 if is_player_footstep else 10.0
 				default_unit = 5.0 if is_player_footstep else 3.0
 				
-			# If newly created, or if using old/inherited defaults, update to category defaults
-			var is_old_or_class_default = (event.max_distance == 30.0 or event.max_distance == 5.0 or event.max_distance == 10.0) and (event.unit_size == 3.0 or event.unit_size == 1.0 or event.unit_size == 2.0 or event.unit_size == 5.0)
-			if is_new or is_old_or_class_default:
+			# Set attenuation defaults only for newly created resources
+			if is_new:
 				event.max_distance = default_max
 				event.unit_size = default_unit
 				
@@ -259,14 +258,7 @@ func generate_all_events() -> void:
 			for filepath in grp.alternative_adds:
 				var s = load(filepath)
 				if s: event.alternative_parallel_streams.append(s)
-				
-		# Disable pitch randomness if the event has multiple variations (files or regions)
-		if event.use_regions:
-			if event.regions.size() > 1:
-				event.pitch_range = Vector2(1.0, 1.0)
-		else:
-			if grp.normals.size() > 1:
-				event.pitch_range = Vector2(1.0, 1.0)
+
 
 		# Save resource
 		var err = ResourceSaver.save(event, save_path)

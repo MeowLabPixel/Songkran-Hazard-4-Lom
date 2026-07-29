@@ -6,7 +6,6 @@ func _init() -> void:
 	id = "kilo_code"
 	display_name = "Kilo Code"
 	config_type = "json"
-	doc_url = "https://kilocode.ai/docs/features/mcp/using-mcp-in-kilo-code"
 	path_template = {
 		"darwin": "~/Library/Application Support/Code/User/globalStorage/kilocode.kilo-code/settings/mcp_settings.json",
 		"windows": "$APPDATA/Code/User/globalStorage/kilocode.kilo-code/settings/mcp_settings.json",
@@ -21,4 +20,3 @@ func _init() -> void:
 	## entry off, or auto-approved specific tools). Seed on first Configure
 	## but preserve across reconfigure — see `entry_initial_fields` in `_base.gd`.
 	entry_initial_fields = {"disabled": false, "alwaysAllow": []}
-	detect_paths = PackedStringArray(path_template.values())

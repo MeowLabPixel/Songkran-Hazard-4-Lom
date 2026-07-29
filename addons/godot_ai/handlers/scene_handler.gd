@@ -16,13 +16,39 @@ func _init(connection: McpConnection = null) -> void:
 
 func get_scene_tree(params: Dictionary) -> Dictionary:
 	var max_depth: int = params.get("depth", 10)
+	var offset: int = maxi(0, int(params.get("offset", 0)))
+	# limit <= 0 means "no limit" (the hierarchy resource reads the whole tree);
+	# the scene_get_hierarchy tool passes an explicit positive limit. Paginating
+	# here — rather than walking + serializing the full tree and slicing on the
+	# Python side — means only the requested window builds node dicts and clean
+	# scene paths, and only the window crosses the WebSocket.
+	var limit: int = int(params.get("limit", 0))
 	var scene_root := EditorInterface.get_edited_scene_root()
 	if scene_root == null:
-		return {"data": {"nodes": [], "message": "No scene open"}}
+		return {"data": {
+			"nodes": [],
+			"total_count": 0,
+			"offset": offset,
+			"limit": limit,
+			"has_more": false,
+			"message": "No scene open",
+		}}
 
 	var nodes: Array[Dictionary] = []
-	_walk_tree(scene_root, nodes, 0, max_depth, scene_root)
-	return {"data": {"nodes": nodes, "total_count": nodes.size()}}
+	# index_ref[0] is the running DFS index shared across the recursion (Arrays
+	# pass by reference in GDScript). The walk still visits every node to get an
+	# accurate total_count, but only materializes those inside the window.
+	var index_ref: Array[int] = [0]
+	# _walk_tree self-seeds the root's path for full reads; pass "" explicitly.
+	_walk_tree(scene_root, nodes, 0, max_depth, scene_root, offset, limit, index_ref, "")
+	var total: int = index_ref[0]
+	return {"data": {
+		"nodes": nodes,
+		"total_count": total,
+		"offset": offset,
+		"limit": limit,
+		"has_more": limit > 0 and offset + limit < total,
+	}}
 
 
 func get_open_scenes(_params: Dictionary) -> Dictionary:
@@ -118,14 +144,11 @@ func create_scene(params: Dictionary) -> Dictionary:
 		root_name = path.get_file().get_basename()
 	root.name = root_name
 
-	var packed := PackedScene.new()
-	packed.pack(root)
-	root.free()
-
 	if _connection:
 		_connection.pause_processing = true
-	var err := ResourceSaver.save(packed, path)
-	EditorInterface.open_scene_from_path(path)
+	var err := _pack_and_save_with_uid(root, path)
+	if err == OK:
+		EditorInterface.open_scene_from_path(path)
 	if _connection:
 		_connection.pause_processing = false
 
@@ -141,6 +164,29 @@ func create_scene(params: Dictionary) -> Dictionary:
 			"reason": "Scene creation involves file system operations",
 		}
 	}
+
+
+## Pack `root` and save it to `path`, embedding a fresh uid or preserving the
+## one `path` already had — the exact save sequence `create_scene` runs,
+## minus the `pause_processing` guard (the caller owns that, since it also
+## needs to bracket `open_scene_from_path`) and minus opening the scene
+## (switching the editor's active scene isn't safe inside the shared test
+## runner, so tests call this directly instead of going through
+## `create_scene` end-to-end). Frees `root`. Returns `OK`, or the first
+## `Error` encountered.
+func _pack_and_save_with_uid(root: Node, path: String) -> Error:
+	var packed := PackedScene.new()
+	packed.pack(root)
+	root.free()
+
+	# Captured BEFORE the save below overwrites the file — see
+	# McpResourceIO.ensure_uid's doc comment.
+	var prior_uid := ResourceLoader.get_resource_uid(path) if FileAccess.file_exists(path) else ResourceUID.INVALID_ID
+
+	var err := ResourceSaver.save(packed, path)
+	if err == OK:
+		err = McpResourceIO.ensure_uid(path, prior_uid)
+	return err
 
 
 ## How long open_scene waits for the editor to actually switch to the
@@ -337,14 +383,38 @@ func _save_current_scene_as(path: String) -> void:
 	EditorInterface.save_scene_as(path)
 
 
-func _walk_tree(node: Node, out: Array[Dictionary], depth: int, max_depth: int, scene_root: Node) -> void:
+func _walk_tree(node: Node, out: Array[Dictionary], depth: int, max_depth: int, scene_root: Node, offset: int, limit: int, index_ref: Array[int], node_path: String) -> void:
 	if depth > max_depth:
 		return
-	out.append({
-		"name": node.name,
-		"type": node.get_class(),
-		"path": McpScenePath.from_node(node, scene_root),
-		"children_count": node.get_child_count(),
-	})
+	var idx: int = index_ref[0]
+	index_ref[0] = idx + 1
+	# Materialize only nodes inside the [offset, offset+limit) window. Outside
+	# it we still recurse (to count total_count) but skip the per-node dict.
+	#
+	# Path build strategy depends on the read shape (identical output either way):
+	#   * A whole-tree read (offset == 0 and limit <= 0 — the resource-style read
+	#     backing godot://scene/hierarchy) threads the parent's clean path down the
+	#     DFS: each node's path is one O(1) concat reusing the descent, instead of
+	#     McpScenePath.from_node's two native walks back up (is_ancestor_of +
+	#     get_path_to). Benchmarked ~1.8x faster on a ~1.5k-node tree, up to ~5x on
+	#     deep chains.
+	#   * Any windowed read (limit > 0, or an offset > 0 skip) keeps from_node for
+	#     just the emitted nodes: threading would concatenate a path for every node
+	#     visited for total_count, which benchmarks ~20% slower for a small window.
+	#
+	# `node_path` is self-seeded at the scene root below, so a caller cannot leave
+	# a full read unseeded (it has no default — pass "" for windowed reads).
+	var incremental := limit <= 0 and offset == 0
+	if incremental and node == scene_root:
+		node_path = "/" + String(scene_root.name)
+	var in_window := idx >= offset and (limit <= 0 or idx < offset + limit)
+	if in_window:
+		out.append({
+			"name": node.name,
+			"type": node.get_class(),
+			"path": node_path if incremental else McpScenePath.from_node(node, scene_root),
+			"children_count": node.get_child_count(),
+		})
 	for child in node.get_children():
-		_walk_tree(child, out, depth + 1, max_depth, scene_root)
+		var child_path := (node_path + "/" + String(child.name)) if incremental else ""
+		_walk_tree(child, out, depth + 1, max_depth, scene_root, offset, limit, index_ref, child_path)

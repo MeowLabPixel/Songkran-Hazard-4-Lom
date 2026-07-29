@@ -28,12 +28,14 @@ extends Resource
 @export_group("Layers")
 @export var parallel_streams: Array[AudioStream] = []
 @export var parallel_regions: Array[Vector2] = [] # x = start_time, y = duration
+@export_range(-80.0, 12.0) var parallel_volume_db: float = 0.0
 
 @export_group("Alternative")
 @export var alternative_streams: Array[AudioStream] = []
 @export var alternative_parallel_streams: Array[AudioStream] = []
 @export var alternative_regions: Array[Vector2] = [] # x = start_time, y = duration
 @export var alternative_parallel_regions: Array[Vector2] = [] # x = start_time, y = duration
+@export_range(-80.0, 12.0) var alternative_volume_db: float = 0.0
 
 var _last_played_index: int = -1
 

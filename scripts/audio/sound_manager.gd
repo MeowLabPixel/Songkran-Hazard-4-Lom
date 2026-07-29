@@ -24,10 +24,27 @@ extends Node
 	set(val):
 		voiceline_volume = val
 		_set_bus_vol("Voiceline", val)
+@export_range(-80.0, 12.0) var parallel_layer_volume_db: float = 0.0
+@export_range(-80.0, 12.0) var alternative_layer_volume_db: float = 0.0
 
 @export_group("Muffle Settings")
+@export var enable_muffle: bool = true:
+	set(val):
+		enable_muffle = val
+		if not val:
+			_disable_all_muffle()
 @export var default_muffle_cutoff: float = 500.0
 @export var default_muffle_duration: float = 0.3
+
+@export_group("Spatial Audio Controls")
+@export var enable_spatial_effects: bool = true:
+	set(val):
+		enable_spatial_effects = val
+		_update_spatial_effects()
+@export var enable_doppler: bool = false:
+	set(val):
+		enable_doppler = val
+		_update_doppler_settings()
 
 @export_group("Music Transition Controls")
 @export var music_bpm: float = 112.0
@@ -47,6 +64,7 @@ extends Node
 			generate_resources_now = false
 
 @export_group("Sound Event Bank")
+@export var enable_pitch_randomization: bool = true
 @export var sound_bank: Array[SoundEvent] = []
 
 @export_group("Voiceline Control Settings")
@@ -387,7 +405,9 @@ func play_2d(event_name: String, start_offset: float = 0.0, duration: float = -1
 			parallel_player = AudioStreamPlayer2D.new()
 			add_child(parallel_player)
 			parallel_player.bus = target_bus
-			parallel_player.volume_db = event.volume_db + random_vol
+			var use_alt_layer_vol = alternative if event_name != "watergun_hit" else false
+			var layer_vol_offset = (alternative_layer_volume_db + event.alternative_volume_db) if use_alt_layer_vol else (parallel_layer_volume_db + event.parallel_volume_db)
+			parallel_player.volume_db = event.volume_db + random_vol + layer_vol_offset
 			parallel_player.pitch_scale = random_pitch
 			parallel_player.stream = event.stream # Assuming same master file
 			parallel_player.play(preg.x)
@@ -401,7 +421,9 @@ func play_2d(event_name: String, start_offset: float = 0.0, duration: float = -1
 			parallel_player = AudioStreamPlayer2D.new()
 			add_child(parallel_player)
 			parallel_player.bus = target_bus
-			parallel_player.volume_db = event.volume_db + random_vol
+			var use_alt_layer_vol = alternative if event_name != "watergun_hit" else false
+			var layer_vol_offset = (alternative_layer_volume_db + event.alternative_volume_db) if use_alt_layer_vol else (parallel_layer_volume_db + event.parallel_volume_db)
+			parallel_player.volume_db = event.volume_db + random_vol + layer_vol_offset
 			parallel_player.pitch_scale = random_pitch
 			parallel_player.stream = event.alternative_parallel_streams[idx] if alternative else event.parallel_streams[idx]
 			parallel_player.play(start_offset)
@@ -433,7 +455,8 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 		
 	_check_polyphony(event)
 	
-	var idx = event.get_next_variation_index(alternative)
+	var lookup_alt = false if event_name == "watergun_hit" else alternative
+	var idx = event.get_next_variation_index(lookup_alt)
 	if idx == -1:
 		push_warning("[SoundManager] SoundEvent '%s' has no streams/regions configured." % event_name)
 		return null
@@ -454,7 +477,7 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 	var random_vol = randf_range(-event.volume_randomness_db, event.volume_randomness_db)
 	player.volume_db = event.volume_db + random_vol
 	
-	var random_pitch = randf_range(event.pitch_range.x, event.pitch_range.y) * pitch_multiplier
+	var random_pitch = (randf_range(event.pitch_range.x, event.pitch_range.y) * pitch_multiplier) if enable_pitch_randomization else 1.0
 	player.pitch_scale = random_pitch
 	
 	# Attenuation ranges
@@ -472,14 +495,14 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 		event_name == "leon_footstep" or 
 		event_name.begins_with("vo_leon_")
 	)
-	if is_player_sound:
+	if not enable_spatial_effects or is_player_sound:
 		player.panning_strength = 0.0
 		player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
 	else:
 		player.panning_strength = 0.85
 		player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 		
-	player.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP
+	player.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP if enable_doppler else AudioStreamPlayer3D.DOPPLER_TRACKING_DISABLED
 	
 	# Playback details (Multi-file vs Regions)
 	var final_duration = duration
@@ -501,7 +524,9 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 			parallel_player.set_meta("event_name", event_name)
 			_all_spatial_players.append(parallel_player)
 			parallel_player.bus = target_bus
-			parallel_player.volume_db = event.volume_db + random_vol
+			var use_alt_layer_vol = alternative if event_name != "watergun_hit" else false
+			var layer_vol_offset = (alternative_layer_volume_db + event.alternative_volume_db) if use_alt_layer_vol else (parallel_layer_volume_db + event.parallel_volume_db)
+			parallel_player.volume_db = event.volume_db + random_vol + layer_vol_offset
 			parallel_player.pitch_scale = random_pitch
 			parallel_player.stream = event.stream
 			
@@ -510,46 +535,60 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 			parallel_player.attenuation_filter_cutoff_hz = 20500.0
 			parallel_player.attenuation_filter_db = 0.0
 			
-			if is_player_sound:
+			if not enable_spatial_effects or is_player_sound:
 				parallel_player.panning_strength = 0.0
 				parallel_player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
 			else:
 				parallel_player.panning_strength = 0.85
 				parallel_player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 				
-			parallel_player.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP
+			parallel_player.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP if enable_doppler else AudioStreamPlayer3D.DOPPLER_TRACKING_DISABLED
 				
 			_initialize_spatial_player(parallel_player, source)
 			parallel_player.play(preg.x)
 	else:
-		player.stream = event.alternative_streams[idx] if alternative else event.streams[idx]
+		if event_name == "watergun_hit":
+			player.stream = event.streams[idx]
+		else:
+			player.stream = event.alternative_streams[idx] if alternative else event.streams[idx]
 		_initialize_spatial_player(player, source)
 		player.play(start_offset)
 		
 		# Parallel file layering
-		var has_parallel = (alternative and event.alternative_parallel_streams.size() > idx) or (not alternative and event.parallel_streams.size() > idx)
+		var has_parallel = false
+		if event_name == "watergun_hit":
+			has_parallel = alternative and (event.parallel_streams.size() > 0)
+		else:
+			has_parallel = (alternative and event.alternative_parallel_streams.size() > idx) or (not alternative and event.parallel_streams.size() > idx)
+
 		if has_parallel:
 			parallel_player = AudioStreamPlayer3D.new()
 			parallel_player.set_meta("event_name", event_name)
 			_all_spatial_players.append(parallel_player)
 			parallel_player.bus = target_bus
-			parallel_player.volume_db = event.volume_db + random_vol
+			var use_alt_layer_vol = alternative if event_name != "watergun_hit" else false
+			var layer_vol_offset = (alternative_layer_volume_db + event.alternative_volume_db) if use_alt_layer_vol else (parallel_layer_volume_db + event.parallel_volume_db)
+			parallel_player.volume_db = event.volume_db + random_vol + layer_vol_offset
 			parallel_player.pitch_scale = random_pitch
-			parallel_player.stream = event.alternative_parallel_streams[idx] if alternative else event.parallel_streams[idx]
+			if event_name == "watergun_hit":
+				var parallel_idx = idx % event.parallel_streams.size()
+				parallel_player.stream = event.parallel_streams[parallel_idx]
+			else:
+				parallel_player.stream = event.alternative_parallel_streams[idx] if alternative else event.parallel_streams[idx]
 			
 			parallel_player.max_distance = target_max_distance
 			parallel_player.unit_size = target_unit_size
 			parallel_player.attenuation_filter_cutoff_hz = 20500.0
 			parallel_player.attenuation_filter_db = 0.0
 			
-			if is_player_sound:
+			if not enable_spatial_effects or is_player_sound:
 				parallel_player.panning_strength = 0.0
 				parallel_player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
 			else:
 				parallel_player.panning_strength = 0.85
 				parallel_player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 				
-			parallel_player.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP
+			parallel_player.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP if enable_doppler else AudioStreamPlayer3D.DOPPLER_TRACKING_DISABLED
 				
 			_initialize_spatial_player(parallel_player, source)
 			parallel_player.play(start_offset)
@@ -578,8 +617,51 @@ func stop(event_name: String) -> void:
 			inst.queue_free()
 	_active_instances[event_name] = []
 
+func _disable_all_muffle() -> void:
+	var buses = ["Master", "SFX", "Music", "UI", "Voiceline"]
+	for category in buses:
+		var bus_idx = AudioServer.get_bus_index(category)
+		if bus_idx != -1:
+			for i in range(AudioServer.get_bus_effect_count(bus_idx)):
+				var effect = AudioServer.get_bus_effect(bus_idx, i)
+				if effect is AudioEffectLowPassFilter:
+					effect.cutoff_hz = 20000.0
+		if _muffle_tweens.has(category):
+			var t = _muffle_tweens[category]
+			if t and t.is_valid():
+				t.kill()
+		if _muffle_linger_tweens.has(category):
+			var l = _muffle_linger_tweens[category]
+			if l and l.is_valid():
+				l.kill()
+
+func _update_spatial_effects() -> void:
+	for p in _all_spatial_players:
+		if is_instance_valid(p):
+			var event_name = p.get_meta("event_name") if p.has_meta("event_name") else ""
+			var is_player_sound = (
+				event_name.begins_with("watergun_pistol_") or 
+				event_name.begins_with("Superpump_") or 
+				event_name == "leon_footstep" or 
+				event_name.begins_with("vo_leon_")
+			)
+			if not enable_spatial_effects or is_player_sound:
+				p.panning_strength = 0.0
+				p.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
+			else:
+				p.panning_strength = 0.85
+				p.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+
+func _update_doppler_settings() -> void:
+	for p in _all_spatial_players:
+		if is_instance_valid(p):
+			p.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP if enable_doppler else AudioStreamPlayer3D.DOPPLER_TRACKING_DISABLED
+
 # Muffles or unmuffles a main category bus dynamically over a transition duration (with recovery linger)
 func set_bus_muffled(category_name: String, enabled: bool, transition_duration: float = 0.1) -> void:
+	if not enable_muffle:
+		enabled = false
+
 	var bus_idx = AudioServer.get_bus_index(category_name)
 	if bus_idx == -1:
 		push_warning("[SoundManager] Audio bus '%s' not found." % category_name)

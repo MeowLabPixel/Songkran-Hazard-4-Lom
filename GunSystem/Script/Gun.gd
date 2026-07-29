@@ -49,6 +49,9 @@ var _shot_vfx_pool: Array[Node] = []
 var _cached_player_rids: Array = []
 var _cached_player_node: Node = null
 
+static var _last_hit_frame: int = -1
+static var _hits_in_current_frame: int = 0
+
 func _process(delta):
 	if shoot_timer > 0.0:
 		shoot_timer -= delta
@@ -81,6 +84,42 @@ func can_shoot() -> bool:
 	var has_air = air >= get_air_consumption()
 	return shoot_timer <= 0.0 and has_water and has_air
 
+func play_shoot_sound(shoot_pos: Vector3) -> void:
+	var pitch = randf_range(0.95, 1.05) if (SoundManager and SoundManager.enable_pitch_randomization) else 1.0
+	SoundManager.play_3d("watergun_pistol_shoot", shoot_pos, 0.0, -1.0, pitch)
+	if is_super_active:
+		SoundManager.play_3d("watergun_pistol_Superpump_Shoot_Add", shoot_pos, 0.0, -1.0, pitch)
+
+func _is_result_enemy(result: Dictionary) -> bool:
+	var collider = result.get("collider")
+	if collider == null:
+		return false
+	if collider is Area3D:
+		var hz: HitboxZone = collider.get_node_or_null("HitboxZone")
+		if hz and (hz._enemy != null or hz.get("_anchalee") != null):
+			return true
+	var node: Node = collider
+	while node:
+		if node.is_in_group("enemy") or node.has_method("take_hit") or ("Enemy" in node.name) or ("Zombie" in node.name):
+			if not node.is_in_group("player"):
+				return true
+		node = node.get_parent()
+	return false
+
+func play_hit_sound(result: Dictionary) -> void:
+	if not result:
+		return
+	var current_frame = Engine.get_process_frames()
+	if _last_hit_frame != current_frame:
+		_last_hit_frame = current_frame
+		_hits_in_current_frame = 0
+	
+	_hits_in_current_frame += 1
+	if _hits_in_current_frame <= 2:
+		var is_enemy = _is_result_enemy(result)
+		var pitch = randf_range(0.92, 1.08) if (SoundManager and SoundManager.enable_pitch_randomization) else 1.0
+		SoundManager.play_3d("watergun_hit", result.position, 0.0, -1.0, pitch, is_enemy)
+
 func shoot():
 	if not can_shoot():
 		return
@@ -91,13 +130,7 @@ func shoot():
 
 	# Play watergun shoot sounds
 	var shoot_pos = spawn_point.global_position if spawn_point else global_position
-	
-	# Always play standard firing sound
-	SoundManager.play_3d("watergun_pistol_shoot", shoot_pos)
-	
-	# Layer the Superpump shoot addition sound in parallel if super is active
-	if is_super_active:
-		SoundManager.play_3d("watergun_pistol_Superpump_Shoot_Add", shoot_pos)
+	play_shoot_sound(shoot_pos)
 
 	# Consume resources normally (super pump unlimited air/water time removed)
 	if water_tank:
@@ -166,6 +199,8 @@ func fire_pellet():
 		end_pos = result.position
 		# Apply damage to any enemy hit by the raycast
 		_apply_damage_to_result(result)
+		# Play watergun hit SFX
+		play_hit_sound(result)
 
 	# Muzzle Flash
 	if muzzle_vfx_scene and spawn_point:
@@ -200,18 +235,6 @@ func fire_pellet():
 			shot_vfx.set_line(start_pos, end_pos)
 
 	if result and hit_vfx_scene:
-		# Play watergun hit SFX
-		var alt = false
-		if is_super_active:
-			alt = true
-		else:
-			var collider = result.get("collider")
-			if collider is Area3D:
-				var hz = collider.get_node_or_null("HitboxZone")
-				if hz and hz.zone_name == "head":
-					alt = true
-		SoundManager.play_3d("watergun_hit", result.position, 0.0, -1.0, 1.0, alt)
-		
 		var hit_vfx: Node3D = hit_vfx_scene.instantiate()
 		if tree.current_scene:
 			tree.current_scene.add_child(hit_vfx)

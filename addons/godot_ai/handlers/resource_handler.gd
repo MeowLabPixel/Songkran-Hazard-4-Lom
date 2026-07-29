@@ -26,7 +26,9 @@ func search_resources(params: Dictionary) -> Dictionary:
 
 	var efs := EditorInterface.get_resource_filesystem()
 	if efs == null:
-		return ErrorCodes.make(ErrorCodes.EDITOR_NOT_READY, "EditorFileSystem not available")
+		return ErrorCodes.make_not_ready(
+			ErrorCodes.SUB_EDITOR_UNAVAILABLE,
+			"EditorFileSystem not available", false)
 
 	var results: Array[Dictionary] = []
 	_scan_resources(efs.get_filesystem(), type_filter, path_filter, results)
@@ -286,10 +288,24 @@ static func _instantiate_resource(type_str: String) -> Variant:
 	return _unknown_resource_type_error(type_str)
 
 
+## Maximum nesting depth for the {"__class__": ...} sub-resource shortcut.
+## Caller-supplied dicts recurse through _apply_resource_properties; without a
+## cap a deeply nested payload overflows the GDScript call stack and crashes
+## the editor (#536). 32 is far beyond any legitimate sub-resource chain.
+const MAX_NESTED_RESOURCE_DEPTH := 32
+
+
 ## Apply a dict of property values to a freshly-instantiated Resource,
 ## reusing NodeHandler's coercion so Vector3/Color/etc. dicts land typed.
 ## Returns null on success or an error dict on failure.
-static func _apply_resource_properties(res: Resource, properties: Dictionary) -> Variant:
+## `depth` is internal recursion bookkeeping for the nested {"__class__": ...}
+## shortcut — external callers use the default of 0.
+static func _apply_resource_properties(res: Resource, properties: Dictionary, depth: int = 0) -> Variant:
+	if depth > MAX_NESTED_RESOURCE_DEPTH:
+		return ErrorCodes.make(
+			ErrorCodes.INVALID_PARAMS,
+			"Nested resource properties exceed the maximum depth of %d — flatten the {\"__class__\": ...} nesting or create the deep sub-resources in separate calls" % MAX_NESTED_RESOURCE_DEPTH
+		)
 	var prop_types := {}
 	for prop in res.get_property_list():
 		prop_types[prop.name] = prop.get("type", TYPE_NIL)
@@ -350,18 +366,43 @@ static func _apply_resource_properties(res: Resource, properties: Dictionary) ->
 			var remaining: Dictionary = (v as Dictionary).duplicate()
 			remaining.erase("__class__")
 			if not remaining.is_empty():
-				var nested_err := _apply_resource_properties(sub_res, remaining)
+				var nested_err := _apply_resource_properties(sub_res, remaining, depth + 1)
 				if nested_err != null:
 					return nested_err
 			v = sub_res
 		else:
-			v = NodeHandler._coerce_value(v, target_type)
-			## Mirror set_property's coerce check: wrong-shape dicts (#123) and
-			## non-dict inputs that don't land as the target compound Variant
-			## (#191) both error here instead of writing zero-filled Variants.
-			var coerce_err := NodeHandler._check_coerced(v, target_type, "Property '%s'" % key)
-			if coerce_err != null:
-				return coerce_err
+			var slot_value: Variant = res.get(key)
+			if target_type == TYPE_ARRAY and slot_value is Array and (slot_value as Array).is_typed():
+				## Typed Array[T] slot (#612): mirror set_property's dispatch —
+				## the generic passthrough would hand an untyped Array to the
+				## typed setter, which drops it silently while we report success.
+				var typed_out: Variant = NodeHandler._coerce_typed_array(
+					v, slot_value, "Property '%s'" % key
+				)
+				if typed_out is Dictionary:
+					return typed_out
+				v = typed_out
+			elif (
+				target_type == TYPE_DICTIONARY
+				and slot_value is Dictionary
+				and (slot_value as Dictionary).is_typed()
+			):
+				## Typed Dictionary[K, V] slot (#612 stage 3): success is a
+				## typed duplicate of the slot; the error envelope is untyped.
+				var typed_dict_out: Dictionary = NodeHandler._coerce_typed_dictionary(
+					v, slot_value, "Property '%s'" % key
+				)
+				if not typed_dict_out.is_typed():
+					return typed_dict_out
+				v = typed_dict_out
+			else:
+				v = NodeHandler._coerce_value(v, target_type)
+				## Mirror set_property's coerce check: wrong-shape dicts (#123) and
+				## non-dict inputs that don't land as the target compound Variant
+				## (#191) both error here instead of writing zero-filled Variants.
+				var coerce_err := NodeHandler._check_coerced(v, target_type, "Property '%s'" % key)
+				if coerce_err != null:
+					return coerce_err
 		res.set(key, v)
 	return null
 
@@ -383,7 +424,7 @@ func _assign_created_resource(res: Resource, type_str: String, node_path: String
 	if not found:
 		return ErrorCodes.make(
 			ErrorCodes.PROPERTY_NOT_ON_CLASS,
-			"Property '%s' not found on %s" % [property, node.get_class()]
+			McpPropertyErrors.build_message(node, property)
 		)
 	if prop_type != TYPE_NIL and prop_type != TYPE_OBJECT:
 		return ErrorCodes.make(

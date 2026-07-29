@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_qqs0u"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_rifle_shoot_1.wav" id="2_0ks80"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_rifle_shoot_2.wav" id="3_7yup0"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_rifle_shoot_3.wav" id="4_hq63c"]
+
+[resource]
+script = ExtResource("1_qqs0u")
+name = "watergun_rifle_shoot"
+volume_randomness_db = 0.5
+is_3d = true
+streams = Array[AudioStream]([ExtResource("2_0ks80"), ExtResource("3_7yup0"), ExtResource("4_hq63c")])

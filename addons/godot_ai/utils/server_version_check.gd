@@ -29,7 +29,7 @@ extends RefCounted
 ## `_connection` because `disarm()` releases it.
 
 ## How long to wait after the WebSocket opens before declaring the
-## handshake_ack overdue. Mirrors `plugin.gd::SERVER_HANDSHAKE_VERSION_TIMEOUT_MS`
+## handshake_ack overdue. This is the sole owner of the 5s budget
 ## — kept at this layer so the version-check seam is self-contained.
 const TIMEOUT_MS := 5 * 1000
 
@@ -110,16 +110,6 @@ func tick(now_msec: int) -> bool:
 		_complete_unverified()
 		return true
 	return false
-
-
-## Invoked when `_on_connection_established` notices that we transitioned
-## out of FOREIGN_PORT — the server may yet prove itself compatible.
-## Re-arming is idempotent: if already active, no-op; otherwise the
-## caller's connection + last-known expected version are reused.
-func rearm_for_foreign_port_recovery(connection) -> void:
-	if _active:
-		return
-	arm(connection, _expected_version)
 
 
 func _complete_with_version(version: String) -> void:

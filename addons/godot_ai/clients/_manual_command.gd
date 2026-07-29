@@ -16,6 +16,8 @@ static func build(client: McpClient, server_name: String, server_url: String, re
 			return _build_json(client, server_name, server_url, resolved_path)
 		"toml":
 			return _build_toml(client, server_name, server_url, resolved_path)
+		"yaml":
+			return _build_yaml(client, server_name, server_url, resolved_path)
 	return ""
 
 
@@ -60,6 +62,18 @@ static func _build_toml(client: McpClient, _server_name: String, server_url: Str
 	var lines: Array[String] = ["Edit %s and add:" % resolved_path, "  %s" % header]
 	for b in body:
 		lines.append("  %s" % String(b))
+	return "\n".join(lines)
+
+
+static func _build_yaml(client: McpClient, server_name: String, server_url: String, resolved_path: String) -> String:
+	var entry := McpYamlStrategy.build_entry(client, server_url)
+	var key := client.server_key_path[0] if client.server_key_path.size() > 0 else "mcp_servers"
+	var lines: Array[String] = [
+		"Edit %s and add under '%s':" % [resolved_path, key],
+		"  %s:" % server_name,
+	]
+	for k in entry:
+		lines.append("    %s: %s" % [k, str(entry[k])])
 	return "\n".join(lines)
 
 

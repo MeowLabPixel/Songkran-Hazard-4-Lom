@@ -23,8 +23,7 @@ func _enter() -> void:
 	
 	# Play Rookie Lee get hit voice line and physical hit sound
 	SoundManager.play_3d("vo_leon_gethit", owner)
-	SoundManager.play_3d("leon_hit", owner)
-	SoundManager.play_3d("Region_PlayerGetHitMelee", owner)
+	SoundManager.play_3d("leon_gethit", owner)
 	
 	# Play Anchalee worried voiceline 1.0 second after player gets hit
 	var timer = owner.get_tree().create_timer(1.0)

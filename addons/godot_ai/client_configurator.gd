@@ -20,6 +20,7 @@ const Client := preload("res://addons/godot_ai/clients/_base.gd")
 const ClientRegistry := preload("res://addons/godot_ai/clients/_registry.gd")
 const JsonStrategy := preload("res://addons/godot_ai/clients/_json_strategy.gd")
 const TomlStrategy := preload("res://addons/godot_ai/clients/_toml_strategy.gd")
+const YamlStrategy := preload("res://addons/godot_ai/clients/_yaml_strategy.gd")
 const CliStrategy := preload("res://addons/godot_ai/clients/_cli_strategy.gd")
 const ManualCommand := preload("res://addons/godot_ai/clients/_manual_command.gd")
 const CliFinder := preload("res://addons/godot_ai/clients/_cli_finder.gd")
@@ -45,6 +46,7 @@ const MAX_PORT := 65535
 const SUGGEST_PORT_MAX_PROBES := 64
 const SETTING_WS_PORT := "godot_ai/ws_port"
 const SETTING_STARTUP_TRACE := "godot_ai/log_startup_timing"
+const SETTING_KEEP_SERVER_ON_EXIT := "godot_ai/keep_server_on_exit"
 const _DISCOVERY_TIMEOUT_MS := 3000
 
 
@@ -84,6 +86,7 @@ static func ensure_settings_registered() -> void:
 	_register_port_setting(es, McpSettings.SETTING_HTTP_PORT, DEFAULT_HTTP_PORT)
 	_register_port_setting(es, SETTING_WS_PORT, DEFAULT_WS_PORT)
 	_register_bool_setting(es, SETTING_STARTUP_TRACE, false)
+	_register_bool_setting(es, SETTING_KEEP_SERVER_ON_EXIT, false)
 
 
 static func _register_port_setting(es: EditorSettings, key: String, default_port: int) -> void:
@@ -109,14 +112,59 @@ static func _register_bool_setting(es: EditorSettings, key: String, default_valu
 
 
 static func startup_trace_enabled() -> bool:
-	var raw := OS.get_environment(STARTUP_TRACE_ENV).strip_edges().to_lower()
+	## env_lookup + _editor_setting_lookup for the same worker-thread
+	## reason as mode_override (#691).
+	var raw := McpPathTemplate.env_lookup(STARTUP_TRACE_ENV).strip_edges().to_lower()
 	if raw == "1" or raw == "true" or raw == "yes" or raw == "on":
 		return true
-	if Engine.is_editor_hint():
-		var es := EditorInterface.get_editor_settings()
-		if es != null and es.has_setting(SETTING_STARTUP_TRACE):
-			return bool(es.get_setting(SETTING_STARTUP_TRACE))
+	var setting: Variant = _editor_setting_lookup(SETTING_STARTUP_TRACE)
+	if setting != null:
+		return bool(setting)
 	return false
+
+
+## keep_server_on_exit (#800): when enabled, editor teardown detaches from
+## the managed server instead of killing it, and the spawn env opts the
+## server out of both self-reap paths (owner-PID watchdog, session-idle
+## backstop) — so MCP clients connected over HTTP stay served across editor
+## sessions, and the next editor start adopts the survivor. Off by default:
+## "server dies with the editor" stays the shipped behavior. Read via
+## _editor_setting_lookup for the same worker-thread reason as
+## startup_trace_enabled (#691).
+static func keep_server_on_exit() -> bool:
+	var setting: Variant = _editor_setting_lookup(SETTING_KEEP_SERVER_ON_EXIT)
+	if setting != null:
+		return bool(setting)
+	return false
+
+
+## #691: EditorSettings counterpart of McpPathTemplate.env_lookup. The #678
+## startup walk's discovery worker reaches mode_override() (via
+## get_server_command) and EditorInterface / EditorSettings are not
+## thread-safe objects. Main thread: live read + mutex-guarded snapshot
+## refresh. Worker thread: snapshot only — a never-warmed key reads as
+## null (unset), never a live EditorInterface call. Warmed alongside the
+## env snapshot in warm_env_snapshot(), which runs on the main thread
+## before any worker dispatch.
+static var _setting_snapshot := {}
+static var _setting_snapshot_mutex := Mutex.new()
+
+
+static func _editor_setting_lookup(key: String) -> Variant:
+	if OS.get_thread_caller_id() == OS.get_main_thread_id():
+		var live: Variant = null
+		if Engine.is_editor_hint():
+			var es := EditorInterface.get_editor_settings()
+			if es != null and es.has_setting(key):
+				live = es.get_setting(key)
+		_setting_snapshot_mutex.lock()
+		_setting_snapshot[key] = live
+		_setting_snapshot_mutex.unlock()
+		return live
+	_setting_snapshot_mutex.lock()
+	var cached: Variant = _setting_snapshot.get(key, null)
+	_setting_snapshot_mutex.unlock()
+	return cached
 
 
 ## Read the `godot_ai/excluded_domains` EditorSetting as a canonicalized
@@ -124,6 +172,12 @@ static func startup_trace_enabled() -> bool:
 ## "" when the setting is missing or resolves to an empty set — callers can
 ## skip appending the flag in that case so older servers that don't know
 ## `--exclude-domains` don't see an empty argument.
+##
+## Unknown domain names (e.g. a domain removed since the setting was last
+## written) are dropped here, at the single chokepoint both the startup
+## flag builder (plugin.gd) and the dock display read — the server's
+## `parse_exclude_list` hard-fails on unknown names, so a stale setting
+## would otherwise block server startup.
 static func excluded_domains() -> String:
 	var es := EditorInterface.get_editor_settings()
 	if es == null or not es.has_setting(McpSettings.SETTING_EXCLUDED_DOMAINS):
@@ -132,10 +186,26 @@ static func excluded_domains() -> String:
 	var parts := PackedStringArray()
 	for p in raw.split(","):
 		var t := p.strip_edges()
-		if not t.is_empty() and parts.find(t) == -1:
-			parts.append(t)
+		if t.is_empty() or parts.find(t) != -1:
+			continue
+		if not McpToolCatalog.is_excludable_domain(t):
+			continue
+		parts.append(t)
 	parts.sort()
 	return ",".join(parts)
+
+
+## Read the `godot_ai/allow_remote_hosts` EditorSetting as a canonicalized
+## comma-separated list of CIDRs / bare IPs (#507). Returns "" when the
+## setting is missing or empty — callers skip appending `--allow-host` in
+## that case so spawns stay byte-for-byte identical to the loopback-only
+## default (and compatible with pre-#421 servers). Mirrors
+## `excluded_domains()` above.
+static func allow_hosts() -> String:
+	var es := EditorInterface.get_editor_settings()
+	if es == null or not es.has_setting(McpSettings.SETTING_ALLOW_HOSTS):
+		return ""
+	return McpAllowHosts.normalize(str(es.get_setting(McpSettings.SETTING_ALLOW_HOSTS)))
 
 
 ## Suggest a port the caller can actually switch to. Walks
@@ -217,13 +287,6 @@ static func check_status(id: String) -> Client.Status:
 	return _dispatch_check_status(client, http_url())
 
 
-static func check_status_for_url(id: String, url: String) -> Client.Status:
-	var client := ClientRegistry.get_by_id(id)
-	if client == null:
-		return Client.Status.NOT_CONFIGURED
-	return _dispatch_check_status(client, url)
-
-
 static func check_status_for_url_with_cli_path(id: String, url: String, cli_path: String) -> Client.Status:
 	return check_status_details_for_url_with_cli_path(id, url, cli_path).get("status", Client.Status.NOT_CONFIGURED)
 
@@ -244,6 +307,26 @@ static func check_status_details_for_url_with_cli_path(id: String, url: String, 
 	if client.config_type == "cli" and cli_path.is_empty() and not client.has_json_fallback():
 		return {"status": Client.Status.NOT_CONFIGURED, "error_msg": ""}
 	return _dispatch_check_status_with_cli_path_details(client, url, cli_path)
+
+
+## #691: main-thread pre-warm of McpPathTemplate's env snapshot, covering
+## the base vars plus every descriptor-declared `config_home_env`
+## (CLAUDE_CONFIG_DIR, CODEX_HOME, …), so worker-thread config-path
+## resolution never calls OS.get_environment concurrently with the spawn
+## window's setenv/unsetenv. Also warms the EditorSettings snapshot for
+## the mode/trace overrides so worker-thread mode_override() /
+## startup_trace_enabled() never touch EditorInterface. Idempotent;
+## called from plugin _enter_tree and before each dock worker dispatch.
+static func warm_env_snapshot() -> void:
+	var extras := PackedStringArray()
+	for id in client_ids():
+		var client := ClientRegistry.get_by_id(String(id))
+		if client != null and not client.config_home_env.is_empty():
+			extras.append(client.config_home_env)
+	McpPathTemplate.warm_env_snapshot(extras)
+	_editor_setting_lookup(MODE_OVERRIDE_SETTING)
+	_editor_setting_lookup(SETTING_STARTUP_TRACE)
+	_editor_setting_lookup(SETTING_KEEP_SERVER_ON_EXIT)
 
 
 static func client_status_probe_snapshot(id: String) -> Dictionary:
@@ -283,6 +366,8 @@ static func _dispatch_configure(client: Client, url: String) -> Dictionary:
 			return JsonStrategy.configure(client, SERVER_NAME, url)
 		"toml":
 			return TomlStrategy.configure(client, SERVER_NAME, url)
+		"yaml":
+			return YamlStrategy.configure(client, SERVER_NAME, url)
 		"cli":
 			# #463: fall back to writing the config file directly when the CLI
 			# binary isn't on PATH (Claude Code as a VS Code/Cursor extension).
@@ -298,6 +383,8 @@ static func _dispatch_remove(client: Client) -> Dictionary:
 			return JsonStrategy.remove(client, SERVER_NAME)
 		"toml":
 			return TomlStrategy.remove(client, SERVER_NAME)
+		"yaml":
+			return YamlStrategy.remove(client, SERVER_NAME)
 		"cli":
 			# #463: mirror the configure fallback so Remove also works without
 			# the CLI binary — otherwise a fallback-written entry is unremovable.
@@ -318,15 +405,17 @@ static func _dispatch_check_status_with_cli_path(client: Client, url: String, cl
 static func _dispatch_check_status_with_cli_path_details(client: Client, url: String, cli_path: String) -> Dictionary:
 	match client.config_type:
 		"json":
-			return {"status": JsonStrategy.check_status(client, SERVER_NAME, url), "error_msg": ""}
+			return JsonStrategy.check_status_details(client, SERVER_NAME, url)
 		"toml":
-			return {"status": TomlStrategy.check_status(client, SERVER_NAME, url), "error_msg": ""}
+			return TomlStrategy.check_status_details(client, SERVER_NAME, url)
+		"yaml":
+			return YamlStrategy.check_status_details(client, SERVER_NAME, url)
 		"cli":
 			var resolved_cli := cli_path if not cli_path.is_empty() else CliStrategy.resolve_cli_path(client)
 			# #463: with no CLI binary, read the JSON fallback config so a
 			# fallback-configured entry reports CONFIGURED instead of red.
 			if resolved_cli.is_empty() and client.has_json_fallback():
-				return {"status": JsonStrategy.check_status(client, SERVER_NAME, url), "error_msg": ""}
+				return JsonStrategy.check_status_details(client, SERVER_NAME, url)
 			return CliStrategy.check_status_details(client, SERVER_NAME, url, resolved_cli)
 	return {"status": Client.Status.NOT_CONFIGURED, "error_msg": ""}
 
@@ -363,7 +452,22 @@ static func manual_command(id: String) -> String:
 	var client := ClientRegistry.get_by_id(id)
 	if client == null:
 		return ""
-	return ManualCommand.build(client, SERVER_NAME, http_url(), client.resolved_config_path())
+	var cmd := ManualCommand.build(client, SERVER_NAME, http_url(), client.resolved_config_path())
+	if cmd.is_empty():
+		return cmd
+	## #507: when the allow-host opt-in names a non-loopback range, also
+	## surface the LAN URL so the user can copy-paste the right address into
+	## a remote agent. Informational only — configure/remove still WRITE the
+	## loopback URL above; nothing about the config-file contract changes.
+	var note := McpAllowHosts.lan_url_note(allow_hosts(), IP.get_local_addresses(), http_port())
+	if not note.is_empty():
+		cmd += "\n\n" + note
+	return cmd
+
+
+static func config_path(id: String) -> String:
+	var client := ClientRegistry.get_by_id(id)
+	return client.resolved_config_path() if client != null else ""
 
 
 static func is_installed(id: String) -> bool:
@@ -385,6 +489,16 @@ static func get_plugin_version() -> String:
 	return "0.0.1"
 
 
+## Strip PEP 440 local build metadata for PyPI pins: `3.0.2+local.1` → `3.0.2`.
+## Pre-release segments (`3.1.0-rc1`) are preserved — only `+…` is removed.
+static func _pypi_pin_version(version: String) -> String:
+	var v := version.strip_edges()
+	var plus := v.find("+")
+	if plus >= 0:
+		v = v.substr(0, plus)
+	return v
+
+
 ## Override for the dev-vs-user heuristic. Accepted values:
 ##   "dev"   — force dev-checkout mode (skip update check + self-install)
 ##   "user"  — force user-install mode (run update check, allow self-install)
@@ -396,28 +510,30 @@ static func get_plugin_version() -> String:
 ## e.g. after unpacking a release zip into `test_project/`).
 ##
 ## Two ways to set it, resolved in priority order:
-##   1. EditorSettings → `godot_ai/mode_override` — UI dropdown in the dock,
-##      persists per-editor-install. Wins over the env var so a UI action
-##      always takes effect without relaunching the editor.
+##   1. EditorSettings → `godot_ai/mode_override` — set manually via
+##      Editor Settings (no dock UI writes it today); persists
+##      per-editor-install and wins over the env var so an editor-side
+##      choice always takes effect without relaunching.
 ##   2. Env var `GODOT_AI_MODE` — useful for CLI launches and CI.
 const MODE_OVERRIDE_ENV := "GODOT_AI_MODE"
 const MODE_OVERRIDE_SETTING := "godot_ai/mode_override"
 
 
 static func mode_override() -> String:
-	# 1. EditorSetting wins — the user explicitly chose via the dock dropdown.
-	#    Guarded on `Engine.is_editor_hint()` so this is a no-op when the
-	#    plugin code runs inside the game subprocess (where EditorInterface
-	#    isn't available). See CLAUDE.md "Game-side code: gate on
-	#    Engine.is_editor_hint(), not OS.has_feature("editor")".
-	if Engine.is_editor_hint():
-		var es := EditorInterface.get_editor_settings()
-		if es != null and es.has_setting(MODE_OVERRIDE_SETTING):
-			var setting_val := str(es.get_setting(MODE_OVERRIDE_SETTING)).strip_edges().to_lower()
-			if setting_val == "dev" or setting_val == "user":
-				return setting_val
-	# 2. Env var fallback.
-	var raw := OS.get_environment(MODE_OVERRIDE_ENV).strip_edges().to_lower()
+	# 1. EditorSetting wins — the user explicitly set it via Editor Settings.
+	#    _editor_setting_lookup handles the `Engine.is_editor_hint()` gate
+	#    (no-op in the game subprocess; see CLAUDE.md "Game-side code") and
+	#    serves worker threads from a main-thread-warmed snapshot — this
+	#    runs on the #678 startup walk's discovery worker, and
+	#    EditorInterface/EditorSettings are not thread-safe (#691).
+	var setting: Variant = _editor_setting_lookup(MODE_OVERRIDE_SETTING)
+	if setting != null:
+		var setting_val := str(setting).strip_edges().to_lower()
+		if setting_val == "dev" or setting_val == "user":
+			return setting_val
+	# 2. Env var fallback. env_lookup, not OS.get_environment: same
+	#    worker-thread reason (#691).
+	var raw := McpPathTemplate.env_lookup(MODE_OVERRIDE_ENV).strip_edges().to_lower()
 	if raw == "dev" or raw == "user":
 		return raw
 	return ""
@@ -448,7 +564,13 @@ static func _is_symlink(path: String) -> bool:
 	if path.is_empty():
 		return false
 	var dir := DirAccess.open(path.get_base_dir())
-	return dir != null and dir.is_link(path)
+	if dir == null:
+		## This is a data-safety guard (a symlinked addons dir is a dev
+		## checkout self-update must never write through). When the path
+		## exists but its parent can't be opened, we can't PROVE it isn't
+		## a link — fail closed and treat it as one (#711).
+		return DirAccess.dir_exists_absolute(path) or FileAccess.file_exists(path)
+	return dir.is_link(path)
 
 
 ## `refresh` forces uvx to re-fetch PyPI index metadata on spawn — used by
@@ -458,7 +580,7 @@ static func _is_symlink(path: String) -> bool:
 ## to go. See plugin.gd::_should_retry_with_refresh.
 static func get_server_command(refresh: bool = false) -> Array[String]:
 	## `mode_override() == "user"` skips the dev_venv tier even when a nearby
-	## .venv exists — the UI dropdown then becomes an actual workaround for
+	## .venv exists — the override then becomes an actual workaround for
 	## the "user venv misidentified as dev checkout" bug, not just a
 	## cosmetic relabel.
 	if mode_override() != "user":
@@ -470,6 +592,11 @@ static func get_server_command(refresh: bool = false) -> Array[String]:
 	var uvx := find_uvx()
 	if not uvx.is_empty():
 		var version := get_plugin_version()
+		## PEP 440 local build tags (e.g. 3.0.2+local.1) are not on PyPI.
+		## Pin uvx to the public base version so the server still boots;
+		## checkout-local extras need the dev_venv tier above
+		## (symlink/junction → repo .venv).
+		var pypi_version := _pypi_pin_version(version)
 		## Pin to the EXACT plugin version rather than `~=<minor>`. Under the
 		## tilde form, uvx was happy to reuse a cached tool env that matched
 		## the minor constraint — so an install that first spawned 1.2.0 kept
@@ -478,11 +605,17 @@ static func get_server_command(refresh: bool = false) -> Array[String]:
 		## otherwise uvx installs the exact version fresh. Keeps plugin and
 		## server version in lockstep without needing `--refresh-package` on
 		## every spawn. See issue #133.
-		print("MCP | using uvx (godot-ai==%s)%s" % [version, " [refresh]" if refresh else ""])
+		if pypi_version != version:
+			print(
+				"MCP | using uvx (godot-ai==%s; local plugin %s not on PyPI)%s"
+				% [pypi_version, version, " [refresh]" if refresh else ""]
+			)
+		else:
+			print("MCP | using uvx (godot-ai==%s)%s" % [pypi_version, " [refresh]" if refresh else ""])
 		var cmd: Array[String] = [uvx]
 		if refresh:
 			cmd.append("--refresh")
-		cmd.append_array(["--from", "godot-ai==%s" % version, "godot-ai"])
+		cmd.append_array(["--from", "godot-ai==%s" % pypi_version, "godot-ai"])
 		return cmd
 
 	var system_cmd := _find_system_install()
@@ -584,19 +717,88 @@ static func invalidate_uv_version_cache() -> void:
 	_uv_version_cache = ""
 
 
+## True when a probe has run this session and came back empty — i.e. the
+## dock is currently rendering "uv: not found". Lets callers decide when
+## a re-probe is worth paying for (server-connect transition, manual
+## Refresh) without ever re-probing once uv has been found.
+static func uv_probe_negative() -> bool:
+	return _uv_version_searched and _uv_version_cache.is_empty()
+
+
+## Drop both uv caches — the resolved uvx path AND the cached
+## `uvx --version` output — so the next check_uv_version() re-runs the
+## full detection. #739: a probe that fails once at editor startup
+## (contended spawn, cold Defender scan, stale PATH under a
+## Steam-launched editor) used to pin "uv: not found" for the whole
+## session; the Install-uv click was the only invalidation path. Callers
+## invoke this on events that suggest the failure was transient.
+static func invalidate_uv_detection() -> void:
+	invalidate_uvx_cli_cache()
+	invalidate_uv_version_cache()
+
+
 static var _venv_python_cache: String = ""
 static var _venv_python_searched: bool = false
+## #678 worker threads write this cache while main-thread callers read
+## it; same lock discipline as McpCliFinder (clients/_cli_finder.gd).
+static var _venv_mutex: Mutex = Mutex.new()
 
 
 static func _cached_venv_python() -> String:
+	_venv_mutex.lock()
 	if not _venv_python_searched:
 		_venv_python_cache = _find_venv_python()
 		_venv_python_searched = true
-	return _venv_python_cache
+	var cached := _venv_python_cache
+	_venv_mutex.unlock()
+	return cached
+
+
+## Absolute path to `res://addons/godot_ai`, resolving Windows junctions /
+## POSIX symlinks via `DirAccess.read_link`. Unresolved globalize_path only
+## walks the *logical* project path (e.g. MyGame/addons/godot_ai → MyGame)
+## and never reaches a fork checkout's `.venv` (…/godot-ai/.venv).
+static func resolve_addons_realpath() -> String:
+	var addons_path := ProjectSettings.globalize_path("res://addons/godot_ai").rstrip("/").rstrip("\\")
+	if addons_path.is_empty():
+		return ""
+	var parent := addons_path.get_base_dir()
+	var dir := DirAccess.open(parent)
+	if dir != null and dir.is_link(addons_path):
+		var target := dir.read_link(addons_path)
+		if not target.is_empty():
+			if target.is_relative_path():
+				target = parent.path_join(target).simplify_path()
+			return target.rstrip("/").rstrip("\\")
+	return addons_path
 
 
 static func _find_venv_python() -> String:
-	return _find_venv_python_in(ProjectSettings.globalize_path("res://").rstrip("/"))
+	## Optional hard override (junction edge cases / CI).
+	var env_py := McpPathTemplate.env_lookup("GODOT_AI_VENV_PYTHON").strip_edges()
+	if not env_py.is_empty():
+		if FileAccess.file_exists(env_py):
+			return env_py
+		## An explicit override pointing nowhere is a misconfiguration the
+		## user needs to see — falling through silently would make the dev
+		## venv appear randomly ignored.
+		push_warning(
+			"godot-ai: GODOT_AI_VENV_PYTHON is set but no file exists at '%s'; ignoring override."
+			% env_py
+		)
+	## 1) Walk up from the open project (classic monorepo / test_project layout).
+	var from_project := _find_venv_python_in(
+		ProjectSettings.globalize_path("res://").rstrip("/").rstrip("\\")
+	)
+	if not from_project.is_empty():
+		return from_project
+	## 2) Junctioned plugin: resolve reparse target, then walk up to fork root.
+	var addons_real := resolve_addons_realpath()
+	if not addons_real.is_empty():
+		var from_addons := _find_venv_python_in(addons_real)
+		if not from_addons.is_empty():
+			return from_addons
+	return ""
 
 
 ## Pure path-based lookup so tests can drive it with a scratch dir instead of
@@ -609,15 +811,17 @@ static func _find_venv_python() -> String:
 ## the uvx tier, so the dev_venv misidentification has no escape hatch — the
 ## detection has to be right the first time.
 static func _find_venv_python_in(start_dir: String) -> String:
-	var dir := start_dir.rstrip("/")
+	var dir := start_dir.rstrip("/").rstrip("\\")
 	var python_name := "python" if OS.get_name() != "Windows" else "python.exe"
 	var venv_dir := ".venv/bin/" if OS.get_name() != "Windows" else ".venv/Scripts/"
-	for i in 5:
+	## 8 hops: game project roots are shallow; junctioned plugins sit at
+	## <repo>/plugin/addons/godot_ai (4) and nested worktrees may be deeper.
+	for i in 8:
 		var venv_path := dir.path_join(venv_dir + python_name)
 		if FileAccess.file_exists(venv_path) and DirAccess.dir_exists_absolute(dir.path_join("src/godot_ai")):
 			return venv_path
 		var parent := dir.get_base_dir()
-		if parent == dir:
+		if parent == dir or parent.is_empty():
 			break
 		dir = parent
 	return ""
@@ -641,14 +845,15 @@ static func find_worktree_src_dir(start_dir: String) -> String:
 	return ""
 
 
+## Delegates to McpCliFinder rather than shelling out to which/where
+## directly: the finder adds the well-known-install-dirs and login-shell
+## PATH tiers plus its per-exe cache, and this drops the private
+## `_pick_best_path` cross-class reach (#711).
 static func _find_system_install() -> String:
-	var cmd := "which" if OS.get_name() != "Windows" else "where"
-	var result := McpCliExec.run(cmd, ["godot-ai"], _DISCOVERY_TIMEOUT_MS, false)
-	if int(result.get("exit_code", -1)) == 0:
-		var lines := PackedStringArray(str(result.get("stdout", "")).split("\n"))
-		if lines.is_empty():
-			return ""
-		var found := CliFinder._pick_best_path(lines) if OS.get_name() == "Windows" else lines[0].strip_edges()
-		if not found.is_empty():
-			return found
-	return ""
+	## Built with append, not a ternary of untyped literals — assigning a
+	## ternary's Array to Array[String] is a runtime error on newer Godot
+	## builds (same idiom as _uvx_cli_names above).
+	var names: Array[String] = ["godot-ai"]
+	if OS.get_name() == "Windows":
+		names.push_front("godot-ai.exe")
+	return CliFinder.find(names)

@@ -6,6 +6,14 @@ class_name ShotgunWaterGun
 func _ready():
 	gun_name = "Water shotgun"
 
+func play_shoot_sound(shoot_pos: Vector3) -> void:
+	var pitch = randf_range(0.95, 1.05) if (SoundManager and SoundManager.enable_pitch_randomization) else 1.0
+	if is_super_active:
+		SoundManager.play_3d("Region_Shotgun_SuperShot", shoot_pos, 0.0, -1.0, pitch)
+		SoundManager.play_3d("watergun_pistol_Superpump_Shoot_Add", shoot_pos, 0.0, -1.0, pitch)
+	else:
+		SoundManager.play_3d("watergun_pistol_shoot", shoot_pos, 0.0, -1.0, pitch)
+
 func fire_projectiles():
 	if is_super_active:
 		# Super Shot

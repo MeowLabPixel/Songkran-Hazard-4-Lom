@@ -251,6 +251,30 @@ func set_property(params: Dictionary) -> Dictionary:
 				return apply_err
 		value = res
 		instantiated_resource = true
+	elif target_type == TYPE_ARRAY and old_value is Array and (old_value as Array).is_typed():
+		## Typed Array[T] slot (#612): the generic TYPE_ARRAY passthrough
+		## hands an untyped Array to Godot's typed setter, which rejects it
+		## wholesale and leaves the slot at its default — with success still
+		## reported. Route through the element-aware coercer instead; errors
+		## name the offending element index.
+		var typed_out: Variant = _coerce_typed_array(value, old_value)
+		if typed_out is Dictionary:
+			return typed_out
+		value = typed_out
+	elif (
+		target_type == TYPE_DICTIONARY
+		and old_value is Dictionary
+		and (old_value as Dictionary).is_typed()
+	):
+		## Typed Dictionary[K, V] slot (#612 stage 3) — same silent-drop
+		## family as typed arrays. A successful result is always a TYPED
+		## Dictionary (a cleared duplicate of the slot), while the error
+		## envelope is an untyped {"error": ...} — that's the discriminator
+		## (a legit payload could contain an "error" key; typedness can't lie).
+		var typed_dict_out: Dictionary = _coerce_typed_dictionary(value, old_value)
+		if not typed_dict_out.is_typed():
+			return typed_dict_out
+		value = typed_dict_out
 	else:
 		value = _coerce_value(value, target_type)
 		## Refuse any value that didn't land as the target compound Variant
@@ -696,25 +720,23 @@ static func _check_dict_coerce_failed(value: Variant, target_type: int) -> Varia
 ## `dict.get(key, 0)` defaults silently zero-filled missing axes.
 static func _coerce_value(value: Variant, target_type: int) -> Variant:
 	match target_type:
+		## Vector2/Vector3/Color route through the canonical strict parser
+		## (#714): same dict/array/string shapes as every other handler, and
+		## non-numeric components fall through (returning the original
+		## value) so _check_coerced flags them instead of crashing a typed
+		## constructor or silently writing black/zeros.
 		TYPE_VECTOR2:
-			if value is Dictionary and value.has_all(VECTOR2_KEYS):
-				return Vector2(value["x"], value["y"])
+			var v2 = McpJsonValues.parse_vector2(value)
+			if v2 != null:
+				return v2
 		TYPE_VECTOR3:
-			if value is Dictionary and value.has_all(VECTOR3_KEYS):
-				return Vector3(value["x"], value["y"], value["z"])
+			var v3 = McpJsonValues.parse_vector3(value)
+			if v3 != null:
+				return v3
 		TYPE_COLOR:
-			if value is Dictionary and value.has_all(COLOR_KEYS):
-				return Color(value["r"], value["g"], value["b"], value.get("a", 1.0))
-			if value is String:
-				# Color(String) silently returns black for an unparseable string
-				# (e.g. "Color(1,1,1,1)" or a typo). Validate with the two-sentinel
-				# from_string idiom (see theme_handler/material_values); on failure
-				# fall through so the value stays a String and _check_coerced flags
-				# it as an error instead of writing black.
-				var col_a := Color.from_string(value, Color(0, 0, 0, 0))
-				var col_b := Color.from_string(value, Color(1, 1, 1, 1))
-				if col_a == col_b:
-					return col_a
+			var col = McpJsonValues.parse_color(value)
+			if col != null:
+				return col
 		TYPE_BOOL:
 			if value is float or value is int:
 				return bool(value)
@@ -887,6 +909,333 @@ static func _coerce_value(value: Variant, target_type: int) -> Variant:
 	return value
 
 
+## Fill a typed `Array[T]` slot from a JSON list (#612 stage 1: value-element
+## types). `slot_value` is the property's current typed Array — Godot's getter
+## returns the (possibly empty) typed container, which carries the element
+## type, so no PROPERTY_HINT_TYPE_STRING parsing is needed. Elements coerce
+## one at a time through the existing `_coerce_value` / `_check_coerced`
+## pair, then bulk-move via `Array.assign()` with a post-assign size check,
+## so a wrong element can never silently drop the write: it errors naming
+## the element index. Returns the filled typed Array on success, or a
+## `make(...)`-shaped error Dictionary (callers discriminate on
+## `result is Dictionary` — a successful result is always an Array).
+##
+## Object elements (Array[Texture2D], Array[MyResource], ...) coerce per
+## element through `_coerce_object_element` (#612 stage 2), mirroring the
+## single-slot TYPE_OBJECT paths: res:// strings load, {"__class__": ...}
+## instantiates, and each landed element is conformance-checked against the
+## slot's element class/script so a wrong-class Resource errors naming the
+## index instead of being rejected wholesale by `assign`.
+static func _coerce_typed_array(value: Variant, slot_value: Array, prefix: String = "") -> Variant:
+	var elem_label := _typed_array_element_label(slot_value)
+	if not (value is Array):
+		var err := ErrorCodes.make(
+			ErrorCodes.WRONG_TYPE,
+			"Cannot write %s to a typed Array[%s] property; expected a list" % [
+				type_string(typeof(value)), elem_label,
+			],
+		)
+		return ErrorCodes.prefix_message(err, prefix)
+	var elem_type := slot_value.get_typed_builtin()
+	var staging: Array = []
+	var in_list: Array = value
+	for i in in_list.size():
+		var elem_prefix := ("element %d" % i) if prefix.is_empty() else "%s element %d" % [prefix, i]
+		var coerced: Variant
+		if elem_type == TYPE_OBJECT:
+			coerced = _coerce_object_element(in_list[i], elem_prefix)
+			if coerced is Dictionary:
+				## Object elements are never legit Dictionaries (a dict input
+				## is either {"__class__"} — consumed above — or an error), so
+				## a Dictionary return is unambiguously the error envelope.
+				return coerced
+			if coerced != null and not _object_element_conforms(coerced, slot_value):
+				var conform_err := ErrorCodes.make(
+					ErrorCodes.WRONG_TYPE,
+					"element is %s, which is not a %s" % [
+						(coerced as Object).get_class(), elem_label,
+					],
+				)
+				return ErrorCodes.prefix_message(conform_err, elem_prefix)
+		else:
+			coerced = _coerce_value(in_list[i], elem_type)
+			var elem_err := _check_coerced(coerced, elem_type, elem_prefix)
+			if elem_err != null:
+				return elem_err
+			if coerced == null:
+				## Prefix with `elem_prefix` (which already folds in `prefix`),
+				## not `prefix` again — the latter double-stamped the property
+				## context (PR #682 review). Object arrays allow null entries
+				## (Godot typed object arrays store null); value-type arrays
+				## don't.
+				var null_err := ErrorCodes.make(
+					ErrorCodes.WRONG_TYPE,
+					"cannot store null in Array[%s]" % elem_label,
+				)
+				return ErrorCodes.prefix_message(null_err, elem_prefix)
+		staging.append(coerced)
+	var out := slot_value.duplicate()
+	out.clear()
+	out.assign(staging)
+	if out.size() != staging.size():
+		## Backstop for element shapes `_check_coerced` waves through but the
+		## typed container still rejects — `assign` loud-rejects and leaves a
+		## short array, which without this check would be a partial write.
+		var assign_err := ErrorCodes.make(
+			ErrorCodes.WRONG_TYPE,
+			"Array[%s] element conversion failed during assign (%d of %d elements landed)" % [
+				elem_label, out.size(), staging.size(),
+			],
+		)
+		return ErrorCodes.prefix_message(assign_err, prefix)
+	return out
+
+
+## "int" / "Vector3" / "Texture2D" / "MyItemData" — element-type name of a
+## typed Array slot, for error messages.
+static func _typed_array_element_label(slot_value: Array) -> String:
+	if slot_value.get_typed_builtin() == TYPE_OBJECT:
+		return _object_type_label(slot_value.get_typed_class_name(), slot_value.get_typed_script())
+	return type_string(slot_value.get_typed_builtin())
+
+
+## Coerce one element of an object-typed Array (#612 stage 2). Mirrors the
+## single-slot TYPE_OBJECT paths in set_property: a res:// path string loads
+## the Resource; {"__class__": "X", ...} (including the #206 stringified
+## form) instantiates via ResourceHandler and applies the remaining keys;
+## "" / null store a null entry (typed object arrays allow them). Returns
+## the Object (or null), or a make(...)-shaped error Dictionary with
+## `elem_prefix` already folded in.
+static func _coerce_object_element(elem: Variant, elem_prefix: String) -> Variant:
+	if elem == null:
+		return null
+	if elem is Object:
+		return elem
+	if elem is String and (elem as String).begins_with("{"):
+		var json := JSON.new()
+		if json.parse(elem) == OK and json.data is Dictionary and (json.data as Dictionary).has("__class__"):
+			elem = json.data
+	if elem is String:
+		if String(elem).is_empty():
+			return null
+		var path_err = McpPathValidator.loadable_error(elem, "value")
+		if path_err != null:
+			return ErrorCodes.prefix_message(path_err, elem_prefix)
+		if not ResourceLoader.exists(elem):
+			return ErrorCodes.prefix_message(
+				ErrorCodes.make(ErrorCodes.RESOURCE_NOT_FOUND, "Resource not found: %s" % elem),
+				elem_prefix,
+			)
+		var loaded := ResourceLoader.load(elem)
+		if loaded == null:
+			return ErrorCodes.prefix_message(
+				ErrorCodes.make(ErrorCodes.RESOURCE_NOT_FOUND, "Resource not found: %s" % elem),
+				elem_prefix,
+			)
+		return loaded
+	if elem is Dictionary and (elem as Dictionary).has("__class__"):
+		var type_str: String = (elem as Dictionary).get("__class__", "")
+		var made := ResourceHandler._instantiate_resource(type_str)
+		if made is Dictionary:
+			return ErrorCodes.prefix_message(made, elem_prefix)
+		var res: Resource = made
+		var remaining: Dictionary = (elem as Dictionary).duplicate()
+		remaining.erase("__class__")
+		if not remaining.is_empty():
+			var apply_err: Variant = ResourceHandler._apply_resource_properties(res, remaining)
+			if apply_err != null:
+				return ErrorCodes.prefix_message(apply_err, elem_prefix)
+		return res
+	return ErrorCodes.prefix_message(
+		ErrorCodes.make(
+			ErrorCodes.WRONG_TYPE,
+			'cannot convert %s to an Object element; pass a res:// path or {"__class__": ...}'
+			% type_string(typeof(elem)),
+		),
+		elem_prefix,
+	)
+
+
+## True when `elem` satisfies the object-typed slot's element constraint —
+## script type when the slot is Array[MyScriptClass], native class
+## otherwise. Checked per element so a wrong-class Resource errors naming
+## the index instead of being rejected wholesale by `Array.assign()`.
+static func _object_element_conforms(elem: Object, slot_value: Array) -> bool:
+	return _object_conforms(elem, slot_value.get_typed_class_name(), slot_value.get_typed_script())
+
+
+## Shared class/script conformance predicate for typed Array elements and
+## typed Dictionary values (#612 stages 2–3).
+static func _object_conforms(elem: Object, cls_name: StringName, script: Variant) -> bool:
+	if script is Script:
+		return is_instance_of(elem, script)
+	var cls := String(cls_name)
+	return cls.is_empty() or elem.is_class(cls)
+
+
+## Fill a typed `Dictionary[K, V]` slot from a JSON object (#612 stage 3).
+## `slot_value` is the property's current typed Dictionary — the getter
+## returns the (possibly empty) typed container carrying both constraint
+## sides. Keys coerce via `_coerce_typed_dict_key` (JSON object keys are
+## always Strings, so int/float/StringName key slots parse the string and
+## fail closed on anything inexact); values mirror the typed-array element
+## rules — object values through `_coerce_object_element` + conformance,
+## everything else through `_coerce_value`/`_check_coerced`. Never partial:
+## any bad key or value errors naming the key and nothing is written.
+##
+## Returns the filled TYPED Dictionary on success or an UNTYPED
+## `make(...)`-shaped error Dictionary — callers discriminate on
+## `is_typed()`, since a success result is always a duplicate of the typed
+## slot and error envelopes are plain dicts.
+static func _coerce_typed_dictionary(
+	value: Variant, slot_value: Dictionary, prefix: String = ""
+) -> Dictionary:
+	var label := _typed_dictionary_label(slot_value)
+	if not (value is Dictionary):
+		var err := ErrorCodes.make(
+			ErrorCodes.WRONG_TYPE,
+			"Cannot write %s to a typed %s property; expected an object" % [
+				type_string(typeof(value)), label,
+			],
+		)
+		return ErrorCodes.prefix_message(err, prefix)
+	var key_type := slot_value.get_typed_key_builtin() if slot_value.is_typed_key() else TYPE_NIL
+	var value_type := (
+		slot_value.get_typed_value_builtin() if slot_value.is_typed_value() else TYPE_NIL
+	)
+	var out := slot_value.duplicate()
+	out.clear()
+	var in_dict: Dictionary = value
+	for raw_key in in_dict.keys():
+		var key_prefix := (
+			'key "%s"' % str(raw_key) if prefix.is_empty()
+			else '%s key "%s"' % [prefix, str(raw_key)]
+		)
+		var key: Variant = _coerce_typed_dict_key(raw_key, key_type, label, key_prefix)
+		if key is Dictionary:
+			## Scalar-only key coercion never returns a legit Dictionary key,
+			## so a Dictionary here is unambiguously the error envelope.
+			return key
+		var raw_value: Variant = in_dict[raw_key]
+		var coerced: Variant
+		if value_type == TYPE_NIL:
+			## Untyped value side (e.g. Dictionary[String, Variant]).
+			coerced = raw_value
+		elif value_type == TYPE_OBJECT:
+			coerced = _coerce_object_element(raw_value, key_prefix)
+			if coerced is Dictionary:
+				return coerced
+			if coerced != null and not _object_conforms(
+				coerced,
+				slot_value.get_typed_value_class_name(),
+				slot_value.get_typed_value_script(),
+			):
+				var conform_err := ErrorCodes.make(
+					ErrorCodes.WRONG_TYPE,
+					"value is %s, which is not a %s" % [
+						(coerced as Object).get_class(),
+						_object_type_label(
+							slot_value.get_typed_value_class_name(),
+							slot_value.get_typed_value_script(),
+						),
+					],
+				)
+				return ErrorCodes.prefix_message(conform_err, key_prefix)
+		else:
+			coerced = _coerce_value(raw_value, value_type)
+			var value_err := _check_coerced(coerced, value_type, key_prefix)
+			if value_err != null:
+				return value_err
+			if coerced == null:
+				var null_err := ErrorCodes.make(
+					ErrorCodes.WRONG_TYPE,
+					"cannot store null as a %s value in %s" % [type_string(value_type), label],
+				)
+				return ErrorCodes.prefix_message(null_err, key_prefix)
+		out[key] = coerced
+	if out.size() != in_dict.size():
+		## Two input keys collapsing onto one coerced key ("1" and "01" both
+		## parse to int 1) would silently lose an entry — refuse instead.
+		var collide_err := ErrorCodes.make(
+			ErrorCodes.WRONG_TYPE,
+			"%s keys collide after coercion (%d of %d entries landed)" % [
+				label, out.size(), in_dict.size(),
+			],
+		)
+		return ErrorCodes.prefix_message(collide_err, prefix)
+	return out
+
+
+## Coerce one JSON-object key onto a typed Dictionary's key slot. JSON keys
+## are always Strings, so int/float/StringName key types accept exactly the
+## strings that parse cleanly; everything else fails closed naming the key.
+## Object/compound key types are unreachable from JSON and refuse loudly.
+static func _coerce_typed_dict_key(
+	raw_key: Variant, key_type: int, label: String, key_prefix: String
+) -> Variant:
+	if key_type == TYPE_NIL or typeof(raw_key) == key_type:
+		return raw_key
+	if raw_key is String:
+		var key_str := raw_key as String
+		match key_type:
+			TYPE_STRING_NAME:
+				return StringName(key_str)
+			TYPE_INT:
+				if key_str.is_valid_int():
+					return int(key_str)
+			TYPE_FLOAT:
+				if key_str.is_valid_float():
+					return float(key_str)
+		## String key that didn't parse: JSON object keys are ALWAYS strings,
+		## so blaming the String-ness would imply the caller could somehow
+		## send a non-string key — name the expected key type instead.
+		var parse_err := ErrorCodes.make(
+			ErrorCodes.WRONG_TYPE,
+			"key does not parse as %s (the %s key type)" % [type_string(key_type), label],
+		)
+		return ErrorCodes.prefix_message(parse_err, key_prefix)
+	if raw_key is float and key_type == TYPE_INT and is_equal_approx(raw_key, roundf(raw_key)):
+		## Whole JSON numbers arrive as floats through some non-JSON callers.
+		return int(raw_key)
+	var err := ErrorCodes.make(
+		ErrorCodes.WRONG_TYPE,
+		"cannot use %s as a %s key" % [type_string(typeof(raw_key)), label],
+	)
+	return ErrorCodes.prefix_message(err, key_prefix)
+
+
+## "Dictionary[String, int]" / "Dictionary[int, Texture2D]" — for error
+## messages. Untyped sides read as Variant.
+static func _typed_dictionary_label(slot_value: Dictionary) -> String:
+	var key_label := "Variant"
+	if slot_value.is_typed_key():
+		key_label = (
+			_object_type_label(
+				slot_value.get_typed_key_class_name(), slot_value.get_typed_key_script()
+			)
+			if slot_value.get_typed_key_builtin() == TYPE_OBJECT
+			else type_string(slot_value.get_typed_key_builtin())
+		)
+	var value_label := "Variant"
+	if slot_value.is_typed_value():
+		value_label = (
+			_object_type_label(
+				slot_value.get_typed_value_class_name(), slot_value.get_typed_value_script()
+			)
+			if slot_value.get_typed_value_builtin() == TYPE_OBJECT
+			else type_string(slot_value.get_typed_value_builtin())
+		)
+	return "Dictionary[%s, %s]" % [key_label, value_label]
+
+
+## Class/script display name for an object-typed constraint side.
+static func _object_type_label(cls_name: StringName, script: Variant) -> String:
+	var cls := String(cls_name)
+	if script is Script and not String((script as Script).get_global_name()).is_empty():
+		cls = String((script as Script).get_global_name())
+	return cls if not cls.is_empty() else "Object"
+
+
 func get_node_properties(params: Dictionary) -> Dictionary:
 	var resolved := _resolve_node(params)
 	if resolved.has("error"):
@@ -895,27 +1244,77 @@ func get_node_properties(params: Dictionary) -> Dictionary:
 	var node_path: String = resolved.path
 	var scene_root: Node = resolved.scene_root
 
+	# Optional token-reducing filter: `fields` restricts the response to a
+	# named subset. Defaults off (empty), so existing callers see the full
+	# dump unchanged. The MCP tool types this as a list, but batch_execute and
+	# raw callers bypass that, so validate the shape here before iterating.
+	var fields_param: Variant = params.get("fields", [])
+	if fields_param == null:
+		fields_param = []
+	if not (fields_param is Array):
+		return ErrorCodes.make(
+			ErrorCodes.INVALID_PARAMS,
+			"'fields' must be an array of property names, got %s (%s)" % [
+				type_string(typeof(fields_param)), str(fields_param),
+			],
+		)
+	var field_filter := {}
+	for f in fields_param:
+		## Property names are strings on the wire; anything else is a
+		## malformed filter (e.g. [123] or [["fov"]]) — reject rather than
+		## silently stringify into a filter that matches nothing (#123/#126:
+		## strict within the accepted shape). StringName is allowed for
+		## editor-side callers.
+		if not (f is String or f is StringName):
+			return ErrorCodes.make(
+				ErrorCodes.INVALID_PARAMS,
+				"'fields' elements must be property-name strings, got %s in %s" % [
+					type_string(typeof(f)), str(fields_param),
+				],
+			)
+		field_filter[str(f)] = true
+	var use_field_filter := not field_filter.is_empty()
+
 	var properties: Array[Dictionary] = []
+	var editor_property_count := 0
+	var matched_fields := {}
 	for prop in node.get_property_list():
 		var usage: int = prop.get("usage", 0)
 		if not (usage & PROPERTY_USAGE_EDITOR):
 			continue
-		# Safe read: custom script getters can error; skip bad properties
-		# rather than letting one bad read timeout the entire request.
-		var value = node.get(prop.name)
-		if value == null and prop.type != TYPE_NIL:
-			continue
+		editor_property_count += 1
+		if use_field_filter:
+			if not field_filter.has(prop.name):
+				continue
+			matched_fields[prop.name] = true
+		# Null reads are values, not omissions: `script` on an unscripted node
+		# and unset Resource slots (mesh, material, …) read back null and must
+		# appear as "value": null with their declared type, so callers can tell
+		# "Object-typed, currently unset" from "doesn't exist" (#771).
 		properties.append({
 			"name": prop.name,
 			"type": type_string(prop.type),
-			"value": _serialize_value(value),
+			"value": _serialize_value(node.get(prop.name)),
 		})
+	# Requested names that matched no editor-visible property — distinguishes
+	# "you asked for something that doesn't exist" from "exists and is null".
+	var unknown_fields: Array[String] = []
+	for f in field_filter:
+		if not matched_fields.has(f):
+			unknown_fields.append(f)
 	return {
 		"data": {
 			"path": node_path,
 			"node_type": node.get_class(),
 			"properties": properties,
 			"count": properties.size(),
+			# Total editor-visible properties before field filtering, so a
+			# caller that passed `fields` knows how many were withheld.
+			# Invariant: an unfiltered call returns every editor-visible
+			# property, so count == total_count; only the `fields` filter
+			# can make count < total_count.
+			"total_count": editor_property_count,
+			"unknown_fields": unknown_fields,
 		}
 	}
 

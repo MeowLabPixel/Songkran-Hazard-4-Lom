@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_add_1.wav" id="1_84m5u"]
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_rwj2u"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_add_2.wav" id="2_7xppu"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_1.wav" id="2_ec8dt"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_add_3.wav" id="3_2rtua"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_2.wav" id="3_fk6dn"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_shotgun_shoot_3.wav" id="4_84m5u"]
+
+[resource]
+script = ExtResource("1_rwj2u")
+name = "watergun_shotgun_shoot"
+volume_randomness_db = 0.5
+is_3d = true
+streams = Array[AudioStream]([ExtResource("2_ec8dt"), ExtResource("3_fk6dn"), ExtResource("4_84m5u")])
+parallel_streams = Array[AudioStream]([ExtResource("1_84m5u"), ExtResource("2_7xppu"), ExtResource("3_2rtua")])

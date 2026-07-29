@@ -11,10 +11,16 @@ extends RefCounted
 ## owns the port, making the failure invisible. See issue #146.
 
 const NETSH_ARGS := ["interface", "ipv4", "show", "excludedportrange", "protocol=tcp"]
-const NETSH_CACHE_TTL_MS := 2000
 
+## Session-lifetime cache. winnat establishes its excluded-port ranges at
+## boot, so the table is effectively static for an editor session — while
+## a `netsh` spawn costs ~250ms (measured), which the old 2s TTL re-paid
+## on every startup walk (and could even re-pay *within* one walk when
+## server-command discovery ran long between the two netsh consumers).
+## Staleness risk is bounded: a mid-session winnat change (Docker/WSL2
+## start) at worst yields the same failure mode as the pre-#146 code for
+## the remainder of the session, and only if a spawn happens after it.
 static var _netsh_cache_text := ""
-static var _netsh_cache_msec := 0
 static var _netsh_cache_valid := false
 static var _netsh_query_count := 0
 
@@ -24,8 +30,7 @@ static var _netsh_query_count := 0
 static func is_port_excluded(port: int) -> bool:
 	if OS.get_name() != "Windows":
 		return false
-	var now_ms := Time.get_ticks_msec()
-	var cached := _get_cached_excluded_output(now_ms)
+	var cached := _get_cached_excluded_output()
 	if bool(cached.get("hit", false)):
 		return parse_excluded(str(cached.get("text", "")), port)
 	var output: Array = []
@@ -33,27 +38,23 @@ static func is_port_excluded(port: int) -> bool:
 	if exit_code != 0 or output.is_empty():
 		return false
 	var text := str(output[0])
-	_store_excluded_output(text, now_ms)
+	_store_excluded_output(text)
 	return parse_excluded(text, port)
 
 
-static func _store_excluded_output(text: String, now_ms: int) -> void:
+static func _store_excluded_output(text: String) -> void:
 	_netsh_cache_text = text
-	_netsh_cache_msec = now_ms
 	_netsh_cache_valid = true
 
 
-static func _get_cached_excluded_output(now_ms: int) -> Dictionary:
+static func _get_cached_excluded_output() -> Dictionary:
 	if not _netsh_cache_valid:
-		return {"hit": false, "text": ""}
-	if now_ms - _netsh_cache_msec > NETSH_CACHE_TTL_MS:
 		return {"hit": false, "text": ""}
 	return {"hit": true, "text": _netsh_cache_text}
 
 
 static func _clear_cache_for_tests() -> void:
 	_netsh_cache_text = ""
-	_netsh_cache_msec = 0
 	_netsh_cache_valid = false
 
 
@@ -115,8 +116,7 @@ static func _ranges_contain(ranges: Array[Vector2i], port: int) -> bool:
 static func suggest_non_excluded_port(start: int, span: int = 2048, max_port: int = 65535) -> int:
 	if OS.get_name() != "Windows":
 		return start
-	var now_ms := Time.get_ticks_msec()
-	var cached := _get_cached_excluded_output(now_ms)
+	var cached := _get_cached_excluded_output()
 	if bool(cached.get("hit", false)):
 		return suggest_non_excluded_port_from_output(str(cached.get("text", "")), start, span, max_port)
 	var output: Array = []
@@ -124,7 +124,7 @@ static func suggest_non_excluded_port(start: int, span: int = 2048, max_port: in
 	if exit_code != 0 or output.is_empty():
 		return start
 	var text := str(output[0])
-	_store_excluded_output(text, now_ms)
+	_store_excluded_output(text)
 	return suggest_non_excluded_port_from_output(text, start, span, max_port)
 
 
@@ -144,23 +144,3 @@ static func suggest_non_excluded_port_from_output(text: String, start: int, span
 			return p
 	return start
 
-
-## User-facing hint for the proactive port-reservation detection path —
-## rendered when `is_port_excluded(port)` returns true *before* we even
-## try to bind. Same copy as the post-crash WinError-10013 branch in
-## `hint_from_output` so the two entry points agree.
-static func port_excluded_hint(port: int) -> String:
-	return "Port %d is reserved by Windows (often Hyper-V / WSL2 / Docker Desktop). In an admin PowerShell: `net stop winnat; net start winnat`, then click Reconnect." % port
-
-
-## Scan captured server output for known failure signatures and return a
-## short, user-facing hint. Empty string means no match.
-static func hint_from_output(lines: PackedStringArray, port: int) -> String:
-	var joined := "\n".join(lines).to_lower()
-	if joined.find("winerror 10013") >= 0 or joined.find("forbidden by its access permissions") >= 0:
-		return port_excluded_hint(port)
-	if joined.find("errno 98") >= 0 or joined.find("winerror 10048") >= 0 or joined.find("address already in use") >= 0:
-		return "Port %d is already in use by another process. Stop the conflicting process, then click Reconnect." % port
-	if joined.find("modulenotfounderror") >= 0 or joined.find("no module named") >= 0:
-		return "The `godot-ai` Python package didn't load. Try `uv cache clean`, then Reconnect."
-	return ""

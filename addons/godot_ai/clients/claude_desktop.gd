@@ -10,7 +10,6 @@ func _init() -> void:
 	id = "claude_desktop"
 	display_name = "Claude Desktop"
 	config_type = "json"
-	doc_url = "https://claude.ai/download"
 	path_template = {
 		"darwin": "~/Library/Application Support/Claude/claude_desktop_config.json",
 		"windows": "$APPDATA/Claude/claude_desktop_config.json",
@@ -21,4 +20,3 @@ func _init() -> void:
 	## verifier ALSO accepts a future url-style entry (Claude Desktop has
 	## been tolerant of both forms since the npx→uvx bridge migration).
 	entry_uvx_bridge = McpClient.UvxBridge.FLAT
-	detect_paths = PackedStringArray(path_template.values())

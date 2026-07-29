@@ -6,8 +6,8 @@
 [resource]
 script = ExtResource("1_vtd1d")
 name = "Region_PlayerTakedownAttackStart"
+volume_db = -10.0
 pitch_range = Vector2(1, 1)
-volume_randomness_db = 0.5
 is_3d = true
 use_regions = true
 stream = ExtResource("2_s16x8")

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_3v8mx"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_gethit.ogg" id="2_tggt0"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_gethit_add_1.wav" id="3_7n8xa"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_gethit_add_2.wav" id="4_5y8xb"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_gethit_add_3.wav" id="5_2z9xc"]
+
+[resource]
+script = ExtResource("1_3v8mx")
+name = "leon_gethit"
+volume_randomness_db = 0.5
+is_3d = true
+streams = Array[AudioStream]([ExtResource("2_tggt0")])
+parallel_streams = Array[AudioStream]([ExtResource("3_7n8xa"), ExtResource("4_5y8xb"), ExtResource("5_2z9xc")])

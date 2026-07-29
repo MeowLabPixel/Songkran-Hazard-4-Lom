@@ -38,8 +38,7 @@ static func status_label(status: McpClient.Status) -> String:
 
 var id: String = ""                              ## stable key, e.g. "cursor"
 var display_name: String = ""                    ## "Cursor"
-var config_type: String = ""                     ## "json" | "toml" | "cli"
-var doc_url: String = ""
+var config_type: String = ""                     ## "json" | "toml" | "yaml" | "cli"
 
 # JSON / TOML clients ------------------------------------------------------
 ## {"darwin": "~/...", "windows": "$APPDATA/...", "linux": "$XDG_CONFIG_HOME/..."}
@@ -90,14 +89,31 @@ enum UvxBridge { NONE, FLAT }
 var entry_uvx_bridge: UvxBridge = UvxBridge.NONE
 
 ## Paths whose existence implies the user has this client installed.
-## Used purely for the dock's "installed" badge.
+## Used purely for the dock's "installed" badge. `is_installed()` additionally
+## checks `resolved_config_path()`, so a config relocated via
+## `config_home_env` is detected without listing it here.
 var detect_paths: PackedStringArray = PackedStringArray()
+
+# Config-home env override ---------------------------------------------------
+## Some clients honor an env var that relocates their entire config home
+## (Codex: `$CODEX_HOME/config.toml`; Claude Code: `$CLAUDE_CONFIG_DIR/.claude.json`).
+## When `config_home_env` names an env var that is set and non-empty,
+## `resolved_config_path()` returns `<env value>/<config_home_env_subpath>`
+## instead of resolving `path_template`. Both fields must be non-empty for the
+## override to apply. Only declare a mapping when the client's docs guarantee
+## the env var relocates the exact file we write — a wrong mapping writes the
+## MCP entry somewhere the client never reads and Configure false-succeeds.
+var config_home_env: String = ""
+## Path of the config file relative to the env var's directory, e.g.
+## "config.toml". Joined verbatim — no per-OS variants needed because the env
+## value itself is already an absolute (or ~-prefixed) directory.
+var config_home_env_subpath: String = ""
 
 # CLI clients --------------------------------------------------------------
 var cli_names: PackedStringArray = PackedStringArray()
 ## Argument templates with `{name}` and `{url}` tokens; the strategy
 ## substitutes them at call time. Tokens are matched verbatim — no escaping
-## semantics, no shell expansion. Today only `claude_code` populates these.
+## semantics, no shell expansion. Populated by CLI descriptors (`claude_code`, `kimi_code`).
 var cli_register_template: PackedStringArray = PackedStringArray()
 var cli_unregister_template: PackedStringArray = PackedStringArray()
 ## Args run to read current state; stdout is scanned for the server name and
@@ -116,8 +132,28 @@ var toml_body_template: PackedStringArray = PackedStringArray()
 
 
 ## Resolved absolute config path for this client on the current OS.
+## A set, non-empty `config_home_env` env var overrides `path_template`
+## (issue #617: e.g. CODEX_HOME relocates ~/.codex — writing the default
+## path would false-succeed while Codex reads elsewhere).
 func resolved_config_path() -> String:
+	var override := config_home_override()
+	if not override.is_empty():
+		return override
 	return McpPathTemplate.resolve(path_template)
+
+
+## The env-var-relocated config path, or "" when no override applies
+## (no mapping declared, env var unset, or env var empty/whitespace).
+func config_home_override() -> String:
+	if config_home_env.is_empty() or config_home_env_subpath.is_empty():
+		return ""
+	## env_lookup, not OS.get_environment: this runs on dock worker threads,
+	## which must not race the spawn window's setenv/unsetenv (#691).
+	var home := McpPathTemplate.env_lookup(config_home_env).strip_edges()
+	if home.is_empty():
+		return ""
+	# Expand a leading ~ so `CODEX_HOME=~/codex-alt` behaves like the shell.
+	return McpPathTemplate.expand(home).path_join(config_home_env_subpath)
 
 
 ## True when a CLI client also declares where its config file lives, so it can

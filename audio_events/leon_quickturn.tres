@@ -1,7 +1,8 @@
 [gd_resource type="Resource" script_class="SoundEvent" format=3]
 
 [ext_resource type="Script" path="res://scripts/audio/sound_event.gd" id="1_8jvh2"]
-[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_quickturn.ogg" id="2_m6evn"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_quickturn_1.wav" id="2_wav1"]
+[ext_resource type="AudioStream" path="res://Audio-Sfx-Music/SFXs/Rookie Lee/leon_quickturn_2.wav" id="3_wav2"]
 
 [resource]
 script = ExtResource("1_8jvh2")
@@ -9,4 +10,4 @@ name = "leon_quickturn"
 volume_db = 5.0
 volume_randomness_db = 0.5
 is_3d = true
-streams = Array[AudioStream]([ExtResource("2_m6evn")])
+streams = Array[AudioStream]([ExtResource("2_wav1"), ExtResource("3_wav2")])

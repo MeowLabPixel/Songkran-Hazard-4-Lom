@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://yp5prqgnr7gr"
+path="res://.godot/imported/watergun_rifle_shoot_1.wav-065e3015b5f2b50624b97790843d65fc.sample"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/SFXs/WaterGun And Combat/watergun_rifle_shoot_1.wav"
+dest_files=["res://.godot/imported/watergun_rifle_shoot_1.wav-065e3015b5f2b50624b97790843d65fc.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

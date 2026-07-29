@@ -6,7 +6,6 @@ func _init() -> void:
 	id = "roo_code"
 	display_name = "Roo Code"
 	config_type = "json"
-	doc_url = "https://docs.roocode.com/features/mcp/using-mcp-in-roo"
 	path_template = {
 		"darwin": "~/Library/Application Support/Code/User/globalStorage/rooveterinaryinc.roo-cline/settings/mcp_settings.json",
 		"windows": "$APPDATA/Code/User/globalStorage/rooveterinaryinc.roo-cline/settings/mcp_settings.json",
@@ -26,4 +25,3 @@ func _init() -> void:
 	## split, the Configure-All-Mismatched sweep silently wipes the user's
 	## auto-approval list every time the type pin or URL drifts.
 	entry_initial_fields = {"disabled": false, "alwaysAllow": []}
-	detect_paths = PackedStringArray(path_template.values())
