@@ -51,6 +51,30 @@ func _ready() -> void:
 	area.monitoring      = true
 
 	area.area_entered.connect(_on_area_entered)
+	_sanitize_scale(area)
+
+func _notification(what: int) -> void:
+	if what == Node3D.NOTIFICATION_LOCAL_TRANSFORM_CHANGED or what == Node3D.NOTIFICATION_TRANSFORM_CHANGED:
+		var area := get_parent() as Area3D
+		_sanitize_scale(area)
+
+func _physics_process(_delta: float) -> void:
+	var area := get_parent() as Area3D
+	_sanitize_scale(area)
+
+func _sanitize_scale(area: Area3D) -> void:
+	if not area or not area.is_inside_tree():
+		return
+	area.top_level = true
+	var parent_node := area.get_parent() as Node3D
+	if parent_node:
+		var t := parent_node.global_transform
+		t.basis = t.basis.orthonormalized()
+		area.global_transform = t
+	else:
+		var t := area.global_transform
+		t.basis = t.basis.orthonormalized()
+		area.global_transform = t
 
 func _on_area_entered(area: Area3D) -> void:
 	if not area.is_in_group("enemy_attack"):

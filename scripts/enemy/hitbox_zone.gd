@@ -48,8 +48,7 @@ func _ready() -> void:
 
 	var area := get_parent() as Area3D
 	if area:
-		# Scrub any inherited or baked non-uniform scale to prevent Jolt Physics warnings
-		area.transform.basis = area.transform.basis.orthonormalized()
+		_sanitize_scale(area)
 		
 		# Find the Skeleton3D and the corresponding BoneAttachment3D node
 		var skeleton: Skeleton3D = null
@@ -90,29 +89,35 @@ func _ready() -> void:
 		# Reparent to BoneAttachment3D at runtime to eliminate one-frame lag
 		if not Engine.is_editor_hint() and _attachment and area.get_parent() != _attachment:
 			_reparent_to_attachment.call_deferred(area, _attachment)
-			_attachment = null
 	else:
 		push_error("[HitboxZone] Parent must be Area3D (zone '%s')" % zone_name)
 
+func _notification(what: int) -> void:
+	if what == Node3D.NOTIFICATION_LOCAL_TRANSFORM_CHANGED or what == Node3D.NOTIFICATION_TRANSFORM_CHANGED:
+		var area := get_parent() as Area3D
+		_sanitize_scale(area)
+
 func _process(_delta: float) -> void:
 	var area := get_parent() as Area3D
-	if area:
-		if _attachment:
-			var target_trans = _attachment.global_transform
-			target_trans.basis = target_trans.basis.orthonormalized()
-			area.global_transform = target_trans
-		else:
-			area.scale = Vector3.ONE
+	_sanitize_scale(area)
 
 func _physics_process(_delta: float) -> void:
 	var area := get_parent() as Area3D
-	if area:
-		if _attachment:
-			var target_trans = _attachment.global_transform
-			target_trans.basis = target_trans.basis.orthonormalized()
-			area.global_transform = target_trans
-		else:
-			area.scale = Vector3.ONE
+	_sanitize_scale(area)
+
+func _sanitize_scale(area: Area3D) -> void:
+	if not area or not area.is_inside_tree():
+		return
+	area.top_level = true
+	var source: Node3D = _attachment if is_instance_valid(_attachment) else (area.get_parent() as Node3D)
+	if source:
+		var t := source.global_transform
+		t.basis = t.basis.orthonormalized()
+		area.global_transform = t
+	else:
+		var t := area.global_transform
+		t.basis = t.basis.orthonormalized()
+		area.global_transform = t
 
 func _on_body_entered(body: Node3D) -> void:
 	if not (body.is_in_group("player_projectile") or body.is_in_group("bullet") or body.is_in_group("player_attack")):

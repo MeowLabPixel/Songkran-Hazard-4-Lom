@@ -173,20 +173,8 @@ func _ready() -> void:
 		
 	process_mode = PROCESS_MODE_ALWAYS
 	
-	# Generate all sound events dynamically from audio files on disk
-	var generator_script = load("res://scripts/audio/sound_event_generator.gd")
-	if generator_script:
-		var generator = generator_script.new()
-		generator.generate_all_events()
-	
-	# Fallback: if sound_bank is empty, load all generated resources dynamically
-	if sound_bank.is_empty():
-		_load_sound_bank_from_disk()
-	else:
-		for event in sound_bank:
-			if event and not event.name.is_empty():
-				_events[event.name] = event
-				_active_instances[event.name] = []
+	# Load all sound event resources dynamically from disk
+	_load_sound_bank_from_disk()
 	
 	# Initialize/create audio buses dynamically
 	_setup_audio_buses()
