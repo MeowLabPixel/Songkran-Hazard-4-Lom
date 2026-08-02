@@ -3,6 +3,14 @@ class_name SniperWaterGun
 
 func _ready():
 	gun_name = "Water sniper"
+	recoil_pitch = 4.2
+	recoil_yaw = 0.4
+	camera_fov_kick = 3.6
+	camera_shake = 0.10
+	mesh_kick_z = 0.22
+	mesh_kick_pitch = 0.28
+	shoulder_kick_z = 0.22
+	shoulder_kick_pitch = 0.26
 
 func play_shoot_sound(shoot_pos: Vector3) -> void:
 	var pitch = randf_range(0.95, 1.05) if (SoundManager and SoundManager.enable_pitch_randomization) else 1.0

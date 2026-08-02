@@ -24,6 +24,15 @@ extends Control
 @export var shrink_speed: float = 15.0
 @export var expand_speed: float = 8.0
 
+@export_group("Procedural Sway & Recoil Settings")
+@export var enable_crosshair_sway: bool = true
+@export var enable_crosshair_recoil: bool = true
+@export var crosshair_sway_amount: float = 2.5
+@export var crosshair_sway_move_mult: float = 2.5
+@export var crosshair_shot_kick_upward: float = 12.0
+@export var crosshair_shot_recoil_duration: float = 0.5
+@export var crosshair_shot_recoil_recovery_speed: float = 4.5
+
 var player: Node = null
 
 # Dynamic visual state
@@ -32,11 +41,37 @@ var was_visible: bool = false
 var pop_scale: float = 1.0
 var was_fully_focused: bool = false
 
+# Procedural Sway & Shot Recoil
+var sway_offset: Vector2 = Vector2.ZERO
+var target_mouse_sway: Vector2 = Vector2.ZERO
+var crosshair_shot_offset: Vector2 = Vector2.ZERO
+var shot_recoil_timer: float = 0.0
+var mouse_still_timer: float = 0.0
+
 func _ready() -> void:
+	add_to_group("crosshair")
 	scale = Vector2.ONE
 	visual_r = max_reticle_radius
 	pop_scale = 1.0
 	was_fully_focused = false
+	sway_offset = Vector2.ZERO
+	target_mouse_sway = Vector2.ZERO
+	crosshair_shot_offset = Vector2.ZERO
+	shot_recoil_timer = 0.0
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		if event.relative.length_squared() > 1.0:
+			mouse_still_timer = 0.0
+
+func trigger_shot_kick(amount: float = 9.0) -> void:
+	var gm = get_tree().root.get_node_or_null("GameManager") if get_tree() and get_tree().root.has_node("GameManager") else null
+	var is_recoil_enabled = enable_crosshair_recoil and (not gm or not ("enable_crosshair_recoil" in gm) or gm.enable_crosshair_recoil)
+	
+	if is_recoil_enabled:
+		visual_r = minf(visual_r + amount, max_reticle_radius * 1.6)
+		crosshair_shot_offset += Vector2(randf_range(-crosshair_shot_kick_upward * 0.5, crosshair_shot_kick_upward * 0.5), -crosshair_shot_kick_upward)
+		shot_recoil_timer = crosshair_shot_recoil_duration
 
 func get_player() -> Node:
 	if player and is_instance_valid(player):
@@ -66,6 +101,8 @@ func _process(delta: float) -> void:
 			pop_scale = 1.0
 			was_fully_focused = false
 			was_visible = true
+			sway_offset = Vector2.ZERO
+			target_mouse_sway = Vector2.ZERO
 			
 		var p = get_player()
 		if p:
@@ -87,6 +124,39 @@ func _process(delta: float) -> void:
 			pop_scale = lerpf(pop_scale, 1.0, delta * 12.0)
 			scale = Vector2(pop_scale, pop_scale)
 			
+			mouse_still_timer += delta
+			var sway_fade = clampf((mouse_still_timer - 0.15) * 4.0, 0.0, 1.0)
+			
+			var breath_sway = Vector2.ZERO
+			if enable_crosshair_sway and sway_fade > 0.0:
+				var t = Time.get_ticks_msec() * 0.001
+				var is_moving = ("velocity" in p) and (p.velocity.length() > 0.1)
+				# Smoothly reduce sway by 50% at full focus
+				var focus_mult = lerpf(1.0, 0.5, focus_prog)
+				var sway_mult = crosshair_sway_amount * sway_fade * focus_mult
+				if is_moving:
+					sway_mult *= crosshair_sway_move_mult
+				
+				# Gamey figure-8 sway: two sine waves at slightly different speeds
+				# creates a smooth Lissajous curve — reads clearly as breathing, not noise
+				breath_sway = Vector2(
+					sin(t * 1.1) * 4.0 * sway_mult,
+					sin(t * 1.7) * 3.0 * sway_mult
+				)
+			
+			target_mouse_sway = Vector2.ZERO
+			
+			if shot_recoil_timer > 0.0:
+				shot_recoil_timer -= delta
+				crosshair_shot_offset = crosshair_shot_offset.lerp(Vector2.ZERO, delta * crosshair_shot_recoil_recovery_speed)
+				if shot_recoil_timer <= 0.0:
+					crosshair_shot_offset = Vector2.ZERO
+			else:
+				crosshair_shot_offset = Vector2.ZERO
+				
+			var desired_sway = breath_sway + target_mouse_sway + crosshair_shot_offset
+			sway_offset = sway_offset.lerp(desired_sway, delta * 14.0)
+			
 		queue_redraw()
 	else:
 		was_visible = false
@@ -94,6 +164,10 @@ func _process(delta: float) -> void:
 		scale = Vector2.ONE
 		pop_scale = 1.0
 		was_fully_focused = false
+		sway_offset = Vector2.ZERO
+		target_mouse_sway = Vector2.ZERO
+		crosshair_shot_offset = Vector2.ZERO
+		shot_recoil_timer = 0.0
 
 func _draw() -> void:
 	var p = get_player()
@@ -107,7 +181,7 @@ func _draw() -> void:
 	if focus_prog >= 1.0:
 		line_color = focused_color
 		
-	var center = size / 2.0
+	var center = (size / 2.0) + sway_offset
 	
 	# Draw reticle lines
 	# Top

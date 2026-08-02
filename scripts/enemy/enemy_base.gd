@@ -308,9 +308,9 @@ func take_hit(hit_data: Dictionary) -> void:
 	if is_defeated or is_takedown_defeat:
 		return
 		
-	# Play pain voiceline with 0.8s cooldown
+	# Play pain voiceline and hit SFX without cooldown when hit
 	var time_now = Time.get_ticks_msec() / 1000.0
-	if time_now - _last_voice_gethit_time >= 0.8:
+	if time_now - _last_voice_gethit_time >= 0.05:
 		_last_voice_gethit_time = time_now
 		var event_name = "vo_zombie_m_melee_gethit" if voice_character == "Zombie Male" else "vo_zombie_f_melee_gethit"
 		SoundManager.play_3d(event_name, self, 0.0, -1.0, custom_pitch_scale)

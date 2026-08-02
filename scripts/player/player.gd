@@ -61,6 +61,12 @@ func _get_footstep_markers(anim_player: AnimationPlayer, anim_name: String) -> A
 			result = temp
 	return result
 
+func trigger_shoulder_recoil(kick_z: float = 0.06, kick_pitch: float = 0.08) -> void:
+	if skeleton:
+		var lean_modifier = skeleton.get_node_or_null("SpineLeanModifier") as PlayerLeanModifier
+		if lean_modifier and lean_modifier.has_method("trigger_shoulder_recoil"):
+			lean_modifier.trigger_shoulder_recoil(kick_z, kick_pitch)
+
 @export_group("Data setting")
 var MaxHP = 150
 @export var hitboxF: Area3D
@@ -114,6 +120,10 @@ var _last_grabber: Node = null
 
 #gun
 @export var gun_controller: GunController
+
+@export_group("Aim Settings")
+@export var aim_head_focus_pitch_down: float = 0.4
+var current_focus_pitch_weight: float = 0.0
 
 #var GunA = {
 	#"name": "pistol",
@@ -177,6 +187,7 @@ const SPEED = 5.0
 const JUMP_VELOCITY = 4.5
 
 func _ready() -> void:
+	add_to_group("player")
 	if get_tree().root.has_node("GameManager") and GameManager.difficulty == GameManager.Difficulty.CASUAL:
 		MaxHP = 210
 	else:
@@ -332,7 +343,7 @@ func _ready() -> void:
 		if head_lookat:
 			aim_target_head = Marker3D.new()
 			aim_target_head.name = "Aim_target_head"
-			add_child(aim_target_head)
+			skeleton.add_child(aim_target_head) # Parent to skeleton so rig turning inertia doesn't snap it!
 			head_lookat.target_node = head_lookat.get_path_to(aim_target_head)
 			# Enable secondary rotation so the head can twist left/right to look at the crosshair
 			head_lookat.use_secondary_rotation = true
@@ -429,6 +440,16 @@ func _process(delta: float) -> void:
 
 func _update_aim_target(delta: float) -> void:
 	if aim_target and camera and camera.targetref:
+		# Project the UI crosshair into 3D space so gun and head point EXACTLY at it!
+		var screen_size = get_viewport().get_visible_rect().size
+		var screen_center = screen_size / 2.0
+		var crosshair_speed = screen_size.y * 1.25
+		var offset_pixels = Vector2(camera.aim_offset.x, camera.aim_offset.y) * crosshair_speed
+		var crosshair_center = screen_center + offset_pixels
+		
+		var distance = camera.global_position.distance_to(camera.targetref.global_position)
+		var projected_target = camera.camera.project_position(crosshair_center, distance)
+
 		var lean_modifier = skeleton.get_node_or_null("SpineLeanModifier") as PlayerLeanModifier
 		if lean_modifier:
 			# Let player_lean_modifier.gd handle the actual bone tilt.
@@ -437,16 +458,6 @@ func _update_aim_target(delta: float) -> void:
 			var bob_y = lean_modifier.current_bob_y
 			var cam_basis = camera.global_transform.basis
 			var target_bob = (cam_basis.x * bob_x + cam_basis.y * bob_y) * 15.0 * lean_modifier.arm_bob_multiplier
-			
-			# Project the UI crosshair into 3D space so the gun points EXACTLY at it!
-			var screen_size = get_viewport().get_visible_rect().size
-			var screen_center = screen_size / 2.0
-			var crosshair_speed = screen_size.y * 1.25
-			var offset_pixels = Vector2(camera.aim_offset.x, camera.aim_offset.y) * crosshair_speed
-			var crosshair_center = screen_center + offset_pixels
-			
-			var distance = camera.global_position.distance_to(camera.targetref.global_position)
-			var projected_target = camera.camera.project_position(crosshair_center, distance)
 			
 			# Cast a ray from the camera exactly through the crosshair to find the physical target!
 			var space_state = get_world_3d().direct_space_state
@@ -462,11 +473,16 @@ func _update_aim_target(delta: float) -> void:
 					exclude_nodes.append(child.get_rid())
 			query.exclude = exclude_nodes
 			
+			var raw_target_pos = projected_target
 			var result = space_state.intersect_ray(query)
 			if result:
-				true_aim_position = result.position
+				raw_target_pos = result.position
+			
+			if true_aim_position == Vector3.ZERO:
+				true_aim_position = raw_target_pos
 			else:
-				true_aim_position = projected_target
+				# Smoothly lerp depth transitions so raycast edge shifts don't snap target position
+				true_aim_position = true_aim_position.lerp(raw_target_pos, delta * 15.0)
 			
 			# Shift the visual target to compensate for spine/shoulder parallax
 			var total_offset = aim_visual_offset
@@ -490,37 +506,48 @@ func _update_aim_target(delta: float) -> void:
 				var target_local = Vector3(0, 1.6, 0) + rotated_dir
 				aim_target_head.position = aim_target_head.position.lerp(target_local, delta * 15.0)
 			else:
-				# Calculate the true global point we want the head to look at.
-				var true_target_global
+				# Calculate the true global target for the head
+				var true_target_global: Vector3
 				if is_aimming:
-					# We use the gun's aim_target, but shift it a bit back towards the raw crosshair 
-					# so the head isn't completely perfectly aligned with the gun barrel.
-					true_target_global = aim_target.global_position.lerp(true_aim_position, 0.4)
+					# Use the unprojected 3D crosshair position so the head points 1:1 at the screen crosshair!
+					true_target_global = projected_target
 				else:
 					true_target_global = camera.targetref.global_position
-				
-				if not is_aimming:
-					# Center the target horizontally so the head isn't skewed left by the camera's shoulder offset
+					# Center target horizontally in player space so shoulder offset doesn't skew hipfire head posture
 					var target_player_local = to_local(true_target_global)
 					target_player_local.x = 0.0
-					
-					# Add head leading! (Flipped the sign because it was moving in reverse!)
+					# Add head turning leading when hipfiring
 					target_player_local.x -= angular_velocity * 0.75 
-					
 					true_target_global = to_global(target_player_local)
 					
-				# Lerp the head target smoothly towards the true global target
-				var target_local = to_local(true_target_global)
+				# Project target out to a FIXED distance (15.0m) from head origin to eliminate target depth distortions
+				var head_origin_global = skeleton.global_position + Vector3(0, 1.6, 0) if skeleton else global_position + Vector3(0, 1.6, 0)
+				var aim_dir = (true_target_global - head_origin_global).normalized()
+				if aim_dir == Vector3.ZERO:
+					aim_dir = -global_transform.basis.z
+				var fixed_depth_global = head_origin_global + aim_dir * 15.0
 				
-				if is_aimming:
-					# The spine naturally leans UP to aim the gun, so we need a strong downward offset 
-					# on the head target to make him actually tuck his chin down into the sights!
-					target_local.y -= 1.35
+				# Lerp the head target smoothly towards the fixed-depth target (in skeleton space to prevent mouse rotation snapping)
+				var target_local = skeleton.to_local(fixed_depth_global) if skeleton else to_local(fixed_depth_global)
+				
+				# Prevent zero-vector singularity (target_local.x == 0.0) when aiming dead-ahead with 180° rotated rig
+				if absf(target_local.x) < 0.001:
+					target_local.x = 0.001
+				
+				# Smoothly blend the focus pitch down offset when transitioning into/out of aim state
+				var target_focus_weight = 1.0 if is_aimming else 0.0
+				current_focus_pitch_weight = lerpf(current_focus_pitch_weight, target_focus_weight, delta * 24.0)
+				
+				if current_focus_pitch_weight > 0.001:
+					# The spine naturally leans UP to aim the gun, so we need a downward offset 
+					# on the head target to make him tuck his chin down into the sights.
+					var dynamic_y_offset = (0.75 + aim_head_focus_pitch_down) * current_focus_pitch_weight
+					target_local.y -= dynamic_y_offset
 					
-				var lerp_speed = 8.0 if is_aimming else 5.0
+				var lerp_speed = lerpf(14.0, 24.0, current_focus_pitch_weight)
 				aim_target_head.position = aim_target_head.position.lerp(target_local, delta * lerp_speed)
 				
-				if not is_aimming:
+				if current_focus_pitch_weight <= 0.001:
 					aim_target_head.global_position.y = camera.targetref.global_position.y
 
 func _update_skeleton_tilt(delta: float) -> void:

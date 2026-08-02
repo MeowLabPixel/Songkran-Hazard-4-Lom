@@ -16,6 +16,37 @@ class_name Gun
 @export var muzzle_animation_name: String = ""
 @export var impact_animation_name: String = ""
 
+@export_group("Recoil & Juice Settings")
+@export var enable_arm_recoil: bool = true
+@export var recoil_pitch: float = 1.6
+@export var recoil_yaw: float = 0.5
+@export var camera_fov_kick: float = 1.8
+@export var camera_shake: float = 0.04
+@export var crosshair_shot_kick: float = 9.0
+@export var mesh_kick_z: float = 0.10
+@export var mesh_kick_x: float = 0.012
+@export var mesh_kick_y: float = 0.015
+@export var mesh_kick_pitch: float = 0.14
+@export var mesh_kick_yaw: float = 0.025
+@export var mesh_kick_roll: float = 0.035
+@export var mesh_recoil_recovery_speed: float = 14.0
+
+@export_group("Procedural Shoulder Recoil")
+@export var shoulder_kick_z: float = 0.08
+@export var shoulder_kick_pitch: float = 0.12
+
+var mesh_offset_z: float = 0.0
+var mesh_offset_x: float = 0.0
+var mesh_offset_y: float = 0.0
+var mesh_offset_pitch: float = 0.0
+var mesh_offset_yaw: float = 0.0
+var mesh_offset_roll: float = 0.0
+
+var mesh_container: Node3D = null
+var initial_mesh_pos: Vector3 = Vector3.ZERO
+var initial_mesh_rot: Vector3 = Vector3.ZERO
+var is_mesh_init: bool = false
+
 var water_tank: GunController
 
 @export_group("Gun Stats")
@@ -52,7 +83,36 @@ var _cached_player_node: Node = null
 static var _last_hit_frame: int = -1
 static var _hits_in_current_frame: int = 0
 
+func _get_mesh_container() -> Node3D:
+	if mesh_container and is_instance_valid(mesh_container):
+		return mesh_container
+	for child in get_children():
+		if child is Node3D and child.name != "SpawnPoint":
+			mesh_container = child
+			return mesh_container
+	return null
+
 func _process(delta):
+	var target_mesh = _get_mesh_container()
+	if target_mesh:
+		if not is_mesh_init:
+			initial_mesh_pos = target_mesh.transform.origin
+			initial_mesh_rot = target_mesh.rotation
+			is_mesh_init = true
+		
+	# Smoothly return weapon mesh recoil offsets to rest position
+	mesh_offset_z = lerpf(mesh_offset_z, 0.0, delta * mesh_recoil_recovery_speed)
+	mesh_offset_x = lerpf(mesh_offset_x, 0.0, delta * mesh_recoil_recovery_speed)
+	mesh_offset_y = lerpf(mesh_offset_y, 0.0, delta * mesh_recoil_recovery_speed)
+	mesh_offset_pitch = lerpf(mesh_offset_pitch, 0.0, delta * mesh_recoil_recovery_speed)
+	mesh_offset_yaw = lerpf(mesh_offset_yaw, 0.0, delta * mesh_recoil_recovery_speed)
+	mesh_offset_roll = lerpf(mesh_offset_roll, 0.0, delta * mesh_recoil_recovery_speed)
+
+	# Apply recoil transform to child mesh container
+	if target_mesh:
+		target_mesh.transform.origin = initial_mesh_pos + Vector3(mesh_offset_x, mesh_offset_y, mesh_offset_z)
+		target_mesh.rotation = initial_mesh_rot + Vector3(-mesh_offset_pitch, mesh_offset_yaw, mesh_offset_roll)
+
 	if shoot_timer > 0.0:
 		shoot_timer -= delta
 
@@ -139,6 +199,33 @@ func shoot():
 	
 	air -= get_air_consumption()
 	air = max(air, 0.0)
+
+	# Apply procedural arm recoil kick (independent from camera recoil)
+	var gm = get_tree().root.get_node_or_null("GameManager") if get_tree() and get_tree().root.has_node("GameManager") else null
+	var is_arm_enabled = enable_arm_recoil and (not gm or not ("enable_arm_recoil" in gm) or gm.enable_arm_recoil)
+	
+	if is_arm_enabled:
+		mesh_offset_z += mesh_kick_z
+		mesh_offset_pitch += mesh_kick_pitch
+		mesh_offset_x += randf_range(-mesh_kick_x, mesh_kick_x)
+		mesh_offset_y += randf_range(mesh_kick_y * 0.5, mesh_kick_y)
+		mesh_offset_yaw += randf_range(-mesh_kick_yaw, mesh_kick_yaw)
+		mesh_offset_roll += randf_range(-mesh_kick_roll, mesh_kick_roll)
+		
+		var player_node = _get_player_ref()
+		if player_node and player_node.has_method("trigger_shoulder_recoil"):
+			player_node.trigger_shoulder_recoil(shoulder_kick_z, shoulder_kick_pitch)
+	
+	var is_weakpoint_hit = _check_weakpoint_aim()
+	var pc = _get_player_camera()
+	if pc:
+		var yaw_sign = 1.0 if randf() > 0.5 else -1.0
+		pc.add_recoil(recoil_pitch, recoil_yaw * yaw_sign, camera_fov_kick, camera_shake, is_weakpoint_hit)
+		
+	var crosshairs = get_tree().get_nodes_in_group("crosshair")
+	for ch in crosshairs:
+		if ch.has_method("trigger_shot_kick"):
+			ch.trigger_shot_kick(crosshair_shot_kick)
 
 	fire_projectiles()
 	shoot_timer = shoot_interval
@@ -361,11 +448,65 @@ func reload_water(water_gain):
 		water_tank.current_water += water_gain
 		water_tank.current_water = clamp(water_tank.current_water, 0.0, water_tank.max_water)
 
+func _get_player_ref() -> Node:
+	if _cached_player_node and is_instance_valid(_cached_player_node):
+		return _cached_player_node
+	var tree := get_tree()
+	if tree:
+		_cached_player_node = tree.get_first_node_in_group("player")
+		if _cached_player_node:
+			return _cached_player_node
+	var p: Node = self
+	while p:
+		if p.has_method("trigger_arm_recoil") or p.is_in_group("player") or p.name == "Player":
+			_cached_player_node = p
+			return _cached_player_node
+		p = p.get_parent()
+	return null
+
+func _get_player_camera() -> Node:
+	if camera and camera.has_method("add_recoil"):
+		return camera
+	if camera:
+		var p: Node = camera
+		while p:
+			if p.has_method("add_recoil"):
+				return p
+			p = p.get_parent()
+	var player_node = _get_player_ref()
+	if player_node and ("camera" in player_node) and is_instance_valid(player_node.camera) and player_node.camera.has_method("add_recoil"):
+		return player_node.camera
+	var tree := get_tree()
+	if tree:
+		var cams = tree.get_nodes_in_group("player_camera")
+		if cams.size() > 0:
+			return cams[0]
+	return null
+
+func _check_weakpoint_aim() -> bool:
+	if not camera:
+		return false
+	var from: Vector3 = camera.global_transform.origin
+	var direction: Vector3 = -camera.global_transform.basis.z
+	var to: Vector3 = from + direction * 100.0
+	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	var query = PhysicsRayQueryParameters3D.create(from, to)
+	query.collision_mask = 14 | 8192
+	query.collide_with_areas = true
+	var result: Dictionary = space_state.intersect_ray(query)
+	if result and result.collider is Area3D:
+		var hitbox_zone: HitboxZone = result.collider.get_node_or_null("HitboxZone")
+		if hitbox_zone:
+			var zn = hitbox_zone.zone_name.to_lower()
+			if zn == "head" or zn == "weakpoint" or zn == "weak" or ("head" in zn) or ("weak" in zn):
+				return true
+	return false
+
 func _update_player_exclude_cache() -> void:
 	var tree := get_tree()
 	if not tree:
 		return
-	var player = tree.get_first_node_in_group("player")
+	var player = _get_player_ref()
 	if player != _cached_player_node or _cached_player_rids.is_empty() or not is_instance_valid(_cached_player_node):
 		_cached_player_node = player
 		_cached_player_rids.clear()

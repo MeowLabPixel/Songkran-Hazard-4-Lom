@@ -47,6 +47,36 @@ var current_tilt_z: float = 0.0
 var _debug_non_zero_printed: bool = false
 var _bob_time: float = 0.0
 var _current_bob_weight: float = 0.0
+@export_group("Procedural Shoulder Recoil")
+@export var enable_shoulder_recoil: bool = true
+@export var shoulder_recoil_multiplier: float = 1.0
+@export var shoulder_kick_z: float = 0.08
+@export var shoulder_kick_pitch: float = 0.12
+@export var shoulder_recoil_recovery_speed: float = 14.0
+
+@export_group("Procedural Shoulder Aim Sway")
+@export var enable_shoulder_aim_sway: bool = true
+@export var arm_crosshair_coupling: float = 0.003
+@export var body_sway_coupling: float = 0.0008
+
+@export_group("Procedural Body Recoil (DEF-spine.003)")
+@export var enable_body_recoil: bool = true
+@export var body_kick_pitch: float = 0.04
+@export var body_recoil_recovery_speed: float = 10.0
+
+var shoulder_recoil_pos: Vector3 = Vector3.ZERO
+var shoulder_recoil_rot: Vector3 = Vector3.ZERO
+var body_recoil_rot: float = 0.0
+
+func trigger_shoulder_recoil(kick_z: float = 0.08, kick_pitch: float = 0.12) -> void:
+	if not enable_shoulder_recoil:
+		return
+	shoulder_recoil_pos.z += kick_z * shoulder_recoil_multiplier
+	shoulder_recoil_rot.x += kick_pitch * shoulder_recoil_multiplier
+	# Body gets a small sympathetic knockback on every shot
+	if enable_body_recoil:
+		body_recoil_rot += body_kick_pitch * shoulder_recoil_multiplier
+
 var current_global_bob_offset: Vector3 = Vector3.ZERO
 var current_bob_x: float = 0.0
 var current_bob_y: float = 0.0
@@ -166,8 +196,9 @@ func _process_modification() -> void:
 	# 2. Apply tilt to the chest bones
 	_apply_tilt_to_group(skeleton, chest_bones, current_tilt_x * chest_tilt_multiplier, current_tilt_z * chest_tilt_multiplier, current_bob_x * arm_sway_multiplier)
 
-	# 3. Apply tilt to the head bones
-	_apply_tilt_to_group(skeleton, head_bones, current_tilt_x * head_tilt_multiplier, current_tilt_z * head_tilt_multiplier)
+	# 3. Apply tilt to the head bones (only when NOT aiming so HeadLookAt has full control without modifier conflict)
+	if not is_aiming:
+		_apply_tilt_to_group(skeleton, head_bones, current_tilt_x * head_tilt_multiplier, current_tilt_z * head_tilt_multiplier)
 
 	# 4. Apply exaggerated tilt and translation shift to the arm/hand IK parent bones
 	var arm_tilt_x = current_tilt_x * arm_tilt_multiplier
@@ -204,7 +235,44 @@ func _process_modification() -> void:
 		pose.basis = (arm_tilt_basis * pose.basis).orthonormalized()
 		skeleton.set_bone_pose(bone_idx, pose)
 
-	# 5. Apply translation shift to the actual shoulder bones to prevent clipping
+	# Smoothly decay procedural shoulder recoil
+	shoulder_recoil_pos = shoulder_recoil_pos.lerp(Vector3.ZERO, delta * shoulder_recoil_recovery_speed)
+	shoulder_recoil_rot = shoulder_recoil_rot.lerp(Vector3.ZERO, delta * shoulder_recoil_recovery_speed)
+	body_recoil_rot = lerpf(body_recoil_rot, 0.0, delta * body_recoil_recovery_speed)
+
+	# 1:1 Synchronized coupling: read 2D crosshair sway_offset to drive 3D shoulder bone sway
+	var sway_pitch_offset = 0.0
+	var sway_yaw_offset = 0.0
+	var body_sway_pitch = 0.0
+	var body_sway_yaw = 0.0
+	if is_aiming and enable_shoulder_aim_sway:
+		var crosshairs = get_tree().get_nodes_in_group("crosshair")
+		if crosshairs.size() > 0 and is_instance_valid(crosshairs[0]):
+			var ch = crosshairs[0]
+			if "sway_offset" in ch:
+				sway_pitch_offset = ch.sway_offset.y * arm_crosshair_coupling
+				sway_yaw_offset = -ch.sway_offset.x * arm_crosshair_coupling
+				# Body moves subtly with the arms (smaller fraction)
+				body_sway_pitch = ch.sway_offset.y * body_sway_coupling
+				body_sway_yaw = -ch.sway_offset.x * body_sway_coupling
+
+	# Apply aim body sway + shoot knockback to DEF-spine.003
+	var chest_idx = skeleton.find_bone("DEF-spine.003")
+	if chest_idx != -1:
+		var chest_pose = skeleton.get_bone_pose(chest_idx)
+		var total_body_pitch = body_sway_pitch - body_recoil_rot
+		if abs(total_body_pitch) > 0.0001 or abs(body_sway_yaw) > 0.0001:
+			var body_basis = Basis.from_euler(Vector3(total_body_pitch, body_sway_yaw, 0.0))
+			var chest_parent_idx = skeleton.get_bone_parent(chest_idx)
+			if chest_parent_idx != -1:
+				var parent_global = skeleton.get_bone_global_pose(chest_parent_idx)
+				var local_body_basis = parent_global.basis.inverse() * body_basis * parent_global.basis
+				chest_pose.basis = (local_body_basis * chest_pose.basis).orthonormalized()
+			else:
+				chest_pose.basis = (body_basis * chest_pose.basis).orthonormalized()
+		skeleton.set_bone_pose(chest_idx, chest_pose)
+
+	# 5. Apply translation shift, procedural recoil, and aim breathing sway to the actual shoulder bones
 	for bone_name in ["ORG-shoulder.L", "ORG-shoulder.R"]:
 		var bone_idx = skeleton.find_bone(bone_name)
 		if bone_idx == -1:
@@ -226,6 +294,17 @@ func _process_modification() -> void:
 			else:
 				shift_x = current_tilt_z * right_arm_outward_x_offset
 			shift_z = -current_tilt_x * right_arm_extra_z_offset
+			
+			# Add procedural shoulder recoil (-Z backward knockback & pitch rotation)
+			shift_z -= shoulder_recoil_pos.z
+			if abs(shoulder_recoil_rot.x) > 0.0001:
+				var recoil_basis = Basis.from_euler(Vector3(shoulder_recoil_rot.x, 0.0, 0.0))
+				pose.basis = (recoil_basis * pose.basis).orthonormalized()
+
+		# Apply organic arm aim breathing sway to shoulder bones
+		if is_aiming and enable_shoulder_aim_sway:
+			var arm_sway_basis = Basis.from_euler(Vector3(sway_pitch_offset, sway_yaw_offset, 0.0))
+			pose.basis = (arm_sway_basis * pose.basis).orthonormalized()
 
 		pose.origin.x += shift_x
 		pose.origin.z += shift_z

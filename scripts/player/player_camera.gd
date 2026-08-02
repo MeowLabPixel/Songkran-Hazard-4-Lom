@@ -45,6 +45,14 @@ var target_camera_rotation: Vector2 = Vector2.ZERO
 @export var camera_smoothing_speed: float = 25.0 # Lower is smoother, higher is more responsive
 var pending_camera_rotation: Vector2 = Vector2.ZERO
 var mouse_sensitivity: float = 0.002
+
+# Smooth independent camera breathing sway (no noise coupling)
+var camera_sway_offset: Vector2 = Vector2.ZERO
+@export_group("Camera Aim Sway")
+@export var enable_camera_aim_sway: bool = true
+@export var camera_sway_pitch: float = 0.0008
+@export var camera_sway_yaw: float = 0.0005
+@export var camera_sway_speed: float = 1.1
 @export var max_look_up: float = 1.4 # ~80 degrees up
 @export var max_look_down: float = 1.4 # ~80 degrees down
 @export var look_up_lift_amount: float = 1.5 # How much the camera lifts when looking up
@@ -235,6 +243,19 @@ func _process(delta: float) -> void:
 		
 	# Add inertia/smoothing to general camera movement
 	camera_rotation = camera_rotation.lerp(target_camera_rotation, delta * camera_smoothing_speed)
+
+	# Smooth independent camera breathing sway — only when aiming, no noise coupling
+	var is_aiming_cam = character and character.is_aimming
+	if enable_camera_aim_sway and is_aiming_cam:
+		var t = Time.get_ticks_msec() * 0.001
+		var target_cam_sway = Vector2(
+			sin(t * camera_sway_speed) * camera_sway_yaw,
+			sin(t * camera_sway_speed * 1.3) * camera_sway_pitch
+		)
+		camera_sway_offset = camera_sway_offset.lerp(target_cam_sway, delta * 3.0)
+	else:
+		camera_sway_offset = camera_sway_offset.lerp(Vector2.ZERO, delta * 3.0)
+
 	_apply_camera_rotation()
 	
 	if rear_spring_arm:
@@ -381,7 +402,12 @@ func _apply_camera_rotation() -> void:
 	if GameManager.movement_type == GameManager.MovementType.TANK and not is_aiming_now and not is_grab_now:
 		rotate_object_local(Vector3(1, 0, 0), action_pitch)
 	else:
-		rotate_object_local(Vector3(1, 0, 0), -camera_rotation.y + action_pitch)	
+		rotate_object_local(Vector3(1, 0, 0), -camera_rotation.y + action_pitch)
+
+	# Apply camera sway as a final additive tilt on the camera only (after all base rotation)
+	if camera_sway_offset.length_squared() > 0.000001:
+		rotate_object_local(Vector3(1, 0, 0), camera_sway_offset.y)
+		rotate_object_local(Vector3(0, 1, 0), camera_sway_offset.x)
 	
 	# Dynamically push the camera's pivot UP when looking up or down to prevent the body from blocking the view!
 	var vertical_angle = camera_rotation.y

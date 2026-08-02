@@ -22,6 +22,34 @@ enum MovementType { HYBRID_RETRO, MODERN, TANK }
 var movement_type: MovementType = MovementType.HYBRID_RETRO
 var movement_type_selected: bool = false
 var selected_language: String = "en"
+enum CameraRecoilMode { DISABLED = 0, WEAKPOINT_ONLY = 1, ENABLED = 2 }
+var camera_recoil_mode: CameraRecoilMode = CameraRecoilMode.ENABLED
+
+func set_camera_recoil_mode(mode_val) -> void:
+	if mode_val is int or mode_val is CameraRecoilMode:
+		camera_recoil_mode = mode_val as CameraRecoilMode
+		var cams = get_tree().get_nodes_in_group("player_camera") if get_tree() else []
+		for cam in cams:
+			if cam.has_method("set_camera_recoil_mode"):
+				cam.set_camera_recoil_mode(mode_val)
+
+func get_camera_recoil_mode() -> CameraRecoilMode:
+	return camera_recoil_mode
+
+func set_camera_recoil_enabled(enabled: bool) -> void:
+	set_camera_recoil_mode(CameraRecoilMode.ENABLED if enabled else CameraRecoilMode.DISABLED)
+
+func is_camera_recoil_enabled() -> bool:
+	return camera_recoil_mode != CameraRecoilMode.DISABLED
+
+var enable_arm_recoil: bool = true
+var enable_crosshair_recoil: bool = true
+
+func set_arm_recoil_enabled(enabled: bool) -> void:
+	enable_arm_recoil = enabled
+
+func set_crosshair_recoil_enabled(enabled: bool) -> void:
+	enable_crosshair_recoil = enabled
 
 # --- New Result Screen / Statistics variables ---
 enum Outcome { VICTORY, DEFEAT_PLAYER, DEFEAT_ANCHALEE }
