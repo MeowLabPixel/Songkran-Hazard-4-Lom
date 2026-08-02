@@ -125,6 +125,20 @@ var _last_grabber: Node = null
 @export var aim_head_focus_pitch_down: float = 0.4
 var current_focus_pitch_weight: float = 0.0
 
+@export_group("NPC Head Glance")
+@export var enable_npc_head_glance: bool = true
+@export var max_npc_glance_distance: float = 7.0
+@export var npc_glance_exit_multiplier: float = 1.25
+@export var npc_glance_fov_deg: float = 72.0
+@export var npc_glance_max_angle_deg: float = 45.0
+@export_range(0.0, 1.0, 0.05) var npc_glance_head_influence: float = 0.6
+@export var head_turn_speed: float = 5.0
+@export var head_look_depth: float = 15.0
+@export var npc_groups: Array[String] = ["Anchalee", "npc", "enemies"]
+var current_npc_glance_pos: Vector3 = Vector3.ZERO
+var active_glance_npc: Node3D = null
+var current_head_influence: float = 0.25
+
 #var GunA = {
 	#"name": "pistol",
 	#"Gun" : Pistol
@@ -343,10 +357,17 @@ func _ready() -> void:
 		if head_lookat:
 			aim_target_head = Marker3D.new()
 			aim_target_head.name = "Aim_target_head"
+			aim_target_head.position = Vector3(0, 1.6, -15.0) # Pre-position forward to avoid startup head-jerk!
 			skeleton.add_child(aim_target_head) # Parent to skeleton so rig turning inertia doesn't snap it!
 			head_lookat.target_node = head_lookat.get_path_to(aim_target_head)
 			# Enable secondary rotation so the head can twist left/right to look at the crosshair
 			head_lookat.use_secondary_rotation = true
+			head_lookat.use_angle_limitation = true
+			head_lookat.symmetry_limitation = true
+			head_lookat.secondary_positive_limit_angle = deg_to_rad(npc_glance_max_angle_deg)
+			head_lookat.secondary_negative_limit_angle = deg_to_rad(npc_glance_max_angle_deg)
+			head_lookat.secondary_positive_damp_threshold = 0.7
+			head_lookat.secondary_negative_damp_threshold = 0.7
 			
 		# Enable secondary rotation so the spine can twist left/right to aim!
 		if aim_bone:
@@ -380,12 +401,18 @@ func _process(delta: float) -> void:
 		else:
 			cross_hair.hide()
 	
-	# Smoothly blend the aiming influence. Full tracking when aiming, only 25% when idle/running
+	# Smoothly blend the aiming influence for spine/chest bones
 	var target_influence = 1.0 if is_aimming else 0.25
 	if is_quick_turn:
 		target_influence = 0.0
 		
 	current_aim_influence = lerpf(current_aim_influence, target_influence, delta * 15.0)
+	
+	# Determine head influence: 1.0 when aiming, npc_glance_head_influence when looking at NPC, 0.25 when idle
+	var target_head_inf = 1.0 if is_aimming else (npc_glance_head_influence if active_glance_npc else 0.25)
+	if is_quick_turn:
+		target_head_inf = 0.0
+	current_head_influence = lerpf(current_head_influence, target_head_inf, delta * 15.0)
 	
 	if aim_bone:
 		aim_bone.influence = current_aim_influence
@@ -397,11 +424,18 @@ func _process(delta: float) -> void:
 		if head_lookat:
 			# Ensure horizontal twisting is always on so the head can lead turns!
 			head_lookat.use_secondary_rotation = true
+			head_lookat.use_angle_limitation = true
+			head_lookat.symmetry_limitation = true
+			# Smoothly expand secondary horizontal rotation limits when aiming so crosshair tracking is unconstrained
+			var glance_limit = deg_to_rad(npc_glance_max_angle_deg)
+			var current_secondary_limit = lerpf(glance_limit, PI, current_focus_pitch_weight)
+			head_lookat.secondary_positive_limit_angle = current_secondary_limit
+			head_lookat.secondary_negative_limit_angle = current_secondary_limit
 			# Fade out head look IK during quickturn to prevent neck snapping!
 			if GameManager.movement_type == GameManager.MovementType.TANK and not is_aimming and not is_grab:
 				head_lookat.influence = 1.0
 			else:
-				head_lookat.influence = current_aim_influence
+				head_lookat.influence = current_head_influence
 			
 		var lean_modifier = skeleton.get_node_or_null("SpineLeanModifier")
 		if lean_modifier:
@@ -506,49 +540,122 @@ func _update_aim_target(delta: float) -> void:
 				var target_local = Vector3(0, 1.6, 0) + rotated_dir
 				aim_target_head.position = aim_target_head.position.lerp(target_local, delta * 15.0)
 			else:
-				# Calculate the true global target for the head
-				var true_target_global: Vector3
-				if is_aimming:
-					# Use the unprojected 3D crosshair position so the head points 1:1 at the screen crosshair!
-					true_target_global = projected_target
+				# Calculate default forward target (centered shoulder offset with turning lead)
+				var default_forward_target: Vector3
+				if camera and is_instance_valid(camera.targetref):
+					var default_forward = camera.targetref.global_position
+					var default_player_local = to_local(default_forward)
+					default_player_local.x = 0.0
+					default_player_local.x -= angular_velocity * 0.75
+					default_forward_target = to_global(default_player_local)
 				else:
-					true_target_global = camera.targetref.global_position
-					# Center target horizontally in player space so shoulder offset doesn't skew hipfire head posture
-					var target_player_local = to_local(true_target_global)
-					target_player_local.x = 0.0
-					# Add head turning leading when hipfiring
-					target_player_local.x -= angular_velocity * 0.75 
-					true_target_global = to_global(target_player_local)
-					
-				# Project target out to a FIXED distance (15.0m) from head origin to eliminate target depth distortions
+					default_forward_target = global_transform.origin + (-global_transform.basis.z * 15.0) + Vector3(0, 1.6, 0)
+
+				# Determine glance target (raw NPC position or default forward — native LookAtModifier3D handles angle limit)
+				var raw_npc_pos = _find_nearby_npc_target()
+				var destination_target_global = raw_npc_pos if raw_npc_pos != Vector3.ZERO else default_forward_target
+				
+				# Smoothly update glance tracking position from current point when not aiming
+				if current_npc_glance_pos == Vector3.ZERO:
+					current_npc_glance_pos = default_forward_target
+				elif not is_aimming:
+					current_npc_glance_pos = current_npc_glance_pos.lerp(destination_target_global, delta * head_turn_speed)
+				
+				# Smoothly blend focus weight when entering or exiting aim state
+				var target_focus_weight = 1.0 if is_aimming else 0.0
+				var focus_speed = 10.0 if is_aimming else 6.0
+				current_focus_pitch_weight = lerpf(current_focus_pitch_weight, target_focus_weight, delta * focus_speed)
+				
+				# Target selection: immediate crosshair when aiming, smooth glance when not aiming
+				var ideal_target_global: Vector3
+				if is_aimming:
+					current_npc_glance_pos = Vector3.ZERO # Reset so glance resumes naturally on release
+					ideal_target_global = projected_target
+				else:
+					ideal_target_global = current_npc_glance_pos
+				
+				# Project to fixed depth to eliminate distance distortions
 				var head_origin_global = skeleton.global_position + Vector3(0, 1.6, 0) if skeleton else global_position + Vector3(0, 1.6, 0)
-				var aim_dir = (true_target_global - head_origin_global).normalized()
-				if aim_dir == Vector3.ZERO:
-					aim_dir = -global_transform.basis.z
-				var fixed_depth_global = head_origin_global + aim_dir * 15.0
+				var aim_vec = ideal_target_global - head_origin_global
+				var aim_dir = -global_transform.basis.z if aim_vec.length_squared() < 0.0001 else aim_vec.normalized()
+				var fixed_depth_global = head_origin_global + aim_dir * head_look_depth
 				
-				# Lerp the head target smoothly towards the fixed-depth target (in skeleton space to prevent mouse rotation snapping)
+				# Convert to skeleton local space
 				var target_local = skeleton.to_local(fixed_depth_global) if skeleton else to_local(fixed_depth_global)
-				
-				# Prevent zero-vector singularity (target_local.x == 0.0) when aiming dead-ahead with 180° rotated rig
 				if absf(target_local.x) < 0.001:
 					target_local.x = 0.001
 				
-				# Smoothly blend the focus pitch down offset when transitioning into/out of aim state
-				var target_focus_weight = 1.0 if is_aimming else 0.0
-				current_focus_pitch_weight = lerpf(current_focus_pitch_weight, target_focus_weight, delta * 24.0)
-				
 				if current_focus_pitch_weight > 0.001:
-					# The spine naturally leans UP to aim the gun, so we need a downward offset 
-					# on the head target to make him tuck his chin down into the sights.
-					var dynamic_y_offset = (0.75 + aim_head_focus_pitch_down) * current_focus_pitch_weight
+					var focus_pitch_offset = lerpf(0.0, aim_head_focus_pitch_down, current_focus_pitch_weight)
+					var dynamic_y_offset = (0.75 * current_focus_pitch_weight) + focus_pitch_offset
 					target_local.y -= dynamic_y_offset
-					
-				var lerp_speed = lerpf(14.0, 24.0, current_focus_pitch_weight)
-				aim_target_head.position = aim_target_head.position.lerp(target_local, delta * lerp_speed)
 				
-				if current_focus_pitch_weight <= 0.001:
-					aim_target_head.global_position.y = camera.targetref.global_position.y
+				# Single consistent-speed head turn — smoothly handles all transitions
+				var turn_speed = lerpf(head_turn_speed, 24.0, current_focus_pitch_weight)
+				aim_target_head.position = aim_target_head.position.lerp(target_local, delta * turn_speed)
+
+func _find_nearby_npc_target() -> Vector3:
+	if not enable_npc_head_glance:
+		active_glance_npc = null
+		return Vector3.ZERO
+		
+	var player_head_pos = skeleton.global_position + Vector3(0, 1.6, 0) if skeleton else global_position + Vector3(0, 1.6, 0)
+	var forward_dir = -global_transform.basis.z
+	
+	# Side detection cone based on inspector FOV angle
+	var fov_threshold = cos(deg_to_rad(npc_glance_fov_deg))
+	
+	# Entry detection threshold
+	var entry_dist_sq = max_npc_glance_distance * max_npc_glance_distance
+	
+	# Dynamic exit hysteresis threshold: scales with npc_glance_exit_multiplier!
+	var dynamic_exit_distance = max_npc_glance_distance * npc_glance_exit_multiplier
+	var exit_dist_sq = dynamic_exit_distance * dynamic_exit_distance
+	
+	# Validate currently active target first using the dynamic exit distance band
+	var closest_target_node: Node3D = null
+	var closest_npc_pos = Vector3.ZERO
+	var min_dist_sq = entry_dist_sq
+	
+	if is_instance_valid(active_glance_npc) and active_glance_npc is Node3D:
+		var current_npc_pos = active_glance_npc.global_position + Vector3(0, 1.5, 0)
+		var exact_head = active_glance_npc.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/Head")
+		if exact_head and exact_head is Node3D:
+			current_npc_pos = exact_head.global_position
+			
+		var dist_sq = player_head_pos.distance_squared_to(current_npc_pos)
+		var dir_to_npc = (current_npc_pos - player_head_pos).normalized()
+		if dist_sq < exit_dist_sq and forward_dir.dot(dir_to_npc) > fov_threshold:
+			closest_target_node = active_glance_npc
+			closest_npc_pos = current_npc_pos
+			min_dist_sq = dist_sq
+	
+	for group_name in npc_groups:
+		var nodes = get_tree().get_nodes_in_group(group_name)
+		for node in nodes:
+			if not is_instance_valid(node) or node == self or node == active_glance_npc:
+				continue
+			if node is Node3D:
+				var npc_pos = node.global_position + Vector3(0, 1.5, 0)
+				var exact_head = node.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/Head")
+				if exact_head and exact_head is Node3D:
+					npc_pos = exact_head.global_position
+				elif "skeleton" in node and node.skeleton:
+					var skel = node.skeleton
+					var head_idx = skel.find_bone("DEF-spine.006")
+					if head_idx != -1:
+						npc_pos = skel.to_global(skel.get_bone_global_pose(head_idx).origin)
+				
+				var dist_sq = player_head_pos.distance_squared_to(npc_pos)
+				if dist_sq < min_dist_sq:
+					var dir_to_npc = (npc_pos - player_head_pos).normalized()
+					if forward_dir.dot(dir_to_npc) > fov_threshold:
+						min_dist_sq = dist_sq
+						closest_npc_pos = npc_pos
+						closest_target_node = node as Node3D
+						
+	active_glance_npc = closest_target_node
+	return closest_npc_pos
 
 func _update_skeleton_tilt(delta: float) -> void:
 	if not rig:
