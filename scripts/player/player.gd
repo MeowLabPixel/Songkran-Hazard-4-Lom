@@ -133,11 +133,14 @@ var current_focus_pitch_weight: float = 0.0
 @export var npc_glance_max_angle_deg: float = 45.0
 @export_range(0.0, 1.0, 0.05) var npc_glance_head_influence: float = 0.6
 @export var head_turn_speed: float = 5.0
+@export var glance_exit_speed: float = 3.5
 @export var head_look_depth: float = 15.0
 @export var npc_groups: Array[String] = ["Anchalee", "npc", "enemies"]
 var current_npc_glance_pos: Vector3 = Vector3.ZERO
 var active_glance_npc: Node3D = null
 var current_head_influence: float = 0.25
+var glance_recovery_cooldown: float = 0.0
+var _was_in_action_state: bool = false
 
 #var GunA = {
 	#"name": "pistol",
@@ -363,7 +366,7 @@ func _ready() -> void:
 			# Enable secondary rotation so the head can twist left/right to look at the crosshair
 			head_lookat.use_secondary_rotation = true
 			head_lookat.use_angle_limitation = true
-			head_lookat.symmetry_limitation = true
+			# Don't set symmetry_limitation — preserve original asymmetric pitch limits from the scene
 			head_lookat.secondary_positive_limit_angle = deg_to_rad(npc_glance_max_angle_deg)
 			head_lookat.secondary_negative_limit_angle = deg_to_rad(npc_glance_max_angle_deg)
 			head_lookat.secondary_positive_damp_threshold = 0.7
@@ -384,6 +387,21 @@ var current_aim_influence: float = 0.25
 func _process(delta: float) -> void:
 	if superpump_cooldown > 0.0:
 		superpump_cooldown -= delta
+	if glance_recovery_cooldown > 0.0:
+		glance_recovery_cooldown -= delta
+		
+	# Track action state transitions to trigger recovery cooldown when returning to Idle/locomotion
+	var current_sm = get_node_or_null("Statemachine")
+	var current_state_name = current_sm.current_state.name if (current_sm and current_sm.current_state) else ""
+	var is_cam_action = camera and camera.has_method("is_action_camera_active") and camera.is_action_camera_active()
+	var is_in_action = is_aimming or is_grab or is_quick_turn or is_cam_action or (current_state_name != "" and current_state_name not in ["Idle", "Run", "Walk", "Sprint"])
+	if is_in_action:
+		_was_in_action_state = true
+		glance_recovery_cooldown = 0.8
+	elif _was_in_action_state:
+		_was_in_action_state = false
+		glance_recovery_cooldown = 0.8
+		
 	update_crosshair_accuracy(delta)
 	
 	if cross_hair and camera:
@@ -408,11 +426,32 @@ func _process(delta: float) -> void:
 		
 	current_aim_influence = lerpf(current_aim_influence, target_influence, delta * 15.0)
 	
-	# Determine head influence: 1.0 when aiming, npc_glance_head_influence when looking at NPC, 0.25 when idle
-	var target_head_inf = 1.0 if is_aimming else (npc_glance_head_influence if active_glance_npc else 0.25)
-	if is_quick_turn:
+	# Determine head glance influence:
+	# 1.0 when Aiming
+	# 0.8 to 1.0 when Glancing at active NPC target (based on movement)
+	# 0.0 during Action States (Grab, Win/Fail, Get Hit, Takedown, Quick Turn, Action Camera, or default Idle without NPC)
+	var glance_inf = 1.0
+	if active_glance_npc:
+		var sm = get_node_or_null("Statemachine")
+		var is_sprint_state = sm and sm.current_state and sm.current_state.name == "Sprint"
+		if is_sprint_state:
+			glance_inf = 0.8
+		elif Motion.input_dir != Vector2.ZERO:
+			glance_inf = 0.9
+		else:
+			glance_inf = 1.0
+
+	var target_head_inf: float = 0.0
+	if is_aimming:
+		target_head_inf = 1.0
+	elif active_glance_npc and glance_recovery_cooldown <= 0.0 and not is_grab and not is_quick_turn and not is_cam_action:
+		target_head_inf = glance_inf
+	else:
 		target_head_inf = 0.0
-	current_head_influence = lerpf(current_head_influence, target_head_inf, delta * 15.0)
+
+	# Asymmetrical blending: brisk entry (10.0), smooth and gentle exit (glance_exit_speed)
+	var inf_blend_speed = 10.0 if target_head_inf > current_head_influence else glance_exit_speed
+	current_head_influence = lerpf(current_head_influence, target_head_inf, delta * inf_blend_speed)
 	
 	if aim_bone:
 		aim_bone.influence = current_aim_influence
@@ -425,7 +464,6 @@ func _process(delta: float) -> void:
 			# Ensure horizontal twisting is always on so the head can lead turns!
 			head_lookat.use_secondary_rotation = true
 			head_lookat.use_angle_limitation = true
-			head_lookat.symmetry_limitation = true
 			# Smoothly expand secondary horizontal rotation limits when aiming so crosshair tracking is unconstrained
 			var glance_limit = deg_to_rad(npc_glance_max_angle_deg)
 			var current_secondary_limit = lerpf(glance_limit, PI, current_focus_pitch_weight)
@@ -555,16 +593,20 @@ func _update_aim_target(delta: float) -> void:
 				var raw_npc_pos = _find_nearby_npc_target()
 				var destination_target_global = raw_npc_pos if raw_npc_pos != Vector3.ZERO else default_forward_target
 				
-				# Smoothly update glance tracking position from current point when not aiming
+				# Smoothly update glance tracking position: active turn when looking at NPC, gentle exit when returning to forward facing
 				if current_npc_glance_pos == Vector3.ZERO:
 					current_npc_glance_pos = default_forward_target
 				elif not is_aimming:
-					current_npc_glance_pos = current_npc_glance_pos.lerp(destination_target_global, delta * head_turn_speed)
+					var current_target_turn_speed = head_turn_speed if raw_npc_pos != Vector3.ZERO else glance_exit_speed
+					current_npc_glance_pos = current_npc_glance_pos.lerp(destination_target_global, delta * current_target_turn_speed)
 				
 				# Smoothly blend focus weight when entering or exiting aim state
 				var target_focus_weight = 1.0 if is_aimming else 0.0
 				var focus_speed = 10.0 if is_aimming else 6.0
 				current_focus_pitch_weight = lerpf(current_focus_pitch_weight, target_focus_weight, delta * focus_speed)
+				
+				# Compute head origin before target selection so we can lock glance Y height
+				var head_origin_global = skeleton.global_position + Vector3(0, 1.6, 0) if skeleton else global_position + Vector3(0, 1.6, 0)
 				
 				# Target selection: immediate crosshair when aiming, smooth glance when not aiming
 				var ideal_target_global: Vector3
@@ -573,9 +615,10 @@ func _update_aim_target(delta: float) -> void:
 					ideal_target_global = projected_target
 				else:
 					ideal_target_global = current_npc_glance_pos
+					# Lock vertical to player head height during NPC glance so head only rotates horizontally
+					ideal_target_global.y = head_origin_global.y
 				
 				# Project to fixed depth to eliminate distance distortions
-				var head_origin_global = skeleton.global_position + Vector3(0, 1.6, 0) if skeleton else global_position + Vector3(0, 1.6, 0)
 				var aim_vec = ideal_target_global - head_origin_global
 				var aim_dir = -global_transform.basis.z if aim_vec.length_squared() < 0.0001 else aim_vec.normalized()
 				var fixed_depth_global = head_origin_global + aim_dir * head_look_depth
@@ -598,7 +641,40 @@ func _find_nearby_npc_target() -> Vector3:
 	if not enable_npc_head_glance:
 		active_glance_npc = null
 		return Vector3.ZERO
-		
+
+	# Block glance during post-action recovery blend-out (0.8s cooldown)
+	if glance_recovery_cooldown > 0.0:
+		active_glance_npc = null
+		return Vector3.ZERO
+
+	# Block glance during action camera sequences (Grab Win/Fail, Get Hit camera, etc.)
+	if camera and camera.has_method("is_action_camera_active") and camera.is_action_camera_active():
+		active_glance_npc = null
+		return Vector3.ZERO
+
+	# Disable glance during boolean flag actions
+	if is_aimming or is_grab or is_quick_turn:
+		active_glance_npc = null
+		return Vector3.ZERO
+
+	# Only allow glance when state machine is in clean locomotion/idle states (blocks Grab Fail/Win/Getup, Reload, Get_hit, Takedown, Die, etc.)
+	var sm = get_node_or_null("Statemachine")
+	if sm and sm.current_state:
+		var s_name = sm.current_state.name
+		if s_name not in ["Idle", "Run", "Walk", "Sprint"]:
+			active_glance_npc = null
+			return Vector3.ZERO
+
+	# Also block glance while AnimationTree root is still blending out of "Grab" path
+	# (is_grab becomes false before the Win/Fail/Getup animation fully blends back to Main)
+	if anim:
+		var root_pb = anim.get("parameters/playback")
+		if root_pb:
+			var root_node = String(root_pb.get_current_node())
+			if root_node == "Grab":
+				active_glance_npc = null
+				return Vector3.ZERO
+
 	var player_head_pos = skeleton.global_position + Vector3(0, 1.6, 0) if skeleton else global_position + Vector3(0, 1.6, 0)
 	var forward_dir = -global_transform.basis.z
 	

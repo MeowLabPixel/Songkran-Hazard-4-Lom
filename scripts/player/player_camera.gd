@@ -106,6 +106,11 @@ func set_action_spring_length(target_offset: float, duration: float) -> void:
 	spring_tween = get_tree().create_tween()
 	spring_tween.tween_property(self, "action_spring_length", target_offset, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
+func is_action_camera_active() -> bool:
+	var is_offsetting = absf(action_offset_y) > 0.01 or absf(action_pitch) > 0.01 or absf(action_spring_length) > 0.01
+	var is_tweening = (offset_tween != null and offset_tween.is_running()) or (pitch_tween != null and pitch_tween.is_running()) or (spring_tween != null and spring_tween.is_running())
+	return is_offsetting or is_tweening
+
 @onready var defaut_edge_spring_arm_length: float = edge_spring_arm.spring_length
 @onready var defaut_rear_spring_arm_length: float = rear_spring_arm.spring_length
 @onready var defaut_camera_fov:float = camera.fov
