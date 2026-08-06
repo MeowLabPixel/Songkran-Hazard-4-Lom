@@ -394,6 +394,15 @@ func _apply_damage_to_result(result: Dictionary) -> void:
 					"hit_zone": hitbox_zone.zone_name,
 					"position": result.position
 				})
+				
+				# On confirmed weakpoint hit impact, trigger camera shake ONLY if mode is WEAKPOINT_ONLY
+				# (If mode is ENABLED, shot fire already triggered camera shake on pull-trigger!)
+				var pc = _get_player_camera()
+				if pc and ("camera_shake_mode" in pc) and pc.camera_shake_mode == pc.CameraShakeMode.WEAKPOINT_ONLY:
+					var zn = str(hitbox_zone.zone_name).to_lower()
+					var is_weak = zn == "head" or zn == "weakpoint" or zn == "weak" or ("head" in zn) or ("weak" in zn) or ("foot" in zn) or ("feet" in zn) or ("leg" in zn)
+					if is_weak and pc.has_method("trigger_weakpoint_shake"):
+						pc.trigger_weakpoint_shake()
 				return
 
 	# ✅ Fallback (direct hit)
@@ -491,15 +500,35 @@ func _check_weakpoint_aim() -> bool:
 	var to: Vector3 = from + direction * 100.0
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var query = PhysicsRayQueryParameters3D.create(from, to)
-	query.collision_mask = 14 | 8192
+	query.collision_mask = 2 | 4 | 14 | 8192
 	query.collide_with_areas = true
+	query.collide_with_bodies = true
+	_update_player_exclude_cache()
+	if not _cached_player_rids.is_empty():
+		query.exclude = _cached_player_rids
+		
 	var result: Dictionary = space_state.intersect_ray(query)
-	if result and result.collider is Area3D:
-		var hitbox_zone: HitboxZone = result.collider.get_node_or_null("HitboxZone")
-		if hitbox_zone:
-			var zn = hitbox_zone.zone_name.to_lower()
-			if zn == "head" or zn == "weakpoint" or zn == "weak" or ("head" in zn) or ("weak" in zn):
-				return true
+	if result and result.has("collider") and is_instance_valid(result.collider):
+		var col: Node = result.collider
+		# Search up and down the collider node tree for HitboxZone
+		var curr: Node = col
+		while curr and curr != get_tree().root:
+			if curr.has_node("HitboxZone"):
+				var hz = curr.get_node("HitboxZone")
+				if "zone_name" in hz:
+					var zn = str(hz.zone_name).to_lower()
+					if "head" in zn or "weak" in zn or "foot" in zn or "feet" in zn or "leg" in zn:
+						return true
+			if "zone_name" in curr:
+				var zn = str(curr.zone_name).to_lower()
+				if "head" in zn or "weak" in zn or "foot" in zn or "feet" in zn or "leg" in zn:
+					return true
+			for child in curr.get_children():
+				if "zone_name" in child:
+					var zn = str(child.zone_name).to_lower()
+					if "head" in zn or "weak" in zn or "foot" in zn or "feet" in zn or "leg" in zn:
+						return true
+			curr = curr.get_parent()
 	return false
 
 func _update_player_exclude_cache() -> void:

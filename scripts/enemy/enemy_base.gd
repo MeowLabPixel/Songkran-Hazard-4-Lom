@@ -34,6 +34,7 @@ var debug_label: Label3D = null
 @export_enum("Zombie Male", "Zombie Female") var voice_character: String = "Zombie Male"
 var custom_pitch_scale: float = 1.0
 var _last_voice_gethit_time: float = -100.0
+var _last_takedown_hit_time: float = -100.0
 
 var next_idle_offset: float = -1.0
 var guaranteed_grab_next_attack: bool = false
@@ -308,8 +309,14 @@ func take_hit(hit_data: Dictionary) -> void:
 	if is_defeated or is_takedown_defeat:
 		return
 		
-	# Play pain voiceline and hit SFX without cooldown when hit
 	var time_now = Time.get_ticks_msec() / 1000.0
+	var hit_type_check: String = hit_data.get("hit_type", "")
+	if hit_type_check in ["takedown", "takedown_splash"]:
+		if time_now - _last_takedown_hit_time < 0.5:
+			return
+		_last_takedown_hit_time = time_now
+
+	# Play pain voiceline and hit SFX without cooldown when hit
 	if time_now - _last_voice_gethit_time >= 0.05:
 		_last_voice_gethit_time = time_now
 		var event_name = "vo_zombie_m_melee_gethit" if voice_character == "Zombie Male" else "vo_zombie_f_melee_gethit"

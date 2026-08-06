@@ -269,23 +269,25 @@ func physics_update(delta: float) -> void:
 					enemy.velocity = dir * current_speed
 					enemy.move_and_slide()
 					
-					# Detect and push other enemies
-					var other_enemies = enemy.get_tree().get_nodes_in_group("enemies")
-					for other in other_enemies:
-						if other == enemy or other.is_defeated or other in _pushed_enemies:
-							continue
-						var dist = enemy.global_position.distance_to(other.global_position)
-						if dist < splash_push_radius:
-							_pushed_enemies.append(other)
-							var push_dir = (other.global_position - enemy.global_position).normalized()
-							push_dir.y = 0.0
-							push_dir = push_dir.normalized()
-							other.take_hit({
-								"damage": splash_push_damage,
-								"hit_type": "push",
-								"hit_direction": push_dir,
-								"source": enemy
-							})
+					# Detect and push other enemies (after 0.2s grace delay in Act 3)
+					if _act3_timer >= 0.2:
+						var other_enemies = enemy.get_tree().get_nodes_in_group("enemies")
+						for other in other_enemies:
+							if other == enemy or other.is_defeated or other in _pushed_enemies:
+								continue
+							var dist = enemy.global_position.distance_to(other.global_position)
+							if dist < splash_push_radius:
+								_pushed_enemies.append(other)
+								var push_dir = (other.global_position - enemy.global_position).normalized()
+								push_dir.y = 0.0
+								push_dir = push_dir.normalized()
+								other.take_hit({
+									"damage": splash_push_damage,
+									"hit_type": "push",
+									"hit_direction": push_dir,
+									"source": enemy
+								})
+
 					
 			# Wait for AnimationTree to automatically transition to Act 4
 			# Since we queued travel() for Head, it will take the user's crossfade arrow to Head Act 4!

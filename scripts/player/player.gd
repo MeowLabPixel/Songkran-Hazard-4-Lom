@@ -1043,6 +1043,9 @@ func lost_HP(amount):
 		HP = 0
 	else:
 		HP -=amount
+	
+	if camera and camera.has_method("trigger_get_hit_shake"):
+		camera.trigger_get_hit_shake()
 
 func force_die() -> void:
 	var already_dead = (HP <= 0)
@@ -1204,25 +1207,45 @@ func attempt_takedown() -> bool:
 		return false
 	takedown_target = null
 	
-	# First try overlapping bodies on the takedown Area
+	var best_enemy: Node = null
+	var best_score: float = -99999.0
+	
+	# Detect center & forward vector of Stunned detect2 / player
+	var detector_pos: Vector3 = stun_detect.global_position
+	var forward_dir: Vector3 = -global_transform.basis.z.normalized()
+	
+	var candidates: Array[Node] = []
 	var areas := stun_detect.get_overlapping_areas()
 	for a in areas:
 		if not a:
 			continue
-
 		var enemy := _find_enemy_from_area(a)
-		if enemy:
-			if enemy.has_method("is_takedownable") and enemy.is_takedownable():
-				takedown_target = enemy
-				# We do NOT trigger knockdown yet; it triggers when the hand sweeps
-				return true
-	# Fallback: use near_enemy_list (populated by stun_detect) to find a takedownable enemy
+		if enemy and not (enemy in candidates):
+			candidates.append(enemy)
+			
 	for e in near_enemy_list:
-		if not e:
-			continue
-		if e.has_method("is_takedownable") and e.is_takedownable():
-			takedown_target = e
-			return true
+		if e and not (e in candidates):
+			candidates.append(e)
+			
+	for enemy in candidates:
+		if enemy.has_method("is_takedownable") and enemy.is_takedownable():
+			var to_enemy = (enemy.global_position - detector_pos)
+			to_enemy.y = 0.0
+			var dist = to_enemy.length()
+			var dir = to_enemy.normalized() if dist > 0.001 else forward_dir
+			
+			# Score combines forward alignment (dot product) and distance
+			var dot = forward_dir.dot(dir) # 1.0 = directly in front
+			var score = (dot * 10.0) - dist
+			
+			if score > best_score:
+				best_score = score
+				best_enemy = enemy
+				
+	if best_enemy:
+		takedown_target = best_enemy
+		return true
+		
 	return false
 
 func _find_enemy_from_area(area: Area3D) -> Node:

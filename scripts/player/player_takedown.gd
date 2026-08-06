@@ -2,26 +2,127 @@ extends State
 #temp can do when idle,run,sprint
 var anim_name = "TD/Take down anim"
 
+@export_group("Hold & Release Timing")
+@export var enable_hold_and_release: bool = true                     ## Enable dramatic slow windup hold before explosive kick release
+@export_range(0.05, 0.6, 0.05) var start_hold_speed: float = 0.23     ## Initial slow-motion speed factor at start of windup (e.g. 0.23 = 23% speed)
+@export_range(0.8, 2.0, 0.05) var release_speed_scale: float = 1.25   ## Explosive release speed scale when kick strikes
+@export_range(1.0, 3.0, 0.1) var acceleration_curve: float = 1.4     ## Exponential acceleration curve during windup
+
+@export_group("Hit Stop Settings")
+@export var enable_hit_stop: bool = true
+@export var enable_domino_hit_stop: bool = true
+@export_range(0.02, 0.15, 0.01) var domino_delay: float = 0.05        ## Time delay between domino zombie hits (seconds)
+@export var hitbox_enable_time: float = 0.25                         ## Keyframe position when takedown attack hitbox activates (seconds)
+@export var hitbox_disable_time: float = 0.47                        ## Keyframe position when takedown attack hitbox deactivates (seconds)
+
+@export_range(0.0, 0.5, 0.01) var anim_slow_duration: float = 0.08    ## Duration player & hit zombie move slow on impact (seconds)
+@export_range(0.0, 0.2, 0.005) var anim_slow_speed: float = 0.02     ## Slow-motion speed scale on impact (e.g. 0.02 = 2% speed, 0.05 = 5% speed)
+@export_range(0.0, 0.3, 0.01) var primary_time_stop_duration: float = 0.12 ## Engine time freeze duration for 0 HP fatal kill (seconds)
+@export_range(0.0, 0.2, 0.01) var primary_time_stop_scale: float = 0.03   ## Engine time scale during 0 HP fatal kill
+@export_range(0.0, 0.2, 0.01) var splash_time_stop_duration: float = 0.06  ## Engine time freeze duration for 0 HP splash kill (seconds)
+@export_range(0.0, 0.2, 0.01) var splash_time_stop_scale: float = 0.10    ## Engine time scale during 0 HP splash kill
+@export_range(0.01, 0.1, 0.005) var time_stop_ease_out_time: float = 0.04 ## Smooth easing recovery back to 1.0 time scale (seconds)
+
 var splash_area: Area3D = null
 var _hit_primary: bool = false
 var _hit_enemies: Array[Node] = []
+var _queued_enemies: Array[Node] = []
+var _pending_domino_hits: Array[Dictionary] = []
+var _domino_timer: float = 0.0
+var _target_player_rot_y: float = 0.0
+var _is_aligning_player_rot: bool = false
+var _hit_stop_tween: Tween = null
+var _is_hit_stopping: bool = false
+var _prev_capsule_transform: Transform3D = Transform3D.IDENTITY
+var _has_valid_prev_ray: bool = false
+
+var _state_timer: float = 0.0
+var _anim_timeline_pos: float = 0.0
+var _has_released_kick: bool = false
+const TAKEDOWN_TIMEOUT_FALLBACK: float = 3.5
+
+func _get_player_camera() -> Node:
+	var cams = get_tree().get_nodes_in_group("player_camera") if get_tree() else []
+	if cams.size() > 0:
+		return cams[0]
+	return null
 
 func _enter() -> void:
-	print(name)
+	_state_timer = 0.0
+	_anim_timeline_pos = 0.0
+	_has_released_kick = false
 	_hit_primary = false
 	_hit_enemies.clear()
+	_queued_enemies.clear()
+	_pending_domino_hits.clear()
+	_domino_timer = 0.0
+	_has_valid_prev_ray = false
+
+	_is_aligning_player_rot = false
 	
-	# Play Rookie Lee attack grunt (low chance for heavy attack grunt)
+	if enable_hold_and_release and is_instance_valid(owner) and "anim" in owner and owner.anim:
+		owner.anim.set("parameters/Main/Takedown/TD_Take down anim/TimeScale/scale", 1.2 * start_hold_speed)
+	
+	# Cancel active aiming so camera offsets don't interfere
+	if is_instance_valid(owner) and owner.has_method("cancel_aim"):
+		owner.cancel_aim()
+		
+	# Calculate target facing direction using Godot native looking_at() transform
+	var target_enemy = owner.takedown_target if is_instance_valid(owner) and "takedown_target" in owner else null
+	var dynamic_blend_duration: float = 0.35
+	
+	if is_instance_valid(target_enemy):
+		var target_pos = target_enemy.global_position
+		target_pos.y = owner.global_position.y
+		if target_pos.distance_squared_to(owner.global_position) > 0.01:
+			var look_trans = owner.global_transform.looking_at(target_pos, Vector3.UP)
+			_target_player_rot_y = look_trans.basis.get_euler().y
+			
+			# Dynamic blend duration based on rotation distance: min 0.35s (0°), max 0.45s (180°)
+			var rot_delta: float = absf(angle_difference(owner.rotation.y, _target_player_rot_y))
+			var rot_factor: float = clamp(rot_delta / PI, 0.0, 1.0)
+			dynamic_blend_duration = lerp(0.35, 0.45, rot_factor)
+			
+			var cam_node = _get_player_camera()
+			if cam_node:
+				var desired_cam_yaw = -_target_player_rot_y
+				
+				# Smoothly blend character mesh rotation towards target
+				if is_instance_valid(owner):
+					var player_target_rot = owner.rotation.y + angle_difference(owner.rotation.y, _target_player_rot_y)
+					var rot_tween := create_tween()
+					rot_tween.set_trans(Tween.TRANS_SINE)
+					rot_tween.set_ease(Tween.EASE_IN_OUT)
+					rot_tween.tween_property(owner, "rotation:y", player_target_rot, dynamic_blend_duration)
+					
+				# Trigger hybrid additive takedown camera sweep (starts at 0.0, sweeps to target_diff, accepts mouse look additively)
+				if cam_node.has_method("trigger_hybrid_takedown_yaw_sweep") and "camera_rotation" in cam_node:
+					var cur_cam_rot = cam_node.camera_rotation.x
+					var target_diff = angle_difference(cur_cam_rot, desired_cam_yaw)
+					cam_node.trigger_hybrid_takedown_yaw_sweep(target_diff, dynamic_blend_duration)
+
+
+
+
+
+	# Trigger dynamic cinematic takedown camera transition
+	var cam = _get_player_camera()
+	if cam:
+		if cam.has_method("start_takedown_windup_zoom_in"):
+			cam.start_takedown_windup_zoom_in(dynamic_blend_duration)
+		elif cam.has_method("start_takedown_camera_transition"):
+			cam.start_takedown_camera_transition()
+
+
+	# Play Rookie Lee attack sound effects
 	if randf() < 0.15:
 		SoundManager.play_3d("vo_leon_attack", owner)
 	else:
 		SoundManager.play_3d("vo_leon_quickattack", owner)
 		
-	# Play Rookie Lee takedown sound and Region_PlayerTakedownAttackStart
 	SoundManager.play_3d("leon_takedown", owner)
 	SoundManager.play_3d("Region_PlayerTakedownAttackStart", owner)
 		
-	owner.stun_detect.monitorable = true
 	owner.aim_bone_on(false)
 	stop_moving()
 	owner.anim.get(owner.anim_playback).travel("Takedown")
@@ -29,104 +130,409 @@ func _enter() -> void:
 		owner.anim.animation_finished.connect(anim_done)
 	owner.hitboxF.monitoring = false
 	owner.hitboxB.monitoring = false
-	
-	# Reference the pre-configured takedown hitbox in the scene
+	# Reference the pre-configured takedown hitbox in the scene (Keep disabled during windup phase)
 	splash_area = owner.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox")
 	if splash_area:
-		splash_area.monitoring = true
+		splash_area.monitoring = false
 		if not splash_area.area_entered.is_connected(_on_splash_area_entered):
 			splash_area.area_entered.connect(_on_splash_area_entered)
 	else:
 		push_warning("[PlayerTakedown] TakedownHitbox not found at path Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox")
+
+
+func _update(delta: float) -> void:
+	_state_timer += delta
+	if _state_timer >= TAKEDOWN_TIMEOUT_FALLBACK:
+		push_warning("[PlayerTakedown] Safety timeout reached, transitioning to Idle.")
+		finished.emit("Idle")
+		return
 		
-func _update(_delta: float) -> void:
-	_check_overlapping_splash()
+	# Track animation timeline position & handle gradual windup acceleration
+	if enable_hold_and_release and not _has_released_kick:
+		var progress: float = clamp(_anim_timeline_pos / hitbox_enable_time, 0.0, 1.0)
+		var current_speed: float = lerp(start_hold_speed, release_speed_scale, pow(progress, acceleration_curve))
+		_anim_timeline_pos += delta * current_speed
+		
+		if is_instance_valid(owner) and "anim" in owner and owner.anim:
+			owner.anim.set("parameters/Main/Takedown/TD_Take down anim/TimeScale/scale", 1.2 * current_speed)
+			
+		if _anim_timeline_pos >= hitbox_enable_time:
+			_has_released_kick = true
+			if is_instance_valid(splash_area):
+				splash_area.monitoring = true # Enable attack hitbox now that windup phase has ended
+			if is_instance_valid(owner) and "anim" in owner and owner.anim:
+				owner.anim.set("parameters/Main/Takedown/TD_Take down anim/TimeScale/scale", 1.2 * release_speed_scale)
+			
+			# Trigger quick release zoom OUT on camera
+			var cam = _get_player_camera()
+			if cam and cam.has_method("trigger_takedown_release_zoom_out"):
+				cam.trigger_takedown_release_zoom_out()
+	else:
+		_anim_timeline_pos += delta * (release_speed_scale if enable_hold_and_release else 1.0)
+		if not enable_hold_and_release and _anim_timeline_pos >= hitbox_enable_time:
+			_has_released_kick = true
+			if is_instance_valid(splash_area) and not splash_area.monitoring and _anim_timeline_pos <= hitbox_disable_time:
+				splash_area.monitoring = true
+
+	# Process hit detection strictly within active release window (hitbox_enable_time to hitbox_disable_time)
+	if _anim_timeline_pos >= hitbox_enable_time and _anim_timeline_pos <= hitbox_disable_time:
+		if is_instance_valid(splash_area) and not splash_area.monitoring:
+			splash_area.monitoring = true
+				# Process physical collision hit detection (first zombie touched receives primary hit)
+		_check_overlapping_splash()
+		
+		# Process inter-frame swept shapecast volume query across 0.25s - 0.47s window
+		_process_capsule_swept_shapecast()
+	elif _anim_timeline_pos > hitbox_disable_time:
+		if is_instance_valid(splash_area) and splash_area.monitoring:
+			splash_area.monitoring = false
+		_has_valid_prev_ray = false
+
+		
+	# Process domino hit stop queue with staggered delay
+	if enable_domino_hit_stop and not _pending_domino_hits.is_empty():
+		_domino_timer -= delta
+		if _domino_timer <= 0.0:
+			_domino_timer = domino_delay
+			var hit_info = _pending_domino_hits.pop_front()
+			_execute_domino_hit(hit_info)
+
+func _process_capsule_swept_shapecast() -> void:
+	var attack_box_node = owner.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox/TakedownAttackBox")
+	if not is_instance_valid(attack_box_node) or not is_inside_tree():
+		return
+		
+	var shape_resource: Shape3D = null
+	if attack_box_node is CollisionShape3D:
+		shape_resource = attack_box_node.shape
+	elif attack_box_node is CollisionObject3D:
+		for child in attack_box_node.get_children():
+			if child is CollisionShape3D:
+				shape_resource = child.shape
+				break
+				
+	var curr_transform: Transform3D = attack_box_node.global_transform
+	if not _has_valid_prev_ray:
+		_prev_capsule_transform = curr_transform
+		_has_valid_prev_ray = true
+		return
+		
+	var space_state = owner.get_world_3d().direct_space_state
+	if not space_state:
+		return
+		
+	if shape_resource:
+		var exclude_rids: Array[RID] = [owner.get_rid()]
+		var num_steps: int = 6
+		
+		for step in range(num_steps + 1):
+			var t: float = float(step) / float(num_steps)
+			var step_transform: Transform3D = _prev_capsule_transform.interpolate_with(curr_transform, t)
+			
+			var query = PhysicsShapeQueryParameters3D.new()
+			query.shape = shape_resource
+			query.transform = step_transform
+			query.collide_with_areas = true
+			query.collide_with_bodies = true
+			query.exclude = exclude_rids
+			
+			var results = space_state.intersect_shape(query, 16)
+			for res in results:
+				var collider = res.get("collider")
+				if is_instance_valid(collider):
+					if collider is RID:
+						exclude_rids.append(collider)
+					else:
+						exclude_rids.append(collider.get_rid())
+						var enemy = _find_enemy_from_node(collider)
+						if enemy and not enemy.is_defeated:
+							_register_enemy_takedown_hit(enemy, collider)
+
+	_prev_capsule_transform = curr_transform
+
+func _register_enemy_takedown_hit(enemy: Node, hit_node: Node = null) -> void:
+	if not is_instance_valid(enemy) or enemy.is_defeated:
+		return
+		
+	if enemy in _hit_enemies:
+		return
+		
+	# First enemy hit receives primary takedown hit
+	if not _hit_primary and (owner.takedown_target == null or enemy == owner.takedown_target or _hit_enemies.is_empty()):
+		_execute_primary_hit(enemy)
+		return
+		
+	var zone_name := "body"
+	if is_instance_valid(hit_node):
+		if hit_node is HitboxZone:
+			zone_name = hit_node.zone_name
+		elif hit_node.has_node("HitboxZone"):
+			var hz = hit_node.get_node("HitboxZone")
+			if hz is HitboxZone:
+				zone_name = hz.zone_name
+				
+	var hit_info = {
+		"enemy": enemy,
+		"area": hit_node if hit_node is Area3D else null,
+		"zone_name": zone_name
+	}
+	
+	_execute_splash_hit(hit_info)
+
+func _find_enemy_from_node(node: Node) -> EnemyBase:
+	var curr = node
+	while curr:
+		if curr is EnemyBase:
+			return curr
+		curr = curr.get_parent()
+	return null
 
 func _exit() -> void:
-	# Removed the safety fallback: enemies will now ONLY be knocked down if the physical TakedownHitbox actually collided with them!
+	_has_valid_prev_ray = false
+	# Ensure hit stop tween is killed and engine time scale is restored
+	_reset_hit_stop()
+	
+	# Smoothly restore standard gameplay camera view
+	var cam = _get_player_camera()
+	if cam and cam.has_method("exit_takedown_camera_transition"):
+		cam.exit_takedown_camera_transition()
+	
 	if is_instance_valid(owner):
+		if "anim" in owner and owner.anim:
+			owner.anim.set("parameters/Main/Takedown/TD_Take down anim/TimeScale/scale", 1.2)
+			if owner.anim.animation_finished.is_connected(anim_done):
+				owner.anim.animation_finished.disconnect(anim_done)
 		if owner.stun_detect:
 			owner.stun_detect.monitorable = false
-		if owner.anim and is_instance_valid(owner.anim) and owner.anim.animation_finished.is_connected(anim_done):
-			owner.anim.animation_finished.disconnect(anim_done)
+		if owner.hitboxF:
+			owner.hitboxF.monitoring = true
+		if owner.hitboxB:
+			owner.hitboxB.monitoring = true
 	
 	if is_instance_valid(splash_area):
+		splash_area.monitoring = false
 		if splash_area.area_entered.is_connected(_on_splash_area_entered):
 			splash_area.area_entered.disconnect(_on_splash_area_entered)
 	splash_area = null
+	_hit_primary = false
+	_hit_enemies.clear()
+	_queued_enemies.clear()
+	_pending_domino_hits.clear()
+
 
 func anim_done(namee: String):
 	if namee == anim_name:
 		finished.emit("Idle")
-		owner.hitboxF.monitoring = true
-		owner.hitboxB.monitoring = true
 
 func stop_moving():
 	var dire = Vector3.ZERO
 	owner.set_velocity_from_motion(dire)
 
 func _check_overlapping_splash() -> void:
-	if not is_instance_valid(splash_area):
+	if not is_instance_valid(splash_area) or not splash_area.monitoring:
 		return
+	# Query overlapping Area3D hitboxes (HitboxZones)
 	for a in splash_area.get_overlapping_areas():
 		_process_splash_hit(a)
+	# Query overlapping CharacterBody3D physics bodies (EnemyBase)
+	for b in splash_area.get_overlapping_bodies():
+		_process_splash_hit(b)
 
 func _on_splash_area_entered(area: Area3D) -> void:
 	_process_splash_hit(area)
 
-func _process_splash_hit(area: Area3D) -> void:
-	var enemy = _find_enemy_from_area(area)
-	if enemy and not enemy.is_defeated:
-		if enemy == owner.takedown_target:
-			if not _hit_primary:
-				if enemy.has_method("trigger_takedown"):
-					enemy.trigger_takedown()
-				else:
-					var sm = enemy.get_node_or_null("EnemyStateMachine")
-					if sm:
-						var td = sm.get_node_or_null("StateTakedownable")
-						if td:
-							td.trigger_takedown()
-				
-				var hit_dir = (enemy.global_position - owner.global_position).normalized()
-				hit_dir.y = 0.0
-				hit_dir = hit_dir.normalized()
-				if enemy.has_method("take_hit"):
-					enemy.take_hit({
-						"damage": 1.33,
-						"hit_zone": "body",
-						"hit_type": "takedown",
-						"hit_direction": hit_dir,
-						"source": owner
-					})
-				_hit_primary = true
-			return
-			
-		if enemy in _hit_enemies:
-			return
-		_hit_enemies.append(enemy)
+func _process_splash_hit(node: Node) -> void:
+	if _anim_timeline_pos < hitbox_enable_time or _anim_timeline_pos > hitbox_disable_time:
+		return
 		
-		var zone_name := "body"
-		var hitbox_zone = area.get_node_or_null("HitboxZone")
-		if not hitbox_zone:
-			for child in area.get_children():
-				if child is HitboxZone:
-					hitbox_zone = child
-					break
-		if hitbox_zone:
-			zone_name = hitbox_zone.zone_name
-			
-		var hit_dir = (enemy.global_position - owner.global_position).normalized()
-		hit_dir.y = 0.0
-		hit_dir = hit_dir.normalized()
+	var enemy = _find_enemy_from_node(node)
+	if enemy:
+		_register_enemy_takedown_hit(enemy, node)
+
+
+func _execute_primary_hit(enemy: Node) -> void:
+
+	if not is_instance_valid(enemy) or enemy.is_defeated or enemy in _hit_enemies:
+		return
 		
+	_hit_primary = true
+	_hit_enemies.append(enemy)
+
+	if enemy.has_method("trigger_takedown"):
+		enemy.trigger_takedown()
+	else:
+		var sm = enemy.get_node_or_null("EnemyStateMachine")
+		if sm:
+			var td = sm.get_node_or_null("StateTakedownable")
+			if td:
+				td.trigger_takedown()
+	
+	var hit_dir = (enemy.global_position - owner.global_position).normalized()
+	hit_dir.y = 0.0
+	hit_dir = hit_dir.normalized()
+	if enemy.has_method("take_hit"):
 		enemy.take_hit({
 			"damage": 1.33,
-			"hit_zone": zone_name,
-			"hit_type": "takedown_splash",
+			"hit_zone": "body",
+			"hit_type": "takedown",
 			"hit_direction": hit_dir,
 			"source": owner
 		})
+	
+	# 1. ALWAYS slow down player and zombie animations briefly to convey physical impact
+	_trigger_anim_slow(enemy, anim_slow_duration, anim_slow_speed)
+	
+	# 2. Trigger engine TIME STOP ONLY if zombie is reduced to 0 HP (fatal kill)
+	var is_fatal: bool = false
+	if "current_hp" in enemy:
+		is_fatal = (enemy.current_hp <= 0)
+	if not is_fatal and ("is_takedown_defeat" in enemy or "is_defeated" in enemy):
+		is_fatal = (enemy.get("is_takedown_defeat") == true or enemy.get("is_defeated") == true)
+	
+	if is_fatal:
+		_trigger_time_stop(primary_time_stop_duration, primary_time_stop_scale)
+	
+	# Trigger takedown screen shake & FOV impact punch on player camera
+	var cam = _get_player_camera()
+	if cam:
+		if cam.has_method("trigger_takedown_impact_fov_kick"):
+			cam.trigger_takedown_impact_fov_kick()
+		if cam.has_method("trigger_takedown_shake"):
+			cam.trigger_takedown_shake()
+			
+	# Trigger stylized UI takedown shockwave at impact position
+	var ui = get_tree().get_first_node_in_group("player_ui") if get_tree() else null
+	if ui and ui.has_method("spawn_takedown_shockwave"):
+		ui.spawn_takedown_shockwave(enemy.global_position)
+
+
+func _execute_domino_hit(hit_info: Dictionary) -> void:
+	_execute_splash_hit(hit_info)
+
+func _execute_splash_hit(hit_info: Dictionary) -> void:
+	var enemy = hit_info.get("enemy") as Node
+	if not is_instance_valid(enemy) or enemy.is_defeated:
+		return
+		
+	if enemy in _hit_enemies:
+		return
+	_hit_enemies.append(enemy)
+	
+	var zone_name = hit_info.get("zone_name", "body")
+	var hit_dir = (enemy.global_position - owner.global_position).normalized()
+	hit_dir.y = 0.0
+	hit_dir = hit_dir.normalized()
+	
+	enemy.take_hit({
+		"damage": 1.33,
+		"hit_zone": zone_name,
+		"hit_type": "takedown_splash",
+		"hit_direction": hit_dir,
+		"source": owner
+	})
+	
+	# 1. Trigger domino animation micro slow-down
+	_trigger_anim_slow(enemy, anim_slow_duration, anim_slow_speed)
+	
+	# 2. Trigger engine TIME STOP ONLY if collateral splash hit resulted in 0 HP (fatal kill)
+	var is_fatal_splash: bool = false
+	if "current_hp" in enemy:
+		is_fatal_splash = (enemy.current_hp <= 0)
+	if not is_fatal_splash and ("is_takedown_defeat" in enemy or "is_defeated" in enemy):
+		is_fatal_splash = (enemy.get("is_takedown_defeat") == true or enemy.get("is_defeated") == true)
+		
+	if is_fatal_splash:
+		_trigger_time_stop(splash_time_stop_duration, splash_time_stop_scale)
+		
+	# Trigger camera micro shake for domino splash hit
+	var cams = get_tree().get_nodes_in_group("player_camera") if get_tree() else []
+	for cam in cams:
+		if cam.has_method("trigger_takedown_shake"):
+			cam.trigger_takedown_shake()
+
+func _trigger_anim_slow(enemy: Node, duration: float, slow_speed_factor: float) -> void:
+	if not enable_hit_stop or duration <= 0.0:
+		return
+	# Avoid applying extreme slowdown if animation is past active hitbox window
+	if _anim_timeline_pos > (hitbox_disable_time + 0.5):
+		return
+		
+	# 1. Set player takedown AnimationTree TimeScale parameter relative to default 1.2 scale
+	if is_instance_valid(owner) and "anim" in owner and owner.anim:
+		owner.anim.set("parameters/Main/Takedown/TD_Take down anim/TimeScale/scale", 1.2 * slow_speed_factor)
+		
+	# 2. Set enemy AnimationPlayer speed_scale for zombie slow-mo
+	var e_ap: AnimationPlayer = null
+	if is_instance_valid(enemy):
+		if "anim_player" in enemy and enemy.anim_player and enemy.anim_player is AnimationPlayer:
+			e_ap = enemy.anim_player
+		elif "anim_tree" in enemy and enemy.anim_tree and enemy.anim_tree is AnimationTree:
+			e_ap = enemy.anim_tree.get_node_or_null(enemy.anim_tree.anim_player) as AnimationPlayer
+			
+	var prev_e_scale: float = 1.0
+	if e_ap:
+		prev_e_scale = e_ap.speed_scale if e_ap.speed_scale > 0.0 else 1.0
+		e_ap.speed_scale = slow_speed_factor
+		
+	var tree = get_tree()
+	if tree:
+		var timer = tree.create_timer(duration, true, false, true)
+		timer.timeout.connect(func():
+			if is_instance_valid(owner) and "anim" in owner and owner.anim:
+				owner.anim.set("parameters/Main/Takedown/TD_Take down anim/TimeScale/scale", 1.2)
+			if is_instance_valid(e_ap):
+				e_ap.speed_scale = prev_e_scale
+		)
+	else:
+		if is_instance_valid(owner) and "anim" in owner and owner.anim:
+			owner.anim.set("parameters/Main/Takedown/TD_Take down anim/TimeScale/scale", 1.2)
+		if is_instance_valid(e_ap):
+			e_ap.speed_scale = prev_e_scale
+
+func _trigger_time_stop(duration: float, time_scale: float) -> void:
+	if not enable_hit_stop or duration <= 0.0:
+		return
+		
+	if _hit_stop_tween and _hit_stop_tween.is_valid():
+		_hit_stop_tween.kill()
+		_hit_stop_tween = null
+		
+	_is_hit_stopping = true
+	Engine.time_scale = time_scale
+	
+	var tree = get_tree()
+	if not tree:
+		Engine.time_scale = 1.0
+		_is_hit_stopping = false
+		return
+		
+	var timer = tree.create_timer(duration, true, false, true)
+	timer.timeout.connect(func():
+		if not is_inside_tree():
+			Engine.time_scale = 1.0
+			_is_hit_stopping = false
+			return
+			
+		_hit_stop_tween = create_tween()
+		if _hit_stop_tween:
+			_hit_stop_tween.tween_property(Engine, "time_scale", 1.0, time_stop_ease_out_time)\
+				.set_trans(Tween.TRANS_CUBIC)\
+				.set_ease(Tween.EASE_OUT)
+			_hit_stop_tween.finished.connect(func():
+				Engine.time_scale = 1.0
+				_is_hit_stopping = false
+			)
+		else:
+			Engine.time_scale = 1.0
+			_is_hit_stopping = false
+	)
+
+func _reset_hit_stop() -> void:
+	if _hit_stop_tween and _hit_stop_tween.is_valid():
+		_hit_stop_tween.kill()
+		_hit_stop_tween = null
+	Engine.time_scale = 1.0
+	_is_hit_stopping = false
 
 func _find_enemy_from_area(area: Area3D) -> Node:
 	var node = area

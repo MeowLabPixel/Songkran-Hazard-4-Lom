@@ -36,7 +36,10 @@ func enter() -> void:
 		enemy.velocity = Vector3.ZERO
 		enemy.move_and_slide()
 		enemy.show() # Ensure the enemy is visible when re-pooling/starting
-		enemy.set_collision_mask_value(1, false)
+		enemy.collision_layer = 0
+		enemy.collision_mask = 0
+		if nav_agent:
+			nav_agent.avoidance_enabled = false
 		
 	print("[StateDefeated] Enemy defeated!")
 	
@@ -288,10 +291,12 @@ func _fade_out_and_hide() -> void:
 	var target_y = enemy.global_position.y - sink_depth
 	tween.tween_property(enemy, "global_position:y", target_y, sink_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	
-	# 3. After sinking, hide the enemy and restore default materials
+	# 3. After sinking, hide the enemy, restore default materials, and free node
 	tween.tween_callback(func():
-		enemy.hide()
-		_restore_materials()
+		if is_instance_valid(enemy):
+			enemy.hide()
+			_restore_materials()
+			enemy.queue_free()
 	)
 
 func _restore_materials() -> void:

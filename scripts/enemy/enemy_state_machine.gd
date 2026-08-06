@@ -83,17 +83,32 @@ func handle_hit(hit_data: Dictionary) -> void:
 	if hit_type == "push":
 		if not current_state.name in ["StateKnockdown", "StateGetUp", "StateDefeated"]:
 			if current_state.name == "StateTakedownable":
-				if _states.has("StateKnockdown"):
-					_states["StateKnockdown"].knockdown_mode = "NORMAL"
-					_states["StateKnockdown"].stun_type = current_state.stun_type
-					transition_to("StateKnockdown")
-					return
+				var td = current_state as StateTakedownable
+				var is_foot_stun = td and td.stun_type != "head"
+				if is_foot_stun:
+					if _states.has("StateKnockdown"):
+						var knockdown = _states["StateKnockdown"]
+						knockdown.knockdown_mode = "SPECIAL_LEG_SHOT"
+						knockdown.start_offset_override = 1.25
+						if td.stun_type == "right_foot":
+							knockdown.special_side = "R"
+							knockdown.stun_type = "right_foot"
+						else:
+							knockdown.special_side = "L"
+							knockdown.stun_type = "left_foot"
+						transition_to("StateKnockdown")
+						return
+				else:
+					if _states.has("StateHitPush"):
+						_states["StateHitPush"].push_direction = hit_data.get("hit_direction", Vector3.ZERO)
+						transition_to("StateHitPush", true)
+						return
 			elif _states.has("StateHitPush"):
 				_states["StateHitPush"].push_direction = hit_data.get("hit_direction", Vector3.ZERO)
 				var force = (current_state.name == "StateHitPush")
 				transition_to("StateHitPush", force)
 				return
-	elif hit_type == "takedown_splash":
+	elif hit_type in ["takedown", "takedown_splash"]:
 		if not current_state.name in ["StateKnockdown", "StateGetUp", "StateDefeated"]:
 			if _states.has("StateKnockdown"):
 				_states["StateKnockdown"].knockdown_mode = "NORMAL"
@@ -132,7 +147,7 @@ func _update_collision_for_state(state_name: String) -> void:
 	# Active states have collision with other enemies and enable navigation avoidance.
 	# Floor/disabled states disable these to avoid creating invisible walls.
 	var is_collidable = true
-	if state_name in ["StateTakedownable", "StateKnockdown", "StateGetUp"]:
+	if state_name in ["StateTakedownable", "StateKnockdown", "StateGetUp", "StateDefeated"]:
 		is_collidable = false
 		
 	enemy_node.set_collision_layer_value(3, is_collidable)

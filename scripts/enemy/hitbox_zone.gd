@@ -142,6 +142,15 @@ func _on_body_entered(body: Node3D) -> void:
 			"source": body,
 			"hit_direction": hit_dir,
 		})
+		
+		# Trigger camera shake on confirmed weakpoint hit ONLY if mode is WEAKPOINT_ONLY
+		var zn = str(zone_name).to_lower()
+		if zn == "head" or zn == "weakpoint" or zn == "weak" or ("head" in zn) or ("weak" in zn) or ("foot" in zn) or ("feet" in zn) or ("leg" in zn):
+			var cams = get_tree().get_nodes_in_group("player_camera") if get_tree() else []
+			for cam in cams:
+				if ("camera_shake_mode" in cam) and cam.camera_shake_mode == cam.CameraShakeMode.WEAKPOINT_ONLY:
+					if cam.has_method("trigger_weakpoint_shake"):
+						cam.trigger_weakpoint_shake()
 
 func _reparent_to_attachment(area: Area3D, attachment: BoneAttachment3D) -> void:
 	if not is_instance_valid(area) or not is_instance_valid(attachment):

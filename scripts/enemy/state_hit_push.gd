@@ -57,6 +57,10 @@ func physics_update(delta: float) -> void:
 				state_machine.transition_to("StateHunt")
 
 func handle_hit(hit_data: Dictionary) -> String:
+	var hit_type: String = hit_data.get("hit_type", "")
+	if hit_type in ["takedown", "takedown_splash"]:
+		return "StateKnockdown"
+
 	# If hit while pushed, can transition to Takedownable or standard stun
 	var zone: String = hit_data.get("hit_zone", "body")
 	_current_push_speed = 0.0
