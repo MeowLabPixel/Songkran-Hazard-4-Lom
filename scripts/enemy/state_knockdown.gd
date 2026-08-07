@@ -13,6 +13,16 @@ enum Phase { NONE, ACT3, ACT4, ACT5, DONE }
 @export var splash_push_radius: float = 1.0
 @export var splash_push_damage: int = 0
 
+@export_group("Act 3 Windup & Juice Settings")
+@export var act3_enable_windup_hold: bool = true                     ## Enable dramatic freeze & cartoony mesh pop before launch
+@export_range(0.05, 0.25, 0.01) var act3_windup_duration: float = 0.12 ## Windup freeze duration on takedown impact (seconds)
+@export_range(0.0, 0.2, 0.01) var act3_windup_anim_speed: float = 0.05 ## Animation speed scale during freeze phase
+@export_range(1.0, 3.0, 0.1) var act3_release_acceleration_curve: float = 1.6 ## Exponential acceleration curve on release launch
+@export_range(1.0, 1.8, 0.05) var act3_mesh_stretch_factor: float = 1.35 ## Cartoony squash & stretch multiplier
+@export_range(5.0, 30.0, 1.0) var act3_mesh_shake_frequency: float = 24.0 ## Micro-shake vibration frequency (Hz)
+@export_range(0.02, 0.15, 0.01) var act3_mesh_shake_amplitude: float = 0.06 ## Micro-shake vibration displacement (meters)
+
+
 var knockdown_mode: String = "NORMAL" # "NORMAL", "SPECIAL_LEG_SHOT", "SPECIAL_FOOT_HEAD", etc.
 var stun_type: String  = "head"
 var skip_act3: bool    = false
@@ -37,8 +47,11 @@ func enter() -> void:
 	_travelled_to_getup_end = false
 	if enemy:
 		enemy.reset_getup_conditions()
+		if enemy.anim_player:
+			enemy.anim_player.speed_scale = 1.0
 		if enemy.has_method("trigger_impact_sway"):
 			enemy.trigger_impact_sway(true)
+
 	
 	# Determine push direction and align enemy rotation
 	var is_special = knockdown_mode in ["SPECIAL_LEG_SHOT", "SPECIAL_FOOT_HEAD", "SPECIAL_HEAD_FOOT", "SWING_SHOT"]
@@ -68,17 +81,20 @@ func enter() -> void:
 		enemy.move_and_slide()
 	print("[StateKnockdown] Knocked down. Mode: %s Zone: %s skip_act3=%s special_side=%s" % [knockdown_mode, stun_type, skip_act3, special_side])
 	
-	# Trigger Act 3 takedown/knockdown sounds
+	# Trigger Act 3 takedown/knockdown sounds & pain voiceline on launch
 	if not skip_act3 and enemy:
-		if knockdown_mode == "NORMAL":
-			# Normal player-triggered takedown sequence
-			SoundManager.play_3d("ZombieGetHitTakedown", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
-		else:
+		if enemy.has_method("play_takedown_launch_voiceline"):
+			enemy.play_takedown_launch_voiceline()
+
+		if knockdown_mode != "NORMAL":
 			# Non-normal knockdown (stumble, leg shot, swing shot)
 			if stun_type == "head":
 				SoundManager.play_3d("zombie_hit_head_act_3_takedown", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
 			else:
 				SoundManager.play_3d("zombie_hit_leg_act_3_takedown", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+
+
+
 				
 	if skip_act3:
 		_start_act4()
@@ -211,6 +227,7 @@ func exit() -> void:
 		enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Special_L", false)
 		enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Special_R", false)
 		enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Swing_shot", false)
+		_reset_all_act3_anim_timescales()
 		
 	skip_act3 = false
 	knockdown_mode = "NORMAL"
@@ -241,8 +258,6 @@ func physics_update(delta: float) -> void:
 				_act3_timer += delta
 				if enemy:
 					var duration = _get_act3_anim_duration(current_node)
-					var pct = _act3_timer / duration if duration > 0.0 else 0.0
-					
 					var base_speed = act3_push_speed
 					var min_speed = act3_push_min_speed
 					var dir = push_direction
@@ -260,14 +275,23 @@ func physics_update(delta: float) -> void:
 						if act3_push_speed > 0.0:
 							min_speed = swing_shot_push_speed * (act3_push_min_speed / act3_push_speed)
 						dir = -enemy.global_transform.basis.z
-						
-					var current_speed = base_speed
-					if pct > 0.25:
-						var t_factor = (pct - 0.25) / 0.75
-						current_speed = min_speed * max(0.0, 1.0 - t_factor)
-						
+
+					# Act 3 Launch Phase: Explosive Launch Acceleration from stored energy
+					_set_act3_anim_timescale(current_node, 1.0)
+					var rel_pct = clamp(_act3_timer / duration, 0.0, 1.0) if duration > 0.0 else 1.0
+
+					# Ramp launch velocity rapidly over first 0.15s of launch
+					var accel = pow(clamp(_act3_timer / 0.15, 0.0, 1.0), act3_release_acceleration_curve)
+					var current_speed = base_speed * accel
+
+					if rel_pct > 0.25:
+						var t_factor = (rel_pct - 0.25) / 0.75
+						var decel_target = min_speed * max(0.0, 1.0 - t_factor)
+						current_speed = lerp(current_speed, decel_target, t_factor)
+
 					enemy.velocity = dir * current_speed
 					enemy.move_and_slide()
+
 					
 					# Detect and push other enemies (after 0.2s grace delay in Act 3)
 					if _act3_timer >= 0.2:
@@ -287,6 +311,7 @@ func physics_update(delta: float) -> void:
 									"hit_direction": push_dir,
 									"source": enemy
 								})
+
 
 					
 			# Wait for AnimationTree to automatically transition to Act 4
@@ -383,3 +408,27 @@ func is_playing_special_act3() -> bool:
 		"HIT head act 3-take down Special for Attack Swing Leg Shot",
 		"HIT RightLeg act 3-take down Special_R"
 	]
+
+
+func _set_act3_anim_timescale(node_name: String, speed: float) -> void:
+	if not enemy or not enemy.anim_tree or node_name == "":
+		return
+	var path = "parameters/hit/hit_takedown/" + node_name + "/TimeScale/scale"
+	if enemy.anim_tree.get(path) != null:
+		enemy.anim_tree.set(path, speed)
+
+
+func _reset_all_act3_anim_timescales() -> void:
+	if not enemy or not enemy.anim_tree:
+		return
+	for n in [
+		"Hit Leg act 3-take down for head",
+		"Hit Leg act 3 (Take_down)",
+		"Hit RightLeg act 3 (Take_down)",
+		"HIT head act 3-take down Special_L",
+		"HIT head act 3-take down Special for Attack Swing Leg Shot",
+		"HIT RightLeg act 3-take down Special_R"
+	]:
+		var path = "parameters/hit/hit_takedown/" + n + "/TimeScale/scale"
+		if enemy.anim_tree.get(path) != null:
+			enemy.anim_tree.set(path, 1.0)

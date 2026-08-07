@@ -6,16 +6,31 @@ extends EnemyState
 @export var foot_stun_duration: float = 3.0
 @export var head_hit_move_speed: float = 2.0
 
+@export_group("Takedown Anticipation Settings")
+@export var enable_takedown_anticipation: bool = true                     ## Enable hit-stop, mesh pop, and squash & stretch in Act 2
+@export_range(0.05, 0.5, 0.01) var anticipation_duration: float = 0.2      ## Duration of hit-stop anticipation in Act 2 (seconds)
+@export_range(1.1, 1.6, 0.05) var mesh_pop_scale: float = 1.30             ## Frame-1 Mesh Pop scale multiplier
+@export_range(1.0, 1.8, 0.05) var squash_stretch_factor: float = 1.30      ## Cartoony squash & stretch scale factor
+@export_range(0.02, 0.15, 0.01) var micro_shake_amplitude: float = 0.8    ## Micro-shake displacement (meters)
+@export_range(10.0, 40.0, 1.0) var micro_shake_frequency: float = 60.0     ## Micro-shake vibration frequency (Hz)
+
+
+
 var _act2_timer: float = 0.0
 var _act1_timer: float = 0.0
 var _in_act1: bool     = false
 var _act1_velocity: Vector3 = Vector3.ZERO
 var stun_type: String  = "head"
 var takedown_triggered: bool = false
+var _in_anticipation_phase: bool = false
+var _anticipation_timer: float = 0.0
+
 
 func enter() -> void:
 	_act2_timer = 0.0
 	takedown_triggered = false
+	_in_anticipation_phase = false
+	_anticipation_timer = 0.0
 	takedown_window = get_stun_duration()
 	if enemy:
 		enemy.velocity = Vector3.ZERO
@@ -28,6 +43,8 @@ func _start_act1() -> void:
 	_act1_timer = 0.0
 	_act2_timer = 0.0
 	takedown_triggered = false
+	_in_anticipation_phase = false
+	_anticipation_timer = 0.0
 	takedown_window = get_stun_duration()
 	_act1_velocity = Vector3.ZERO
 	var anim = enemy.anim_set.hit_reaction(stun_type)
@@ -67,6 +84,8 @@ func exit() -> void:
 	stun_type = "head"
 	takedown_triggered = false
 	_in_act1 = false
+	_in_anticipation_phase = false
+	_anticipation_timer = 0.0
 	if enemy:
 		if enemy.anim_tree:
 			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/hit_far", false)
@@ -75,12 +94,27 @@ func exit() -> void:
 
 func physics_update(delta: float) -> void:
 	if takedown_triggered:
-		var knockdown = state_machine._states.get("StateKnockdown")
-		if knockdown:
-			knockdown.knockdown_mode = "NORMAL"
-			knockdown.stun_type = stun_type
-		state_machine.transition_to("StateKnockdown")
-		return
+		if _in_anticipation_phase:
+			_anticipation_timer += delta
+			if enemy:
+				enemy.velocity = Vector3.ZERO
+				enemy.move_and_slide()
+			if _anticipation_timer >= anticipation_duration:
+				_in_anticipation_phase = false
+				var knockdown = state_machine._states.get("StateKnockdown")
+				if knockdown:
+					knockdown.knockdown_mode = "NORMAL"
+					knockdown.stun_type = stun_type
+				state_machine.transition_to("StateKnockdown")
+			return
+		else:
+			var knockdown = state_machine._states.get("StateKnockdown")
+			if knockdown:
+				knockdown.knockdown_mode = "NORMAL"
+				knockdown.stun_type = stun_type
+			state_machine.transition_to("StateKnockdown")
+			return
+
 		
 	var current_node = ""
 	if enemy and enemy.anim_tree:
@@ -198,9 +232,30 @@ func handle_hit(hit_data: Dictionary) -> String:
 
 
 func trigger_takedown() -> void:
+	if _in_anticipation_phase:
+		return
+		
 	takedown_triggered = true
 	var knockdown = state_machine._states.get("StateKnockdown")
 	if knockdown:
 		knockdown.knockdown_mode = "NORMAL"
 		knockdown.stun_type = stun_type
-	state_machine.transition_to("StateKnockdown")
+
+
+	if enable_takedown_anticipation and enemy:
+		_in_anticipation_phase = true
+		_anticipation_timer = 0.0
+		SoundManager.play_3d("ZombieGetHitTakedown", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
+		var hit_dir = -enemy.global_transform.basis.z
+		var players = enemy.get_tree().get_nodes_in_group("player") if (enemy and enemy.get_tree()) else []
+		if players.size() > 0:
+			var to_enemy = enemy.global_position - players[0].global_position
+			to_enemy.y = 0.0
+			if to_enemy.length() > 0.01:
+				hit_dir = to_enemy.normalized()
+
+		if enemy.has_method("trigger_act2_anticipation_juice"):
+			enemy.trigger_act2_anticipation_juice(hit_dir, anticipation_duration, mesh_pop_scale, squash_stretch_factor, micro_shake_amplitude, micro_shake_frequency)
+
+	else:
+		state_machine.transition_to("StateKnockdown")

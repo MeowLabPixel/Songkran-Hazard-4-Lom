@@ -108,6 +108,17 @@ var _dead_walk_markers: Array[float] = [0.5, 1.0]
 var _last_norm_pos: float = -1.0
 var _last_step_time: int = 0
 
+# ─── Act 3 Game Juice Variables ────────────────────────────────────────────
+var _model_juice_tween: Tween = null
+var _model_juice_shake_timer: float = 0.0
+var _model_juice_shake_duration: float = 0.0
+var _model_juice_shake_amp: float = 0.0
+var _model_juice_shake_freq: float = 24.0
+var _model_original_pos: Vector3 = Vector3.ZERO
+var _model_original_scale: Vector3 = Vector3.ONE
+var _has_stored_model_baseline: bool = false
+
+
 func _get_footstep_markers(anim_player: AnimationPlayer, anim_name: String) -> Array[float]:
 	var result: Array[float] = [0.5, 1.0]
 	if not anim_player or not anim_player.has_animation(anim_name):
@@ -316,12 +327,14 @@ func take_hit(hit_data: Dictionary) -> void:
 			return
 		_last_takedown_hit_time = time_now
 
-	# Play pain voiceline and hit SFX without cooldown when hit
+	# Play pain voiceline and hit SFX for non-takedown hits (takedowns use dedicated ZombieGetHitTakedown SFX)
 	if time_now - _last_voice_gethit_time >= 0.05:
 		_last_voice_gethit_time = time_now
-		var event_name = "vo_zombie_m_melee_gethit" if voice_character == "Zombie Male" else "vo_zombie_f_melee_gethit"
-		SoundManager.play_3d(event_name, self, 0.0, -1.0, custom_pitch_scale)
-		SoundManager.play_3d("zombie_melee_hit", self)
+		if hit_type_check not in ["takedown", "takedown_splash"]:
+			play_takedown_launch_voiceline()
+			SoundManager.play_3d("zombie_melee_hit", self)
+
+
 	if show_debug_label:
 		print("[EnemyBase] take_hit — zone:'%s' dmg:%d state:%s hp:%d" % [
 			hit_data.get("hit_zone", "?"),
@@ -652,8 +665,10 @@ func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
 
 # ─── Procedural Animation ──────────────────────────────────────────────────
 func _physics_process(delta: float) -> void:
+	_update_act3_mesh_juice(delta)
 	_update_aura_overlays(delta)
 	_update_skeleton_tilt(delta)
+
 	
 	target_update_timer -= delta
 	if target_update_timer <= 0.0:
@@ -879,3 +894,79 @@ func _get_zone_bone_position(zone: String) -> Vector3:
 	if bone_idx != -1:
 		return skeleton.global_transform * skeleton.get_bone_global_pose(bone_idx).origin
 	return global_position
+
+
+# ─── Act 3 Visual Mesh Juice Helpers ──────────────────────────────────────────
+func _get_visual_model_node() -> Node3D:
+	for path in ["ZombieModel", "Re4Lom Base Rig", "All zombie fix", "rig"]:
+		var node = get_node_or_null(path)
+		if node and node is Node3D:
+			return node
+	var skel = _find_skeleton(self)
+	if skel and skel.get_parent() is Node3D and skel.get_parent() != self:
+		return skel.get_parent() as Node3D
+	elif skel:
+		return skel
+	return self
+
+
+func trigger_act2_anticipation_juice(hit_direction: Vector3, duration: float, mesh_pop_scale: float = 1.30, stretch_factor: float = 1.35, shake_amp: float = 0.06, shake_freq: float = 30.0) -> void:
+	var model_node = _get_visual_model_node()
+	if not is_instance_valid(model_node):
+		return
+		
+	if not _has_stored_model_baseline:
+		_model_original_pos = model_node.position
+		_model_original_scale = model_node.scale
+		_has_stored_model_baseline = true
+
+	if _model_juice_tween and _model_juice_tween.is_running():
+		_model_juice_tween.kill()
+
+	# Combine Frame-1 Mesh Pop (mesh_pop_scale) + Directional Squash & Stretch (stretch_factor)
+	var stretch_y = 1.0 / sqrt(clamp(stretch_factor, 1.0, 2.0))
+	var stretch_xz = clamp(stretch_factor, 1.0, 2.0)
+	var pop = clamp(mesh_pop_scale, 1.0, 2.0)
+
+	var target_scale = Vector3(
+		_model_original_scale.x * stretch_xz * pop,
+		_model_original_scale.y * stretch_y * pop,
+		_model_original_scale.z * stretch_xz * pop
+	)
+
+	model_node.scale = target_scale
+
+	_model_juice_shake_timer = duration
+	_model_juice_shake_duration = max(duration, 0.01)
+	_model_juice_shake_amp = shake_amp
+	_model_juice_shake_freq = shake_freq
+
+	# Create elastic rebound back to baseline scale as transition to Act 3 launch occurs
+	_model_juice_tween = create_tween()
+	_model_juice_tween.set_trans(Tween.TRANS_ELASTIC)
+	_model_juice_tween.set_ease(Tween.EASE_OUT)
+	_model_juice_tween.tween_property(model_node, "scale", _model_original_scale, max(duration * 1.8, 0.35)).set_delay(duration * 0.7)
+
+
+func trigger_act3_mesh_juice(hit_direction: Vector3, windup_duration: float, stretch_factor: float = 1.35, shake_amp: float = 0.06, shake_freq: float = 24.0) -> void:
+	trigger_act2_anticipation_juice(hit_direction, windup_duration, 1.15, stretch_factor, shake_amp, shake_freq)
+
+
+func _update_act3_mesh_juice(delta: float) -> void:
+	if _model_juice_shake_timer > 0.0:
+		_model_juice_shake_timer -= delta
+		var model_node = _get_visual_model_node()
+		if is_instance_valid(model_node):
+			if _model_juice_shake_timer > 0.0:
+				var decay = _model_juice_shake_timer / _model_juice_shake_duration
+				var offset_x = sin(_model_juice_shake_timer * _model_juice_shake_freq * TAU) * _model_juice_shake_amp * decay
+				var offset_z = cos(_model_juice_shake_timer * _model_juice_shake_freq * TAU * 1.25) * _model_juice_shake_amp * decay
+				model_node.position = _model_original_pos + Vector3(offset_x, 0.0, offset_z)
+			else:
+				model_node.position = _model_original_pos
+
+
+func play_takedown_launch_voiceline() -> void:
+	if not is_defeated:
+		var event_name = "vo_zombie_m_melee_gethit" if voice_character == "Zombie Male" else "vo_zombie_f_melee_gethit"
+		SoundManager.play_3d(event_name, self, 0.0, -1.0, custom_pitch_scale)

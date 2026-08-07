@@ -11,11 +11,14 @@ var anim_name = "TD/Take down anim"
 @export_group("Hit Stop Settings")
 @export var enable_hit_stop: bool = true
 @export var enable_domino_hit_stop: bool = true
-@export_range(0.02, 0.15, 0.01) var domino_delay: float = 0.05        ## Time delay between domino zombie hits (seconds)
-@export var hitbox_enable_time: float = 0.25                         ## Keyframe position when takedown attack hitbox activates (seconds)
+@export_range(0.02, 0.15, 0.01) var domino_delay: float = 0.06        ## Time delay between domino zombie hits (seconds)
+
+@export var hitbox_enable_time: float = 0.28                         ## Keyframe position when takedown attack hitbox activates (seconds)
 @export var hitbox_disable_time: float = 0.47                        ## Keyframe position when takedown attack hitbox deactivates (seconds)
 
 @export_range(0.0, 0.5, 0.01) var anim_slow_duration: float = 0.08    ## Duration player & hit zombie move slow on impact (seconds)
+
+
 @export_range(0.0, 0.2, 0.005) var anim_slow_speed: float = 0.02     ## Slow-motion speed scale on impact (e.g. 0.02 = 2% speed, 0.05 = 5% speed)
 @export_range(0.0, 0.3, 0.01) var primary_time_stop_duration: float = 0.12 ## Engine time freeze duration for 0 HP fatal kill (seconds)
 @export_range(0.0, 0.2, 0.01) var primary_time_stop_scale: float = 0.03   ## Engine time scale during 0 HP fatal kill
@@ -178,10 +181,9 @@ func _update(delta: float) -> void:
 	if _anim_timeline_pos >= hitbox_enable_time and _anim_timeline_pos <= hitbox_disable_time:
 		if is_instance_valid(splash_area) and not splash_area.monitoring:
 			splash_area.monitoring = true
-				# Process physical collision hit detection (first zombie touched receives primary hit)
 		_check_overlapping_splash()
 		
-		# Process inter-frame swept shapecast volume query across 0.25s - 0.47s window
+		# Process precise TakedownAttackBox shapecast and timed spatial proximity window
 		_process_capsule_swept_shapecast()
 	elif _anim_timeline_pos > hitbox_disable_time:
 		if is_instance_valid(splash_area) and splash_area.monitoring:
@@ -212,10 +214,11 @@ func _process_capsule_swept_shapecast() -> void:
 				break
 				
 	var curr_transform: Transform3D = attack_box_node.global_transform
+	var is_first_frame: bool = false
 	if not _has_valid_prev_ray:
 		_prev_capsule_transform = curr_transform
 		_has_valid_prev_ray = true
-		return
+		is_first_frame = true
 		
 	var space_state = owner.get_world_3d().direct_space_state
 	if not space_state:
@@ -223,20 +226,41 @@ func _process_capsule_swept_shapecast() -> void:
 		
 	if shape_resource:
 		var exclude_rids: Array[RID] = [owner.get_rid()]
-		var num_steps: int = 6
+		var num_steps: int = 1 if is_first_frame else 6
+		var player_pos: Vector3 = owner.global_position
+		
+		var rel_prev: Vector3 = _prev_capsule_transform.origin - player_pos
+		var rel_curr: Vector3 = curr_transform.origin - player_pos
+		var r_prev: float = rel_prev.length()
+		var r_curr: float = rel_curr.length()
+		var angle_prev: float = atan2(rel_prev.x, rel_prev.z)
+		var angle_curr: float = angle_prev + angle_difference(angle_prev, atan2(rel_curr.x, rel_curr.z))
+		
+		var q_prev: Quaternion = _prev_capsule_transform.basis.get_rotation_quaternion()
+		var q_curr: Quaternion = curr_transform.basis.get_rotation_quaternion()
 		
 		for step in range(num_steps + 1):
 			var t: float = float(step) / float(num_steps)
-			var step_transform: Transform3D = _prev_capsule_transform.interpolate_with(curr_transform, t)
+			
+			# Arc origin interpolation around player center Y-axis (preserves 1.5m radius)
+			var radius: float = lerp(r_prev, r_curr, t)
+			var angle: float = lerp(angle_prev, angle_curr, t)
+			var step_y: float = lerp(_prev_capsule_transform.origin.y, curr_transform.origin.y, t)
+			var step_origin: Vector3 = Vector3(player_pos.x + sin(angle) * radius, step_y, player_pos.z + cos(angle) * radius)
+			
+			# Quaternion slerp for un-warped basis rotation
+			var step_basis: Basis = Basis(q_prev.slerp(q_curr, t))
+			var step_transform: Transform3D = Transform3D(step_basis, step_origin)
 			
 			var query = PhysicsShapeQueryParameters3D.new()
 			query.shape = shape_resource
 			query.transform = step_transform
 			query.collide_with_areas = true
 			query.collide_with_bodies = true
+			query.collision_mask = 8198 # Layer 2 hitboxes, Layer 3 enemies, Layer 14 hitboxes
 			query.exclude = exclude_rids
 			
-			var results = space_state.intersect_shape(query, 16)
+			var results = space_state.intersect_shape(query, 32)
 			for res in results:
 				var collider = res.get("collider")
 				if is_instance_valid(collider):
@@ -254,13 +278,18 @@ func _register_enemy_takedown_hit(enemy: Node, hit_node: Node = null) -> void:
 	if not is_instance_valid(enemy) or enemy.is_defeated:
 		return
 		
-	if enemy in _hit_enemies:
+	if enemy in _hit_enemies or enemy in _queued_enemies:
 		return
 		
-	# First enemy hit receives primary takedown hit
-	if not _hit_primary and (owner.takedown_target == null or enemy == owner.takedown_target or _hit_enemies.is_empty()):
-		_execute_primary_hit(enemy)
-		return
+	# First enemy hit receives primary takedown hit (give priority to owner.takedown_target if assigned)
+	if not _hit_primary:
+		if is_instance_valid(owner) and "takedown_target" in owner and is_instance_valid(owner.takedown_target) and not owner.takedown_target.is_defeated:
+			if enemy == owner.takedown_target or _hit_enemies.is_empty():
+				_execute_primary_hit(enemy)
+				return
+		else:
+			_execute_primary_hit(enemy)
+			return
 		
 	var zone_name := "body"
 	if is_instance_valid(hit_node):
@@ -277,7 +306,12 @@ func _register_enemy_takedown_hit(enemy: Node, hit_node: Node = null) -> void:
 		"zone_name": zone_name
 	}
 	
-	_execute_splash_hit(hit_info)
+	if enable_domino_hit_stop:
+		_queued_enemies.append(enemy)
+		_pending_domino_hits.append(hit_info)
+	else:
+		_execute_splash_hit(hit_info)
+
 
 func _find_enemy_from_node(node: Node) -> EnemyBase:
 	var curr = node
@@ -313,6 +347,12 @@ func _exit() -> void:
 		splash_area.monitoring = false
 		if splash_area.area_entered.is_connected(_on_splash_area_entered):
 			splash_area.area_entered.disconnect(_on_splash_area_entered)
+			
+	# Flush any remaining queued domino hits before exiting state
+	while not _pending_domino_hits.is_empty():
+		var hit_info = _pending_domino_hits.pop_front()
+		_execute_domino_hit(hit_info)
+
 	splash_area = null
 	_hit_primary = false
 	_hit_enemies.clear()
@@ -407,7 +447,22 @@ func _execute_primary_hit(enemy: Node) -> void:
 
 
 func _execute_domino_hit(hit_info: Dictionary) -> void:
+	var enemy = hit_info.get("enemy") as Node
+	if not is_instance_valid(enemy) or enemy.is_defeated:
+		return
+		
+	# Trigger dedicated domino impact SFX & pain voiceline
+	SoundManager.play_3d("zombie_melee_hit", enemy)
+	var event_name = "vo_zombie_m_melee_gethit" if ("voice_character" in enemy and enemy.voice_character == "Zombie Male") else "vo_zombie_f_melee_gethit"
+	SoundManager.play_3d(event_name, enemy, 0.0, -1.0, enemy.get("custom_pitch_scale") if "custom_pitch_scale" in enemy else 1.0)
+
+	# Trigger stylized UI shockwave at domino zombie 3D position
+	var ui = get_tree().get_first_node_in_group("player_ui") if get_tree() else null
+	if ui and ui.has_method("spawn_takedown_shockwave"):
+		ui.spawn_takedown_shockwave(enemy.global_position)
+
 	_execute_splash_hit(hit_info)
+
 
 func _execute_splash_hit(hit_info: Dictionary) -> void:
 	var enemy = hit_info.get("enemy") as Node
@@ -469,9 +524,7 @@ func _trigger_anim_slow(enemy: Node, duration: float, slow_speed_factor: float) 
 		elif "anim_tree" in enemy and enemy.anim_tree and enemy.anim_tree is AnimationTree:
 			e_ap = enemy.anim_tree.get_node_or_null(enemy.anim_tree.anim_player) as AnimationPlayer
 			
-	var prev_e_scale: float = 1.0
 	if e_ap:
-		prev_e_scale = e_ap.speed_scale if e_ap.speed_scale > 0.0 else 1.0
 		e_ap.speed_scale = slow_speed_factor
 		
 	var tree = get_tree()
@@ -481,13 +534,14 @@ func _trigger_anim_slow(enemy: Node, duration: float, slow_speed_factor: float) 
 			if is_instance_valid(owner) and "anim" in owner and owner.anim:
 				owner.anim.set("parameters/Main/Takedown/TD_Take down anim/TimeScale/scale", 1.2)
 			if is_instance_valid(e_ap):
-				e_ap.speed_scale = prev_e_scale
+				e_ap.speed_scale = 1.0
 		)
 	else:
 		if is_instance_valid(owner) and "anim" in owner and owner.anim:
 			owner.anim.set("parameters/Main/Takedown/TD_Take down anim/TimeScale/scale", 1.2)
 		if is_instance_valid(e_ap):
-			e_ap.speed_scale = prev_e_scale
+			e_ap.speed_scale = 1.0
+
 
 func _trigger_time_stop(duration: float, time_scale: float) -> void:
 	if not enable_hit_stop or duration <= 0.0:

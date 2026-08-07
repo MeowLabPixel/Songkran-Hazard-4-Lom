@@ -110,14 +110,24 @@ func handle_hit(hit_data: Dictionary) -> void:
 				return
 	elif hit_type in ["takedown", "takedown_splash"]:
 		if not current_state.name in ["StateKnockdown", "StateGetUp", "StateDefeated"]:
-			if _states.has("StateKnockdown"):
+			if current_state.name == "StateTakedownable":
+				var td = current_state as StateTakedownable
+				if td:
+					td.trigger_takedown()
+					return
+			elif _states.has("StateTakedownable"):
+				var td = _states["StateTakedownable"] as StateTakedownable
+				if td:
+					td.stun_type = hit_data.get("hit_zone", "head")
+					transition_to("StateTakedownable")
+					td.trigger_takedown()
+					return
+			elif _states.has("StateKnockdown"):
 				_states["StateKnockdown"].knockdown_mode = "NORMAL"
-				if current_state.name == "StateTakedownable":
-					_states["StateKnockdown"].stun_type = current_state.stun_type
-				else:
-					_states["StateKnockdown"].stun_type = hit_data.get("hit_zone", "head")
+				_states["StateKnockdown"].stun_type = hit_data.get("hit_zone", "head")
 				transition_to("StateKnockdown")
 				return
+
 
 	var next := current_state.handle_hit(hit_data)
 	if next != "":

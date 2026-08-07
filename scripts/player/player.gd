@@ -289,7 +289,7 @@ func _ready() -> void:
 	nav_agent = get_node_or_null("NavigationAgent3D")
 	var td_hitbox = get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox")
 	if td_hitbox:
-		td_hitbox.collision_mask = 8196 # Detect enemy hitboxes (layers 3 & 14)
+		td_hitbox.collision_mask = 8198 # Detect enemy hitboxes & CharacterBody3D (layers 2, 3 & 14)
 		td_hitbox.collision_layer = 0 # No layer needed for detection
 	
 	pickup_detect.area_entered.connect(pickup_detect_area)
