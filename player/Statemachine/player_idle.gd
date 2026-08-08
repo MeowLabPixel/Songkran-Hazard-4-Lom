@@ -3,6 +3,9 @@ extends Motion
 var _is_first_time: bool = true
 
 func _enter() -> void:
+	if owner.HP <= 0 or ("pending_die_after_hit" in owner and owner.pending_die_after_hit):
+		finished.emit("Die")
+		return
 	owner.aim_bone_on(true)
 	if Input.is_action_pressed("aim") and not owner.aim_blocked_until_release and owner.can_aim():
 		owner.is_aimming = true
@@ -25,16 +28,15 @@ func _enter() -> void:
 	
 	set_gun_anim()
 
-
-
 func _update(_delta:float) -> void:
+	if owner.HP <= 0 or ("pending_die_after_hit" in owner and owner.pending_die_after_hit):
+		finished.emit("Die")
+		return
 	if not Input.is_action_pressed("aim"):
 		owner.aim_blocked_until_release = false
 		
 	set_direction()
 	calculate_velocity(SPEED,direction,_delta)
-	if owner.HP <= 0:
-		finished.emit("Die")
 	if direction != Vector3.ZERO:
 		finished.emit("Run")
 

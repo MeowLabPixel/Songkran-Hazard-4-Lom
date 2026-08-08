@@ -9,7 +9,7 @@ extends EnemyState
 @export_group("Takedown Anticipation Settings")
 @export var enable_takedown_anticipation: bool = true                     ## Enable hit-stop, mesh pop, and squash & stretch in Act 2
 @export_range(0.05, 0.5, 0.01) var anticipation_duration: float = 0.2      ## Duration of hit-stop anticipation in Act 2 (seconds)
-@export_range(1.1, 1.6, 0.05) var mesh_pop_scale: float = 1.30             ## Frame-1 Mesh Pop scale multiplier
+@export_range(1.1, 1.6, 0.05) var mesh_pop_scale: float = 1.2             ## Frame-1 Mesh Pop scale multiplier
 @export_range(1.0, 1.8, 0.05) var squash_stretch_factor: float = 1.30      ## Cartoony squash & stretch scale factor
 @export_range(0.02, 0.15, 0.01) var micro_shake_amplitude: float = 0.8    ## Micro-shake displacement (meters)
 @export_range(10.0, 40.0, 1.0) var micro_shake_frequency: float = 60.0     ## Micro-shake vibration frequency (Hz)
@@ -193,9 +193,7 @@ func handle_hit(hit_data: Dictionary) -> String:
 	if stun_type == "head":
 		match zone:
 			"head":
-				stun_type = zone
-				_act2_timer = 0.0
-				_start_act1()
+				# Head hit reaction animation cannot be re-triggered while inside StateTakedownable
 				return ""
 			"left_foot", "right_foot", "foot":
 				var knockdown = state_machine._states.get("StateKnockdown")

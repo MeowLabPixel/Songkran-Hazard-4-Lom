@@ -394,10 +394,10 @@ func _update_debuff_display() -> void:
 			var tween = create_tween()
 			tween.tween_property(debuff_label, "modulate:a", 0.0, 0.2)
 
-func spawn_takedown_shockwave(zombie_3d_pos: Vector3) -> void:
+func spawn_takedown_shockwave(zombie_3d_pos: Vector3, custom_scale: float = 1.0) -> void:
 	active_shockwaves.append({
 		"pos_3d": zombie_3d_pos,
-		"radius": 15.0,
+		"radius": 15.0 * custom_scale,
 		"alpha": 1.0,
 		"color": Color(1.0, 0.8, 0.1) # Yellow
 	})
@@ -405,6 +405,7 @@ func spawn_takedown_shockwave(zombie_3d_pos: Vector3) -> void:
 		active_shockwaves.remove_at(0)
 	if is_instance_valid(shockwave_drawer):
 		shockwave_drawer.queue_redraw()
+
 
 func spawn_defeat_shockwave(zombie_3d_pos: Vector3) -> void:
 	active_shockwaves.append({

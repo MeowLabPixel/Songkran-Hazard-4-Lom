@@ -72,6 +72,10 @@ enum CameraShakeMode { DISABLED = 0, WEAKPOINT_ONLY = 1, ENABLED = 2 }
 @export var get_hit_shake_intensity: float = 0.65
 @export var get_hit_shake_decay: float = 16.0
 
+@export_subgroup("Grab Shake")
+@export var grab_shake_intensity: float = 0.85
+@export var grab_shake_decay: float = 8.0
+
 var camera_trauma: float = 0.0
 var shake_decay_speed: float = 12.0
 
@@ -107,11 +111,20 @@ func trigger_takedown_shake() -> void:
 	shake_decay_speed = takedown_shake_decay
 	add_shake(takedown_shake_intensity)
 
-func trigger_get_hit_shake() -> void:
+func trigger_get_hit_shake(hit_location: String = "front") -> void:
 	if not enable_camera_shake or camera_shake_mode == CameraShakeMode.DISABLED:
 		return
 	shake_decay_speed = get_hit_shake_decay
-	add_shake(get_hit_shake_intensity)
+	var trauma = get_hit_shake_intensity
+	if hit_location == "back":
+		trauma *= 1.15 # Slightly heavier punch for back hits
+	add_shake(trauma)
+
+func trigger_grab_shake() -> void:
+	if not enable_camera_shake or camera_shake_mode == CameraShakeMode.DISABLED:
+		return
+	shake_decay_speed = grab_shake_decay
+	add_shake(grab_shake_intensity)
 
 func add_recoil(pitch: float = 0.0, yaw: float = 0.0, fov_kick: float = 0.0, shake: float = 0.04, is_weakpoint_hit: bool = false) -> void:
 	if camera_shake_mode == CameraShakeMode.DISABLED:

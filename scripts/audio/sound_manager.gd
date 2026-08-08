@@ -93,31 +93,31 @@ func _physics_process(_delta: float) -> void:
 	# Keep only valid instances in the list
 	var alive: Array[AudioStreamPlayer3D] = []
 	for p in _all_spatial_players:
-		if is_instance_valid(p):
+		if is_instance_valid(p) and p.is_inside_tree():
 			alive.append(p)
 			if p.has_meta("follow_target"):
 				var target = p.get_meta("follow_target")
-				if is_instance_valid(target):
+				if is_instance_valid(target) and target is Node3D and target.is_inside_tree():
 					p.global_position = target.global_position
 	_all_spatial_players = alive
 
 	# Track player node and camera to update the global unscaled audio listener
 	var player_node = get_tree().get_first_node_in_group("player")
 	var camera: Camera3D = null
-	if player_node != null:
+	if player_node != null and is_instance_valid(player_node) and player_node.is_inside_tree():
 		camera = player_node.get_node_or_null("Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D") as Camera3D
 	if camera == null:
 		camera = get_viewport().get_camera_3d()
 
-	if camera != null:
+	if camera != null and is_instance_valid(camera) and camera.is_inside_tree():
 		if "use_listener" in camera:
 			camera.use_listener = false
 
-	if audio_listener != null:
-		if player_node != null and camera != null:
+	if audio_listener != null and is_instance_valid(audio_listener) and audio_listener.is_inside_tree():
+		if player_node != null and is_instance_valid(player_node) and player_node.is_inside_tree() and camera != null and is_instance_valid(camera) and camera.is_inside_tree():
 			audio_listener.global_position = player_node.global_position + Vector3(0, 1.5, 0)
 			audio_listener.global_basis = _get_clean_basis(camera.global_basis)
-		elif camera != null:
+		elif camera != null and is_instance_valid(camera) and camera.is_inside_tree():
 			audio_listener.global_position = camera.global_position
 			audio_listener.global_basis = _get_clean_basis(camera.global_basis)
 
@@ -607,6 +607,25 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 			parallel_player.play(start_offset)
 			
 
+
+	if event_name.begins_with("vo_leon_"):
+		var p_node = get_tree().get_first_node_in_group("player")
+		if p_node and "face_controller" in p_node and p_node.face_controller:
+			var dur = final_duration if final_duration > 0.0 else 1.0
+			p_node.face_controller.trigger_voiceline(dur)
+
+	if event_name.begins_with("vo_anchalee_"):
+		var a_node = get_tree().get_first_node_in_group("Anchalee")
+		if a_node and "face_controller" in a_node and a_node.face_controller:
+			var dur = final_duration if final_duration > 0.0 else 1.0
+			a_node.face_controller.trigger_voiceline(dur)
+
+	if event_name.begins_with("vo_zombie_"):
+		var ev_lower = event_name.to_lower()
+		if "greeting" in ev_lower or "geeting" in ev_lower or "laugh" in ev_lower:
+			if typeof(source) == TYPE_OBJECT and is_instance_valid(source) and "face_controller" in source and source.face_controller:
+				var dur = final_duration if final_duration > 0.0 else 1.5
+				source.face_controller.trigger_vocal_boost(dur, 5.0)
 
 	# Apply duration limit / automatic cleanup
 	if final_duration > 0.0:

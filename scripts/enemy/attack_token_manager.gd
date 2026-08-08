@@ -89,11 +89,14 @@ func _update_token_assignments() -> void:
 		if sm.current_state.name == "StateAttack":
 			active_attackers.append(enemy)
 		elif sm.current_state.name == "StateHunt" and not enemy.attack_blocked:
-			# Verify the enemy is not currently on attack cooldown
+			# Verify the enemy is not on attack cooldown or recovering from stun/getup blend
 			var hunt = sm._states.get("StateHunt")
 			var can_attack = true
-			if hunt and "last_attack_time" in enemy:
-				can_attack = (Time.get_ticks_msec() / 1000.0) - enemy.last_attack_time >= hunt.attack_cooldown
+			if hunt:
+				if hunt._stun_recovery_timer > 0.0 or hunt._getup_block_timer > 0.0:
+					can_attack = false
+				elif "last_attack_time" in enemy:
+					can_attack = (Time.get_ticks_msec() / 1000.0) - enemy.last_attack_time >= hunt.attack_cooldown
 			if can_attack:
 				candidates.append(enemy)
 			

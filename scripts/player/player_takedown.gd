@@ -11,7 +11,10 @@ var anim_name = "TD/Take down anim"
 @export_group("Hit Stop Settings")
 @export var enable_hit_stop: bool = true
 @export var enable_domino_hit_stop: bool = true
-@export_range(0.02, 0.15, 0.01) var domino_delay: float = 0.06        ## Time delay between domino zombie hits (seconds)
+@export_range(0.02, 0.30, 0.01) var domino_delay: float = 0.07        ## Time delay between standard domino zombie hits (seconds)
+@export_range(0.02, 0.30, 0.01) var domino_fatal_delay: float = 0.14  ## Time delay when domino zombie is defeated/killed (seconds)
+
+
 
 @export var hitbox_enable_time: float = 0.28                         ## Keyframe position when takedown attack hitbox activates (seconds)
 @export var hitbox_disable_time: float = 0.47                        ## Keyframe position when takedown attack hitbox deactivates (seconds)
@@ -32,6 +35,10 @@ var _hit_enemies: Array[Node] = []
 var _queued_enemies: Array[Node] = []
 var _pending_domino_hits: Array[Dictionary] = []
 var _domino_timer: float = 0.0
+var _domino_combo_count: int = 0
+var _anim_slow_timer: SceneTreeTimer = null
+var _anim_slow_remaining: float = 0.0
+var _enemy_prev_speed_scales: Dictionary = {}
 var _target_player_rot_y: float = 0.0
 var _is_aligning_player_rot: bool = false
 var _hit_stop_tween: Tween = null
@@ -43,6 +50,7 @@ var _state_timer: float = 0.0
 var _anim_timeline_pos: float = 0.0
 var _has_released_kick: bool = false
 const TAKEDOWN_TIMEOUT_FALLBACK: float = 3.5
+
 
 func _get_player_camera() -> Node:
 	var cams = get_tree().get_nodes_in_group("player_camera") if get_tree() else []
@@ -191,13 +199,21 @@ func _update(delta: float) -> void:
 		_has_valid_prev_ray = false
 
 		
-	# Process domino hit stop queue with staggered delay
+	# Process domino hit stop queue with staggered delay (0.07s standard vs 0.14s fatal defeat kill)
 	if enable_domino_hit_stop and not _pending_domino_hits.is_empty():
 		_domino_timer -= delta
 		if _domino_timer <= 0.0:
-			_domino_timer = domino_delay
 			var hit_info = _pending_domino_hits.pop_front()
+			var enemy = hit_info.get("enemy") as Node
+			var is_fatal: bool = false
+			if is_instance_valid(enemy):
+				if "current_hp" in enemy:
+					is_fatal = (enemy.current_hp <= 1.33 or enemy.current_hp <= 0)
+				if not is_fatal and ("is_takedown_defeat" in enemy or "is_defeated" in enemy):
+					is_fatal = (enemy.get("is_takedown_defeat") == true or enemy.get("is_defeated") == true)
+			_domino_timer = domino_fatal_delay if is_fatal else domino_delay
 			_execute_domino_hit(hit_info)
+
 
 func _process_capsule_swept_shapecast() -> void:
 	var attack_box_node = owner.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox/TakedownAttackBox")
@@ -274,8 +290,23 @@ func _process_capsule_swept_shapecast() -> void:
 
 	_prev_capsule_transform = curr_transform
 
+func _is_enemy_takedown_protected(enemy: Node) -> bool:
+	if not is_instance_valid(enemy):
+		return true
+	var sm = enemy.get_node_or_null("EnemyStateMachine")
+	if not sm or not is_instance_valid(sm.current_state):
+		return false
+	var state_name: String = sm.current_state.name
+	if state_name == "StateGetUp":
+		return true
+	if state_name == "StateKnockdown":
+		var kd = sm.current_state as StateKnockdown
+		if kd and kd._phase in [StateKnockdown.Phase.ACT4, StateKnockdown.Phase.ACT5]:
+			return true
+	return false
+
 func _register_enemy_takedown_hit(enemy: Node, hit_node: Node = null) -> void:
-	if not is_instance_valid(enemy) or enemy.is_defeated:
+	if not is_instance_valid(enemy) or enemy.is_defeated or _is_enemy_takedown_protected(enemy):
 		return
 		
 	if enemy in _hit_enemies or enemy in _queued_enemies:
@@ -309,8 +340,38 @@ func _register_enemy_takedown_hit(enemy: Node, hit_node: Node = null) -> void:
 	if enable_domino_hit_stop:
 		_queued_enemies.append(enemy)
 		_pending_domino_hits.append(hit_info)
+		_sort_pending_domino_hits()
+		if _pending_domino_hits.size() == 1:
+			var is_fatal: bool = false
+			if "current_hp" in enemy:
+				is_fatal = (enemy.current_hp <= 1.33 or enemy.current_hp <= 0)
+			if not is_fatal and ("is_takedown_defeat" in enemy or "is_defeated" in enemy):
+				is_fatal = (enemy.get("is_takedown_defeat") == true or enemy.get("is_defeated") == true)
+			_domino_timer = domino_fatal_delay if is_fatal else domino_delay
 	else:
 		_execute_splash_hit(hit_info)
+
+
+
+func _sort_pending_domino_hits() -> void:
+	if _pending_domino_hits.size() <= 1 or not is_instance_valid(owner):
+		return
+	var player_pos: Vector3 = owner.global_position
+	var player_fwd: Vector3 = -owner.global_transform.basis.z
+	var fwd_angle: float = atan2(player_fwd.x, player_fwd.z)
+	
+	_pending_domino_hits.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var enemy_a = a.get("enemy") as Node
+		var enemy_b = b.get("enemy") as Node
+		if not is_instance_valid(enemy_a) or not is_instance_valid(enemy_b):
+			return false
+		var pos_a: Vector3 = enemy_a.global_position - player_pos
+		var pos_b: Vector3 = enemy_b.global_position - player_pos
+		var ang_a: float = wrapf(atan2(pos_a.x, pos_a.z) - fwd_angle, -PI, PI)
+		var ang_b: float = wrapf(atan2(pos_b.x, pos_b.z) - fwd_angle, -PI, PI)
+		return ang_a < ang_b
+	)
+
 
 
 func _find_enemy_from_node(node: Node) -> EnemyBase:
@@ -355,9 +416,12 @@ func _exit() -> void:
 
 	splash_area = null
 	_hit_primary = false
+	_domino_combo_count = 0
+	_reset_anim_slow()
 	_hit_enemies.clear()
 	_queued_enemies.clear()
 	_pending_domino_hits.clear()
+
 
 
 func anim_done(namee: String):
@@ -391,12 +455,13 @@ func _process_splash_hit(node: Node) -> void:
 
 
 func _execute_primary_hit(enemy: Node) -> void:
-
 	if not is_instance_valid(enemy) or enemy.is_defeated or enemy in _hit_enemies:
 		return
 		
 	_hit_primary = true
 	_hit_enemies.append(enemy)
+	_domino_combo_count = 1
+
 
 	if enemy.has_method("trigger_takedown"):
 		enemy.trigger_takedown()
@@ -451,15 +516,23 @@ func _execute_domino_hit(hit_info: Dictionary) -> void:
 	if not is_instance_valid(enemy) or enemy.is_defeated:
 		return
 		
-	# Trigger dedicated domino impact SFX & pain voiceline
-	SoundManager.play_3d("zombie_melee_hit", enemy)
-	var event_name = "vo_zombie_m_melee_gethit" if ("voice_character" in enemy and enemy.voice_character == "Zombie Male") else "vo_zombie_f_melee_gethit"
-	SoundManager.play_3d(event_name, enemy, 0.0, -1.0, enemy.get("custom_pitch_scale") if "custom_pitch_scale" in enemy else 1.0)
+	_domino_combo_count += 1
+	var pitch_multiplier: float = clamp(1.0 + (_domino_combo_count - 1) * 0.08, 1.0, 1.35)
+	var raw_pitch = enemy.get("custom_pitch_scale") if "custom_pitch_scale" in enemy else null
+	var base_pitch: float = 1.0
+	if raw_pitch != null and typeof(raw_pitch) in [TYPE_FLOAT, TYPE_INT] and float(raw_pitch) > 0.0:
+		base_pitch = float(raw_pitch)
 
-	# Trigger stylized UI shockwave at domino zombie 3D position
+	# Trigger dedicated domino impact SFX & pain voiceline with escalating pitch
+	SoundManager.play_3d("zombie_melee_hit", enemy, 0.0, -1.0, pitch_multiplier)
+	var event_name = "vo_zombie_m_melee_gethit" if ("voice_character" in enemy and enemy.voice_character == "Zombie Male") else "vo_zombie_f_melee_gethit"
+	SoundManager.play_3d(event_name, enemy, 0.0, -1.0, base_pitch * pitch_multiplier)
+
+	# Trigger stylized UI shockwave at domino zombie 3D position with growing scale
 	var ui = get_tree().get_first_node_in_group("player_ui") if get_tree() else null
 	if ui and ui.has_method("spawn_takedown_shockwave"):
-		ui.spawn_takedown_shockwave(enemy.global_position)
+		var shock_scale: float = clamp(1.0 + (_domino_combo_count - 1) * 0.25, 1.0, 2.0)
+		ui.spawn_takedown_shockwave(enemy.global_position, shock_scale)
 
 	_execute_splash_hit(hit_info)
 
@@ -525,22 +598,46 @@ func _trigger_anim_slow(enemy: Node, duration: float, slow_speed_factor: float) 
 			e_ap = enemy.anim_tree.get_node_or_null(enemy.anim_tree.anim_player) as AnimationPlayer
 			
 	if e_ap:
+		if not _enemy_prev_speed_scales.has(e_ap):
+			_enemy_prev_speed_scales[e_ap] = e_ap.speed_scale
 		e_ap.speed_scale = slow_speed_factor
 		
+	# 3. Additive stacking timer duration
+	_anim_slow_remaining = clamp(_anim_slow_remaining + duration, 0.0, 0.30)
+	
 	var tree = get_tree()
-	if tree:
-		var timer = tree.create_timer(duration, true, false, true)
-		timer.timeout.connect(func():
-			if is_instance_valid(owner) and "anim" in owner and owner.anim:
-				owner.anim.set("parameters/Main/Takedown/TD_Take down anim/TimeScale/scale", 1.2)
-			if is_instance_valid(e_ap):
-				e_ap.speed_scale = 1.0
-		)
-	else:
-		if is_instance_valid(owner) and "anim" in owner and owner.anim:
-			owner.anim.set("parameters/Main/Takedown/TD_Take down anim/TimeScale/scale", 1.2)
-		if is_instance_valid(e_ap):
-			e_ap.speed_scale = 1.0
+	if not tree:
+		return
+		
+	if _anim_slow_timer == null:
+		_run_anim_slow_timer(tree, e_ap)
+
+func _run_anim_slow_timer(tree: SceneTree, e_ap: AnimationPlayer) -> void:
+	if _anim_slow_remaining <= 0.0:
+		_reset_anim_slow(e_ap)
+		return
+		
+	var step_duration: float = min(_anim_slow_remaining, 0.03)
+	_anim_slow_remaining -= step_duration
+	
+	_anim_slow_timer = tree.create_timer(step_duration, true, false, true)
+	_anim_slow_timer.timeout.connect(func():
+		if _anim_slow_remaining > 0.0:
+			_run_anim_slow_timer(tree, e_ap)
+		else:
+			_reset_anim_slow(e_ap)
+	)
+
+func _reset_anim_slow(e_ap: AnimationPlayer = null) -> void:
+	_anim_slow_remaining = 0.0
+	_anim_slow_timer = null
+	if is_instance_valid(owner) and "anim" in owner and owner.anim:
+		owner.anim.set("parameters/Main/Takedown/TD_Take down anim/TimeScale/scale", 1.2)
+	if is_instance_valid(e_ap):
+		var prev_scale: float = _enemy_prev_speed_scales.get(e_ap, 1.0)
+		_enemy_prev_speed_scales.erase(e_ap)
+		e_ap.speed_scale = prev_scale
+
 
 
 func _trigger_time_stop(duration: float, time_scale: float) -> void:

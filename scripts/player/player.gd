@@ -6,12 +6,12 @@ class_name Player extends CharacterBody3D
 		movement_type_override = val
 		if Engine.is_editor_hint() or is_node_ready():
 			GameManager.movement_type = val
-@export var walk_speed = 3.0
-@export var walk_Back_speed = 2.5
-@export var turn_speed:= 180.0
-@export var quick_turn_speed:= 0.3 #in second
+@export var walk_speed: float = 3.0
+@export var walk_Back_speed: float = 2.5
+@export var turn_speed: float = 180.0
+@export var quick_turn_speed: float = 0.3 #in second
 @export var quick_turn_cooldown_duration: float = 0.5 # cooldown in seconds before another quick turn
-@export var run_speed:=4.5
+@export var run_speed: float = 4.5
 @export var aim_bone: LookAtModifier3D
 @export var aim_bone2: LookAtModifier3D
 @export var max_tilt_angle: float = 6.0
@@ -68,7 +68,7 @@ func trigger_shoulder_recoil(kick_z: float = 0.06, kick_pitch: float = 0.08) -> 
 			lean_modifier.trigger_shoulder_recoil(kick_z, kick_pitch)
 
 @export_group("Data setting")
-var MaxHP = 150
+@export var MaxHP = 150
 @export var hitboxF: Area3D
 @export var hitboxB: Area3D
 @export var stun_detect: Area3D
@@ -77,6 +77,8 @@ var MaxHP = 150
 var HP = MaxHP
 var takedown_target: Node = null
 var takedown_prompt_label: Label = null
+var hit_damage_already_applied: bool = false
+var pending_die_after_hit: bool = false
 var Hit_info = {
 	"bullet": null,
 	"location": null
@@ -105,7 +107,6 @@ var start_qte = false
 const GRAVITY = -9.81
 var is_quick_turn: bool = false
 var is_stunned: bool = false
-var hit_damage_already_applied: bool = false
 var quick_turn_cooldown: float = 0.0
 var is_aimming:bool = false
 var focus_progress: float = 0.0
@@ -120,6 +121,7 @@ var _last_grabber: Node = null
 
 #gun
 @export var gun_controller: GunController
+@export var face_controller: PlayerFaceController
 
 @export_group("Aim Settings")
 @export var aim_head_focus_pitch_down: float = 0.4
@@ -205,11 +207,12 @@ const JUMP_VELOCITY = 4.5
 
 func _ready() -> void:
 	add_to_group("player")
+	if not face_controller:
+		face_controller = get_node_or_null("PlayerFaceController") as PlayerFaceController
 	if get_tree().root.has_node("GameManager") and GameManager.difficulty == GameManager.Difficulty.CASUAL:
 		MaxHP = 210
 	else:
-		MaxHP = 150
-	HP = MaxHP
+		HP = MaxHP
 
 	if not GameManager.movement_type_selected:
 		GameManager.movement_type = movement_type_override
@@ -223,6 +226,14 @@ func _ready() -> void:
 			speed_mult = 1.0
 		GameManager.MovementType.TANK:         # Type C
 			speed_mult = 1.5
+
+	if walk_speed == null: walk_speed = 3.0
+	if walk_Back_speed == null: walk_Back_speed = 2.5
+	if run_speed == null: run_speed = 4.5
+	if walk_anim_speed == null: walk_anim_speed = 1.2
+	if walk_back_anim_speed == null: walk_back_anim_speed = 1.2
+	if walk_side_anim_speed == null: walk_side_anim_speed = 1.2
+	if sprint_anim_speed == null: sprint_anim_speed = 2.0
 
 	walk_speed *= speed_mult
 	walk_Back_speed *= speed_mult
@@ -1003,15 +1014,16 @@ func take_damage(amount: int, ignore_stun_and_invulnerable: bool = false) -> voi
 		return
 	lost_HP(amount)
 	print("[Player] Took %d damage — HP: %d/%d" % [amount, HP, MaxHP])
+	if face_controller:
+		face_controller.notify_hit()
 
-	if HP <= 0:
-		force_die()
-		return
+	var is_fatal: bool = (HP <= 0)
 
-	# Transition to Get_hit state for melee hit
+	# Transition to Get_hit state for melee hit (both non-fatal and fatal hits play hit reaction first)
 	var sm = get_node_or_null("Statemachine")
 	if sm and sm.current_state and sm.current_state.name != "Get_hit" and sm.current_state.name != "Grab" and sm.current_state.name != "Die" and sm.current_state.name != "Knockdown" and sm.current_state.name != "Takedown":
 		hit_damage_already_applied = true
+		pending_die_after_hit = is_fatal
 		
 		# Determine hit direction from currently overlapping enemy attacks
 		var location = null
@@ -1035,6 +1047,8 @@ func take_damage(amount: int, ignore_stun_and_invulnerable: bool = false) -> voi
 				
 		Hit_info.location = location
 		sm._change_state("Get_hit")
+	elif is_fatal:
+		force_die()
 
 func lost_HP(amount):
 	if get_tree().root.has_node("GameManager"):
@@ -1045,7 +1059,8 @@ func lost_HP(amount):
 		HP -=amount
 	
 	if camera and camera.has_method("trigger_get_hit_shake"):
-		camera.trigger_get_hit_shake()
+		var loc = Hit_info.location if ("location" in Hit_info and Hit_info.location) else "front"
+		camera.trigger_get_hit_shake(loc)
 
 func force_die() -> void:
 	var already_dead = (HP <= 0)
@@ -1200,6 +1215,9 @@ func on_hitbox_grabbed_with_area(area: Area3D) -> void:
 	var sm = get_node_or_null("Statemachine")
 	if sm:
 		sm._change_state("Grab")
+
+	if camera and camera.has_method("trigger_grab_shake"):
+		camera.trigger_grab_shake()
 
 func attempt_takedown() -> bool:
 	# Called when player presses takedown and is_near_stunt is true.

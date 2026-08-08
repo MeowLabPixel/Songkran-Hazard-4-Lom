@@ -72,6 +72,21 @@ func _process(delta: float) -> void:
 	if current_state:
 		current_state.update(delta)
 
+func is_grabbing_player() -> bool:
+	var enemy = get_parent()
+	if not enemy or not is_instance_valid(enemy):
+		return false
+	if current_state and current_state.name == "StateAttack":
+		var sa = current_state as StateAttack
+		if sa and sa._phase in [StateAttack.Phase.GRAB_REACHING, StateAttack.Phase.GRAB_HOLDING]:
+			return true
+	var players = enemy.get_tree().get_nodes_in_group("player")
+	for p in players:
+		if is_instance_valid(p) and "is_grab" in p and p.is_grab:
+			if "_last_grabber" in p and p._last_grabber == enemy:
+				return true
+	return false
+
 ## Convenience: forward a hit event to the current state.
 ## If the state returns a non-empty string, transition to that state.
 func handle_hit(hit_data: Dictionary) -> void:
@@ -81,6 +96,8 @@ func handle_hit(hit_data: Dictionary) -> void:
 	# Handle custom system hit types
 	var hit_type = hit_data.get("hit_type", "")
 	if hit_type == "push":
+		if is_grabbing_player():
+			return
 		if not current_state.name in ["StateKnockdown", "StateGetUp", "StateDefeated"]:
 			if current_state.name == "StateTakedownable":
 				var td = current_state as StateTakedownable

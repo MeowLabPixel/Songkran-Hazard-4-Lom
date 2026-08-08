@@ -38,6 +38,24 @@ var _anim_duration: float = 0.0
 var _pushed_enemies: Array[Node] = []
 var _act3_timer: float = 0.0
 var _travelled_to_getup_end: bool = false
+var _default_act3_timescales: Dictionary = {}
+
+func _cache_default_act3_timescales() -> void:
+	if not enemy or not enemy.anim_tree:
+		return
+	for n in [
+		"Hit Leg act 3-take down for head",
+		"Hit Leg act 3 (Take_down)",
+		"Hit RightLeg act 3 (Take_down)",
+		"HIT head act 3-take down Special_L",
+		"HIT head act 3-take down Special for Attack Swing Leg Shot",
+		"HIT RightLeg act 3-take down Special_R"
+	]:
+		var path = "parameters/hit/hit_takedown/" + n + "/TimeScale/scale"
+		var val = enemy.anim_tree.get(path)
+		if val != null and typeof(val) in [TYPE_FLOAT, TYPE_INT] and float(val) > 0.0:
+			if not _default_act3_timescales.has(n):
+				_default_act3_timescales[n] = float(val)
 
 func enter() -> void:
 	_timer = 0.0
@@ -45,6 +63,7 @@ func enter() -> void:
 	_pushed_enemies.clear()
 	_act3_timer = 0.0
 	_travelled_to_getup_end = false
+	_cache_default_act3_timescales()
 	if enemy:
 		enemy.reset_getup_conditions()
 		if enemy.anim_player:
@@ -277,7 +296,8 @@ func physics_update(delta: float) -> void:
 						dir = -enemy.global_transform.basis.z
 
 					# Act 3 Launch Phase: Explosive Launch Acceleration from stored energy
-					_set_act3_anim_timescale(current_node, 1.0)
+					var default_ts: float = _default_act3_timescales.get(current_node, 1.0)
+					_set_act3_anim_timescale(current_node, default_ts)
 					var rel_pct = clamp(_act3_timer / duration, 0.0, 1.0) if duration > 0.0 else 1.0
 
 					# Ramp launch velocity rapidly over first 0.15s of launch
@@ -293,8 +313,8 @@ func physics_update(delta: float) -> void:
 					enemy.move_and_slide()
 
 					
-					# Detect and push other enemies (after 0.2s grace delay in Act 3)
-					if _act3_timer >= 0.2:
+					# Detect and push other enemies (only during active Act 3 flying before Act 4 blend starts)
+					if _act3_timer >= 0.2 and is_flying_node and current_node != act4_anim:
 						var other_enemies = enemy.get_tree().get_nodes_in_group("enemies")
 						for other in other_enemies:
 							if other == enemy or other.is_defeated or other in _pushed_enemies:
@@ -431,4 +451,5 @@ func _reset_all_act3_anim_timescales() -> void:
 	]:
 		var path = "parameters/hit/hit_takedown/" + n + "/TimeScale/scale"
 		if enemy.anim_tree.get(path) != null:
-			enemy.anim_tree.set(path, 1.0)
+			var default_ts: float = _default_act3_timescales.get(n, 1.0)
+			enemy.anim_tree.set(path, default_ts)

@@ -32,6 +32,7 @@ var debug_label: Label3D = null
 
 @export_group("Voice Config")
 @export_enum("Zombie Male", "Zombie Female") var voice_character: String = "Zombie Male"
+@export var face_controller: ZombieFaceController
 var custom_pitch_scale: float = 1.0
 var _last_voice_gethit_time: float = -100.0
 var _last_takedown_hit_time: float = -100.0
@@ -158,6 +159,10 @@ func _find_anim_player() -> AnimationPlayer:
 
 # ─── Ready ─────────────────────────────────────────────────────────────────
 func _ready() -> void:
+	if not face_controller:
+		face_controller = get_node_or_null("ZombieFaceController") as ZombieFaceController
+		if not face_controller:
+			face_controller = find_child("ZombieFaceController", true, false) as ZombieFaceController
 	# Choose a persistent randomized pitch modifier for this zombie instance's voice
 	const PITCH_INCREMENTS = [1.0, 1.05, 1.10, 1.15]
 	custom_pitch_scale = PITCH_INCREMENTS.pick_random()
@@ -347,6 +352,16 @@ func take_hit(hit_data: Dictionary) -> void:
 	var is_takedown = (hit_data.get("hit_type") == "takedown_splash" or 
 					   (state_machine and state_machine.current_state and state_machine.current_state.name == "StateTakedownable"))
 	trigger_impact_sway(is_takedown)
+
+	if face_controller:
+		var hit_z = String(hit_data.get("hit_zone", "")).to_lower()
+		var hit_t = String(hit_data.get("hit_type", "")).to_lower()
+		var duration = 1.0
+		if hit_t in ["takedown", "takedown_splash"] or is_takedown:
+			duration = 2.5
+		elif hit_z == "head":
+			duration = 2.0
+		face_controller.notify_hit(duration)
 
 	# Set hit_getup to true if hit during vulnerable getup block
 	var is_vulnerable_getup = false

@@ -9,6 +9,9 @@ func enter() -> void:
 	Anchalee.move_and_slide()
 	_timer = 0.0
 	
+	if Anchalee and Anchalee.has_method("trigger_hit_lean"):
+		Anchalee.trigger_hit_lean()
+	
 	# Play Anchalee get hit voice line and physical hit sound
 	SoundManager.play_3d("vo_anchalee_gethit", Anchalee)
 	SoundManager.play_3d("anchalee_hit", Anchalee)

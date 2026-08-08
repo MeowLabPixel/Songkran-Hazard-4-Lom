@@ -298,10 +298,39 @@ func _start_grab_hold() -> void:
 	if player:
 		# Play Rookie Lee's QTE grab loop voice line
 		_player_grab_loop_sfx = SoundManager.play_3d("vo_leon_grab_loop", player)
+		_push_surrounding_enemies_on_grab(player)
 		
 		var sm = player.get_node_or_null("Statemachine")
 		if sm and sm.has_method("_change_state"):
 			sm._change_state("Grab")
+
+func _push_surrounding_enemies_on_grab(player: Node) -> void:
+	if not enemy or not is_instance_valid(enemy) or not player or not is_instance_valid(player):
+		return
+	var player_pos = player.global_position
+	var grabber_pos = enemy.global_position
+
+	var enemies = enemy.get_tree().get_nodes_in_group("enemies")
+	for other in enemies:
+		if not is_instance_valid(other) or other.is_defeated or other == enemy:
+			continue
+		var dist_player = player_pos.distance_to(other.global_position)
+		var dist_grabber = grabber_pos.distance_to(other.global_position)
+		if dist_player <= 1.5 or dist_grabber <= 1.5:
+			var push_dir = (other.global_position - player_pos)
+			push_dir.y = 0.0
+			if push_dir.length() < 0.1:
+				push_dir = -player.global_transform.basis.z
+			push_dir = push_dir.normalized()
+			
+			if other.has_method("take_hit"):
+				other.take_hit({
+					"damage": 0.0,
+					"hit_zone": "body",
+					"hit_type": "push",
+					"hit_direction": push_dir,
+					"source": enemy
+				})
 			
 		# Force alignment
 		var to_player = player.global_position - enemy.global_position

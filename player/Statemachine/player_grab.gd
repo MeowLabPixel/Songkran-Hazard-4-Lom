@@ -206,6 +206,36 @@ func _enter() -> void:
 				qte_len = sa.qte_duration
 	max_grab_duration = qte_len + 5.0 # QTE duration + 5.0 seconds for win/fail/getup animation paths
 	print("[PlayerGrab] Grab started. Max grab duration: ", max_grab_duration)
+	_push_surrounding_enemies_on_grab_enter()
+
+func _push_surrounding_enemies_on_grab_enter() -> void:
+	if not owner or not is_instance_valid(owner):
+		return
+	var player_pos = owner.global_position
+	var grabber_pos = _current_grabber.global_position if is_instance_valid(_current_grabber) else player_pos
+
+	var enemies = get_tree().get_nodes_in_group("enemies")
+	for enemy in enemies:
+		if not is_instance_valid(enemy) or enemy.is_defeated or enemy == _current_grabber:
+			continue
+		var dist_player = player_pos.distance_to(enemy.global_position)
+		var dist_grabber = grabber_pos.distance_to(enemy.global_position)
+		if dist_player <= 1.5 or dist_grabber <= 1.5:
+			var push_dir = (enemy.global_position - player_pos)
+			push_dir.y = 0.0
+			if push_dir.length() < 0.1:
+				push_dir = -owner.global_transform.basis.z
+			push_dir = push_dir.normalized()
+			
+			if enemy.has_method("take_hit"):
+				enemy.take_hit({
+					"damage": 0.0,
+					"hit_zone": "body",
+					"hit_type": "push",
+					"hit_direction": push_dir,
+					"source": owner
+				})
+				print("[PlayerGrab] Pushed away nearby enemy: ", enemy.name, " on grab enter within 1.5m")
 
 func _exit() -> void:
 	set_process(false)
@@ -224,6 +254,7 @@ func _exit() -> void:
 			sub_pb.travel("End")
 			
 	is_exiting = false
+	last_anim = ""
 	mini_done = false
 	owner.is_grab = false
 	owner.is_stunned = false

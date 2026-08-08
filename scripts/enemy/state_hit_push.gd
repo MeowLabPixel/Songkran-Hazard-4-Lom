@@ -14,6 +14,12 @@ func enter() -> void:
 	_current_push_speed = push_speed
 	print("[StateHitPush] Push! Enemy: %s, Direction: %s" % [enemy.name, push_direction])
 	if enemy:
+		if push_direction.length() < 0.01:
+			var rand_angle = randf() * TAU
+			push_direction = Vector3(cos(rand_angle), 0.0, sin(rand_angle))
+		push_direction = push_direction.normalized()
+		# Temporarily disable physical collision with other enemies (layer 3) so crowded capsules don't block push movement
+		enemy.set_collision_mask_value(3, false)
 		enemy.velocity = push_direction * _current_push_speed
 		enemy.move_and_slide()
 	
@@ -27,15 +33,26 @@ func exit() -> void:
 	push_direction = Vector3.ZERO
 	_current_push_speed = 0.0
 	if enemy:
+		# Re-enable physical collision with other enemies (layer 3)
+		enemy.set_collision_mask_value(3, true)
 		enemy.reset_getup_conditions()
 
 func physics_update(delta: float) -> void:
 	_grace_timer += delta
 	
-	if enemy and _current_push_speed > 0.0:
-		_current_push_speed = move_toward(_current_push_speed, 0.0, push_decay * delta)
-		enemy.velocity = push_direction * _current_push_speed
-		enemy.move_and_slide()
+	if enemy:
+		if _current_push_speed > 0.0:
+			_current_push_speed = move_toward(_current_push_speed, 0.0, push_decay * delta)
+			enemy.velocity = push_direction * _current_push_speed
+			enemy.move_and_slide()
+			
+		# Smoothly lerp Y-rotation to face the hit source / player
+		if push_direction.length() > 0.01:
+			var hit_source_dir = -push_direction
+			hit_source_dir.y = 0.0
+			if hit_source_dir.length() > 0.01:
+				var target_y = atan2(-hit_source_dir.x, -hit_source_dir.z)
+				enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, 6.0 * delta)
 		
 	# Wait a moment for the AnimationTree to process the travel() call
 	if _grace_timer < 0.1:

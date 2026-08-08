@@ -6,6 +6,9 @@ var stop_timer: float = 0.0
 var _linger_anim_speed: float = 1.0
 
 func _enter() -> void:
+	if owner.HP <= 0 or ("pending_die_after_hit" in owner and owner.pending_die_after_hit):
+		finished.emit("Die")
+		return
 	is_stopping = false
 	stop_timer = 0.0
 	print(name)
@@ -20,9 +23,10 @@ func _enter() -> void:
 	owner.anim.get(owner.anim_playback).travel("Run")	
 	#gun_anim()
 
-
-
 func _update(_delta:float) -> void:
+	if owner.HP <= 0 or ("pending_die_after_hit" in owner and owner.pending_die_after_hit):
+		finished.emit("Die")
+		return
 	if not Input.is_action_pressed("aim"):
 		owner.aim_blocked_until_release = false
 

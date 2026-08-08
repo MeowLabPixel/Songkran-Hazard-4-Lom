@@ -79,15 +79,18 @@ func _enter() -> void:
 	# Calculate push direction
 	calculate_push_direction(location)
 	
-	# Start camera transition (lowering camera exactly like grab fail)
+	# Start camera transition (directional pitch reaction)
 	var cam = owner.camera
 	if cam:
+		var target_pitch = hit_cam_pitch if location != "back" else 10.0
 		if cam.has_method("set_action_offset_y"):
 			cam.set_action_offset_y(hit_cam_offset, hit_cam_duration_down)
 		if cam.has_method("set_action_pitch"):
-			cam.set_action_pitch(hit_cam_pitch, hit_cam_duration_down)
+			cam.set_action_pitch(target_pitch, hit_cam_duration_down)
 		if cam.has_method("set_action_spring_length"):
 			cam.set_action_spring_length(hit_cam_spring_offset, hit_cam_duration_down)
+		if cam.has_method("trigger_get_hit_shake"):
+			cam.trigger_get_hit_shake(location)
 	
 	# Listen for animation end to transition immediately
 	if not owner.anim.animation_finished.is_connected(_on_hit_anim_finished):
@@ -103,6 +106,8 @@ func _exit() -> void:
 	owner.Hit_info.location = null
 	owner.Hit_info.bullet = null
 	owner.hit_damage_already_applied = false
+	if "pending_die_after_hit" in owner:
+		owner.pending_die_after_hit = false
 	owner.is_stunned = false
 	owner.aim_blocked_until_release = false
 	
@@ -159,9 +164,13 @@ func _update(delta: float) -> void:
 		
 	owner.velocity = velocity
 	
-	# Transition back to Idle when animation finishes
+	# Transition to Run or Idle when hit animation finishes (allowing natural transition to Idle/Run before Die)
 	if _anim_finished:
-		finished.emit("Idle")
+		var raw_input = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+		if raw_input.length() > 0.1:
+			finished.emit("Run")
+		else:
+			finished.emit("Idle")
 
 func stop_moving() -> void:
 	velocity = Vector3.ZERO

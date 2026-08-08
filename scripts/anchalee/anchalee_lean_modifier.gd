@@ -5,10 +5,46 @@ class_name AnchaleeLeanModifier
 @export var tilt_speed: float = 8.0
 @export var forward_lean_factor: float = 0.4 # reduce forward lean (multiplier)
 
+@export_group("Hit Reaction")
+@export var damage_hit_force: float = 14.0 # Base force/angle in degrees
+@export var hit_stiffness: float = 220.0
+@export var hit_damping: float = 15.0
+@export var hit_impulse_multiplier: float = 20.0
+
 var current_tilt_x: float = 0.0
 var current_tilt_z: float = 0.0
 
+var hit_tilt_x: float = 0.0
+var hit_vel_x: float = 0.0
+var hit_tilt_z: float = 0.0
+var hit_vel_z: float = 0.0
+
 var anchalee: CharacterBody3D
+
+func apply_hit_force(hit_data: Dictionary = {}) -> void:
+	if not anchalee or not anchalee.is_inside_tree(): return
+	
+	var hit_dir = hit_data.get("hit_direction", Vector3.ZERO)
+	if hit_dir == Vector3.ZERO and hit_data.has("position"):
+		var pos = hit_data.get("position", Vector3.ZERO)
+		hit_dir = (anchalee.global_position - pos).normalized()
+	if hit_dir == Vector3.ZERO:
+		# Default hit comes from front (facing direction local +Z)
+		hit_dir = anchalee.global_transform.basis.z
+		
+	var local_hit_dir = anchalee.global_transform.basis.inverse() * hit_dir
+	if local_hit_dir.length_squared() > 0.001:
+		local_hit_dir = local_hit_dir.normalized()
+	else:
+		local_hit_dir = Vector3.BACK # +Z
+		
+	# Opposite Z force: opposite to local_hit_dir.z
+	# If hit pushes forward (local_hit_dir.z < 0), opposite force pushes backward (+X pitch tilt).
+	var z_force = -local_hit_dir.z * damage_hit_force
+	var x_force = local_hit_dir.x * damage_hit_force
+	
+	hit_vel_x += deg_to_rad(z_force) * hit_impulse_multiplier
+	hit_vel_z += deg_to_rad(x_force) * hit_impulse_multiplier
 
 func _process_modification() -> void:
 	if not anchalee or not anchalee.is_inside_tree(): return
@@ -17,6 +53,15 @@ func _process_modification() -> void:
 	
 	var delta = get_process_delta_time()
 	if delta <= 0.0: delta = 0.016
+	
+	# Update hit reaction spring physics
+	var force_x = -hit_stiffness * hit_tilt_x - hit_damping * hit_vel_x
+	hit_vel_x += force_x * delta
+	hit_tilt_x += hit_vel_x * delta
+	
+	var force_z = -hit_stiffness * hit_tilt_z - hit_damping * hit_vel_z
+	hit_vel_z += force_z * delta
+	hit_tilt_z += hit_vel_z * delta
 	
 	var local_vel = anchalee.global_transform.basis.inverse() * anchalee.velocity
 	
@@ -47,7 +92,11 @@ func _process_modification() -> void:
 	current_tilt_x = lerp_angle(current_tilt_x, target_tilt_x, delta * tilt_speed)
 	current_tilt_z = lerp_angle(current_tilt_z, target_tilt_z, delta * tilt_speed)
 	
-	var group_tilt_basis = Basis.from_euler(Vector3(current_tilt_x, 0.0, current_tilt_z))
+	# Additively combine movement tilt and hit reaction tilt
+	var total_tilt_x = current_tilt_x + hit_tilt_x
+	var total_tilt_z = current_tilt_z + hit_tilt_z
+	
+	var group_tilt_basis = Basis.from_euler(Vector3(total_tilt_x, 0.0, total_tilt_z))
 	
 	var bones = ["DEF-spine", "DEF-spine.001", "DEF-spine.002", "DEF-spine.003"]
 	for bone_name in bones:
@@ -64,3 +113,4 @@ func _process_modification() -> void:
 			
 			pose.basis = local_tilt_basis * pose.basis
 			skeleton.set_bone_pose(b_idx, pose)
+

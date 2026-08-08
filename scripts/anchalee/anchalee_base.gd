@@ -17,8 +17,10 @@ signal player_exited_friend_area()
 @onready var help_label: Label3D = get_node_or_null("HelpLabel")
 @onready var rig: Node3D = $AnchaleeModel/rig_002
 var anim_player: AnimationPlayer = null  # assigned at runtime once model is finalized
+var lean_modifier: AnchaleeLeanModifier = null
 
-# ─── Health ────────────────────────────────────────────────────────────────
+# ─── Health & Face Controller ──────────────────────────────────────────────
+@export var face_controller: AnchaleeFaceController
 @export var max_health: int = 100
 var health: int = max_health
 var is_dead: bool = false
@@ -99,6 +101,10 @@ var is_cornered: bool = false:
 			help_label.visible = value
 
 func _ready() -> void:
+	if not face_controller:
+		face_controller = get_node_or_null("AnchaleeFaceController") as AnchaleeFaceController
+		if not face_controller:
+			face_controller = find_child("AnchaleeFaceController", true, false) as AnchaleeFaceController
 	if has_node("AnchaleeModel/AnimationPlayer"):
 		anim_player = $AnchaleeModel/AnimationPlayer
 		_walk_markers = _get_footstep_markers(anim_player, "Walk -loop")
@@ -152,6 +158,16 @@ func _ready() -> void:
 		lean.anchalee = self
 		lean.name = "AnchaleeLeanModifier"
 		skel.add_child(lean)
+		lean_modifier = lean
+
+func trigger_hit_lean(hit_data: Dictionary = {}) -> void:
+	if lean_modifier and is_instance_valid(lean_modifier):
+		lean_modifier.apply_hit_force(hit_data)
+	else:
+		var lean = find_child("AnchaleeLeanModifier", true, false) as AnchaleeLeanModifier
+		if lean:
+			lean_modifier = lean
+			lean.apply_hit_force(hit_data)
 
 func _unhandled_input(event: InputEvent) -> void:
 	pass # Wait behavior replaced by dynamic Idle/Walk
@@ -174,7 +190,7 @@ func kill_anchalee() -> void:
 		player.force_die()
 
 ## Called by enemy attack hitboxes to damage Anchalee.
-func take_damage(amount: int, _hit_data: Dictionary = {}) -> void:
+func take_damage(amount: int, hit_data: Dictionary = {}) -> void:
 	if is_dead:
 		return
 		
@@ -185,9 +201,12 @@ func take_damage(amount: int, _hit_data: Dictionary = {}) -> void:
 		
 	health -= amount
 	print("[Anchalee] Took %d damage -- HP: %d/%d" % [amount, health, max_health])
+	trigger_hit_lean(hit_data)
 	if health <= 0:
 		kill_anchalee()
 		return
+	if face_controller:
+		face_controller.notify_hit(1.0)
 	state_machine.transition_to("AnchaleeStateHit")
 
 ## Called by player gun/bullets (friendly fire)
@@ -200,6 +219,9 @@ func take_hit(hit_data: Dictionary) -> void:
 		
 	health -= amount
 	print("[Anchalee] Friendly Fire! Took %d damage -- HP: %d/%d" % [amount, health, max_health])
+	trigger_hit_lean(hit_data)
+	if face_controller:
+		face_controller.notify_hit(1.0)
 	if health <= 0:
 		kill_anchalee()
 		return

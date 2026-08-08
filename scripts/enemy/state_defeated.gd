@@ -18,6 +18,7 @@ var _override_meshes: Array[MeshInstance3D] = []
 var _hiding_spot: Vector3 = Vector3.ZERO
 var _use_hiding: bool = false
 var _last_steer_side: float = 0.0
+var _pushed_enemies_in_walk: Array[Node] = []
 
 var nav_agent: NavigationAgent3D:
 	get: return enemy.get_node_or_null("NavigationAgent3D") if enemy else null
@@ -31,6 +32,7 @@ func enter() -> void:
 	_use_hiding      = false
 	_hiding_spot     = Vector3.ZERO
 	_override_meshes.clear()
+	_pushed_enemies_in_walk.clear()
 	
 	if enemy:
 		enemy.velocity = Vector3.ZERO
@@ -105,18 +107,31 @@ func physics_update(_delta: float) -> void:
 			var path_dir = diff.normalized()
 			var move_dir = _get_avoidance_direction(path_dir)
 			
-			# Add separation force from other active zombies
+			# Add separation force & push active zombies away within 0.8m
 			var separation_force = Vector3.ZERO
 			var close_count = 0
 			for other in enemy.get_tree().get_nodes_in_group("enemies"):
 				if other == enemy or not is_instance_valid(other) or other.is_defeated:
 					continue
 				var dist = enemy.global_position.distance_to(other.global_position)
-				if dist < 1.2 and dist > 0.01:
+				if dist < 0.8 and dist > 0.01:
 					var push = (enemy.global_position - other.global_position).normalized()
-					var strength = (1.2 - dist) / 1.2
+					var strength = (0.8 - dist) / 0.8
 					separation_force += push * strength
 					close_count += 1
+					
+					# Also push the active zombie away
+					if not other in _pushed_enemies_in_walk:
+						_pushed_enemies_in_walk.append(other)
+						var push_dir = (other.global_position - enemy.global_position).normalized()
+						push_dir.y = 0.0
+						push_dir = push_dir.normalized()
+						other.take_hit({
+							"damage": 0,
+							"hit_type": "push",
+							"hit_direction": push_dir,
+							"source": enemy
+						})
 			if path_dir.length() > 0.01 and close_count > 0:
 				move_dir = (move_dir + separation_force * 0.8).normalized()
 				move_dir.y = 0.0

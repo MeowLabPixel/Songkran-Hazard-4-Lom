@@ -11,7 +11,7 @@ extends EnemyState
 @export var attack_cooldown: float = 1.3
 @export var attack_state: String = "StateAttack"
 @export var walk_back_range: float = 1.8
-@export var guaranteed_grab_range: float = 1.0
+@export var guaranteed_grab_range: float = 1.1
 @export var walk_back_speed_multiplier: float = 0.8
 
 @export_group("Animation Timescales")
@@ -22,6 +22,7 @@ extends EnemyState
 
 @export_group("Hunt Sprint")
 @export var sprint_speed: float = 4.0
+@export var sprint_acceleration: float = 2.083
 @export var sprint_timescale: float = 2.0
 @export var sprint_duration_min: float = 1.5
 @export var sprint_duration_max: float = 2.5
@@ -134,6 +135,8 @@ func enter() -> void:
 	if trigger_stun_recovery:
 		trigger_stun_recovery = false
 		_stun_recovery_timer = stun_recovery_pause * 0.5
+		if enemy:
+			enemy.attack_blocked = true
 		# Don't force-play idle here — let the AnimationTree's own
 		# blend transitions (hit_stun → End → hit → End) handle the smooth exit.
 		# The recovery pause timer keeps the zombie still while the blend plays.
@@ -238,8 +241,13 @@ func physics_update(_delta: float) -> void:
 		return
 		
 	if _stun_recovery_timer > 0.0 or _attack_recovery_timer > 0.0:
+		if enemy:
+			enemy.attack_blocked = true
 		_stun_recovery_timer -= _delta
 		_attack_recovery_timer -= _delta
+		if _stun_recovery_timer <= 0.0 and _attack_recovery_timer <= 0.0:
+			if enemy and _getup_block_timer <= 0.0:
+				enemy.attack_blocked = false
 		if nav_agent and nav_agent.avoidance_enabled:
 			nav_agent.set_velocity(Vector3.ZERO)
 		enemy.velocity = Vector3.ZERO
@@ -297,7 +305,7 @@ func physics_update(_delta: float) -> void:
 	to_target.y = 0.0
 	var flat_dist: float = to_target.length()
 
-	if is_sprinting and dist_to_player <= 3.0:
+	if is_sprinting and (dist_to_player <= attack_prep_range or _has_token):
 		_end_sprint()
 
 	if dist_to_player <= guaranteed_grab_range:
@@ -452,7 +460,7 @@ func physics_update(_delta: float) -> void:
 							return
 
 	# ─── Sprint Activation Check ─────────────────────────────────────────────
-	if not is_sprinting and _sprint_cooldown_timer <= 0.0 and flat_dist > 3.0:
+	if not is_sprinting and _sprint_cooldown_timer <= 0.0 and flat_dist > attack_prep_range and not _has_token:
 		if randf() < sprint_activation_chance_per_sec * _delta:
 			if can_start_sprint():
 				_start_sprint()
@@ -497,17 +505,27 @@ func physics_update(_delta: float) -> void:
 		move_dir = (move_dir + separation_force * 0.8).normalized()
 		move_dir.y = 0.0
 
+	var safe_sprint_accel: float = sprint_acceleration if (sprint_acceleration != null and typeof(sprint_acceleration) in [TYPE_FLOAT, TYPE_INT] and float(sprint_acceleration) > 0.0) else 2.083
+	var safe_move_accel: float = move_acceleration if (move_acceleration != null and typeof(move_acceleration) in [TYPE_FLOAT, TYPE_INT] and float(move_acceleration) > 0.0) else 0.3
+
 	var is_circling = player and not _has_token and dist_to_player <= _my_circling_radius and not _is_fleeing_grab
 	var target_speed = move_speed
+	var current_accel = safe_move_accel
 	if is_sprinting:
 		target_speed = sprint_speed
+		current_accel = safe_sprint_accel
 	elif is_circling:
 		target_speed = circling_move_speed
 	else:
 		target_speed = move_speed
 
+	# Decelerate back to target speed using 2x acceleration rate
+	if _current_speed > target_speed:
+		var accel_base = safe_sprint_accel if _current_speed > move_speed else current_accel
+		current_accel = accel_base * 2.0
+
 	if move_dir.length() > 0.01:
-		_current_speed = move_toward(_current_speed, target_speed, move_acceleration * _delta)
+		_current_speed = move_toward(_current_speed, target_speed, current_accel * _delta)
 	else:
 		_current_speed = initial_move_speed
 
@@ -612,11 +630,11 @@ func _walk_back(dir_to_player: Vector3, delta: float) -> void:
 
 	if flee_dir.length() > 0.01:
 		var target_vel = flee_dir * move_speed * walk_back_speed_multiplier
-		if nav_agent and nav_agent.avoidance_enabled:
+		if nav_agent and nav_agent.avoidance_enabled and not _is_fleeing_grab:
 			nav_agent.max_speed = move_speed * walk_back_speed_multiplier
 			nav_agent.set_velocity(target_vel)
 		else:
-			# Force it to walk directly backward relative to its facing direction to prevent sideways sliding
+			# Force it to walk directly backward relative to its facing direction to prevent RVO crowd locking during grab
 			var backward_dir = enemy.global_transform.basis.z.normalized()
 			enemy.velocity = backward_dir * (move_speed * walk_back_speed_multiplier)
 			enemy.move_and_slide()
