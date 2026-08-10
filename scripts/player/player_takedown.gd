@@ -505,10 +505,10 @@ func _execute_primary_hit(enemy: Node) -> void:
 		if cam.has_method("trigger_takedown_shake"):
 			cam.trigger_takedown_shake()
 			
-	# Trigger stylized UI takedown shockwave at impact position
-	var ui = get_tree().get_first_node_in_group("player_ui") if get_tree() else null
-	if ui and ui.has_method("spawn_takedown_shockwave"):
-		ui.spawn_takedown_shockwave(enemy.global_position)
+	# Trigger stylized UI takedown shockwave at impact position (REMOVED: reserved only for takedownable state)
+	# var ui = get_tree().get_first_node_in_group("player_ui") if get_tree() else null
+	# if ui and ui.has_method("spawn_takedown_shockwave"):
+	# 	ui.spawn_takedown_shockwave(enemy.global_position)
 
 
 func _execute_domino_hit(hit_info: Dictionary) -> void:
@@ -528,11 +528,11 @@ func _execute_domino_hit(hit_info: Dictionary) -> void:
 	var event_name = "vo_zombie_m_melee_gethit" if ("voice_character" in enemy and enemy.voice_character == "Zombie Male") else "vo_zombie_f_melee_gethit"
 	SoundManager.play_3d(event_name, enemy, 0.0, -1.0, base_pitch * pitch_multiplier)
 
-	# Trigger stylized UI shockwave at domino zombie 3D position with growing scale
-	var ui = get_tree().get_first_node_in_group("player_ui") if get_tree() else null
-	if ui and ui.has_method("spawn_takedown_shockwave"):
-		var shock_scale: float = clamp(1.0 + (_domino_combo_count - 1) * 0.25, 1.0, 2.0)
-		ui.spawn_takedown_shockwave(enemy.global_position, shock_scale)
+	# Trigger stylized UI shockwave at domino zombie 3D position with growing scale (REMOVED: reserved only for takedownable state)
+	# var ui = get_tree().get_first_node_in_group("player_ui") if get_tree() else null
+	# if ui and ui.has_method("spawn_takedown_shockwave"):
+	# 	var shock_scale: float = clamp(1.0 + (_domino_combo_count - 1) * 0.25, 1.0, 2.0)
+	# 	ui.spawn_takedown_shockwave(enemy.global_position, shock_scale)
 
 	_execute_splash_hit(hit_info)
 

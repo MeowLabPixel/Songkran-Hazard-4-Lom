@@ -10,6 +10,7 @@ extends Control
 @export var center_dot_outline: float = 2.625
 @export var default_color: Color = Color(1.0, 1.0, 1.0, 0.75)
 @export var focused_color: Color = Color(1.0, 0.8, 0.1, 0.95)
+@export var enable_center_dot: bool = false
 
 @export_group("Air Gauge Settings")
 @export var gauge_on_left: bool = true
@@ -194,8 +195,9 @@ func _draw() -> void:
 	draw_reticle_line(center + Vector2(visual_r, 0), center + Vector2(visual_r + reticle_line_length, 0), line_color)
 	
 	# Draw center dot
-	draw_circle(center, center_dot_outline, Color(0, 0, 0, 0.8))
-	draw_circle(center, center_dot_radius, line_color)
+	if enable_center_dot:
+		draw_circle(center, center_dot_outline, Color(0, 0, 0, 0.8))
+		draw_circle(center, center_dot_radius, line_color)
 	
 	# Draw Zelda-style 1/4 circular air gauge outline (Scales dynamically with visual_r!)
 	var current_gauge_radius = visual_r + gauge_offset_radius

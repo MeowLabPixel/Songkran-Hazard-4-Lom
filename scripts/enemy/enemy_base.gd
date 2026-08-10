@@ -508,25 +508,29 @@ func _on_state_changed(old_state: String, new_state: String) -> void:
 		debug_label.text = "State: %s\n(%s → %s)" % [new_state, old_state, new_state]
 
 	if new_state == "StateTakedownable":
-		var ui = get_tree().get_first_node_in_group("player_ui")
-		if ui and ui.has_method("spawn_takedown_shockwave"):
-			var stun_bone = "DEF-spine.006" # Default to head
-			if state_machine:
-				var td = state_machine._states.get("StateTakedownable")
-				if td:
-					if td.stun_type == "left_foot":
-						stun_bone = "DEF-foot.L"
-					elif td.stun_type == "right_foot":
-						stun_bone = "DEF-foot.R"
+		# Do not spawn takedown indicator shockwave if we were just hit by a takedown attack (e.g. splash/domino hit)
+		var time_now = Time.get_ticks_msec() / 1000.0
+		var time_since_takedown = time_now - _last_takedown_hit_time
+		if time_since_takedown > 0.5 and not is_takedown_defeat:
+			var ui = get_tree().get_first_node_in_group("player_ui")
+			if ui and ui.has_method("spawn_takedown_shockwave"):
+				var stun_bone = "DEF-spine.006" # Default to head
+				if state_machine:
+					var td = state_machine._states.get("StateTakedownable")
+					if td:
+						if td.stun_type == "left_foot":
+							stun_bone = "DEF-foot.L"
+						elif td.stun_type == "right_foot":
+							stun_bone = "DEF-foot.R"
+							
+				var spawn_pos = global_position
+				var skeleton = _find_skeleton(self)
+				if skeleton:
+					var bone_idx = skeleton.find_bone(stun_bone)
+					if bone_idx != -1:
+						spawn_pos = skeleton.global_transform * skeleton.get_bone_global_pose(bone_idx).origin
 						
-			var spawn_pos = global_position
-			var skeleton = _find_skeleton(self)
-			if skeleton:
-				var bone_idx = skeleton.find_bone(stun_bone)
-				if bone_idx != -1:
-					spawn_pos = skeleton.global_transform * skeleton.get_bone_global_pose(bone_idx).origin
-					
-			ui.spawn_takedown_shockwave(spawn_pos)
+				ui.spawn_takedown_shockwave(spawn_pos)
 
 func _find_meshes_recursive(node: Node, meshes: Array[MeshInstance3D]) -> void:
 	if node is MeshInstance3D:

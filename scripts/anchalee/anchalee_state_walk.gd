@@ -30,6 +30,7 @@ var _jink_phase: int = 0
 # Breathing audio tracking
 var _active_breath_sfx: Node = null
 var _current_breath_event: String = ""
+var _panting_timer: float = 0.0
 
 func enter() -> void:
 	print("[Anchalee] Walk/Run")
@@ -43,6 +44,7 @@ func enter() -> void:
 	_jink_dir_sign = 1
 	_failed_jinks = 0
 	_jink_phase = 0
+	_panting_timer = 0.0
 
 func exit() -> void:
 	# Stop walk/run breathing sound
@@ -51,6 +53,7 @@ func exit() -> void:
 		_active_breath_sfx.queue_free()
 	_active_breath_sfx = null
 	_current_breath_event = ""
+	_panting_timer = 0.0
 	
 	if is_instance_valid(Anchalee):
 		if Anchalee.nav_agent:
@@ -268,14 +271,33 @@ func physics_update(delta: float) -> void:
 	var is_far = not is_in_near_area
 	var is_running = is_far or Anchalee.player_is_sprinting
 	
-	# Dynamic breathing SFX manager
-	var target_event = "vo_anchalee_Exhausted" if is_running else "vo_anchalee_Panting"
-	if _current_breath_event != target_event or _active_breath_sfx == null or not is_instance_valid(_active_breath_sfx) or not _active_breath_sfx.playing:
+	# Dynamic breathing SFX manager: only play after moving at max walk speed or more for at least 3 sec
+	var current_move_speed = Vector2(Anchalee.velocity.x, Anchalee.velocity.z).length()
+	var is_moving_at_max_walk = current_move_speed >= (walk_speed - 0.15)
+	var is_sprinting_fast = current_move_speed > (walk_speed + 0.15)
+	
+	if is_moving_at_max_walk:
+		if is_sprinting_fast:
+			_panting_timer += delta * 1.5 # 50% faster count rate when sprinting/going beyond max walk speed
+		else:
+			_panting_timer += delta * 1.0
+	else:
+		_panting_timer = 0.0
+
+	if _panting_timer >= 3.0:
+		var target_event = "vo_anchalee_Exhausted" if is_running else "vo_anchalee_Panting"
+		if _current_breath_event != target_event or _active_breath_sfx == null or not is_instance_valid(_active_breath_sfx) or not _active_breath_sfx.playing:
+			if is_instance_valid(_active_breath_sfx):
+				_active_breath_sfx.stop()
+				_active_breath_sfx.queue_free()
+			_current_breath_event = target_event
+			_active_breath_sfx = SoundManager.play_3d(target_event, Anchalee)
+	else:
 		if is_instance_valid(_active_breath_sfx):
 			_active_breath_sfx.stop()
 			_active_breath_sfx.queue_free()
-		_current_breath_event = target_event
-		_active_breath_sfx = SoundManager.play_3d(target_event, Anchalee)
+		_active_breath_sfx = null
+		_current_breath_event = ""
 	
 	var current_speed = walk_speed
 	if is_running:
