@@ -353,6 +353,26 @@ func take_hit(hit_data: Dictionary) -> void:
 					   (state_machine and state_machine.current_state and state_machine.current_state.name == "StateTakedownable"))
 	trigger_impact_sway(is_takedown)
 
+	# Trigger Act 1 localized Bone Juice (Pop, Squash-and-Stretch, Shake)
+	var skel = _find_skeleton(self)
+	if skel:
+		var hit_reaction_modifier = skel.get_node_or_null("EnemyHitReactionModifier")
+		if hit_reaction_modifier and hit_reaction_modifier.has_method("trigger_bone_juice"):
+			if not is_takedown and hit_type_check not in ["takedown", "takedown_splash"]:
+				var zone = hit_data.get("hit_zone", "body")
+				if zone in ["head", "left_foot", "left_leg", "right_foot", "right_leg"]:
+					var hit_dir = hit_data.get("hit_direction", Vector3.ZERO)
+					if hit_dir == Vector3.ZERO:
+						var players = get_tree().get_nodes_in_group("player")
+						if players.size() > 0:
+							hit_dir = (hit_data.get("position", global_position) - players[0].global_position).normalized()
+						else:
+							hit_dir = -global_transform.basis.z
+					# 50% effects of Act 2 (Micro-shake disabled as requested)
+					hit_reaction_modifier.trigger_bone_juice(zone, hit_dir, 0.35, 1.15, 1.175, 0.0, 30.0)
+
+
+
 	if face_controller:
 		var hit_z = String(hit_data.get("hit_zone", "")).to_lower()
 		var hit_t = String(hit_data.get("hit_type", "")).to_lower()

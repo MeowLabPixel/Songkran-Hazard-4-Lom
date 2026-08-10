@@ -83,6 +83,18 @@ class ActiveReaction:
 # Map of bone_name -> ActiveReaction
 var _active_reactions: Dictionary = {}
 
+class ActiveJuiceReaction:
+	var bone_name: String = ""
+	var hit_dir: Vector3 = Vector3.ZERO
+	var timer: float = 0.0
+	var duration: float = 0.1
+	var pop: float = 1.0
+	var stretch: float = 1.0
+	var shake_amp: float = 0.0
+	var shake_freq: float = 0.0
+
+var _active_juice_reactions: Dictionary = {}
+
 func _ready() -> void:
 	if not enemy:
 		var node: Node = get_parent()
@@ -236,6 +248,30 @@ func _trigger_reaction(skeleton: Skeleton3D, bone_name: String, axis: Vector3, s
 	react.stiffness = stiffness_val
 	react.damping = damping_val
 	react.velocity += force_val * reaction_multiplier
+
+func trigger_bone_juice(zone: String, hit_dir: Vector3, duration: float, pop: float = 1.15, stretch: float = 1.175, shake_amp: float = 0.03, shake_freq: float = 30.0) -> void:
+	var target_bones = []
+	match zone:
+		"head": target_bones = ["DEF-spine.006"]
+		"left_foot", "left_leg": target_bones = ["DEF-shin.L", "DEF-foot.L"]
+		"right_foot", "right_leg": target_bones = ["DEF-shin.R", "DEF-foot.R"]
+		_: return
+		
+	for bone_name in target_bones:
+		var react = _active_juice_reactions.get(bone_name)
+		if not react:
+			react = ActiveJuiceReaction.new()
+			react.bone_name = bone_name
+			_active_juice_reactions[bone_name] = react
+			
+		react.hit_dir = hit_dir
+		react.timer = duration
+		react.duration = max(duration, 0.01)
+		react.pop = pop
+		react.stretch = stretch
+		react.shake_amp = shake_amp
+		react.shake_freq = shake_freq
+
 
 func _find_flipflop_mesh(skeleton: Skeleton3D, is_left: bool) -> MeshInstance3D:
 	var prefix = "left" if is_left else "right"
@@ -483,3 +519,45 @@ func _process_modification() -> void:
 			
 	for bone_name in to_remove:
 		_active_reactions.erase(bone_name)
+
+	# Apply all bone juice reactions
+	var juice_to_remove = []
+	for bone_name in _active_juice_reactions.keys():
+		var react = _active_juice_reactions[bone_name]
+		if react.timer > 0.0:
+			react.timer -= delta
+			var b_idx = skeleton.find_bone(bone_name)
+			if b_idx != -1:
+				var pose = skeleton.get_bone_pose(b_idx)
+				
+				# Simple elastic decay approximation
+				var decay = max(react.timer / react.duration, 0.0)
+				
+				# Shake
+				var offset_x = sin(react.timer * react.shake_freq * TAU) * react.shake_amp * decay
+				var offset_z = cos(react.timer * react.shake_freq * TAU * 1.25) * react.shake_amp * decay
+				
+				# Squash & Stretch
+				var local_hit_dir = (skeleton.global_transform.basis.inverse() * react.hit_dir).normalized()
+				var stretch_y = 1.0 / sqrt(clamp(react.stretch, 1.0, 2.0))
+				var stretch_xz = clamp(react.stretch, 1.0, 2.0)
+				
+				# Interpolate back to 1.0 over time
+				var current_pop = lerp(1.0, react.pop, decay)
+				var current_stretch_xz = lerp(1.0, stretch_xz, decay)
+				var current_stretch_y = lerp(1.0, stretch_y, decay)
+				
+				var target_scale = Vector3(
+					current_pop * lerp(1.0, current_stretch_xz, abs(local_hit_dir.x)),
+					current_pop * current_stretch_y,
+					current_pop * lerp(1.0, current_stretch_xz, abs(local_hit_dir.z))
+				)
+				
+				pose.basis = pose.basis.scaled(target_scale)
+				pose.origin += Vector3(offset_x, 0.0, offset_z)
+				skeleton.set_bone_pose(b_idx, pose)
+		else:
+			juice_to_remove.append(bone_name)
+			
+	for bone_name in juice_to_remove:
+		_active_juice_reactions.erase(bone_name)
