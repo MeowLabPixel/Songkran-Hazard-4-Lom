@@ -7,17 +7,18 @@ class_name Player extends CharacterBody3D
 		if Engine.is_editor_hint() or is_node_ready():
 			GameManager.movement_type = val
 @export var walk_speed: float = 3.0
-@export var walk_Back_speed: float = 2.5
+@export var walk_Back_speed: float = 2.0
 @export var turn_speed: float = 180.0
 @export var quick_turn_speed: float = 0.3 #in second
 @export var quick_turn_cooldown_duration: float = 0.5 # cooldown in seconds before another quick turn
-@export var run_speed: float = 4.5
+@export var run_speed: float = 4.0
 @export var aim_bone: LookAtModifier3D
 @export var aim_bone2: LookAtModifier3D
 @export var max_tilt_angle: float = 6.0
 @export var rotation_tilt_sensitivity: float = 2.0 # degrees of Z tilt per rad/sec of turn speed
 @export var max_yaw_angle: float = 15.0
 @export var rotation_yaw_sensitivity: float = 6.0 # degrees of Y yaw per rad/sec of turn speed
+@export var invert_turn_lean: bool = false # Toggle to invert turning lean direction
 
 @export_group("animation setting")
 #@export var anim_player:AnimationPlayer
@@ -229,11 +230,11 @@ func _ready() -> void:
 
 	if walk_speed == null: walk_speed = 3.0
 	if walk_Back_speed == null: walk_Back_speed = 2.5
-	if run_speed == null: run_speed = 4.5
+	if run_speed == null: run_speed = 4.0
 	if walk_anim_speed == null: walk_anim_speed = 1.2
 	if walk_back_anim_speed == null: walk_back_anim_speed = 1.2
 	if walk_side_anim_speed == null: walk_side_anim_speed = 1.2
-	if sprint_anim_speed == null: sprint_anim_speed = 2.0
+	if sprint_anim_speed == null: sprint_anim_speed = 1.6
 
 	walk_speed *= speed_mult
 	walk_Back_speed *= speed_mult
@@ -488,6 +489,7 @@ func _process(delta: float) -> void:
 			
 		var lean_modifier = skeleton.get_node_or_null("SpineLeanModifier")
 		if lean_modifier:
+			lean_modifier.current_velocity = velocity
 			var sm = get_node_or_null("Statemachine")
 			var is_reloading = sm and sm.current_state and sm.current_state.name == "Reload"
 			
@@ -515,6 +517,18 @@ func _process(delta: float) -> void:
 					and not is_grab
 				)
 				lean_modifier.rotating_in_place_speed = abs(_current_turn_anim_scale)
+				lean_modifier.angular_velocity = _smoothed_angular_velocity
+				lean_modifier.invert_turn_lean = invert_turn_lean
+
+				# Dynamic velocity-based animation timescale (scaled by directional target speed)
+				if anim and Motion.input_dir != Vector2.ZERO and not is_aimming:
+					var horiz_speed = Vector3(velocity.x, 0.0, velocity.z).length()
+					var active_dir_speed = walk_speed
+					if Motion.input_dir.y > 0.0 or (Motion.input_dir.y == 0.0 and Motion.input_dir.x != 0.0):
+						active_dir_speed = walk_Back_speed
+					var dynamic_ts = clampf(1.2 * (horiz_speed / maxf(active_dir_speed, 0.1)), 0.2, 3.0)
+					anim.set("parameters/Main/Run/Pis/TimeScale/scale", dynamic_ts)
+					anim.set("parameters/Main/Run/Shot/TimeScale/scale", dynamic_ts)
 
 	_update_skeleton_tilt(delta)
 	_update_aim_target(delta)
@@ -789,11 +803,11 @@ func _update_skeleton_tilt(delta: float) -> void:
 		target_z = 0.0
 		target_y = 0.0
 
-	# Rotate the rig node on the Z-axis (roll) and Y-axis (yaw) for turning inertia
-	# We don't tilt on X here since walk tilt is handled by SpineLeanModifier
+	# Rotate the rig node on the Y-axis (yaw) for turning inertia
+	# Z turning lean is now handled additively by the unified SpineLeanModifier
 	rig.rotation.x = lerp_angle(rig.rotation.x, 0.0, delta * TILT_SPEED)
 	rig.rotation.y = lerp_angle(rig.rotation.y, target_y, delta * TILT_SPEED)
-	rig.rotation.z = lerp_angle(rig.rotation.z, target_z, delta * TILT_SPEED)
+	rig.rotation.z = lerp_angle(rig.rotation.z, 0.0, delta * TILT_SPEED)
 
 func update_crosshair_accuracy(delta: float) -> void:
 	if not cross_hair:

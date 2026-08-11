@@ -5452,7 +5452,7 @@ blend_point_3/name = &"3"
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_b8hi5"]
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_n0b8q"]
-graph_offset = Vector2(-106.909424, 14.091077)
+graph_offset = Vector2(-84.8, 56.8)
 nodes/output/position = Vector2(976, 160)
 nodes/BlendSpace2D/node = SubResource("AnimationNodeBlendSpace2D_w7j2h")
 nodes/BlendSpace2D/position = Vector2(96, 144)
@@ -5495,7 +5495,7 @@ blend_point_3/name = &"3"
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_2uvqg"]
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_a1u5o"]
-graph_offset = Vector2(239.42715, -26.337427)
+graph_offset = Vector2(231.42715, 74.46257)
 nodes/output/position = Vector2(1056, 192)
 nodes/BlendSpace2D/node = SubResource("AnimationNodeBlendSpace2D_vgvch")
 nodes/BlendSpace2D/position = Vector2(464, 128)
@@ -5530,7 +5530,7 @@ states/Shot/node = SubResource("AnimationNodeBlendTree_a1u5o")
 states/Shot/position = Vector2(325.2, 190.4)
 states/Start/position = Vector2(96, 117.6)
 transitions = ["Start", "Pis", SubResource("AnimationNodeStateMachineTransition_3dxkp"), "Start", "Shot", SubResource("AnimationNodeStateMachineTransition_6wior"), "Pis", "End", SubResource("AnimationNodeStateMachineTransition_p5tca"), "Shot", "End", SubResource("AnimationNodeStateMachineTransition_jbx34"), "Pis", "Shot", SubResource("AnimationNodeStateMachineTransition_1so5t"), "Shot", "Pis", SubResource("AnimationNodeStateMachineTransition_hjies")]
-graph_offset = Vector2(-2, -37)
+graph_offset = Vector2(60, -10)
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_6wior"]
 animation = &"TD/Take down anim"
@@ -5642,7 +5642,7 @@ states/Start/position = Vector2(67.2, 55.2)
 states/Takedown/node = SubResource("AnimationNodeStateMachine_a1u5o")
 states/Takedown/position = Vector2(675.2, 130.064)
 transitions = ["Start", "Idle", SubResource("AnimationNodeStateMachineTransition_35wys"), "Idle", "Run", SubResource("AnimationNodeStateMachineTransition_pjwc4"), "Run", "Idle", SubResource("AnimationNodeStateMachineTransition_or4qq"), "Idle", "Aim", SubResource("AnimationNodeStateMachineTransition_hggc2"), "Aim", "Idle", SubResource("AnimationNodeStateMachineTransition_b2j0d"), "QT", "Idle", SubResource("AnimationNodeStateMachineTransition_55jnj"), "Idle", "QT", SubResource("AnimationNodeStateMachineTransition_xcnuv"), "Aim", "Reload", SubResource("AnimationNodeStateMachineTransition_s3g0c"), "Run", "Reload", SubResource("AnimationNodeStateMachineTransition_7l6ig"), "Idle", "Reload", SubResource("AnimationNodeStateMachineTransition_utr5e"), "Reload", "Idle", SubResource("AnimationNodeStateMachineTransition_kewli"), "Idle", "Takedown", SubResource("AnimationNodeStateMachineTransition_kcq4v"), "Run", "Takedown", SubResource("AnimationNodeStateMachineTransition_qavcc"), "Takedown", "Idle", SubResource("AnimationNodeStateMachineTransition_bd26m"), "Run", "Aim", SubResource("AnimationNodeStateMachineTransition_237xx"), "Aim", "QT", SubResource("AnimationNodeStateMachineTransition_gswnw"), "Run", "QT", SubResource("AnimationNodeStateMachineTransition_j55il"), "QT", "Run", SubResource("AnimationNodeStateMachineTransition_wpyo2"), "QT", "Aim", SubResource("AnimationNodeStateMachineTransition_a1u5o"), "Reload", "Aim", SubResource("AnimationNodeStateMachineTransition_2s0vo"), "Start", "Aim", SubResource("AnimationNodeStateMachineTransition_hgm8h"), "Reload", "Run", SubResource("AnimationNodeStateMachineTransition_upxxc")]
-graph_offset = Vector2(70.86243, -34.03647)
+graph_offset = Vector2(-30.137573, 62.96353)
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_j3r50"]
 priority = 0
@@ -5674,10 +5674,10 @@ states/Grab/position = Vector2(333.41266, 230.32591)
 states/Hit/node = SubResource("AnimationNodeStateMachine_7crtr")
 states/Hit/position = Vector2(333.33957, -3.8740928)
 states/Main/node = SubResource("AnimationNodeStateMachine_7l6ig")
-states/Main/position = Vector2(333.95972, 94.52592)
+states/Main/position = Vector2(333.50592, 94.52592)
 states/Start/position = Vector2(202.4, 100)
 transitions = ["Start", "Main", SubResource("AnimationNodeStateMachineTransition_j3r50"), "Main", "Hit", SubResource("AnimationNodeStateMachineTransition_do7qw"), "Grab", "Main", SubResource("AnimationNodeStateMachineTransition_48p26"), "Main", "Grab", SubResource("AnimationNodeStateMachineTransition_anp34"), "Hit", "Main", SubResource("AnimationNodeStateMachineTransition_2h6tc"), "Main", "Die", SubResource("AnimationNodeStateMachineTransition_8rogd")]
-graph_offset = Vector2(-17.911728, 12.157486)
+graph_offset = Vector2(-11.911728, -85.842514)
 
 [node name="player" type="CharacterBody3D" unique_id=324464419 node_paths=PackedStringArray("aim_bone", "aim_bone2", "anim", "hitboxF", "hitboxB", "stun_detect", "pickup_detect", "gun_controller")]
 collision_layer = 42
@@ -5687,10 +5687,9 @@ floor_stop_on_slope = false
 floor_max_angle = 1.2217305
 floor_snap_length = 0.5
 script = ExtResource("1_4eg07")
-walk_Back_speed = 2.0
+movement_type_override = 1
 quick_turn_speed = 0.4
 quick_turn_cooldown_duration = 0.33
-run_speed = 4.0
 aim_bone = NodePath("Re4Lom Base Rig/rig/Skeleton3D/ArmLookAt")
 aim_bone2 = NodePath("Re4Lom Base Rig/rig/Skeleton3D/SpineLookAt")
 anim = NodePath("AnimationTree")
@@ -7658,7 +7657,7 @@ bone_idx = 4
 [node name="TakedownHitbox" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox" unique_id=958867971]
 
 [node name="TakedownAttackBox" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=1184713375]
-transform = Transform3D(0.031009449, 0.7687627, -0.6387815, -0.9525332, -0.17091237, -0.25193122, -0.30285102, 0.61627203, 0.7269732, 0.586274, -0.14511234, 0.42287216)
+transform = Transform3D(0.031009445, 0.7687626, -0.6387815, -0.95253307, -0.17091236, -0.25193122, -0.302851, 0.616272, 0.7269732, 0.586274, -0.14511234, 0.42287216)
 shape = SubResource("CapsuleShape3D_ntd1s")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=315213988]
@@ -8003,10 +8002,10 @@ parameters/Main/Reload/SuperPump/SuperPumpEnd/TimeScale/scale = 0.29999999999999
 parameters/Main/Reload/SuperPump/SuperPumpStart/TimeScale/scale = 0.14999999999999858
 parameters/Main/Run/conditions/pis = false
 parameters/Main/Run/conditions/shot = false
-parameters/Main/Run/Pis/BlendSpace2D/blend_position = Vector2(-0.004705906, 0)
+parameters/Main/Run/Pis/BlendSpace2D/blend_position = Vector2(0, 0)
 parameters/Main/Run/Pis/Blend2/blend_amount = 1.0
 parameters/Main/Run/Pis/TimeScale/scale = 1.0
-parameters/Main/Run/Shot/BlendSpace2D/blend_position = Vector2(0.001568675, -0.007299304)
+parameters/Main/Run/Shot/BlendSpace2D/blend_position = Vector2(0, 0)
 parameters/Main/Run/Shot/TimeScale/scale = 1.0
 "parameters/Main/Takedown/TD_Take down anim/TimeScale/scale" = 1.2000000000000028
 
