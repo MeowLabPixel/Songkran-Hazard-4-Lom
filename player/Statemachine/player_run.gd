@@ -4,6 +4,8 @@ var is_stopping: bool = false
 var last_input_dir: Vector2 = Vector2.ZERO
 var stop_timer: float = 0.0
 var _linger_anim_speed: float = 1.0
+var blend_reversal_timer: float = 0.0
+const BLEND_REVERSAL_DURATION: float = 0.40
 
 func _enter() -> void:
 	if owner.HP <= 0 or ("pending_die_after_hit" in owner and owner.pending_die_after_hit):
@@ -11,6 +13,7 @@ func _enter() -> void:
 		return
 	is_stopping = false
 	stop_timer = 0.0
+	blend_reversal_timer = 0.0
 	print(name)
 	owner.aim_bone_on(true)
 	
@@ -20,8 +23,9 @@ func _enter() -> void:
 		return
 		
 	set_gun_anim()
-	owner.anim.get(owner.anim_playback).travel("Run")	
-	#gun_anim()
+	owner.anim.get(owner.anim_playback).travel("Run")
+	owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale", 1.0)
+	owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale", 1.0)
 
 func _update(_delta:float) -> void:
 	if owner.HP <= 0 or ("pending_die_after_hit" in owner and owner.pending_die_after_hit):
@@ -51,6 +55,8 @@ func _update(_delta:float) -> void:
 			current_anim_speed = owner.walk_side_anim_speed
 			
 		_linger_anim_speed = current_anim_speed
+		owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale", current_anim_speed)
+		owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale", current_anim_speed)
 			
 		calculate_velocity(current_speed, direction, _delta)
 		
@@ -67,8 +73,21 @@ func _update(_delta:float) -> void:
 		var current_blend_pis = owner.anim.get("parameters/Main/Run/Pis/BlendSpace2D/blend_position") as Vector2
 		var current_blend_shot = owner.anim.get("parameters/Main/Run/Shot/BlendSpace2D/blend_position") as Vector2
 		
-		var new_blend_pis = current_blend_pis.lerp(target_blend, _delta * 12.0)
-		var new_blend_shot = current_blend_shot.lerp(target_blend, _delta * 12.0)
+		# Detect 180° direction reversal (target opposes current blend position)
+		if target_blend.length_squared() > 0.1 and current_blend_pis.length_squared() > 0.1:
+			var dot = target_blend.normalized().dot(current_blend_pis.normalized())
+			if dot < -0.3 and blend_reversal_timer <= 0.0:
+				blend_reversal_timer = BLEND_REVERSAL_DURATION
+
+		var blend_lerp_speed = 12.0
+		if blend_reversal_timer > 0.0:
+			blend_reversal_timer -= _delta
+			var elapsed_t = clampf((BLEND_REVERSAL_DURATION - blend_reversal_timer) / BLEND_REVERSAL_DURATION, 0.0, 1.0)
+			# Gradually accelerate lerp speed from 3.0 (slow plant) -> 18.0 (fast whip into new direction)
+			blend_lerp_speed = lerpf(3.0, 18.0, elapsed_t * elapsed_t)
+
+		var new_blend_pis = current_blend_pis.lerp(target_blend, _delta * blend_lerp_speed)
+		var new_blend_shot = current_blend_shot.lerp(target_blend, _delta * blend_lerp_speed)
 		
 		owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position", new_blend_pis)
 		owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position", new_blend_shot)

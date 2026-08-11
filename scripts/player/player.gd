@@ -494,6 +494,7 @@ func _process(delta: float) -> void:
 			var is_reloading = sm and sm.current_state and sm.current_state.name == "Reload"
 			
 			lean_modifier.is_grab = is_grab
+			lean_modifier.is_action_state = is_in_action
 			
 			if is_reloading:
 				lean_modifier.input_dir = Vector2.ZERO
@@ -519,16 +520,21 @@ func _process(delta: float) -> void:
 				lean_modifier.rotating_in_place_speed = abs(_current_turn_anim_scale)
 				lean_modifier.angular_velocity = _smoothed_angular_velocity
 				lean_modifier.invert_turn_lean = invert_turn_lean
+				lean_modifier.is_quick_turn = is_quick_turn
 
-				# Dynamic velocity-based animation timescale (scaled by directional target speed)
-				if anim and Motion.input_dir != Vector2.ZERO and not is_aimming:
-					var horiz_speed = Vector3(velocity.x, 0.0, velocity.z).length()
-					var active_dir_speed = walk_speed
-					if Motion.input_dir.y > 0.0 or (Motion.input_dir.y == 0.0 and Motion.input_dir.x != 0.0):
-						active_dir_speed = walk_Back_speed
-					var dynamic_ts = clampf(1.2 * (horiz_speed / maxf(active_dir_speed, 0.1)), 0.2, 3.0)
-					anim.set("parameters/Main/Run/Pis/TimeScale/scale", dynamic_ts)
-					anim.set("parameters/Main/Run/Shot/TimeScale/scale", dynamic_ts)
+			# Decelerate physical velocity smoothly during action states to eliminate residual movement jumps on exit
+			if is_in_action and Motion.input_dir == Vector2.ZERO:
+				velocity = velocity.lerp(Vector3.ZERO, delta * 12.0)
+
+			# Dynamic velocity-based animation timescale (scaled by directional target speed)
+			if anim and Motion.input_dir != Vector2.ZERO and not is_aimming:
+				var horiz_speed = Vector3(velocity.x, 0.0, velocity.z).length()
+				var active_dir_speed = walk_speed
+				if Motion.input_dir.y > 0.0 or (Motion.input_dir.y == 0.0 and Motion.input_dir.x != 0.0):
+					active_dir_speed = walk_Back_speed
+				var dynamic_ts = clampf(1.2 * (horiz_speed / maxf(active_dir_speed, 0.1)), 0.2, 3.0)
+				anim.set("parameters/Main/Run/Pis/TimeScale/scale", dynamic_ts)
+				anim.set("parameters/Main/Run/Shot/TimeScale/scale", dynamic_ts)
 
 	_update_skeleton_tilt(delta)
 	_update_aim_target(delta)
@@ -906,18 +912,25 @@ func _physics_process(_delta: float) -> void:
 	var sm = get_node_or_null("Statemachine")
 	if sm and sm.current_state:
 		var s_name = sm.current_state.name
-		if s_name == "Reload" or (s_name == "Grab" and not sm.current_state.get("is_exiting")):
-			# Check if reload state permits movement
-			var block_move = true
-			if s_name == "Reload":
-				var rel_state = sm.current_state
-				var is_pistol_qte = is_instance_valid(rel_state.get("qte_hud")) and rel_state.qte_hud.mode == "qte"
-				if is_pistol_qte and not rel_state.get("block_movement_during_qte"):
-					block_move = false
+		var is_cam_action = camera and camera.has_method("is_action_camera_active") and camera.is_action_camera_active()
+		var is_in_action = is_aimming or is_grab or is_quick_turn or is_cam_action or (s_name != "" and s_name not in ["Idle", "Run", "Walk", "Sprint"])
+
+		if is_in_action:
+			# Decelerate static Motion.velocity as well so exiting Aim/Reload/Action states does not cause a forward velocity jerk!
+			Motion.velocity.x = move_toward(Motion.velocity.x, 0.0, 32.0 * _delta)
+			Motion.velocity.z = move_toward(Motion.velocity.z, 0.0, 32.0 * _delta)
 			
-			if block_move:
-				velocity.x = 0.0
-				velocity.z = 0.0
+			if s_name == "Reload" or (s_name == "Grab" and not sm.current_state.get("is_exiting")) or (is_aimming and Motion.input_dir == Vector2.ZERO) or s_name in ["Get_hit", "Knockdown", "Die", "Takedown"]:
+				var block_move = true
+				if s_name == "Reload":
+					var rel_state = sm.current_state
+					var is_pistol_qte = is_instance_valid(rel_state.get("qte_hud")) and rel_state.qte_hud.mode == "qte"
+					if is_pistol_qte and not rel_state.get("block_movement_during_qte"):
+						block_move = false
+				
+				if block_move:
+					velocity.x = Motion.velocity.x
+					velocity.z = Motion.velocity.z
 		
 	move_and_slide()
 	
@@ -1483,7 +1496,11 @@ func _update_idle_turn_blend(delta: float) -> void:
 		var turn_speed = _smoothed_turn_speed
 		# Hysteresis threshold to prevent jitter when turning mouse slowly
 		var is_turning_now = false
-		if _is_turning:
+		# During Quick Turn, the 180° rotation tween generates massive angular_velocity
+		# from rotation.y delta. Suppress sidestep detection so QT Blend2 stays at 0.0.
+		if current_state_name == "Quick_turn":
+			is_turning_now = false
+		elif _is_turning:
 			is_turning_now = (turn_speed > 0.015)
 		else:
 			is_turning_now = (turn_speed > 0.08)
@@ -1641,20 +1658,23 @@ func _update_idle_turn_blend(delta: float) -> void:
 		anim.set("parameters/Main/Idle/Shot/TimeScale/scale", target_scale)
 
 	# Smoothly update the blend amount in the AnimationTree for QT
+	var qt_lerp_speed = 8.0 if current_state_name == "Quick_turn" else 25.0
 	var current_blend_qt = anim.get("parameters/Main/QT/Pis/Blend2/blend_amount")
 	var new_blend_qt = 0.0
 	if current_blend_qt != null:
-		new_blend_qt = lerp(current_blend_qt, target_blend, delta * 8.0)
+		new_blend_qt = lerp(current_blend_qt, target_blend, delta * qt_lerp_speed)
 		anim.set("parameters/Main/QT/Pis/Blend2/blend_amount", new_blend_qt)
-		anim.set("parameters/Main/QT/Pis/TimeScale/scale", target_scale)
+		var qt_pis_scale = 1.5 if current_state_name == "Quick_turn" else target_scale
+		anim.set("parameters/Main/QT/Pis/TimeScale/scale", qt_pis_scale)
 		anim.set("parameters/Main/QT/Pis/UpperBlend/blend_amount", 1.0)
 		
 	var current_blend_qt_shot = anim.get("parameters/Main/QT/Shot/Blend2/blend_amount")
 	var new_blend_qt_shot = 0.0
 	if current_blend_qt_shot != null:
-		new_blend_qt_shot = lerp(current_blend_qt_shot, target_blend, delta * 8.0)
+		new_blend_qt_shot = lerp(current_blend_qt_shot, target_blend, delta * qt_lerp_speed)
 		anim.set("parameters/Main/QT/Shot/Blend2/blend_amount", new_blend_qt_shot)
-		anim.set("parameters/Main/QT/Shot/TimeScale/scale", target_scale)
+		var qt_shot_scale = 1.5 if current_state_name == "Quick_turn" else target_scale
+		anim.set("parameters/Main/QT/Shot/TimeScale/scale", qt_shot_scale)
 		anim.set("parameters/Main/QT/Shot/UpperBlend/blend_amount", 1.0)
 
 	# Reset state variables when all active turn blends have faded out below 0.02

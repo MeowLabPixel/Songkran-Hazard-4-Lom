@@ -84,5 +84,6 @@ func switch_gun(num:int):
 			#owner.anim.get(anim_node + "playback").travel("Shot")
 
 func stop_moving():
-	var dire = Vector3.ZERO
-	owner.set_velocity_from_motion(dire)
+	Motion.velocity = Vector3.ZERO
+	Motion.input_dir = Vector2.ZERO
+	owner.set_velocity_from_motion(Vector3.ZERO)
