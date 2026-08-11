@@ -102,9 +102,10 @@ func _enter() -> void:
 				if is_instance_valid(owner):
 					var player_target_rot = owner.rotation.y + angle_difference(owner.rotation.y, _target_player_rot_y)
 					var rot_tween := create_tween()
-					rot_tween.set_trans(Tween.TRANS_SINE)
-					rot_tween.set_ease(Tween.EASE_IN_OUT)
-					rot_tween.tween_property(owner, "rotation:y", player_target_rot, dynamic_blend_duration)
+					if rot_tween:
+						rot_tween.set_trans(Tween.TRANS_SINE)
+						rot_tween.set_ease(Tween.EASE_IN_OUT)
+						rot_tween.tween_property(owner, "rotation:y", player_target_rot, dynamic_blend_duration)
 					
 				# Trigger hybrid additive takedown camera sweep (starts at 0.0, sweeps to target_diff, accepts mouse look additively)
 				if cam_node.has_method("trigger_hybrid_takedown_yaw_sweep") and "camera_rotation" in cam_node:

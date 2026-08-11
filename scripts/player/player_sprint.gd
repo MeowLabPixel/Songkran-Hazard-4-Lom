@@ -6,9 +6,6 @@ func _enter() -> void:
 	print(name)
 	owner.aim_bone_on(true)
 	owner.anim.get(owner.anim_playback).travel("Run")	
-
-	owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale", owner.sprint_anim_speed)
-	owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale", owner.sprint_anim_speed)
 	
 	var camera_node = owner.get_node_or_null("Camera")
 	if camera_node and camera_node.has_method("enter_sprint"):
@@ -26,26 +23,32 @@ func _update(_delta:float) -> void:
 		return
 	calculate_velocity(owner.run_speed,direction,_delta)
 	
-	var target_blend = Vector2(input_dir.x, -input_dir.y)
+	# Velocity-Driven BlendSpace2D blending (1-to-1 sync with physical character momentum)
+	var player_basis = owner.global_transform.basis
+	var local_vel = player_basis.inverse() * velocity
+	var ref_speed_z = maxf(owner.run_speed if local_vel.z < 0.0 else owner.walk_Back_speed, 0.1)
+	var ref_speed_x = maxf(owner.walk_Back_speed, 0.1)
+	var target_blend = Vector2(
+		clampf(local_vel.x / ref_speed_x, -1.0, 1.0),
+		clampf(-local_vel.z / ref_speed_z, -1.0, 1.0)
+	)
+	
 	var current_blend_pis = owner.anim.get("parameters/Main/Run/Pis/BlendSpace2D/blend_position") as Vector2
 	var current_blend_shot = owner.anim.get("parameters/Main/Run/Shot/BlendSpace2D/blend_position") as Vector2
 	
-	var new_blend_pis = current_blend_pis.lerp(target_blend, _delta * 10.0)
-	var new_blend_shot = current_blend_shot.lerp(target_blend, _delta * 10.0)
+	var new_blend_pis = current_blend_pis.lerp(target_blend, _delta * 12.0)
+	var new_blend_shot = current_blend_shot.lerp(target_blend, _delta * 12.0)
 	
 	owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position", new_blend_pis)
 	owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position", new_blend_shot)
 	#owner.anim.get("parameters/Main/Run/Pis/BlendSpace2D/blend_position").set(direction)
 	D=_delta
 	if direction == Vector3.ZERO:
-		finished.emit("Idle")
+		finished.emit("Run")
 	if owner.HP <= 0:
 		finished.emit("Die")
 		
 func _exit() -> void:
-	owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale", owner.walk_anim_speed)
-	owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale", owner.walk_anim_speed)
-	
 	var camera_node = owner.get_node_or_null("Camera")
 	if camera_node and camera_node.has_method("exit_sprint"):
 		camera_node.exit_sprint()
