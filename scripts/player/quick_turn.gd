@@ -21,14 +21,12 @@ func _enter() -> void:
 	if owner.anim:
 		owner.anim.set("parameters/Main/QT/Pis/TimeScale/scale", 1.5)
 		owner.anim.set("parameters/Main/QT/Shot/TimeScale/scale", 1.5)
-		# Force-reset QT Blend2 to 0.0 so the sidestep layer starts clean
-		owner.anim.set("parameters/Main/QT/Pis/Blend2/blend_amount", 0.0)
-		owner.anim.set("parameters/Main/QT/Shot/Blend2/blend_amount", 0.0)
-	# Reset idle turn state so the 180° tween rotation doesn't activate sidestepping
-	owner._is_turning = false
+		owner.anim.set("parameters/Main/QT/Pis/Blend2/blend_amount", 1.0)
+		owner.anim.set("parameters/Main/QT/Shot/Blend2/blend_amount", 1.0)
+	owner._is_turning = true
 	owner._is_returning_to_neutral = false
-	owner._turn_direction = 0.0
-	owner._peak_blend = 0.0
+	owner._turn_direction = -1.0
+	owner._peak_blend = 1.0
 	SoundManager.play_3d("leon_quickturn", owner)
 	if owner.anim.get(owner.anim_playback).get_current_node() != "QT":
 		owner.anim.get(owner.anim_playback).travel("QT")
@@ -53,6 +51,14 @@ func _exit() -> void:
 	# Cleanly reset movement velocity and BlendSpace2D positions on exit to guarantee smooth foot blending
 	Motion.velocity = Vector3.ZERO
 	if owner.anim:
+		# Pre-synchronize Idle's Blend2 to match QT's Blend2 so both nodes have identical leg poses during crossfade!
+		var c_blend_qt = owner.anim.get("parameters/Main/QT/Pis/Blend2/blend_amount")
+		if c_blend_qt != null:
+			owner.anim.set("parameters/Main/Idle/Pis/Blend2/blend_amount", c_blend_qt)
+		var c_blend_qt_shot = owner.anim.get("parameters/Main/QT/Shot/Blend2/blend_amount")
+		if c_blend_qt_shot != null:
+			owner.anim.set("parameters/Main/Idle/Shot/Blend2/blend_amount", c_blend_qt_shot)
+			
 		owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position", Vector2.ZERO)
 		owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position", Vector2.ZERO)
 		owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale", 1.0)

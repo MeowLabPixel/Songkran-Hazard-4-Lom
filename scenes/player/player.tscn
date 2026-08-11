@@ -50,6 +50,19 @@
 [ext_resource type="Script" uid="uid://dxr0w5vn4oq5s" path="res://player/test/UI.gd" id="40_jfgyi"]
 [ext_resource type="Script" uid="uid://capeimnw2ecqx" path="res://scripts/ui/procedural_crosshair.gd" id="41_procedural_crosshair"]
 
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1u1sw"]
+sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+
+[sub_resource type="Sky" id="Sky_2t3bg"]
+sky_material = SubResource("ProceduralSkyMaterial_1u1sw")
+
+[sub_resource type="Environment" id="Environment_jrbya"]
+background_mode = 2
+sky = SubResource("Sky_2t3bg")
+tonemap_mode = 2
+glow_enabled = true
+
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jfgyi"]
 radius = 0.24511719
 height = 1.6469727
@@ -5687,10 +5700,8 @@ floor_stop_on_slope = false
 floor_max_angle = 1.2217305
 floor_snap_length = 0.5
 script = ExtResource("1_4eg07")
-walk_Back_speed = 2.0
 quick_turn_speed = 0.4
 quick_turn_cooldown_duration = 0.33
-run_speed = 4.0
 aim_bone = NodePath("Re4Lom Base Rig/rig/Skeleton3D/ArmLookAt")
 aim_bone2 = NodePath("Re4Lom Base Rig/rig/Skeleton3D/SpineLookAt")
 anim = NodePath("AnimationTree")
@@ -5710,6 +5721,9 @@ crosshair_texture = ExtResource("2_e7oew")
 min_scale = 0.02
 max_scale = 0.3
 aim_visual_offset = Vector3(0.4, 0.7, 0)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=73981276]
+environment = SubResource("Environment_jrbya")
 
 [node name="NavigationAgent3D" type="NavigationAgent3D" parent="." unique_id=1029335132]
 path_desired_distance = 0.1
@@ -7658,7 +7672,7 @@ bone_idx = 4
 [node name="TakedownHitbox" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox" unique_id=958867971]
 
 [node name="TakedownAttackBox" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=1184713375]
-transform = Transform3D(0.031009449, 0.7687627, -0.6387815, -0.9525332, -0.17091237, -0.25193122, -0.30285102, 0.61627203, 0.7269732, 0.586274, -0.14511234, 0.42287216)
+transform = Transform3D(0.031009447, 0.76876265, -0.6387815, -0.9525331, -0.17091236, -0.25193122, -0.30285102, 0.616272, 0.7269732, 0.586274, -0.14511234, 0.42287216)
 shape = SubResource("CapsuleShape3D_ntd1s")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=315213988]

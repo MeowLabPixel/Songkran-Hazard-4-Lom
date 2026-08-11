@@ -1499,7 +1499,7 @@ func _update_idle_turn_blend(delta: float) -> void:
 		# During Quick Turn, the 180° rotation tween generates massive angular_velocity
 		# from rotation.y delta. Suppress sidestep detection so QT Blend2 stays at 0.0.
 		if current_state_name == "Quick_turn":
-			is_turning_now = false
+			is_turning_now = true
 		elif _is_turning:
 			is_turning_now = (turn_speed > 0.015)
 		else:
@@ -1516,6 +1516,8 @@ func _update_idle_turn_blend(delta: float) -> void:
 					_turn_direction = 1.0 # Left
 				elif angular_velocity < -0.01:
 					_turn_direction = -1.0 # Right
+				else:
+					_turn_direction = -1.0 # Default right for QuickTurn
 			else:
 				# Opposing threshold to change direction
 				if _turn_direction == 1.0 and angular_velocity < -0.1:
@@ -1526,6 +1528,11 @@ func _update_idle_turn_blend(delta: float) -> void:
 			# Speed mult: 0.6 at minimum (slow turn) up to 1.2 at max turn speed.
 			var speed_mult = clamp(0.6 + _smoothed_turn_speed * turn_speed_scale_factor, 0.6, 1.2)
 			var scale_magnitude = turn_anim_speed * speed_mult
+			if current_state_name == "Quick_turn":
+				# Calculate target_scale so 1 full step (0.53s animation time) finishes exactly as the 180° rotation completes
+				var sync_scale = 0.53 / max(quick_turn_speed, 0.1)
+				speed_mult = sync_scale / max(turn_anim_speed, 0.1)
+				scale_magnitude = sync_scale
 			_last_speed_mult = speed_mult
 			_linger_speed_mult = speed_mult  # track live; will decay slowly once stop step begins
 			
@@ -1535,7 +1542,7 @@ func _update_idle_turn_blend(delta: float) -> void:
 			
 			if not _is_turning:
 				_is_turning = true
-				_peak_blend = 0.0
+				_peak_blend = 1.0
 				_trigger_turn_seek()
 				
 			target_blend = 1.0
@@ -1643,17 +1650,18 @@ func _update_idle_turn_blend(delta: float) -> void:
 			_trigger_turn_seek()
 
 	# Smoothly update the blend amount in the AnimationTree for Idle
+	var idle_lerp_speed = 25.0 if (current_state_name != "Quick_turn" and _last_active_turn_state == "Quick_turn") else 8.0
 	var current_blend = anim.get("parameters/Main/Idle/Pis/Blend2/blend_amount")
 	var new_blend = 0.0
 	if current_blend != null:
-		new_blend = lerp(current_blend, target_blend, delta * 8.0)
+		new_blend = lerp(current_blend, target_blend, delta * idle_lerp_speed)
 		anim.set("parameters/Main/Idle/Pis/Blend2/blend_amount", new_blend)
 		anim.set("parameters/Main/Idle/Pis/TimeScale/scale", target_scale)
 		
 	var current_blend_shot = anim.get("parameters/Main/Idle/Shot/Blend2/blend_amount")
 	var new_blend_shot = 0.0
 	if current_blend_shot != null:
-		new_blend_shot = lerp(current_blend_shot, target_blend, delta * 8.0)
+		new_blend_shot = lerp(current_blend_shot, target_blend, delta * idle_lerp_speed)
 		anim.set("parameters/Main/Idle/Shot/Blend2/blend_amount", new_blend_shot)
 		anim.set("parameters/Main/Idle/Shot/TimeScale/scale", target_scale)
 
@@ -1676,6 +1684,19 @@ func _update_idle_turn_blend(delta: float) -> void:
 		var qt_shot_scale = 1.5 if current_state_name == "Quick_turn" else target_scale
 		anim.set("parameters/Main/QT/Shot/TimeScale/scale", qt_shot_scale)
 		anim.set("parameters/Main/QT/Shot/UpperBlend/blend_amount", 1.0)
+
+	# Continuous frame-by-frame TimeSeek sync across both Idle and QT nodes
+	# to guarantee zero phase offset or pose snap during crossfade transitions
+	if _is_turning and target_scale != 0.0:
+		var seek_paths = [
+			"parameters/Main/Idle/Pis/TimeSeek/seek_request",
+			"parameters/Main/Idle/Shot/TimeSeek/seek_request",
+			"parameters/Main/QT/Pis/TimeSeek/seek_request",
+			"parameters/Main/QT/Shot/TimeSeek/seek_request"
+		]
+		for spath in seek_paths:
+			if anim.get(spath) != null:
+				anim.set(spath, _anim_time)
 
 	# Reset state variables when all active turn blends have faded out below 0.02
 	if _is_turning:
