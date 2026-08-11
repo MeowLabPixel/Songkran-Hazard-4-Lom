@@ -3,7 +3,7 @@ class_name Motion
 signal velocity_updated(vel:Vector3)
 const SPEED: float = 5.0
 const SPEED_sprint: float = 8.0
-const acceleration: float = 32.0
+const acceleration:float = 1000
 const Gravity: float = 9.8
 
 static var input_dir: Vector2 = Vector2.ZERO
@@ -74,21 +74,8 @@ func set_direction() -> void:
 		direction = owner.global_transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)
 
 func calculate_velocity(_speed:float,_direction: Vector3,delta:float)->void:
-	var horiz_vel = Vector3(velocity.x, 0.0, velocity.z)
-	var active_accel = acceleration
-	
-	# Detect direction changes (180-degree reversal vs 90-degree turn)
-	if _direction != Vector3.ZERO and horiz_vel.length_squared() > 0.5:
-		var dir_dot = _direction.normalized().dot(horiz_vel.normalized())
-		if dir_dot < -0.4:
-			# 180-degree reversal: Full physical deceleration (20.0 m/s^2) for footstep pivot inertia
-			active_accel = 20.0
-		elif abs(dir_dot) < 0.4:
-			# 90-degree turn: Half-strength physical deceleration (26.0 m/s^2) for crisp pivot inertia
-			active_accel = 26.0
-
-	velocity.x = move_toward(velocity.x,_direction.x*_speed,active_accel*delta)
-	velocity.z = move_toward(velocity.z,_direction.z*_speed,active_accel*delta)
+	velocity.x = move_toward(velocity.x,_direction.x*_speed,acceleration*delta)
+	velocity.z = move_toward(velocity.z,_direction.z*_speed,acceleration*delta)
 	velocity_updated.emit(velocity)
 	
 func calculate_gravity(delta:float) -> void:

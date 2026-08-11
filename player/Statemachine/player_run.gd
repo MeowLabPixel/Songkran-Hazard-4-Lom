@@ -46,7 +46,7 @@ func _update(_delta:float) -> void:
 		if input_dir.y > 0.0:
 			current_speed = owner.walk_Back_speed
 			current_anim_speed = owner.walk_back_anim_speed
-		elif input_dir.y == 0.0 and input_dir.x != 0.0:
+		elif input_dir.x != 0.0:
 			current_speed = owner.walk_Back_speed
 			current_anim_speed = owner.walk_side_anim_speed
 			
@@ -54,41 +54,35 @@ func _update(_delta:float) -> void:
 			
 		calculate_velocity(current_speed, direction, _delta)
 		
-		# Velocity-Driven BlendSpace2D blending (1-to-1 sync with physical character momentum)
-		var player_basis = owner.global_transform.basis
-		var local_vel = player_basis.inverse() * velocity
-		var ref_speed_z = maxf(owner.walk_speed if local_vel.z < 0.0 else owner.walk_Back_speed, 0.1)
-		var ref_speed_x = maxf(owner.walk_Back_speed, 0.1)
-		var target_blend = Vector2(
-			clampf(local_vel.x / ref_speed_x, -1.0, 1.0),
-			clampf(-local_vel.z / ref_speed_z, -1.0, 1.0)
-		)
+		owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale", current_anim_speed)
+		owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale", current_anim_speed)
 		
+		var target_blend = Vector2(input_dir.x, -input_dir.y)
 		var current_blend_pis = owner.anim.get("parameters/Main/Run/Pis/BlendSpace2D/blend_position") as Vector2
 		var current_blend_shot = owner.anim.get("parameters/Main/Run/Shot/BlendSpace2D/blend_position") as Vector2
 		
-		var new_blend_pis = current_blend_pis.lerp(target_blend, _delta * 12.0)
-		var new_blend_shot = current_blend_shot.lerp(target_blend, _delta * 12.0)
+		var new_blend_pis = current_blend_pis.lerp(target_blend, _delta * 10.0)
+		var new_blend_shot = current_blend_shot.lerp(target_blend, _delta * 10.0)
 		
 		owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position", new_blend_pis)
 		owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position", new_blend_shot)
 	else:
 		if not is_stopping:
 			is_stopping = true
-			stop_timer = 0.22 # Stopping step duration in seconds
+			stop_timer = 0.15 # Stopping step duration in seconds
 			
 		stop_timer -= _delta
 		if stop_timer <= 0.0:
 			finished.emit("Idle")
 			return
 			
-		# Smooth AAA-style physical velocity deceleration (footstep inertia)
-		velocity.x = lerpf(velocity.x, 0.0, _delta * 9.0)
-		velocity.z = lerpf(velocity.z, 0.0, _delta * 9.0)
+		# Smooth physical deceleration
+		velocity.x = lerpf(velocity.x, 0.0, _delta * 20.0)
+		velocity.z = lerpf(velocity.z, 0.0, _delta * 20.0)
 		velocity_updated.emit(velocity)
 		
 		# Smooth animation deceleration
-		var decay_speed = lerpf(0.0, _linger_anim_speed, clamp(stop_timer / 0.22, 0.0, 1.0))
+		var decay_speed = lerpf(0.0, _linger_anim_speed, stop_timer / 0.15)
 		owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale", decay_speed)
 		owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale", decay_speed)
 		

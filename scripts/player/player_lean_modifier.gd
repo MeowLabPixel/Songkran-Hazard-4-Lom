@@ -7,7 +7,6 @@ class_name PlayerLeanModifier
 @export var max_backward_tilt_angle: float = 5.0 # in degrees
 @export var tilt_speed: float = 10.0
 @export var sprint_tilt_multiplier: float = 1.5 # extra tilt multiplier when sprinting
-@export var invert_turn_lean: bool = false # Toggle to invert turning lean direction
 
 @export_group("Body Bobbing")
 @export var bobbing_amount: float = 0.015
@@ -36,30 +35,13 @@ class_name PlayerLeanModifier
 @export var right_arm_outward_x_offset: float = -0.3 # when leaning right (moving left)
 @export var right_arm_extra_z_offset: float = -0.3
 
-var current_velocity: Vector3 = Vector3.ZERO
-var prev_local_velocity: Vector3 = Vector3.ZERO
-var prev_input_dir: Vector2 = Vector2.ZERO
-
-@export_group("Acceleration & Stopping Lean Settings")
-@export var acceleration_tilt_sensitivity: float = 0.06 # Radians of tilt per m/s^2 of acceleration
-@export var stopping_cubic_overshoot_amount: float = 0.08 # Radians of initial cubic overshoot on stop
-
-var stop_momentum_timer: float = 0.0
-var stop_momentum_duration: float = 0.30
-var stop_momentum_dir: Vector2 = Vector2.ZERO
-var stop_was_sprinting: bool = false
-
 var input_dir: Vector2 = Vector2.ZERO
-var _smooth_input_dir: Vector2 = Vector2.ZERO
-var _smooth_local_accel: Vector3 = Vector3.ZERO
 var is_sprinting: bool = false
-var sprint_transition_factor: float = 0.0
 var is_aiming: bool = false
 var is_reloading: bool = false
 var is_rotating_in_place: bool = false
 var is_grab: bool = false
 var rotating_in_place_speed: float = 0.0
-var angular_velocity: float = 0.0
 var current_tilt_x: float = 0.0
 var current_tilt_z: float = 0.0
 var _debug_non_zero_printed: bool = false
@@ -125,148 +107,28 @@ func _process_modification() -> void:
 	if delta <= 0.0:
 		delta = 0.016 # fallback
 
-	# Smooth input vector to eliminate digital snap discontinuities when changing keys
-	_smooth_input_dir = _smooth_input_dir.lerp(input_dir, delta * 12.0)
+	# Calculate base tilts based on input
+	var active_max_tilt = max_tilt_angle
+	var active_backward_tilt = max_backward_tilt_angle
+	if is_sprinting:
+		active_max_tilt *= sprint_tilt_multiplier
+		active_backward_tilt *= sprint_tilt_multiplier
 
-	# 1. Base input tilt (smooth continuous sprint ramping: 6.0 deg walk -> 9.0 deg sprint)
-	var target_sprint_factor = 1.0 if is_sprinting else 0.0
-	sprint_transition_factor = lerpf(sprint_transition_factor, target_sprint_factor, delta * 5.0)
-	var current_sprint_mult = lerpf(1.0, sprint_tilt_multiplier, sprint_transition_factor)
-
-	var active_max_tilt = max_tilt_angle * current_sprint_mult
-	var active_backward_tilt = max_backward_tilt_angle * current_sprint_mult
-
-	# 2. Local Velocity & Turning Velocity Symmetrical Base Pitch and Base Roll (100% Symmetrical ON/OFF Magnitude)
-	var player_basis = skeleton.global_transform.basis
-	var local_vel = player_basis.inverse() * current_velocity
-	
-	var ref_speed_z = 3.0 if local_vel.z < 0.0 else 2.0
-	var ref_speed_x = 2.0
-	var vel_ratio_z = clampf(-local_vel.z / ref_speed_z, -1.2, 1.2) # Positive = forward velocity
-
-	var base_pitch = 0.0
-	if vel_ratio_z > 0.0:
-		base_pitch = deg_to_rad(-vel_ratio_z * active_max_tilt * 0.80) # Negative pitch = Forward Lean!
-	else:
-		base_pitch = deg_to_rad(-vel_ratio_z * active_backward_tilt) # Positive pitch = Backward Lean!
-
-	# Symmetrical lateral velocity and turning velocity combination (Equal angle width for ON and OFF)
-	var turn_sign = 1.0 if invert_turn_lean else -1.0
-	var pure_turn_roll = deg_to_rad(clampf(angular_velocity * turn_sign * 1.5, -active_max_tilt, active_max_tilt))
-	
-	var phys_vel_ratio_x = clampf(-local_vel.x / ref_speed_x, -1.2, 1.2)
-	var phys_roll = deg_to_rad(phys_vel_ratio_x * active_max_tilt)
-	if invert_turn_lean:
-		phys_roll = -phys_roll
-
-	# Blend physical movement roll and pure turning roll symmetrically
-	var move_weight = clampf(Vector3(local_vel.x, 0.0, local_vel.z).length() / 2.0, 0.0, 1.0)
-	var base_roll = lerpf(pure_turn_roll, phys_roll + pure_turn_roll * 0.3, move_weight)
-	base_roll = clampf(base_roll, deg_to_rad(-active_max_tilt * 1.2), deg_to_rad(active_max_tilt * 1.2))
-
-	# Hold & Release Direction Reversal Lean Inertia:
-	# Holds momentum lean while physical velocity decelerates through pivot, releasing smoothly into new direction as velocity crosses zero
-	if abs(_smooth_input_dir.y) > 0.1 and abs(local_vel.z) > 0.3:
-		var vel_input_sign = -1.0 if local_vel.z < 0.0 else 1.0
-		if sign(_smooth_input_dir.y) != sign(vel_input_sign):
-			var momentum_pitch = deg_to_rad(-active_max_tilt * 0.80) if local_vel.z < 0.0 else deg_to_rad(active_backward_tilt)
-			var hold_weight = lerpf(0.0, 1.0, abs(local_vel.z) / 3.0)
-			base_pitch = lerpf(base_pitch, momentum_pitch, hold_weight)
-
-	if abs(_smooth_input_dir.x) > 0.1 and abs(local_vel.x) > 0.3:
-		var vel_side_sign = -1.0 if local_vel.x < 0.0 else 1.0
-		if sign(_smooth_input_dir.x) != sign(vel_side_sign):
-			var momentum_roll = deg_to_rad(active_max_tilt) if local_vel.x < 0.0 else deg_to_rad(-active_max_tilt)
-			var hold_weight = lerpf(0.0, 1.0, abs(local_vel.x) / 3.0)
-			base_roll = lerpf(base_roll, momentum_roll, hold_weight)
-
-	# 3. Additive Local Acceleration Boost (lerp-filtered to eliminate spike noise)
-	var raw_local_accel = Vector3.ZERO
-	if delta > 0.001:
-		raw_local_accel = (local_vel - prev_local_velocity) / delta
-	prev_local_velocity = local_vel
-	_smooth_local_accel = _smooth_local_accel.lerp(raw_local_accel, delta * 8.0)
-
-	# Additive acceleration pitch and roll boost (Extra momentum lean when accelerating)
-	var accel_forward = -_smooth_local_accel.z
-	var add_accel_pitch = deg_to_rad(-accel_forward * 0.20) if accel_forward > 0.0 else 0.0
-	var add_accel_roll = deg_to_rad(-_smooth_local_accel.x * 0.15)
-
-	# 4. High-Visibility Additive Stopping Overshoot Impulse (Float-tolerant direction change detection)
-	var is_180_reversal = (
-		input_dir.y != 0.0 
-		and prev_input_dir.y != 0.0 
-		and sign(input_dir.y) != sign(prev_input_dir.y)
-	)
-	var is_90_change = (
-		input_dir != Vector2.ZERO 
-		and prev_input_dir != Vector2.ZERO 
-		and abs(input_dir.dot(prev_input_dir)) < 0.2
-	)
-
-	if input_dir != Vector2.ZERO and not is_180_reversal and not is_90_change:
-		# Capture live moving tilt state while moving
-		stop_momentum_dir = Vector2(current_tilt_x, current_tilt_z)
-		stop_was_sprinting = is_sprinting
-		if stop_momentum_dir.length_squared() < 0.0001:
-			stop_momentum_dir = Vector2(base_pitch, base_roll)
-		stop_momentum_timer = 0.0 # Clear stopping timer whenever normal active input is present
-	elif is_180_reversal and stop_momentum_dir.length_squared() > 0.0001:
-		stop_momentum_duration = 0.30
-		stop_momentum_timer = 0.30 # Full duration / 180-deg reversal pivot plant (100% impulse)
-	elif is_90_change and stop_momentum_dir.length_squared() > 0.0001:
-		stop_momentum_duration = 0.15
-		stop_momentum_timer = 0.15 # Half duration / 90-deg turn pivot plant (50% impulse)
-	elif input_dir == Vector2.ZERO and prev_input_dir != Vector2.ZERO and stop_momentum_dir.length_squared() > 0.0001:
-		stop_momentum_duration = 0.30
-		stop_momentum_timer = 0.30 # Duration of footstep stopping step
-	prev_input_dir = input_dir
-
-	var stopping_overshoot_x = 0.0
-	var stopping_overshoot_z = 0.0
-	var is_stopping_active = false
-	if stop_momentum_timer > 0.0:
-		stop_momentum_timer -= delta
-		is_stopping_active = true
-		var duration = maxf(stop_momentum_duration, 0.05)
-		var elapsed_t = clampf((duration - stop_momentum_timer) / duration, 0.0, 1.0)
-		# Pulse shape starting at 1.0 (running lean), overshooting to 1.50 (+50% extra impulse) at initial footstep plant, decaying to 0.0
-		var impulse_bump = sin(elapsed_t * PI) * 0.50
-		var decay_fade = cos(elapsed_t * PI * 0.5)
-		var overshoot_factor = (1.0 + impulse_bump) * decay_fade
+	var target_tilt_x = 0.0
+	if input_dir.y < 0.0:
+		target_tilt_x = deg_to_rad(-input_dir.y * active_max_tilt)
+	elif input_dir.y > 0.0:
+		target_tilt_x = deg_to_rad(-input_dir.y * active_backward_tilt)
 		
-		stopping_overshoot_x = stop_momentum_dir.x * overshoot_factor
-		stopping_overshoot_z = stop_momentum_dir.y * overshoot_factor
-
-	# 5. Pure Additive Target Tilt Combination (100% Unified Formula)
-	var active_tilt_x = base_pitch + add_accel_pitch
-	var active_tilt_z = base_roll + add_accel_roll
-
-	var input_weight = clampf(_smooth_input_dir.length(), 0.0, 1.0)
-	var target_tilt_x = lerpf(stopping_overshoot_x, active_tilt_x, input_weight) * spine_tilt_multiplier
-	var target_tilt_z = lerpf(stopping_overshoot_z, active_tilt_z, input_weight) * spine_tilt_multiplier
-
-	# Soft tilt boundary damping via lerpf (+/- 16 degrees safety boundary)
-	var max_allowed_rad = deg_to_rad(16.0)
-	if abs(target_tilt_x) > max_allowed_rad:
-		target_tilt_x = lerpf(target_tilt_x, sign(target_tilt_x) * max_allowed_rad, delta * 10.0)
-	if abs(target_tilt_z) > max_allowed_rad:
-		target_tilt_z = lerpf(target_tilt_z, sign(target_tilt_z) * max_allowed_rad, delta * 10.0)
-
+	var target_tilt_z = deg_to_rad(input_dir.x * active_max_tilt)
+	
 	if is_aiming:
 		target_tilt_x = 0.0
 		target_tilt_z = 0.0
-		stop_momentum_timer = 0.0
 
-	# Smoothly interpolate current tilts toward target with continuous lerp speed ramp
-	var active_tilt_speed = tilt_speed
-	if is_stopping_active:
-		var duration = maxf(stop_momentum_duration, 0.05)
-		var elapsed_t = clampf((duration - stop_momentum_timer) / duration, 0.0, 1.0)
-		var speed_multiplier = lerpf(3.5, 1.1, elapsed_t) # Smooth decay from peak impulse speed to settle speed
-		active_tilt_speed = tilt_speed * speed_multiplier
-	current_tilt_x = lerp_angle(current_tilt_x, target_tilt_x, delta * active_tilt_speed)
-	current_tilt_z = lerp_angle(current_tilt_z, target_tilt_z, delta * active_tilt_speed)
+	# Smoothly interpolate the tilts
+	current_tilt_x = lerp_angle(current_tilt_x, target_tilt_x, delta * tilt_speed)
+	current_tilt_z = lerp_angle(current_tilt_z, target_tilt_z, delta * tilt_speed)
 
 	if not _debug_non_zero_printed and input_dir != Vector2.ZERO:
 		_debug_non_zero_printed = true
