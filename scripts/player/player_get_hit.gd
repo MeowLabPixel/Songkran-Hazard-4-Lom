@@ -164,10 +164,16 @@ func _update(delta: float) -> void:
 		
 	owner.velocity = velocity
 	
-	# Transition to Run or Idle when hit animation finishes (allowing natural transition to Idle/Run before Die)
+	# Transition when hit animation finishes via input queuing check
 	if _anim_finished:
+		var is_aim = Input.is_action_pressed("aim")
+		if is_aim and is_instance_valid(owner) and owner.has_method("can_aim") and owner.can_aim():
+			owner.aim_blocked_until_release = false
+			finished.emit("Aim")
+			return
 		var raw_input = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-		if raw_input.length() > 0.1:
+		var is_move = raw_input.length() > 0.1 or Input.is_action_pressed("ui_up") or Input.is_action_pressed("ui_down") or Input.is_action_pressed("ui_left") or Input.is_action_pressed("ui_right")
+		if is_move:
 			finished.emit("Run")
 		else:
 			finished.emit("Idle")

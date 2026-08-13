@@ -86,10 +86,16 @@ var _takedown_duck_roll: bool = false
 
 var zombie_reaction_state: String = "none"
 var zombie_reaction_timer: float = 0.0
+var duck_cooldown_timer: float = 0.0
+var trigger_post_getup_jink: bool = false
+@export var duck_cooldown_duration: float = 4.0
 @export var zombie_reaction_cooldown: float = 2.5
 @export var reaction_chance_duck: float = 0.30
 @export var reaction_chance_evade: float = 0.40
 # The remaining percentage will be used for "back_up"
+
+func start_duck_cooldown() -> void:
+	duck_cooldown_timer = duck_cooldown_duration
 
 ## Set by states when Anchalee is stuck.
 var is_cornered: bool = false:
@@ -326,6 +332,9 @@ func _physics_process(delta: float) -> void:
 		if zombie_reaction_timer <= 0.0:
 			zombie_reaction_state = "none"
 			
+	if duck_cooldown_timer > 0.0:
+		duck_cooldown_timer -= delta
+			
 	if is_dead: return
 	
 	if nav_agent:
@@ -494,6 +503,38 @@ func get_threat_count() -> int:
 				
 	nearby_threats = valid_threats
 	return count
+
+func get_rear_threat_behind_player(prep_range: float = 4.0) -> Node3D:
+	var player = get_player()
+	if not player or not is_instance_valid(self): return null
+	var player_forward = -player.global_transform.basis.z
+	player_forward.y = 0.0
+	if player_forward.length() < 0.01: return null
+	player_forward = player_forward.normalized()
+	
+	var closest_threat: Node3D = null
+	var closest_dist: float = prep_range
+	
+	for threat in nearby_threats:
+		if not is_instance_valid(threat) or threat.is_queued_for_deletion() or threat.is_defeated:
+			continue
+		var sm = threat.state_machine
+		if sm and sm.current_state:
+			var state_name = sm.current_state.name.to_lower()
+			if "hit" in state_name or "defeated" in state_name or "stun" in state_name or "push" in state_name or "takedown" in state_name or "knockdown" in state_name or "getup" in state_name or "get_up" in state_name:
+				continue
+				
+		var to_threat = threat.global_position - player.global_position
+		to_threat.y = 0.0
+		var dist = to_threat.length()
+		if dist <= prep_range:
+			to_threat = to_threat.normalized()
+			# Dot product < -0.2 means zombie is in the rear 120° arc behind player's facing direction
+			if player_forward.dot(to_threat) < -0.2:
+				if dist < closest_dist:
+					closest_dist = dist
+					closest_threat = threat
+	return closest_threat
 
 func _distance_to_segment(p: Vector3, a: Vector3, b: Vector3) -> float:
 	var ab = b - a

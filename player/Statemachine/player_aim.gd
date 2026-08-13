@@ -13,7 +13,7 @@ func _enter() -> void:
 
 	if not Input.is_action_pressed("aim") :
 		owner.is_aimming = false
-		finished.emit("Idle")
+		_evaluate_queued_exit()
 
 func _update(_delta:float) -> void:
 	if owner.HP <= 0:
@@ -41,7 +41,7 @@ func _state_input(_event: InputEvent) -> void:
 		finished.emit("Quick_turn")
 	if Input.is_action_just_released("aim") :
 		owner.is_aimming = false
-		finished.emit("Idle")
+		_evaluate_queued_exit()
 	if Input.is_action_just_pressed("Reload") :
 		var gun = owner.gun_controller.current_gun
 		var is_pistol = gun and (gun.gun_name == "Water pistol" or owner.gun_controller.current_gun_index == 0)
@@ -82,6 +82,13 @@ func switch_gun(num:int):
 		#owner.anim.set(anim_node + "conditions/shot",true)
 		#if owner.anim.get(anim_node + "playback").get_current_node() != "Shot":
 			#owner.anim.get(anim_node + "playback").travel("Shot")
+
+func _evaluate_queued_exit() -> void:
+	var is_move = Input.is_action_pressed("ui_up") or Input.is_action_pressed("ui_down") or Input.is_action_pressed("ui_left") or Input.is_action_pressed("ui_right") or (typeof(Motion) != TYPE_NIL and Motion.input_dir != Vector2.ZERO)
+	if is_move:
+		finished.emit("Run")
+	else:
+		finished.emit("Idle")
 
 func stop_moving():
 	Motion.velocity = Vector3.ZERO

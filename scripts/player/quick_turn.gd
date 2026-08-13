@@ -158,8 +158,7 @@ func anim_done(namee: String):
 		namee.ends_with("Shot")
 	)
 	if not _exited and is_qt_anim:
-		var next_state = "Run" if Motion.input_dir != Vector2.ZERO else "Idle"
-		finished.emit(next_state)
+		_evaluate_queued_exit()
 
 func _qt_fallback_timeout() -> void:
 	if not _exited:
@@ -167,8 +166,19 @@ func _qt_fallback_timeout() -> void:
 			owner.camera.camera_rotation.x = -owner.rotation.y
 			owner.camera.target_camera_rotation.x = -owner.rotation.y
 		owner.is_quick_turn = false
-		var next_state = "Run" if Motion.input_dir != Vector2.ZERO else "Idle"
-		finished.emit(next_state)
+		_evaluate_queued_exit()
+
+func _evaluate_queued_exit() -> void:
+	var is_aim = Input.is_action_pressed("aim")
+	if is_aim and is_instance_valid(owner) and owner.has_method("can_aim") and owner.can_aim():
+		owner.aim_blocked_until_release = false
+		finished.emit("Aim")
+		return
+	var is_move = Input.is_action_pressed("ui_up") or Input.is_action_pressed("ui_down") or Input.is_action_pressed("ui_left") or Input.is_action_pressed("ui_right") or (typeof(Motion) != TYPE_NIL and Motion.input_dir != Vector2.ZERO)
+	if is_move:
+		finished.emit("Run")
+	else:
+		finished.emit("Idle")
 
 func stop_moving():
 	Motion.velocity = Vector3.ZERO

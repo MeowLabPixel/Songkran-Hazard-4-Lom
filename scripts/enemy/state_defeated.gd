@@ -39,7 +39,7 @@ func enter() -> void:
 		enemy.move_and_slide()
 		enemy.show() # Ensure the enemy is visible when re-pooling/starting
 		enemy.collision_layer = 0
-		enemy.collision_mask = 0
+		enemy.collision_mask = 1 # Keep environment/floor collision active (Layer 1)
 		if nav_agent:
 			nav_agent.avoidance_enabled = false
 		
@@ -61,6 +61,11 @@ func physics_update(_delta: float) -> void:
 		return
 
 	if not _walking:
+		if not enemy.is_on_floor():
+			enemy.velocity.y -= 9.8 * _delta
+			enemy.move_and_slide()
+		else:
+			enemy.velocity = Vector3.ZERO
 		# Poll the AnimationTree to detect transition to the dead walk animation
 		if enemy.anim_tree:
 			var pb = enemy.anim_tree.get("parameters/defeated/playback")
@@ -153,12 +158,19 @@ func physics_update(_delta: float) -> void:
 			# Restrict physical velocity strictly to current forward direction
 			var forward_dir = -enemy.global_transform.basis.z.normalized()
 			var target_vel = forward_dir * move_speed
+			if not enemy.is_on_floor():
+				target_vel.y = enemy.velocity.y - 9.8 * _delta
+			else:
+				target_vel.y = -0.1
 			
 			enemy.velocity = target_vel
 			enemy.move_and_slide()
 		else:
 			# If nav_agent finished but we didn't hit distance check (e.g. wall block), fade out
-			enemy.velocity = Vector3.ZERO
+			if not enemy.is_on_floor():
+				enemy.velocity.y -= 9.8 * _delta
+			else:
+				enemy.velocity.y = 0.0
 			enemy.move_and_slide()
 			_fading = true
 			_fade_out_and_hide()
@@ -184,6 +196,10 @@ func physics_update(_delta: float) -> void:
 
 		var flee_dir: Vector3 = -to_player.normalized()
 		var target_vel = flee_dir * move_speed
+		if not enemy.is_on_floor():
+			target_vel.y = enemy.velocity.y - 9.8 * _delta
+		else:
+			target_vel.y = -0.1
 		
 		enemy.velocity = target_vel
 		enemy.move_and_slide()
@@ -303,6 +319,10 @@ func _fade_out_and_hide() -> void:
 		
 	# 2. Once fully transparent, start sinking
 	tween.set_parallel(false)
+	tween.tween_callback(func():
+		if is_instance_valid(enemy):
+			enemy.collision_mask = 0
+	)
 	var target_y = enemy.global_position.y - sink_depth
 	tween.tween_property(enemy, "global_position:y", target_y, sink_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	

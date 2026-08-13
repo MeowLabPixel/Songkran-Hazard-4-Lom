@@ -15,7 +15,7 @@ func enter() -> void:
 func physics_update(delta: float) -> void:
 	if Anchalee.zombie_reaction_state == "none" and Anchalee.get_threat_count() >= 1:
 		var threats = Anchalee.get_threat_count()
-		var duck_chance = Anchalee.reaction_chance_duck if threats >= 2 else 0.0
+		var duck_chance = Anchalee.reaction_chance_duck if (threats >= 2 and Anchalee.duck_cooldown_timer <= 0.0) else 0.0
 		var roll = randf()
 		if roll <= duck_chance:
 			Anchalee.zombie_reaction_state = "duck"
@@ -47,6 +47,8 @@ func physics_update(delta: float) -> void:
 		if near_area:
 			is_in_near_area = near_area.overlaps_body(Anchalee)
 			
+	var has_reached_destination = is_in_near_area or Anchalee.is_player_in_friend_area or Anchalee.is_touching_player or dist_to_target <= Anchalee.get_effective_follow_stop_distance()
+			
 	var is_player_moving_backward = false
 	if player:
 		var player_forward = -player.global_transform.basis.z
@@ -54,8 +56,12 @@ func physics_update(delta: float) -> void:
 		
 	var should_walk_back = is_player_moving_backward and is_in_near_area
 	
-	var is_player_moving = player and player.velocity.length_squared() > 0.1
-	if dist_to_target > Anchalee.follow_start_distance or should_walk_back or is_player_moving:
+	# Only transition to Walk if far away from player, backing up, sprinting, or significant movement when not at destination
+	var player_sprinting = Anchalee.player_is_sprinting
+	var is_far_away = dist_to_target > Anchalee.follow_start_distance
+	var should_start_walking = is_far_away or should_walk_back or player_sprinting or (not has_reached_destination and player and player.velocity.length_squared() > 1.0)
+	
+	if should_start_walking:
 		if should_walk_back:
 			Anchalee.is_walking_backward = true
 		else:
@@ -73,9 +79,19 @@ func physics_update(delta: float) -> void:
 	Anchalee.velocity = Vector3.ZERO
 	Anchalee.move_and_slide()
 	
-	# Rotate to match player's facing direction
-	if player:
-		# player.global_rotation.y is the direction the player is facing
+	# Rear Threat Spotting: check for zombies behind player in attack prep range (4.0m)
+	var rear_threat = Anchalee.get_rear_threat_behind_player(4.0) if player else null
+	if rear_threat:
+		var to_threat = (rear_threat.global_position - Anchalee.global_position)
+		to_threat.y = 0.0
+		if to_threat.length() > 0.1:
+			var target_y = atan2(-to_threat.x, -to_threat.z)
+			Anchalee.rotation.y = lerp_angle(Anchalee.rotation.y, target_y, 8.0 * delta)
+		Anchalee.is_walking_backward = true
+		state_machine.transition_to("AnchaleeStateWalk")
+		return
+	elif player:
+		# Rotate to match player's facing direction when stopped in Idle
 		var target_y = player.global_rotation.y
 		Anchalee.rotation.y = lerp_angle(Anchalee.rotation.y, target_y, 10.0 * delta)
 

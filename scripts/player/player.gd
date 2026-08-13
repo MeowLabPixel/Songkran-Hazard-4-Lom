@@ -912,8 +912,9 @@ func _physics_process(_delta: float) -> void:
 	var sm = get_node_or_null("Statemachine")
 	if sm and sm.current_state:
 		var s_name = sm.current_state.name
+		var is_locomotion = s_name in ["Idle", "Run", "Walk", "Sprint"]
 		var is_cam_action = camera and camera.has_method("is_action_camera_active") and camera.is_action_camera_active()
-		var is_in_action = is_aimming or is_grab or is_quick_turn or is_cam_action or (s_name != "" and s_name not in ["Idle", "Run", "Walk", "Sprint"])
+		var is_in_action = is_aimming or is_grab or is_quick_turn or (!is_locomotion and is_cam_action) or (s_name != "" and not is_locomotion)
 
 		if is_in_action:
 			# Decelerate static Motion.velocity as well so exiting Aim/Reload/Action states does not cause a forward velocity jerk!

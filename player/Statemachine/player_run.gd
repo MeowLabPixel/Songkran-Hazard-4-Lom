@@ -26,6 +26,15 @@ func _enter() -> void:
 	owner.anim.get(owner.anim_playback).travel("Run")
 	owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale", 1.0)
 	owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale", 1.0)
+	
+	set_direction()
+	if direction != Vector3.ZERO:
+		last_input_dir = input_dir
+		var init_blend = Vector2(input_dir.x, -input_dir.y)
+		var cur_blend_pis = owner.anim.get("parameters/Main/Run/Pis/BlendSpace2D/blend_position") as Vector2
+		if cur_blend_pis == null or cur_blend_pis.length_squared() < 0.01:
+			owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position", init_blend * 0.3)
+			owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position", init_blend * 0.3)
 
 func _update(_delta:float) -> void:
 	if owner.HP <= 0 or ("pending_die_after_hit" in owner and owner.pending_die_after_hit):

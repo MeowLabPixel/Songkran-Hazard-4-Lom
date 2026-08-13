@@ -198,11 +198,11 @@ func _state_input(_event: InputEvent) -> void:
 				_pump_cooldown_timer = 0.2
 			else:
 				# Already super active, exit back
-				finished.emit("Idle")
+				_evaluate_queued_exit()
 
 func reloading() -> void:
 	if not owner.gun_controller:
-		finished.emit("Aim" if owner.is_aimming else "Idle")
+		_evaluate_queued_exit()
 		return
 
 	var gun = owner.gun_controller.current_gun
@@ -241,7 +241,7 @@ func anim_done(namee: String) -> void:
 func reload_timeout() -> void:
 	if _exited:
 		return
-	finished.emit("Idle")
+	_evaluate_queued_exit()
 
 func stop_moving() -> void:
 	owner.set_velocity_from_motion(Vector3.ZERO)
@@ -278,12 +278,24 @@ func _on_reload_finished(final_air: float, super_activated: bool) -> void:
 	# Cleanup HUD reference
 	qte_hud = null
 	
-	# Transition back to Idle immediately
-	finished.emit("Idle")
+	# Transition back using queued exit check
+	_evaluate_queued_exit()
 
 func _on_reload_cancelled() -> void:
 	if _exited:
 		return
 	qte_hud = null
 	
-	finished.emit("Idle")
+	_evaluate_queued_exit()
+
+func _evaluate_queued_exit() -> void:
+	var is_aim = Input.is_action_pressed("aim")
+	if is_aim and is_instance_valid(owner) and owner.has_method("can_aim") and owner.can_aim():
+		owner.aim_blocked_until_release = false
+		finished.emit("Aim")
+		return
+	var is_move = Input.is_action_pressed("ui_up") or Input.is_action_pressed("ui_down") or Input.is_action_pressed("ui_left") or Input.is_action_pressed("ui_right") or (typeof(Motion) != TYPE_NIL and Motion.input_dir != Vector2.ZERO)
+	if is_move:
+		finished.emit("Run")
+	else:
+		finished.emit("Idle")

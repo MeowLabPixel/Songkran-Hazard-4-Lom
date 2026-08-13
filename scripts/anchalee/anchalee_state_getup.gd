@@ -28,9 +28,15 @@ func physics_update(delta: float) -> void:
 	if player and player.velocity.length_squared() > 0.01:
 		Anchalee.move_and_slide()
 	
+	# If player aims at Anchalee while she is getting up, abort getup and duck back down immediately!
+	if Anchalee.is_player_aiming_or_takedown():
+		state_machine.transition_to("AnchaleeStateDuck")
+		return
+	
 	_timer += delta
 	if _timer > 4.0: # Fallback
-		state_machine.transition_to("AnchaleeStateIdle")
+		Anchalee.trigger_post_getup_jink = true
+		state_machine.transition_to("AnchaleeStateWalk")
 		return
 
 	if Anchalee.has_node("AnchaleeModel/AnimationTree"):
@@ -45,7 +51,8 @@ func physics_update(delta: float) -> void:
 				print("[Anchalee] Immunity lifted at GetupAct 2")
 			if current == "Idle" or current == "End" or current == "" or current == "Walk" or current == "Run":
 				if _timer > 0.5:
-					state_machine.transition_to("AnchaleeStateIdle")
+					Anchalee.trigger_post_getup_jink = true
+					state_machine.transition_to("AnchaleeStateWalk")
 
 func _set_immune(is_immune: bool) -> void:
 	if is_instance_valid(Anchalee):

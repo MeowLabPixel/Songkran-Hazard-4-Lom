@@ -29,6 +29,8 @@ var anim_name = "TD/Take down anim"
 @export_range(0.0, 0.2, 0.01) var splash_time_stop_scale: float = 0.10    ## Engine time scale during 0 HP splash kill
 @export_range(0.01, 0.1, 0.005) var time_stop_ease_out_time: float = 0.04 ## Smooth easing recovery back to 1.0 time scale (seconds)
 
+@export_range(0.15, 0.75, 0.05) var recovery_downtime_delay: float = 0.35  ## Downtime delay after kick attack before movement triggers (seconds)
+
 var splash_area: Area3D = null
 var _hit_primary: bool = false
 var _hit_enemies: Array[Node] = []
@@ -49,8 +51,9 @@ var _has_valid_prev_ray: bool = false
 var _state_timer: float = 0.0
 var _anim_timeline_pos: float = 0.0
 var _has_released_kick: bool = false
+var _has_queued_movement: bool = false
+var _has_queued_aim: bool = false
 const TAKEDOWN_TIMEOUT_FALLBACK: float = 3.5
-
 
 func _get_player_camera() -> Node:
 	var cams = get_tree().get_nodes_in_group("player_camera") if get_tree() else []
@@ -62,6 +65,8 @@ func _enter() -> void:
 	_state_timer = 0.0
 	_anim_timeline_pos = 0.0
 	_has_released_kick = false
+	_has_queued_movement = false
+	_has_queued_aim = false
 	_hit_primary = false
 	_hit_enemies.clear()
 	_queued_enemies.clear()
@@ -198,6 +203,28 @@ func _update(delta: float) -> void:
 		if is_instance_valid(splash_area) and splash_area.monitoring:
 			splash_area.monitoring = false
 		_has_valid_prev_ray = false
+		
+		# Record movement and aim input queuing during recovery downtime
+		var is_aim_pressed = Input.is_action_pressed("aim")
+		if is_aim_pressed:
+			_has_queued_aim = true
+			if is_instance_valid(owner):
+				owner.aim_blocked_until_release = false
+				
+		var is_move_pressed = Input.is_action_pressed("ui_up") or Input.is_action_pressed("ui_down") or Input.is_action_pressed("ui_left") or Input.is_action_pressed("ui_right")
+		if is_move_pressed:
+			_has_queued_movement = true
+			
+		# Enforce balanced recovery downtime lock before enabling locomotion transition
+		if _anim_timeline_pos >= (hitbox_disable_time + recovery_downtime_delay):
+			if _has_queued_aim or is_aim_pressed:
+				if is_instance_valid(owner):
+					owner.aim_blocked_until_release = false
+				finished.emit("Aim")
+				return
+			elif _has_queued_movement or is_move_pressed:
+				finished.emit("Run")
+				return
 
 		
 	# Process domino hit stop queue with staggered delay (0.07s standard vs 0.14s fatal defeat kill)
@@ -422,12 +449,22 @@ func _exit() -> void:
 	_hit_enemies.clear()
 	_queued_enemies.clear()
 	_pending_domino_hits.clear()
+	stop_moving()
 
 
 
 func anim_done(namee: String):
 	if namee == anim_name:
-		finished.emit("Idle")
+		var is_aim_pressed = Input.is_action_pressed("aim")
+		var is_move_pressed = Input.is_action_pressed("ui_up") or Input.is_action_pressed("ui_down") or Input.is_action_pressed("ui_left") or Input.is_action_pressed("ui_right")
+		if _has_queued_aim or is_aim_pressed:
+			if is_instance_valid(owner):
+				owner.aim_blocked_until_release = false
+			finished.emit("Aim")
+		elif _has_queued_movement or is_move_pressed:
+			finished.emit("Run")
+		else:
+			finished.emit("Idle")
 
 func stop_moving():
 	var dire = Vector3.ZERO

@@ -44,8 +44,8 @@ func _process(_delta: float) -> void:
 	# Tick the grab timer
 	_time_in_grab += _delta
 	if _time_in_grab >= max_grab_duration:
-		print("[PlayerGrab] Stuck grab fallback triggered. Forcing transition to Idle.")
-		finished.emit("Idle")
+		print("[PlayerGrab] Stuck grab fallback triggered. Forcing transition via queued exit.")
+		_evaluate_queued_exit()
 		return
 
 
@@ -145,7 +145,19 @@ func _process(_delta: float) -> void:
 								var health = follower.get("health")
 								if health != null and health > 0:
 									SoundManager.play_3d("vo_anchalee_after_gethit", follower)
-					finished.emit("Idle")
+					_evaluate_queued_exit()
+
+func _evaluate_queued_exit() -> void:
+	var is_aim = Input.is_action_pressed("aim")
+	if is_aim and is_instance_valid(owner) and owner.has_method("can_aim") and owner.can_aim():
+		owner.aim_blocked_until_release = false
+		finished.emit("Aim")
+		return
+	var is_move = Input.is_action_pressed("ui_up") or Input.is_action_pressed("ui_down") or Input.is_action_pressed("ui_left") or Input.is_action_pressed("ui_right") or (typeof(Motion) != TYPE_NIL and Motion.input_dir != Vector2.ZERO)
+	if is_move:
+		finished.emit("Run")
+	else:
+		finished.emit("Idle")
 
 
 func _enter() -> void:
