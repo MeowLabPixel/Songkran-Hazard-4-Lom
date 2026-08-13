@@ -13,8 +13,12 @@ extends AnchaleeState
 
 # ── Jink steering ──────────────────────────────────────────────────────────
 @export_group("Jink Steering")
+const JINK_ANGLES_ALL: Array[float] = [-115.0, -90.0, -75.0, -60.0, -45.0, -30.0, -15.0, 15.0, 30.0, 45.0, 60.0, 75.0, 90.0, 115.0]
+const JINK_ANGLES_NEAR_PLAYER: Array[float] = [-45.0, -30.0, -15.0, 15.0, 30.0, 45.0]
+const JINK_ANGLES_NEAR_ZOMBIE: Array[float] = [-115.0, -90.0, -75.0, -60.0, -45.0, 45.0, 60.0, 75.0, 90.0, 115.0]
+
 @export var jink_min_angle_deg: float = 15.0   ## Min deflection angle when stuck
-@export var jink_max_angle_deg: float = 90.0  ## Max deflection angle when stuck
+@export var jink_max_angle_deg: float = 115.0  ## Max deflection angle when stuck
 @export var jink_duration: float = 0.4         ## How long each jink lasts (s) - 25% faster
 @export var jink_cooldown: float = 0.6         ## Minimum time between jinks (s)
 @export var jink_stuck_threshold: float = 0.3  ## Stuck duration before jinking
@@ -31,6 +35,7 @@ var _jink_phase: int = 0
 var _active_breath_sfx: Node = null
 var _current_breath_event: String = ""
 var _panting_timer: float = 0.0
+var _walk_time: float = 0.0
 
 func enter() -> void:
 	print("[Anchalee] Walk/Run")
@@ -44,6 +49,7 @@ func enter() -> void:
 	_failed_jinks = 0
 	_jink_phase = 0
 	_panting_timer = 0.0
+	_walk_time = 0.0
 
 func exit() -> void:
 	# Stop walk/run breathing sound
@@ -53,6 +59,7 @@ func exit() -> void:
 	_active_breath_sfx = null
 	_current_breath_event = ""
 	_panting_timer = 0.0
+	_walk_time = 0.0
 	
 	if is_instance_valid(Anchalee):
 		if Anchalee.nav_agent:
@@ -61,6 +68,7 @@ func exit() -> void:
 		Anchalee.is_walking_backward = false
 
 func physics_update(delta: float) -> void:
+	_walk_time += delta
 	if Anchalee.zombie_reaction_state == "none" and Anchalee.get_threat_count() >= 1:
 		var threats = Anchalee.get_threat_count()
 		var duck_chance = Anchalee.reaction_chance_duck if (threats >= 2 and Anchalee.duck_cooldown_timer <= 0.0) else 0.0
@@ -187,7 +195,7 @@ func physics_update(delta: float) -> void:
 	# However, if the player is actively moving, stay in Walk state to follow smoothly.
 	var is_player_moving = player and player.velocity.length_squared() > 0.1
 	var is_player_rotating = player and abs(player.get("angular_velocity")) > 0.1
-	if not is_player_moving and not is_player_rotating and Anchalee.zombie_reaction_state != "back_up" and not Anchalee.trigger_post_getup_jink and not rear_threat:
+	if _walk_time >= 0.3 and not is_player_moving and not is_player_rotating and Anchalee.zombie_reaction_state != "back_up" and not Anchalee.trigger_post_getup_jink and not rear_threat:
 		if (dist_to_target <= Anchalee.get_effective_follow_stop_distance() or Anchalee.is_player_in_friend_area or Anchalee.is_touching_player) and repulsion_vec.length() < 0.1:
 			state_machine.transition_to("AnchaleeStateIdle")
 			return
@@ -241,7 +249,7 @@ func physics_update(delta: float) -> void:
 					Anchalee.trigger_post_getup_jink = false
 				
 				# Determine jink rotation direction towards the player if player exists
-				var dir_sign: float = [-1.0, 1.0].pick_random()
+				var dir_sign: float = 0.0
 				if player:
 					var to_player = (player.global_position - Anchalee.global_position)
 					to_player.y = 0.0
@@ -255,15 +263,28 @@ func physics_update(delta: float) -> void:
 							if abs(cross_y) > 0.05:
 								dir_sign = 1.0 if cross_y > 0.0 else -1.0
 				
-				_jink_dir_sign = int(dir_sign)
-				var angle_deg = randf_range(45.0, 135.0) if is_preemptive_evade else randf_range(jink_min_angle_deg, jink_max_angle_deg)
-				_jink_angle_rad = deg_to_rad(angle_deg) * dir_sign
+				var angle_deg: float = 45.0
+				if is_preemptive_evade or Anchalee.get_threat_count() > 0:
+					angle_deg = JINK_ANGLES_NEAR_ZOMBIE.pick_random()
+				elif Anchalee.is_touching_player or is_in_near_area:
+					angle_deg = JINK_ANGLES_NEAR_PLAYER.pick_random()
+				else:
+					angle_deg = JINK_ANGLES_ALL.pick_random()
+					
+				# If direction toward player was identified, enforce sign toward player
+				if dir_sign != 0.0:
+					angle_deg = abs(angle_deg) * dir_sign
+					_jink_dir_sign = int(dir_sign)
+				else:
+					_jink_dir_sign = int(sign(angle_deg)) if angle_deg != 0.0 else 1
+					
+				_jink_angle_rad = deg_to_rad(angle_deg)
 				_jink_active_timer = 0.24 # Phase 1 duration (25% faster)
 				_jink_phase = 1
 				stuck_timer = 0.0
 				_failed_jinks += 1
 				Anchalee.zombie_reaction_state = "evading"
-				print("[Anchalee] Stop & Rotate #%d (%.0f°) Preemptive: %s PostGetup: %s" % [_failed_jinks, angle_deg * dir_sign, is_preemptive_evade, is_post_getup])
+				print("[Anchalee] Stop & Rotate #%d (%.0f°) Preemptive: %s PostGetup: %s" % [_failed_jinks, angle_deg, is_preemptive_evade, is_post_getup])
 				if _failed_jinks >= 3 and not is_preemptive_evade:
 					print("[Anchalee] 3 jinks failed — transitioning to Idle")
 					state_machine.transition_to("AnchaleeStateIdle")

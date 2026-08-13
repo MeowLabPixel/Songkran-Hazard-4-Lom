@@ -1,8 +1,11 @@
 class_name AnchaleeStateIdle
 extends AnchaleeState
 
+var _idle_time: float = 0.0
+
 func enter() -> void:
 	print("[Anchalee] Idle")
+	_idle_time = 0.0
 	Anchalee.velocity = Vector3.ZERO
 	Anchalee.set_player_collision(false)
 	
@@ -13,6 +16,7 @@ func enter() -> void:
 		if pb: pb.travel("Idle")
 
 func physics_update(delta: float) -> void:
+	_idle_time += delta
 	if Anchalee.zombie_reaction_state == "none" and Anchalee.get_threat_count() >= 1:
 		var threats = Anchalee.get_threat_count()
 		var duck_chance = Anchalee.reaction_chance_duck if (threats >= 2 and Anchalee.duck_cooldown_timer <= 0.0) else 0.0
@@ -70,7 +74,7 @@ func physics_update(delta: float) -> void:
 		return
 		
 	var repulsion_vec = _get_repulsion()
-	if repulsion_vec.length() > 0.1:
+	if repulsion_vec.length() > 0.1 and not has_reached_destination:
 		Anchalee.is_walking_backward = false
 		state_machine.transition_to("AnchaleeStateWalk")
 		return
@@ -87,9 +91,10 @@ func physics_update(delta: float) -> void:
 		if to_threat.length() > 0.1:
 			var target_y = atan2(-to_threat.x, -to_threat.z)
 			Anchalee.rotation.y = lerp_angle(Anchalee.rotation.y, target_y, 8.0 * delta)
-		Anchalee.is_walking_backward = true
-		state_machine.transition_to("AnchaleeStateWalk")
-		return
+		if _idle_time >= 0.5:
+			Anchalee.is_walking_backward = true
+			state_machine.transition_to("AnchaleeStateWalk")
+			return
 	elif player:
 		# Rotate to match player's facing direction when stopped in Idle
 		var target_y = player.global_rotation.y
