@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://cfaa8valqp2m2"
+path="res://.godot/imported/3. Cutscene Firstmeet_Lee_5.wav-c1dc95a837c27f786a00166e226b0faf.sample"
+
+[deps]
+
+source_file="res://Audio-Sfx-Music/Voicelines/Cutscene1 (Lee and Anchalee) (not use yet)/3. Cutscene Firstmeet_Lee_5.wav"
+dest_files=["res://.godot/imported/3. Cutscene Firstmeet_Lee_5.wav-c1dc95a837c27f786a00166e226b0faf.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2
