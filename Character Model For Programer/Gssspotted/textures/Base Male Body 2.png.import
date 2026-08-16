@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://vbqa8xytgubx"
 path.s3tc="res://.godot/imported/Base Male Body 2.png-178c060ca1e1b67709e075fa06047a64.s3tc.ctex"
-path.etc2="res://.godot/imported/Base Male Body 2.png-178c060ca1e1b67709e075fa06047a64.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Gssspotted/textures/Base Male Body 2.png"
-dest_files=["res://.godot/imported/Base Male Body 2.png-178c060ca1e1b67709e075fa06047a64.s3tc.ctex", "res://.godot/imported/Base Male Body 2.png-178c060ca1e1b67709e075fa06047a64.etc2.ctex"]
+dest_files=["res://.godot/imported/Base Male Body 2.png-178c060ca1e1b67709e075fa06047a64.s3tc.ctex"]
 
 [params]
 

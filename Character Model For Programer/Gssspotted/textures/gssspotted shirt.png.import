@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://c3hxfoewiy06a"
 path.s3tc="res://.godot/imported/gssspotted shirt.png-0f130199ea01cf7b7be163d0fdcd8265.s3tc.ctex"
-path.etc2="res://.godot/imported/gssspotted shirt.png-0f130199ea01cf7b7be163d0fdcd8265.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Gssspotted/textures/gssspotted shirt.png"
-dest_files=["res://.godot/imported/gssspotted shirt.png-0f130199ea01cf7b7be163d0fdcd8265.s3tc.ctex", "res://.godot/imported/gssspotted shirt.png-0f130199ea01cf7b7be163d0fdcd8265.etc2.ctex"]
+dest_files=["res://.godot/imported/gssspotted shirt.png-0f130199ea01cf7b7be163d0fdcd8265.s3tc.ctex"]
 
 [params]
 

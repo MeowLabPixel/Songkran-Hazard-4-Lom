@@ -1,0 +1,36 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://2yif4f1aopge"]
+
+[ext_resource type="Texture2D" uid="uid://cv17wbavcwgqu" path="res://Character Model For Programer/Gssspotted/gssspotted Face Shadow Fix_gssspotted short pant.png" id="1_ygmfy"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bqgg8"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.5882353)
+grow = true
+grow_amount = 0.004
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
+[resource]
+resource_name = "head male.001"
+next_pass = SubResource("StandardMaterial3D_bqgg8")
+cull_mode = 2
+diffuse_mode = 3
+specular_mode = 2
+albedo_texture = ExtResource("1_ygmfy")
+roughness = 0.0
+rim_enabled = true
+rim = 0.5
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0, 0, 0, 0.5882353)
+stencil_outline_thickness = 0.004
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}

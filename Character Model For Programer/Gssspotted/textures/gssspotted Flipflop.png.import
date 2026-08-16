@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://db32uhioib5ua"
 path.s3tc="res://.godot/imported/gssspotted Flipflop.png-a6fccebca25cde044d48436269359a2d.s3tc.ctex"
-path.etc2="res://.godot/imported/gssspotted Flipflop.png-a6fccebca25cde044d48436269359a2d.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Character Model For Programer/Gssspotted/textures/gssspotted Flipflop.png"
-dest_files=["res://.godot/imported/gssspotted Flipflop.png-a6fccebca25cde044d48436269359a2d.s3tc.ctex", "res://.godot/imported/gssspotted Flipflop.png-a6fccebca25cde044d48436269359a2d.etc2.ctex"]
+dest_files=["res://.godot/imported/gssspotted Flipflop.png-a6fccebca25cde044d48436269359a2d.s3tc.ctex"]
 
 [params]
 
