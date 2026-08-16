@@ -790,7 +790,7 @@ bind/221/name = &"thigh_ik_target.R"
 bind/221/bone = -1
 bind/221/pose = Transform3D(0.97218865, 0.0047074007, 0.23415175, 0.23415175, -0.039633077, -0.97139186, 0.004707424, 0.9992032, -0.039633077, 0.14519721, 0.8649714, -0.45826727)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_befsq"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mmrme"]
 render_priority = 1
 transparency = 1
 shading_mode = 0
@@ -804,7 +804,7 @@ metadata/_stencil_owned = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j7ovl"]
 resource_name = "head male.001"
-next_pass = SubResource("StandardMaterial3D_befsq")
+next_pass = SubResource("StandardMaterial3D_mmrme")
 cull_mode = 2
 diffuse_mode = 3
 specular_mode = 2
@@ -823,7 +823,7 @@ metadata/extras = {
 }
 }
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3g46t"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ngtqc"]
 render_priority = 1
 transparency = 1
 shading_mode = 0
@@ -833,12 +833,11 @@ grow_amount = 0.004
 stencil_mode = 3
 stencil_flags = 1
 stencil_compare = 5
-stencil_reference = 2
 metadata/_stencil_owned = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sldtv"]
 resource_name = "head male.001"
-next_pass = SubResource("StandardMaterial3D_3g46t")
+next_pass = SubResource("StandardMaterial3D_ngtqc")
 cull_mode = 2
 diffuse_mode = 3
 specular_mode = 2
@@ -848,6 +847,39 @@ rim_enabled = true
 rim = 0.5
 stencil_mode = 1
 stencil_flags = 2
+stencil_color = Color(0, 0, 0, 0.5882353)
+stencil_outline_thickness = 0.004
+metadata/extras = {
+"yp": {
+"active_ypaint_node": "",
+"expand_content": 0.0
+}
+}
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6mdt6"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.5882353)
+grow = true
+grow_amount = 0.004
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 4
+metadata/_stencil_owned = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_irc4q"]
+resource_name = "head male.001"
+next_pass = SubResource("StandardMaterial3D_6mdt6")
+cull_mode = 2
+diffuse_mode = 3
+specular_mode = 2
+albedo_texture = ExtResource("7_q1rpi")
+roughness = 0.0
+rim_enabled = true
+rim = 0.5
+stencil_mode = 1
+stencil_flags = 2
 stencil_reference = 2
 stencil_color = Color(0, 0, 0, 0.5882353)
 stencil_outline_thickness = 0.004
@@ -858,42 +890,7 @@ metadata/extras = {
 }
 }
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8nohe"]
-render_priority = 1
-transparency = 1
-shading_mode = 0
-albedo_color = Color(0, 0, 0, 0.5882353)
-grow = true
-grow_amount = 0.004
-stencil_mode = 3
-stencil_flags = 1
-stencil_compare = 5
-stencil_reference = 3
-metadata/_stencil_owned = true
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_irc4q"]
-resource_name = "head male.001"
-next_pass = SubResource("StandardMaterial3D_8nohe")
-cull_mode = 2
-diffuse_mode = 3
-specular_mode = 2
-albedo_texture = ExtResource("7_q1rpi")
-roughness = 0.0
-rim_enabled = true
-rim = 0.5
-stencil_mode = 1
-stencil_flags = 2
-stencil_reference = 3
-stencil_color = Color(0, 0, 0, 0.5882353)
-stencil_outline_thickness = 0.004
-metadata/extras = {
-"yp": {
-"active_ypaint_node": "",
-"expand_content": 0.0
-}
-}
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u6fhv"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bqgg8"]
 render_priority = 1
 transparency = 1
 shading_mode = 0
@@ -907,7 +904,7 @@ metadata/_stencil_owned = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_msk6s"]
 resource_name = "head male.001"
-next_pass = SubResource("StandardMaterial3D_u6fhv")
+next_pass = SubResource("StandardMaterial3D_bqgg8")
 cull_mode = 2
 diffuse_mode = 3
 specular_mode = 2
@@ -983,7 +980,7 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8bxuj"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_y1krb"]
 render_priority = 1
 transparency = 1
 shading_mode = 0
@@ -997,7 +994,7 @@ metadata/_stencil_owned = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o2wqn"]
 resource_name = "head male.001"
-next_pass = SubResource("StandardMaterial3D_8bxuj")
+next_pass = SubResource("StandardMaterial3D_y1krb")
 cull_mode = 2
 diffuse_mode = 3
 specular_mode = 2
@@ -1014,7 +1011,7 @@ metadata/extras = {
 }
 }
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bs8it"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hvxxm"]
 render_priority = 1
 transparency = 1
 shading_mode = 0
@@ -1028,7 +1025,7 @@ metadata/_stencil_owned = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pwgcs"]
 resource_name = "head male.001"
-next_pass = SubResource("StandardMaterial3D_bs8it")
+next_pass = SubResource("StandardMaterial3D_hvxxm")
 cull_mode = 2
 diffuse_mode = 3
 specular_mode = 2
