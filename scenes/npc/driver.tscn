@@ -10,6 +10,7 @@
 [ext_resource type="Material" uid="uid://2yif4f1aopge" path="res://Character Model For Programer/Gssspotted/Material/Pants.tres" id="8_bqgg8"]
 [ext_resource type="Texture2D" uid="uid://bqd5qdfak04wr" path="res://Character Model For Programer/Gssspotted/textures/Base gssspotted Male Face with glasses.png" id="9_c406t"]
 [ext_resource type="Texture2D" uid="uid://d1lhmd1mox5j4" path="res://Character Model For Programer/Gssspotted/textures/gssspotted hair.png" id="10_finwg"]
+[ext_resource type="Texture2D" uid="uid://xvxkh0qrtbkn" path="res://Character Model For Programer/Gssspotted/gssspotted Face Shadow Fix_Base gssspotted Male Face with glasses.png" id="11_ngtqc"]
 [ext_resource type="Material" uid="uid://dxov3f5aoyvdi" path="res://Character Model For Programer/Gssspotted/Material/Hair.tres" id="11_y1krb"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1qk4x"]
@@ -1571,7 +1572,7 @@ bind/221/name = &"thigh_ik_target.R"
 bind/221/bone = -1
 bind/221/pose = Transform3D(0.97218865, 0.0047074007, 0.23415175, 0.23415175, -0.039633077, -0.97139186, 0.004707424, 0.9992032, -0.039633077, 0.14519721, 0.8649714, -0.45826727)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ngtqc"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_y1krb"]
 render_priority = 1
 transparency = 1
 shading_mode = 0
@@ -1585,11 +1586,11 @@ metadata/_stencil_owned = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q1rpi"]
 resource_name = "head male.001"
-next_pass = SubResource("StandardMaterial3D_ngtqc")
+next_pass = SubResource("StandardMaterial3D_y1krb")
 cull_mode = 2
 diffuse_mode = 3
 specular_mode = 2
-albedo_texture = ExtResource("9_c406t")
+albedo_texture = ExtResource("11_ngtqc")
 roughness = 0.0
 stencil_mode = 1
 stencil_flags = 2
@@ -1604,11 +1605,11 @@ metadata/extras = {
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6mdt6"]
 resource_name = "head male.001"
-next_pass = SubResource("StandardMaterial3D_ngtqc")
+next_pass = SubResource("StandardMaterial3D_y1krb")
 cull_mode = 2
 diffuse_mode = 3
 specular_mode = 2
-albedo_texture = ExtResource("9_c406t")
+albedo_texture = ExtResource("11_ngtqc")
 roughness = 0.0
 stencil_mode = 1
 stencil_flags = 2
@@ -1623,11 +1624,11 @@ metadata/extras = {
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bqgg8"]
 resource_name = "head male.001"
-next_pass = SubResource("StandardMaterial3D_ngtqc")
+next_pass = SubResource("StandardMaterial3D_y1krb")
 cull_mode = 2
 diffuse_mode = 3
 specular_mode = 2
-albedo_texture = ExtResource("9_c406t")
+albedo_texture = ExtResource("11_ngtqc")
 roughness = 0.0
 stencil_mode = 1
 stencil_flags = 2
