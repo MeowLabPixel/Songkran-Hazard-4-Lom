@@ -11,9 +11,11 @@ enum EyeState {
 }
 
 enum MouthState {
-	DEFAULT,     # 0.0
-	OPEN_SMALL,  # 0.147
-	OPEN_WIDE,   # 0.284
+	DEFAULT,        # 0.0x / 0.0y
+	OPEN_SMALL,     # 0.0x / 0.147y
+	OPEN_WIDE,      # 0.0x / 0.284y
+	NATURAL_CLOSE,  # 0.001x / 0.434y
+	NATURAL_OPEN,   # 0.003x / 0.568y (Medium)
 }
 
 const EYE_OFFSETS = {
@@ -26,9 +28,11 @@ const EYE_OFFSETS = {
 }
 
 const MOUTH_OFFSETS = {
-	MouthState.DEFAULT: 0.0,
-	MouthState.OPEN_SMALL: 0.147,
-	MouthState.OPEN_WIDE: 0.284,
+	MouthState.DEFAULT: Vector2(0.0, 0.0),
+	MouthState.OPEN_SMALL: Vector2(0.0, 0.147),
+	MouthState.OPEN_WIDE: Vector2(0.0, 0.284),
+	MouthState.NATURAL_CLOSE: Vector2(0.001, 0.434),
+	MouthState.NATURAL_OPEN: Vector2(0.003, 0.568),
 }
 
 @export var head_mesh: MeshInstance3D
@@ -43,6 +47,9 @@ const MOUTH_OFFSETS = {
 @export var min_blink_interval: float = 2.5
 @export var max_blink_interval: float = 5.5
 @export var blink_duration: float = 0.15
+
+@export_group("Mouth Set Configuration")
+@export var use_natural_mouth_set: bool = false ## Toggle to use Natural Close / Natural Open (Medium) for resting and normal speech
 
 # Overrides & Event Flags
 var is_hit_reaction: bool = false
@@ -196,7 +203,7 @@ func _auto_detect_player_state() -> void:
 			is_grabbed = false
 			is_takedown = false
 
-	# Detect transition out of hit or grab_fail to start 2.0s cry linger
+	# Detect transition out of hit or grab_fail to start 1.0s cry linger
 	var is_currently_hit_or_fail = is_hit_reaction or is_grab_fail
 	if is_currently_hit_or_fail:
 		_was_hit_or_fail = true
@@ -301,11 +308,11 @@ func _evaluate_eye_state() -> void:
 
 func _evaluate_mouth_state() -> void:
 	if not is_voiceline_playing:
-		current_mouth_state = MouthState.DEFAULT
+		current_mouth_state = MouthState.NATURAL_CLOSE if use_natural_mouth_set else MouthState.DEFAULT
 	elif current_eye_state in [EyeState.FOCUS, EyeState.ANGRY, EyeState.SURPRISE]:
 		current_mouth_state = MouthState.OPEN_WIDE
 	else:
-		current_mouth_state = MouthState.OPEN_SMALL
+		current_mouth_state = MouthState.NATURAL_OPEN if use_natural_mouth_set else MouthState.OPEN_SMALL
 
 func _get_blink_rate_multiplier() -> float:
 	match current_eye_state:
@@ -352,9 +359,10 @@ func _apply_uv_offsets() -> void:
 			_eye_mat.uv1_scale.y = 1.0
 
 	# Mouth UV
-	var mouth_uv_y: float = MOUTH_OFFSETS.get(current_mouth_state, 0.0)
+	var mouth_uv: Vector2 = MOUTH_OFFSETS.get(current_mouth_state, Vector2.ZERO)
 	if _mouth_mat:
-		_mouth_mat.uv1_offset.y = mouth_uv_y
+		_mouth_mat.uv1_offset.x = mouth_uv.x
+		_mouth_mat.uv1_offset.y = mouth_uv.y
 
 # --- Public API Functions ---
 
@@ -380,6 +388,9 @@ func notify_grab_fail(duration: float = 1.2) -> void:
 
 func set_aiming(aiming: bool) -> void:
 	is_aiming = aiming
+
+func set_mouth_state(state: MouthState) -> void:
+	current_mouth_state = state
 
 func trigger_voiceline(duration: float = 1.0, is_combat_speech: bool = false) -> void:
 	is_voiceline_playing = true

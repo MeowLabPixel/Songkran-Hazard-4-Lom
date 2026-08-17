@@ -4,9 +4,8 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://xvxkh0qrtbkn"
 path.s3tc="res://.godot/imported/gssspotted Face Shadow Fix_Base gssspotted Male Face with glasses.png-b93c0b7917060d869914369a30f028d8.s3tc.ctex"
-path.etc2="res://.godot/imported/gssspotted Face Shadow Fix_Base gssspotted Male Face with glasses.png-b93c0b7917060d869914369a30f028d8.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -16,7 +15,7 @@ generator_parameters={
 [deps]
 
 source_file="res://Character Model For Programer/Gssspotted/gssspotted Face Shadow Fix_Base gssspotted Male Face with glasses.png"
-dest_files=["res://.godot/imported/gssspotted Face Shadow Fix_Base gssspotted Male Face with glasses.png-b93c0b7917060d869914369a30f028d8.s3tc.ctex", "res://.godot/imported/gssspotted Face Shadow Fix_Base gssspotted Male Face with glasses.png-b93c0b7917060d869914369a30f028d8.etc2.ctex"]
+dest_files=["res://.godot/imported/gssspotted Face Shadow Fix_Base gssspotted Male Face with glasses.png-b93c0b7917060d869914369a30f028d8.s3tc.ctex"]
 
 [params]
 
