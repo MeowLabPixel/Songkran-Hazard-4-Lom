@@ -2,11 +2,17 @@ extends Node3D
 
 ## Cutscene1Director.gd
 ## Handles video playback during cutscene animation
-## Listens for logo_out to finish, then plays FullCutscene
-
 signal cutscene_finished
 
-@onready var anim         := $"Cutscene1/AnimationPlayer - Cutscene1"
+@onready var anim: AnimationPlayer = (
+	get_node_or_null("Cutscene1/AnimationPlayer") as AnimationPlayer
+	if has_node("Cutscene1/AnimationPlayer")
+	else (
+		get_node_or_null("Cutscene1/AnimationPlayer - Cutscene1") as AnimationPlayer
+		if has_node("Cutscene1/AnimationPlayer - Cutscene1")
+		else find_child("AnimationPlayer*", true, false) as AnimationPlayer
+	)
+)
 @onready var cutscene_cam := $"Cutscene1/Camera"
 @onready var video_player := $CanvasLayer/VideoPlayerFullscreen
 
@@ -20,6 +26,9 @@ func _ready() -> void:
 	if video_path != "" and ResourceLoader.exists(video_path):
 		video_player.stream = load(video_path)
 		print("[Cutscene1] Video loaded: ", video_path)
+	elif ResourceLoader.exists("res://Cutscene/MarwinCall.ogv"):
+		video_player.stream = load("res://Cutscene/MarwinCall.ogv")
+		print("[Cutscene1] Video loaded from fallback: res://Cutscene/MarwinCall.ogv")
 	
 	# Listen for when animations start and finish
 	if anim:

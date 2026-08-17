@@ -214,32 +214,32 @@ func _ready() -> void:
 				print("[MusicLength] ", ev_name, " length: ", s.get_length())
 
 func _setup_audio_buses() -> void:
-	var categories = ["SFX", "Music", "UI", "Voiceline"]
+	var categories = ["Master", "SFX", "Music", "UI", "Voiceline"]
 	var effects = ["Reverb", "Muffled", "Retro"]
-	
-	# Ensure main category buses exist or fall back to Master
+
+	# Ensure main category buses exist and have a LowPassFilter for dynamic muffling
 	for category in categories:
 		var cat_idx = AudioServer.get_bus_index(category)
 		if cat_idx == -1:
-			# If category bus doesn't exist, we will create it and send it to Master
 			cat_idx = AudioServer.bus_count
 			AudioServer.add_bus(cat_idx)
 			AudioServer.set_bus_name(cat_idx, category)
-			AudioServer.set_bus_send(cat_idx, "Master")
-		
-		# Only add LowPassFilter to Music bus for player get_hit muffling
-		if category == "Music":
-			var lpf_found = false
-			for i in range(AudioServer.get_bus_effect_count(cat_idx)):
-				if AudioServer.get_bus_effect(cat_idx, i) is AudioEffectLowPassFilter:
-					lpf_found = true
-					break
-			if not lpf_found:
-				var lpf = AudioEffectLowPassFilter.new()
-				lpf.cutoff_hz = 20000.0 # start open
-				AudioServer.add_bus_effect(cat_idx, lpf)
+			if category != "Master":
+				AudioServer.set_bus_send(cat_idx, "Master")
 
-		# Create sub-buses for Category + Effect combinations (e.g., SFX_Reverb)
+		# Ensure LowPassFilter exists on category bus for dynamic muffling
+		var lpf_found = false
+		for i in range(AudioServer.get_bus_effect_count(cat_idx)):
+			if AudioServer.get_bus_effect(cat_idx, i) is AudioEffectLowPassFilter:
+				lpf_found = true
+				break
+		if not lpf_found:
+			var lpf = AudioEffectLowPassFilter.new()
+			lpf.cutoff_hz = 20000.0 # start wide open
+			AudioServer.add_bus_effect(cat_idx, lpf)
+
+	# Ensure sub-buses for Category + Effect combinations (e.g., SFX_Reverb, Voiceline_Reverb)
+	for category in ["SFX", "Music", "UI", "Voiceline"]:
 		for effect in effects:
 			var sub_bus_name = category + "_" + effect
 			var sub_idx = AudioServer.get_bus_index(sub_bus_name)
@@ -247,25 +247,25 @@ func _setup_audio_buses() -> void:
 				sub_idx = AudioServer.bus_count
 				AudioServer.add_bus(sub_idx)
 				AudioServer.set_bus_name(sub_idx, sub_bus_name)
-				AudioServer.set_bus_send(sub_idx, category) # route output to main category
-				
-				# Add effect to sub-bus (only if not SFX category)
-				if category != "SFX":
-					match effect:
-						"Reverb":
-							var reverb = AudioEffectReverb.new()
-							reverb.room_size = 0.4
-							reverb.wet = 0.25
-							AudioServer.add_bus_effect(sub_idx, reverb)
-						"Muffled":
-							var lpf = AudioEffectLowPassFilter.new()
-							lpf.cutoff_hz = 1000.0 # muffled
-							AudioServer.add_bus_effect(sub_idx, lpf)
-						"Retro":
-							var dist = AudioEffectDistortion.new()
-							dist.mode = AudioEffectDistortion.MODE_CLIP
-							dist.drive = 0.5
-							AudioServer.add_bus_effect(sub_idx, dist)
+			AudioServer.set_bus_send(sub_idx, category) # route output to main category
+
+			# Ensure corresponding effect exists on sub-bus
+			if AudioServer.get_bus_effect_count(sub_idx) == 0:
+				match effect:
+					"Reverb":
+						var reverb = AudioEffectReverb.new()
+						reverb.room_size = 0.4
+						reverb.wet = 0.25
+						AudioServer.add_bus_effect(sub_idx, reverb)
+					"Muffled":
+						var lpf = AudioEffectLowPassFilter.new()
+						lpf.cutoff_hz = default_muffle_cutoff
+						AudioServer.add_bus_effect(sub_idx, lpf)
+					"Retro":
+						var dist = AudioEffectDistortion.new()
+						dist.mode = AudioEffectDistortion.MODE_CLIP
+						dist.drive = 0.5
+						AudioServer.add_bus_effect(sub_idx, dist)
 
 # Helper to check polyphony (max_instances) and prune old players
 func _check_polyphony(event: SoundEvent) -> bool:
@@ -608,24 +608,34 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 			
 
 
-	if event_name.begins_with("vo_leon_"):
-		var p_node = get_tree().get_first_node_in_group("player")
-		if p_node and "face_controller" in p_node and p_node.face_controller:
-			var dur = final_duration if final_duration > 0.0 else 1.0
-			p_node.face_controller.trigger_voiceline(dur)
+	if event.category == "Voiceline":
+		var dur = final_duration if final_duration > 0.0 else 1.0
+		var target_fc = null
 
-	if event_name.begins_with("vo_anchalee_"):
-		var a_node = get_tree().get_first_node_in_group("Anchalee")
-		if a_node and "face_controller" in a_node and a_node.face_controller:
-			var dur = final_duration if final_duration > 0.0 else 1.0
-			a_node.face_controller.trigger_voiceline(dur)
+		# 1. Try finding face controller on passed source object
+		if typeof(source) == TYPE_OBJECT and is_instance_valid(source):
+			if "face_controller" in source and source.face_controller:
+				target_fc = source.face_controller
+			elif source is Node:
+				target_fc = source.find_child("*FaceController*", true, false)
 
-	if event_name.begins_with("vo_zombie_"):
-		var ev_lower = event_name.to_lower()
-		if "greeting" in ev_lower or "geeting" in ev_lower or "laugh" in ev_lower:
-			if typeof(source) == TYPE_OBJECT and is_instance_valid(source) and "face_controller" in source and source.face_controller:
-				var dur = final_duration if final_duration > 0.0 else 1.5
-				source.face_controller.trigger_vocal_boost(dur, 5.0)
+		# 2. Fallback to global character groups
+		if not target_fc:
+			if event_name.begins_with("vo_leon_"):
+				var p_node = get_tree().get_first_node_in_group("player")
+				if p_node and "face_controller" in p_node and p_node.face_controller:
+					target_fc = p_node.face_controller
+			elif event_name.begins_with("vo_anchalee_"):
+				var a_node = get_tree().get_first_node_in_group("Anchalee")
+				if a_node and "face_controller" in a_node and a_node.face_controller:
+					target_fc = a_node.face_controller
+
+		# 3. Trigger speech on the detected face controller
+		if target_fc:
+			if target_fc.has_method("trigger_voiceline"):
+				target_fc.trigger_voiceline(dur)
+			elif target_fc.has_method("trigger_vocal_boost"):
+				target_fc.trigger_vocal_boost(dur, 5.0)
 
 	# Apply duration limit / automatic cleanup
 	if final_duration > 0.0:
@@ -690,7 +700,7 @@ func _update_doppler_settings() -> void:
 			p.doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP if enable_doppler else AudioStreamPlayer3D.DOPPLER_TRACKING_DISABLED
 
 # Muffles or unmuffles a main category bus dynamically over a transition duration (with recovery linger)
-func set_bus_muffled(category_name: String, enabled: bool, transition_duration: float = 0.1) -> void:
+func set_bus_muffled(category_name: String, enabled: bool, transition_duration: float = -1.0) -> void:
 	if not enable_muffle:
 		enabled = false
 
@@ -721,8 +731,8 @@ func set_bus_muffled(category_name: String, enabled: bool, transition_duration: 
 		if old_linger and old_linger.is_valid():
 			old_linger.kill()
 			
-	# Muffled cutoff is 500Hz, clear/normal cutoff is 20000Hz
-	var target_cutoff = 500.0 if enabled else 20000.0
+	var dur = transition_duration if transition_duration > 0.0 else default_muffle_duration
+	var target_cutoff = default_muffle_cutoff if enabled else 20000.0
 	
 	if not enabled:
 		# Linger the recovery unmuffling for 1.2 seconds so it stays muffled for a bit
@@ -732,12 +742,12 @@ func set_bus_muffled(category_name: String, enabled: bool, transition_duration: 
 		linger_tween.tween_callback(func():
 			var tween = create_tween()
 			_muffle_tweens[category_name] = tween
-			tween.tween_property(lpf, "cutoff_hz", target_cutoff, transition_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			tween.tween_property(lpf, "cutoff_hz", target_cutoff, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		)
 	else:
 		var tween = create_tween()
 		_muffle_tweens[category_name] = tween
-		tween.tween_property(lpf, "cutoff_hz", target_cutoff, transition_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween.tween_property(lpf, "cutoff_hz", target_cutoff, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 # Plays Non-Combat start, transitioning to Non-Combat loop
 func play_music_non_combat() -> void:

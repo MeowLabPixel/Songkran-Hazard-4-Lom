@@ -36,6 +36,17 @@ enum ZombieEyeState {
 @export var female_mouth_breath_offset: float = 0.000
 @export var female_mouth_breath_scale: float = 0.88
 
+@export_group("Cutscene / Manual Animation")
+@export var manual_mode: bool = false ## When true, AnimationPlayer keyframes or manual properties control facial expressions
+@export var manual_eye_state: ZombieEyeState = ZombieEyeState.DEFAULT ## Eye expression keyframable in AnimationPlayer
+
+@export_group("Real-Time Audio Metering")
+@export var voice_player: Node = null ## Optional AudioStreamPlayer or AudioStreamPlayer3D
+@export var voice_bus_name: String = "Voiceline"
+@export var speech_db_threshold: float = -55.0 ## Silence threshold in dB (accounts for 3D camera distance attenuation)
+@export var speech_hold_time: float = 0.22 ## Smoothing buffer in seconds to bridge audio syllables smoothly
+@export var vocal_boost_on_speech: float = 4.0 ## Multiplier for mouth stretch speed when vocalizing
+
 # State Flags
 var is_hit_reaction: bool = false
 var hurt_linger_timer: float = 0.0
@@ -43,11 +54,12 @@ var hurt_linger_timer: float = 0.0
 # Current Active Eye State
 var current_eye_state: ZombieEyeState = ZombieEyeState.DEFAULT
 
-# Internal Procedural Timers
+# Internal Procedural Timers & Audio Metering
 var _breath_time: float = 0.0
-
 var _vocal_boost_timer: float = 0.0
 var _vocal_boost_multiplier: float = 1.0
+var _speech_hold_timer: float = 0.0
+var _audio_peak_db: float = -80.0
 
 # Material References
 var _eye_mat: StandardMaterial3D = null
@@ -114,10 +126,48 @@ func _process(delta: float) -> void:
 
 	_breath_time += delta
 
-	_auto_detect_enemy_state()
+	if not manual_mode:
+		_auto_detect_enemy_state()
+	_update_audio_metering(delta)
 	_update_timers(delta)
 	_evaluate_eye_state()
 	_apply_uv_offsets()
+
+func _update_audio_metering(delta: float) -> void:
+	var has_sound: bool = false
+
+	if is_instance_valid(voice_player):
+		var is_playing: bool = false
+		if "playing" in voice_player:
+			is_playing = bool(voice_player.playing)
+
+		if is_playing:
+			var target_bus = voice_bus_name
+			if "bus" in voice_player and String(voice_player.bus) != "":
+				target_bus = String(voice_player.bus)
+
+			var bus_idx = AudioServer.get_bus_index(target_bus)
+			if bus_idx >= 0:
+				var peak_l = AudioServer.get_bus_peak_volume_left_db(bus_idx, 0)
+				var peak_r = AudioServer.get_bus_peak_volume_right_db(bus_idx, 0)
+				_audio_peak_db = max(peak_l, peak_r)
+				if _audio_peak_db >= speech_db_threshold:
+					has_sound = true
+			else:
+				has_sound = true
+				_audio_peak_db = 0.0
+		else:
+			_audio_peak_db = -80.0
+
+	if has_sound:
+		_speech_hold_timer = speech_hold_time
+		_vocal_boost_multiplier = vocal_boost_on_speech
+	else:
+		if _speech_hold_timer > 0.0:
+			_speech_hold_timer -= delta
+			_vocal_boost_multiplier = vocal_boost_on_speech
+		elif _vocal_boost_timer <= 0.0:
+			_vocal_boost_multiplier = 1.0
 
 func _auto_detect_enemy_state() -> void:
 	if not enemy:
@@ -212,6 +262,10 @@ func _update_timers(delta: float) -> void:
 			_vocal_boost_multiplier = 1.0
 
 func _evaluate_eye_state() -> void:
+	if manual_mode:
+		current_eye_state = manual_eye_state
+		return
+
 	# Priority 1: Active Hit / Stun / Takedown / Die State (0.139)
 	if is_hit_reaction:
 		current_eye_state = ZombieEyeState.HURT

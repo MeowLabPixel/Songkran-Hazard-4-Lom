@@ -52,6 +52,19 @@ enum MouthState {
 @export var duck_eyes_open_end: float = 5.70
 @export var duck_loop_length: float = 6.0
 
+@export_group("Cutscene / Manual Animation")
+@export var manual_mode: bool = false ## When true, AnimationPlayer keyframes or manual properties control facial expressions
+@export var manual_eye_state: EyeState = EyeState.DEFAULT ## Eye expression keyframable in AnimationPlayer
+@export var manual_mouth_state: MouthState = MouthState.NORMAL ## Resting mouth expression keyframable in AnimationPlayer
+@export var is_speaking: bool = false ## Manual flag to force speech flapping if needed
+
+@export_group("Real-Time Audio Metering")
+@export var voice_player: Node = null ## Optional AudioStreamPlayer or AudioStreamPlayer3D
+@export var voice_bus_name: String = "Voiceline"
+@export var speech_db_threshold: float = -55.0 ## Silence threshold in dB (accounts for 3D camera distance attenuation)
+@export var speech_hold_time: float = 0.20 ## Smoothing buffer in seconds to close mouth on silent pauses
+@export var talk_speed: float = 12.0 ## Lip flap cycle speed
+
 # State Flags
 var is_hit_reaction: bool = false
 var hit_linger_timer: float = 0.0
@@ -67,6 +80,12 @@ var is_low_hp: bool = false
 
 var is_voiceline_playing: bool = false
 var _voiceline_timer: float = 0.0
+
+# Internal Audio Metering & Talking State
+var _speech_hold_timer: float = 0.0
+var _talk_time: float = 0.0
+var _audio_is_speaking: bool = false
+var _audio_peak_db: float = -80.0
 
 # Internal Blinking State
 var _blink_timer: float = 0.0
@@ -90,9 +109,22 @@ func _ready() -> void:
 		var parent = get_parent()
 		if parent is CharacterBody3D:
 			anchalee = parent
+		else:
+			manual_mode = true
 	_ensure_head_mesh()
+	_ensure_voice_player()
 	_ensure_unique_materials()
 	_reset_blink_timer()
+
+func _ensure_voice_player() -> void:
+	if not is_instance_valid(voice_player):
+		var p = get_parent()
+		if p:
+			voice_player = p.get_node_or_null("VoicelinePlayer")
+			if not voice_player:
+				voice_player = p.find_child("VoicelinePlayer", true, false)
+			if not voice_player:
+				voice_player = p.find_child("AudioStreamPlayer3D", true, false)
 
 func _ensure_head_mesh() -> void:
 	if not head_mesh and anchalee:
@@ -137,13 +169,66 @@ func _process(delta: float) -> void:
 		if not head_mesh:
 			return
 
+	if not is_instance_valid(voice_player):
+		_ensure_voice_player()
+
 	_shake_time += delta
-	_auto_detect_anchalee_state(delta)
+	if not manual_mode:
+		_auto_detect_anchalee_state(delta)
+	_update_audio_metering(delta)
 	_update_timers(delta)
 	_evaluate_eye_state()
 	_evaluate_mouth_state()
 	_process_blinking(delta)
 	_apply_uv_offsets()
+
+func _update_audio_metering(delta: float) -> void:
+	_talk_time += delta
+	var has_sound: bool = false
+
+	if is_instance_valid(voice_player):
+		var is_playing: bool = false
+		if "playing" in voice_player:
+			is_playing = bool(voice_player.playing)
+
+		if is_playing:
+			var target_bus = voice_bus_name
+			if "bus" in voice_player and String(voice_player.bus) != "":
+				target_bus = String(voice_player.bus)
+
+			var bus_idx = AudioServer.get_bus_index(target_bus)
+			if bus_idx >= 0:
+				var peak_l = AudioServer.get_bus_peak_volume_left_db(bus_idx, 0)
+				var peak_r = AudioServer.get_bus_peak_volume_right_db(bus_idx, 0)
+				_audio_peak_db = max(peak_l, peak_r)
+				if _audio_peak_db >= speech_db_threshold:
+					has_sound = true
+			else:
+				has_sound = true
+				_audio_peak_db = 0.0
+		else:
+			_audio_peak_db = -80.0
+	elif is_voiceline_playing:
+		var bus_idx = AudioServer.get_bus_index(voice_bus_name)
+		if bus_idx >= 0:
+			var peak_l = AudioServer.get_bus_peak_volume_left_db(bus_idx, 0)
+			var peak_r = AudioServer.get_bus_peak_volume_right_db(bus_idx, 0)
+			_audio_peak_db = max(peak_l, peak_r)
+			if _audio_peak_db >= speech_db_threshold:
+				has_sound = true
+		else:
+			has_sound = true
+			_audio_peak_db = -10.0
+
+	if has_sound:
+		_speech_hold_timer = speech_hold_time
+		_audio_is_speaking = true
+	else:
+		if _speech_hold_timer > 0.0:
+			_speech_hold_timer -= delta
+			_audio_is_speaking = true
+		else:
+			_audio_is_speaking = false
 
 func _auto_detect_anchalee_state(delta: float) -> void:
 	if not anchalee:
@@ -231,6 +316,10 @@ func _update_timers(delta: float) -> void:
 			is_voiceline_playing = false
 
 func _evaluate_eye_state() -> void:
+	if manual_mode:
+		current_eye_state = manual_eye_state
+		return
+
 	# Priority 1: CRY Eyes (0.140 - 0.145) - Active hit reaction, death, or 1.0s hit linger
 	if is_hit_reaction or is_die or hit_linger_timer > 0.0:
 		current_eye_state = EyeState.CRY
@@ -290,12 +379,32 @@ func _evaluate_eye_state() -> void:
 	current_eye_state = EyeState.DEFAULT
 
 func _evaluate_mouth_state() -> void:
-	# Priority 1: Voiceline Playing
-	if is_voiceline_playing:
-		if is_combat or is_ducking or current_eye_state == EyeState.SURPRISE:
-			current_mouth_state = MouthState.OPEN_WIDE
+	var active_speaking = is_speaking or _audio_is_speaking
+
+	if manual_mode:
+		if active_speaking:
+			var flap = (sin(_talk_time * talk_speed) + 1.0) * 0.5
+			if flap > 0.35:
+				if _audio_peak_db > -20.0 or manual_eye_state in [EyeState.CRY, EyeState.SURPRISE]:
+					current_mouth_state = MouthState.OPEN_WIDE
+				else:
+					current_mouth_state = MouthState.OPEN_SMALL
+			else:
+				current_mouth_state = manual_mouth_state
 		else:
-			current_mouth_state = MouthState.OPEN_SMALL
+			current_mouth_state = manual_mouth_state
+		return
+
+	# Priority 1: Voiceline Playing (Gameplay Mode)
+	if active_speaking:
+		var flap = (sin(_talk_time * talk_speed) + 1.0) * 0.5
+		if flap > 0.35:
+			if is_combat or is_ducking or current_eye_state == EyeState.SURPRISE or _audio_peak_db > -20.0:
+				current_mouth_state = MouthState.OPEN_WIDE
+			else:
+				current_mouth_state = MouthState.OPEN_SMALL
+		else:
+			current_mouth_state = MouthState.SCARE if (is_combat or is_ducking) else MouthState.NORMAL
 		return
 
 	# Priority 2: Scare / Combat / Ducking

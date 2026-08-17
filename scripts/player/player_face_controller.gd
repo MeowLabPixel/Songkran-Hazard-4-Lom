@@ -51,6 +51,19 @@ const MOUTH_OFFSETS = {
 @export_group("Mouth Set Configuration")
 @export var use_natural_mouth_set: bool = false ## Toggle to use Natural Close / Natural Open (Medium) for resting and normal speech
 
+@export_group("Cutscene / Manual Animation")
+@export var manual_mode: bool = false ## When true, AnimationPlayer keyframes or manual properties control facial expressions
+@export var manual_eye_state: EyeState = EyeState.DEFAULT ## Eye expression keyframable in AnimationPlayer
+@export var manual_mouth_state: MouthState = MouthState.NATURAL_CLOSE ## Resting mouth expression keyframable in AnimationPlayer
+@export var is_speaking: bool = false ## Manual flag to force speech flapping if needed
+
+@export_group("Real-Time Audio Metering")
+@export var voice_player: Node = null ## Optional AudioStreamPlayer or AudioStreamPlayer3D
+@export var voice_bus_name: String = "Voiceline"
+@export var speech_db_threshold: float = -55.0 ## Silence threshold in dB (accounts for 3D camera distance attenuation)
+@export var speech_hold_time: float = 0.20 ## Smoothing buffer in seconds to close mouth on silent pauses
+@export var talk_speed: float = 12.0 ## Lip flap cycle speed
+
 # Overrides & Event Flags
 var is_hit_reaction: bool = false
 var hit_reaction_timer: float = 0.0
@@ -61,7 +74,12 @@ var is_grab_fail: bool = false
 var grab_win_timer: float = 0.0
 var grab_fail_timer: float = 0.0
 var cry_linger_timer: float = 0.0
+var natural_mouth_linger_timer: float = 0.0
+var speech_smile_linger_timer: float = 0.0
 var _was_hit_or_fail: bool = false
+var _was_attacked: bool = false
+var _was_speaking: bool = false
+var _last_hp: float = 100.0
 
 var is_takedown: bool = false
 var is_die: bool = false
@@ -71,6 +89,12 @@ var is_aiming: bool = false
 var is_voiceline_playing: bool = false
 var is_combat: bool = false
 var _voiceline_timer: float = 0.0
+
+# Internal Audio Metering & Talking State
+var _speech_hold_timer: float = 0.0
+var _talk_time: float = 0.0
+var _audio_is_speaking: bool = false
+var _audio_peak_db: float = -80.0
 
 # Internal Blinking State
 var _blink_timer: float = 0.0
@@ -88,10 +112,28 @@ var _mouth_mat: StandardMaterial3D = null
 
 func _ready() -> void:
 	if not player:
-		player = get_parent() as CharacterBody3D
+		var p = get_parent()
+		if p is CharacterBody3D:
+			player = p
+		else:
+			# Auto enable manual mode in cutscene scenes where there is no player CharacterBody3D
+			manual_mode = true
+	if player and "HP" in player:
+		_last_hp = float(player.HP)
 	_ensure_head_mesh()
+	_ensure_voice_player()
 	_ensure_unique_materials()
 	_reset_blink_timer()
+
+func _ensure_voice_player() -> void:
+	if not is_instance_valid(voice_player):
+		var p = get_parent()
+		if p:
+			voice_player = p.get_node_or_null("VoicelinePlayer")
+			if not voice_player:
+				voice_player = p.find_child("VoicelinePlayer", true, false)
+			if not voice_player:
+				voice_player = p.find_child("AudioStreamPlayer3D", true, false)
 
 func _ensure_head_mesh() -> void:
 	if not head_mesh and player:
@@ -132,12 +174,65 @@ func _process(delta: float) -> void:
 		if not head_mesh:
 			return
 
-	_auto_detect_player_state()
+	if not is_instance_valid(voice_player):
+		_ensure_voice_player()
+
+	if not manual_mode:
+		_auto_detect_player_state()
+	_update_audio_metering(delta)
 	_update_timers(delta)
 	_evaluate_eye_state()
 	_evaluate_mouth_state()
 	_process_blinking(delta)
 	_apply_uv_offsets()
+
+func _update_audio_metering(delta: float) -> void:
+	_talk_time += delta
+	var has_sound: bool = false
+
+	if is_instance_valid(voice_player):
+		var is_playing: bool = false
+		if "playing" in voice_player:
+			is_playing = bool(voice_player.playing)
+
+		if is_playing:
+			var target_bus = voice_bus_name
+			if "bus" in voice_player and String(voice_player.bus) != "":
+				target_bus = String(voice_player.bus)
+
+			var bus_idx = AudioServer.get_bus_index(target_bus)
+			if bus_idx >= 0:
+				var peak_l = AudioServer.get_bus_peak_volume_left_db(bus_idx, 0)
+				var peak_r = AudioServer.get_bus_peak_volume_right_db(bus_idx, 0)
+				_audio_peak_db = max(peak_l, peak_r)
+				if _audio_peak_db >= speech_db_threshold:
+					has_sound = true
+			else:
+				has_sound = true
+				_audio_peak_db = 0.0
+		else:
+			_audio_peak_db = -80.0
+	elif is_voiceline_playing:
+		var bus_idx = AudioServer.get_bus_index(voice_bus_name)
+		if bus_idx >= 0:
+			var peak_l = AudioServer.get_bus_peak_volume_left_db(bus_idx, 0)
+			var peak_r = AudioServer.get_bus_peak_volume_right_db(bus_idx, 0)
+			_audio_peak_db = max(peak_l, peak_r)
+			if _audio_peak_db >= speech_db_threshold:
+				has_sound = true
+		else:
+			has_sound = true
+			_audio_peak_db = -10.0
+
+	if has_sound:
+		_speech_hold_timer = speech_hold_time
+		_audio_is_speaking = true
+	else:
+		if _speech_hold_timer > 0.0:
+			_speech_hold_timer -= delta
+			_audio_is_speaking = true
+		else:
+			_audio_is_speaking = false
 
 func _auto_detect_player_state() -> void:
 	if not player:
@@ -211,6 +306,21 @@ func _auto_detect_player_state() -> void:
 		_was_hit_or_fail = false
 		cry_linger_timer = 1.0
 
+	# Detect transition out of being attacked to linger in natural close mouth
+	var is_currently_attacked = is_hit_reaction or is_grabbed or is_grab_fail or is_die
+	if is_currently_attacked:
+		_was_attacked = true
+	elif _was_attacked:
+		_was_attacked = false
+		natural_mouth_linger_timer = 1.8 # Linger in serious/natural close for 1.8s after attack
+
+	var current_hp: float = 100.0
+	if player and "HP" in player:
+		current_hp = float(player.HP)
+		if current_hp < _last_hp:
+			natural_mouth_linger_timer = 1.8
+		_last_hp = current_hp
+
 	is_combat = _check_is_in_combat()
 
 func _check_is_in_combat() -> bool:
@@ -259,12 +369,22 @@ func _update_timers(delta: float) -> void:
 	if cry_linger_timer > 0.0:
 		cry_linger_timer -= delta
 
+	if natural_mouth_linger_timer > 0.0:
+		natural_mouth_linger_timer -= delta
+
+	if speech_smile_linger_timer > 0.0:
+		speech_smile_linger_timer -= delta
+
 	if _voiceline_timer > 0.0:
 		_voiceline_timer -= delta
 		if _voiceline_timer <= 0.0:
 			is_voiceline_playing = false
 
 func _evaluate_eye_state() -> void:
+	if manual_mode:
+		current_eye_state = manual_eye_state
+		return
+
 	var current_hp: float = 100.0
 	var max_hp: float = 100.0
 	if player:
@@ -307,12 +427,70 @@ func _evaluate_eye_state() -> void:
 		current_eye_state = EyeState.DEFAULT
 
 func _evaluate_mouth_state() -> void:
-	if not is_voiceline_playing:
-		current_mouth_state = MouthState.NATURAL_CLOSE if use_natural_mouth_set else MouthState.DEFAULT
-	elif current_eye_state in [EyeState.FOCUS, EyeState.ANGRY, EyeState.SURPRISE]:
-		current_mouth_state = MouthState.OPEN_WIDE
-	else:
-		current_mouth_state = MouthState.NATURAL_OPEN if use_natural_mouth_set else MouthState.OPEN_SMALL
+	var active_speaking = is_speaking or _audio_is_speaking
+	
+	if active_speaking:
+		_was_speaking = true
+		speech_smile_linger_timer = 1.0 # primed to 1.0s while speaking
+	elif _was_speaking:
+		_was_speaking = false
+		speech_smile_linger_timer = 1.0 # countdown starts when speaking finishes
+
+	if manual_mode:
+		if active_speaking:
+			var flap = (sin(_talk_time * talk_speed) + 1.0) * 0.5
+			if flap > 0.35:
+				if _audio_peak_db > -25.0 or manual_eye_state in [EyeState.FOCUS, EyeState.ANGRY, EyeState.SURPRISE]:
+					current_mouth_state = MouthState.OPEN_WIDE
+				else:
+					current_mouth_state = MouthState.NATURAL_OPEN if use_natural_mouth_set else MouthState.OPEN_SMALL
+			else:
+				current_mouth_state = MouthState.NATURAL_CLOSE if use_natural_mouth_set else manual_mouth_state
+		elif speech_smile_linger_timer > 0.0:
+			current_mouth_state = MouthState.NATURAL_CLOSE if use_natural_mouth_set else manual_mouth_state
+		else:
+			current_mouth_state = manual_mouth_state
+		return
+
+	# --- Gameplay Mode ---
+	var is_currently_attacked = is_hit_reaction or is_grabbed or is_grab_fail or is_die
+	var is_in_linger = (natural_mouth_linger_timer > 0.0) or (speech_smile_linger_timer > 0.0)
+	var should_use_natural_close = use_natural_mouth_set or is_currently_attacked or is_in_linger
+
+	# 1. Active Hurt / Getting Attacked (Get_hit, Grabbed, Grab Fail, Die)
+	if is_currently_attacked:
+		if is_die:
+			current_mouth_state = MouthState.OPEN_WIDE
+		else:
+			if active_speaking or _audio_peak_db > -45.0:
+				current_mouth_state = MouthState.OPEN_WIDE
+			else:
+				var pain_flap = (sin(_talk_time * (talk_speed * 0.8)) + 1.0) * 0.5
+				if pain_flap > 0.40:
+					current_mouth_state = MouthState.OPEN_WIDE if (is_hit_reaction or is_grab_fail) else MouthState.NATURAL_OPEN
+				else:
+					current_mouth_state = MouthState.NATURAL_CLOSE
+		return
+
+	# 2. Speaking / Voiceline Active (Flaps between NATURAL_OPEN and NATURAL_CLOSE without smiling)
+	if active_speaking:
+		var flap = (sin(_talk_time * talk_speed) + 1.0) * 0.5
+		if flap > 0.35:
+			if current_eye_state in [EyeState.FOCUS, EyeState.ANGRY, EyeState.SURPRISE] or _audio_peak_db > -25.0:
+				current_mouth_state = MouthState.OPEN_WIDE
+			else:
+				current_mouth_state = MouthState.NATURAL_OPEN
+		else:
+			current_mouth_state = MouthState.NATURAL_CLOSE
+		return
+
+	# 3. Post-Speech / Post-Attack Linger (Stay in NATURAL_CLOSE for 1.0s before returning to DEFAULT smile)
+	if should_use_natural_close:
+		current_mouth_state = MouthState.NATURAL_CLOSE
+		return
+
+	# 4. Default Resting Smile
+	current_mouth_state = MouthState.DEFAULT
 
 func _get_blink_rate_multiplier() -> float:
 	match current_eye_state:
