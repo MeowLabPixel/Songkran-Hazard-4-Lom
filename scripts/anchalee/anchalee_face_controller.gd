@@ -1,3 +1,4 @@
+@tool
 class_name AnchaleeFaceController
 extends Node3D
 
@@ -5,7 +6,7 @@ enum EyeState {
 	DEFAULT,   # 0.000
 	CRY,       # 0.140 - 0.145 (Dynamic shake)
 	CLOSED,    # 0.270 - 0.275 (Dynamic shake for ducking/jinking / blink)
-	SURPRISE,  # 0.420 (When zombie targets Anchalee)
+	SURPRISE,  # 0.421 (When zombie targets Anchalee)
 }
 
 enum MouthState {
@@ -15,12 +16,23 @@ enum MouthState {
 	OPEN_SMALL,  # 0.423 (Voiceline during normal/calm state)
 }
 
-@export var head_mesh: MeshInstance3D
+@export var head_mesh: MeshInstance3D:
+	set(val):
+		head_mesh = val
+		_update_editor_preview()
+
 @export var anchalee: CharacterBody3D
 
 @export_group("Surface Indices")
-@export var eye_surface_index: int = 0
-@export var mouth_surface_index: int = 1
+@export var eye_surface_index: int = 0:
+	set(val):
+		eye_surface_index = val
+		_update_editor_preview()
+
+@export var mouth_surface_index: int = 1:
+	set(val):
+		mouth_surface_index = val
+		_update_editor_preview()
 
 @export_group("Blinking Settings")
 @export var enable_blinking: bool = true
@@ -53,17 +65,47 @@ enum MouthState {
 @export var duck_loop_length: float = 6.0
 
 @export_group("Cutscene / Manual Animation")
-@export var manual_mode: bool = false ## When true, AnimationPlayer keyframes or manual properties control facial expressions
-@export var manual_eye_state: EyeState = EyeState.DEFAULT ## Eye expression keyframable in AnimationPlayer
-@export var manual_mouth_state: MouthState = MouthState.NORMAL ## Resting mouth expression keyframable in AnimationPlayer
-@export var is_speaking: bool = false ## Manual flag to force speech flapping if needed
+@export var manual_mode: bool = false:
+	set(val):
+		manual_mode = val
+		_update_editor_preview()
+
+@export var manual_eye_state: EyeState = EyeState.DEFAULT:
+	set(val):
+		manual_eye_state = val
+		_update_editor_preview()
+
+@export var manual_mouth_state: MouthState = MouthState.NORMAL:
+	set(val):
+		manual_mouth_state = val
+		_update_editor_preview()
+
+@export var override_speech_open_mouth: MouthState = MouthState.NORMAL:
+	set(val):
+		override_speech_open_mouth = val
+		_update_editor_preview()
+
+@export var override_speech_close_mouth: MouthState = MouthState.NORMAL:
+	set(val):
+		override_speech_close_mouth = val
+		_update_editor_preview()
+
+@export var hold_mouth_open: bool = false:
+	set(val):
+		hold_mouth_open = val
+		_update_editor_preview()
+
+@export var is_speaking: bool = false:
+	set(val):
+		is_speaking = val
+		_update_editor_preview()
 
 @export_group("Real-Time Audio Metering")
 @export var voice_player: Node = null ## Optional AudioStreamPlayer or AudioStreamPlayer3D
 @export var voice_bus_name: String = "Voiceline"
 @export var speech_db_threshold: float = -55.0 ## Silence threshold in dB (accounts for 3D camera distance attenuation)
-@export var speech_hold_time: float = 0.20 ## Smoothing buffer in seconds to close mouth on silent pauses
-@export var talk_speed: float = 12.0 ## Lip flap cycle speed
+@export var speech_hold_time: float = 0.15 ## Smoothing buffer in seconds to close mouth on silent pauses
+@export var talk_speed: float = 15.0 ## Lip flap cycle speed
 
 # State Flags
 var is_hit_reaction: bool = false
@@ -86,6 +128,7 @@ var _speech_hold_timer: float = 0.0
 var _talk_time: float = 0.0
 var _audio_is_speaking: bool = false
 var _audio_peak_db: float = -80.0
+var _was_speaking: bool = false
 
 # Internal Blinking State
 var _blink_timer: float = 0.0
@@ -103,36 +146,112 @@ var current_mouth_state: MouthState = MouthState.NORMAL
 # Material References
 var _eye_mat: StandardMaterial3D = null
 var _mouth_mat: StandardMaterial3D = null
+var _isolated_bus_name: String = ""
+
+func _exit_tree() -> void:
+	if not Engine.is_editor_hint() and _isolated_bus_name != "":
+		var idx = AudioServer.get_bus_index(_isolated_bus_name)
+		if idx != -1:
+			AudioServer.remove_bus(idx)
+			_isolated_bus_name = ""
 
 func _ready() -> void:
 	if not anchalee:
 		var parent = get_parent()
 		if parent is CharacterBody3D:
 			anchalee = parent
-		else:
+		elif not Engine.is_editor_hint():
 			manual_mode = true
 	_ensure_head_mesh()
-	_ensure_voice_player()
+	if not Engine.is_editor_hint():
+		_ensure_voice_player()
 	_ensure_unique_materials()
 	_reset_blink_timer()
+	_update_editor_preview()
+
+func _update_editor_preview() -> void:
+	if not is_inside_tree():
+		return
+	_ensure_head_mesh()
+	_ensure_unique_materials()
+	_evaluate_eye_state()
+	_evaluate_mouth_state()
+	_apply_uv_offsets()
 
 func _ensure_voice_player() -> void:
-	if not is_instance_valid(voice_player):
+	# 1. If assigned manually in Inspector, respect it 100%
+	if is_instance_valid(voice_player):
+		if not Engine.is_editor_hint():
+			_ensure_isolated_voice_bus()
+		return
+
+	# 2. Check direct children
+	for child in get_children():
+		if child is AudioStreamPlayer3D or child is AudioStreamPlayer:
+			voice_player = child
+			if not Engine.is_editor_hint():
+				_ensure_isolated_voice_bus()
+			return
+
+	# 3. Check anchalee root children
+	if anchalee:
+		voice_player = anchalee.get_node_or_null("VoicelinePlayer")
+		if not voice_player:
+			voice_player = anchalee.get_node_or_null("AudioStreamPlayer3D")
+		if not voice_player:
+			voice_player = anchalee.find_child("VoicelinePlayer", true, false)
+		if is_instance_valid(voice_player) and not Engine.is_editor_hint():
+			_ensure_isolated_voice_bus()
+	elif not voice_player:
 		var p = get_parent()
 		if p:
 			voice_player = p.get_node_or_null("VoicelinePlayer")
 			if not voice_player:
 				voice_player = p.find_child("VoicelinePlayer", true, false)
-			if not voice_player:
-				voice_player = p.find_child("AudioStreamPlayer3D", true, false)
+
+func _ensure_isolated_voice_bus() -> void:
+	if Engine.is_editor_hint():
+		return
+
+	if _isolated_bus_name == "":
+		var clean_name = name.replace(" ", "_")
+		_isolated_bus_name = "Voice_" + clean_name + "_" + str(get_instance_id())
+
+	var bus_idx = AudioServer.get_bus_index(_isolated_bus_name)
+	if bus_idx == -1:
+		bus_idx = AudioServer.bus_count
+		AudioServer.add_bus(bus_idx)
+		AudioServer.set_bus_name(bus_idx, _isolated_bus_name)
+
+	var parent_bus = voice_bus_name if voice_bus_name != "" else "Voiceline"
+	if AudioServer.get_bus_index(parent_bus) != -1:
+		AudioServer.set_bus_send(bus_idx, parent_bus)
+	else:
+		AudioServer.set_bus_send(bus_idx, "Master")
+
+	if is_instance_valid(voice_player):
+		voice_player.bus = _isolated_bus_name
 
 func _ensure_head_mesh() -> void:
+	if is_instance_valid(head_mesh):
+		return
+	head_mesh = find_child("Head_001", true, false) as MeshInstance3D
+	if not head_mesh:
+		head_mesh = find_child("Head", true, false) as MeshInstance3D
 	if not head_mesh and anchalee:
-		head_mesh = anchalee.get_node_or_null("AnchaleeModel/rig_002/GeneralSkeleton/RetargetModifier3D/OriginalSkeleton/Head_001") as MeshInstance3D
-		if not head_mesh:
-			head_mesh = anchalee.find_child("Head_001", true, false) as MeshInstance3D
+		head_mesh = anchalee.find_child("Head_001", true, false) as MeshInstance3D
 		if not head_mesh:
 			head_mesh = anchalee.find_child("Head", true, false) as MeshInstance3D
+
+	if not head_mesh:
+		var curr: Node = get_parent()
+		while curr and not head_mesh:
+			head_mesh = curr.find_child("Head_001", true, false) as MeshInstance3D
+			if not head_mesh:
+				head_mesh = curr.find_child("Head", true, false) as MeshInstance3D
+			if not head_mesh:
+				head_mesh = curr.find_child("head", true, false) as MeshInstance3D
+			curr = curr.get_parent()
 
 func _ensure_unique_materials() -> void:
 	if not head_mesh:
@@ -146,8 +265,9 @@ func _ensure_unique_materials() -> void:
 			e_mat = active_e.duplicate() as StandardMaterial3D
 			head_mesh.set_surface_override_material(eye_surface_index, e_mat)
 	else:
-		e_mat = e_mat.duplicate() as StandardMaterial3D
-		head_mesh.set_surface_override_material(eye_surface_index, e_mat)
+		if not Engine.is_editor_hint():
+			e_mat = e_mat.duplicate() as StandardMaterial3D
+			head_mesh.set_surface_override_material(eye_surface_index, e_mat)
 	_eye_mat = e_mat
 
 	# Surface 1 - Mouth
@@ -158,8 +278,9 @@ func _ensure_unique_materials() -> void:
 			m_mat = active_m.duplicate() as StandardMaterial3D
 			head_mesh.set_surface_override_material(mouth_surface_index, m_mat)
 	else:
-		m_mat = m_mat.duplicate() as StandardMaterial3D
-		head_mesh.set_surface_override_material(mouth_surface_index, m_mat)
+		if not Engine.is_editor_hint():
+			m_mat = m_mat.duplicate() as StandardMaterial3D
+			head_mesh.set_surface_override_material(mouth_surface_index, m_mat)
 	_mouth_mat = m_mat
 
 func _process(delta: float) -> void:
@@ -173,13 +294,15 @@ func _process(delta: float) -> void:
 		_ensure_voice_player()
 
 	_shake_time += delta
-	if not manual_mode:
+	if not manual_mode and not Engine.is_editor_hint():
 		_auto_detect_anchalee_state(delta)
+
 	_update_audio_metering(delta)
 	_update_timers(delta)
 	_evaluate_eye_state()
 	_evaluate_mouth_state()
-	_process_blinking(delta)
+	if enable_blinking:
+		_process_blinking(delta)
 	_apply_uv_offsets()
 
 func _update_audio_metering(delta: float) -> void:
@@ -187,14 +310,20 @@ func _update_audio_metering(delta: float) -> void:
 	var has_sound: bool = false
 
 	if is_instance_valid(voice_player):
-		var is_playing: bool = false
-		if "playing" in voice_player:
-			is_playing = bool(voice_player.playing)
+		var is_active: bool = false
+		if voice_player is AudioStreamPlayer3D or voice_player is AudioStreamPlayer:
+			is_active = voice_player.has_stream_playback() or voice_player.playing
+		elif "playing" in voice_player:
+			is_active = bool(voice_player.playing)
 
-		if is_playing:
-			var target_bus = voice_bus_name
-			if "bus" in voice_player and String(voice_player.bus) != "":
-				target_bus = String(voice_player.bus)
+		if is_active:
+			var target_bus = ""
+			if not Engine.is_editor_hint():
+				if _isolated_bus_name == "" or String(voice_player.bus) != _isolated_bus_name:
+					_ensure_isolated_voice_bus()
+				target_bus = _isolated_bus_name
+			else:
+				target_bus = String(voice_player.bus) if "bus" in voice_player and String(voice_player.bus) != "" else voice_bus_name
 
 			var bus_idx = AudioServer.get_bus_index(target_bus)
 			if bus_idx >= 0:
@@ -208,17 +337,8 @@ func _update_audio_metering(delta: float) -> void:
 				_audio_peak_db = 0.0
 		else:
 			_audio_peak_db = -80.0
-	elif is_voiceline_playing:
-		var bus_idx = AudioServer.get_bus_index(voice_bus_name)
-		if bus_idx >= 0:
-			var peak_l = AudioServer.get_bus_peak_volume_left_db(bus_idx, 0)
-			var peak_r = AudioServer.get_bus_peak_volume_right_db(bus_idx, 0)
-			_audio_peak_db = max(peak_l, peak_r)
-			if _audio_peak_db >= speech_db_threshold:
-				has_sound = true
-		else:
-			has_sound = true
-			_audio_peak_db = -10.0
+	else:
+		_audio_peak_db = -80.0
 
 	if has_sound:
 		_speech_hold_timer = speech_hold_time
@@ -325,7 +445,7 @@ func _evaluate_eye_state() -> void:
 		current_eye_state = EyeState.CRY
 		return
 
-	# Priority 2: SURPRISE Eyes (0.420) - Zombie enemy is targeting Anchalee
+	# Priority 2: SURPRISE Eyes (0.421) - Zombie enemy is targeting Anchalee
 	if is_targeted_by_zombie:
 		current_eye_state = EyeState.SURPRISE
 		return
@@ -380,35 +500,81 @@ func _evaluate_eye_state() -> void:
 
 func _evaluate_mouth_state() -> void:
 	var active_speaking = is_speaking or _audio_is_speaking
+	if active_speaking:
+		if not _was_speaking:
+			_talk_time = (PI * 0.5) / (talk_speed if talk_speed > 0.0 else 15.0)
+		_was_speaking = true
+	elif _was_speaking:
+		_was_speaking = false
 
+	# --- 1. Manual / Cutscene Mode ---
 	if manual_mode:
+		# A. Hold mouth open override
+		if hold_mouth_open:
+			if override_speech_open_mouth != MouthState.NORMAL:
+				current_mouth_state = override_speech_open_mouth
+			elif manual_mouth_state in [MouthState.OPEN_SMALL, MouthState.OPEN_WIDE]:
+				current_mouth_state = manual_mouth_state
+			else:
+				current_mouth_state = MouthState.OPEN_SMALL
+			return
+
+		# B. If animator keyframed an explicit open mouth pose and not speaking, hold it directly
+		if not active_speaking and manual_mouth_state in [MouthState.OPEN_SMALL, MouthState.OPEN_WIDE]:
+			current_mouth_state = manual_mouth_state
+			return
+
+		# C. Determine Open & Close Flap Pairs
+		var is_surprised = (manual_eye_state == EyeState.SURPRISE)
+		var is_crying = (manual_eye_state == EyeState.CRY)
+		var is_scare = (manual_mouth_state == MouthState.SCARE)
+
+		# Target Open Mouth:
+		var target_open: MouthState
+		if override_speech_open_mouth != MouthState.NORMAL:
+			target_open = override_speech_open_mouth
+		elif is_surprised or is_crying or is_scare:
+			target_open = MouthState.OPEN_WIDE
+		else:
+			target_open = MouthState.OPEN_SMALL
+
+		# Target Close Mouth:
+		var target_close: MouthState
+		if override_speech_close_mouth != MouthState.NORMAL:
+			target_close = override_speech_close_mouth
+		elif is_scare or is_crying:
+			target_close = MouthState.SCARE
+		else:
+			target_close = manual_mouth_state
+
+		# D. When Speaking, oscillate between target_open and target_close
 		if active_speaking:
 			var flap = (sin(_talk_time * talk_speed) + 1.0) * 0.5
-			if flap > 0.35:
-				if _audio_peak_db > -20.0 or manual_eye_state in [EyeState.CRY, EyeState.SURPRISE]:
-					current_mouth_state = MouthState.OPEN_WIDE
-				else:
-					current_mouth_state = MouthState.OPEN_SMALL
-			else:
-				current_mouth_state = manual_mouth_state
+			current_mouth_state = target_open if flap > 0.35 else target_close
+			return
+
+		# E. Silent / Resting State
+		if is_scare or is_crying:
+			current_mouth_state = MouthState.SCARE
 		else:
 			current_mouth_state = manual_mouth_state
 		return
 
+	# --- 2. Gameplay Mode ---
 	# Priority 1: Voiceline Playing (Gameplay Mode)
 	if active_speaking:
 		var flap = (sin(_talk_time * talk_speed) + 1.0) * 0.5
 		if flap > 0.35:
-			if is_combat or is_ducking or current_eye_state == EyeState.SURPRISE or _audio_peak_db > -20.0:
+			if is_combat or is_ducking or current_eye_state == EyeState.SURPRISE or current_eye_state == EyeState.CRY:
 				current_mouth_state = MouthState.OPEN_WIDE
 			else:
 				current_mouth_state = MouthState.OPEN_SMALL
 		else:
-			current_mouth_state = MouthState.SCARE if (is_combat or is_ducking) else MouthState.NORMAL
+			current_mouth_state = MouthState.SCARE if (is_combat or is_ducking or current_eye_state == EyeState.CRY) else MouthState.NORMAL
 		return
 
 	# Priority 2: Scare / Combat / Ducking
-	if is_combat or is_ducking:
+	if is_combat or is_ducking or current_eye_state == EyeState.CRY:
 		current_mouth_state = MouthState.SCARE
 		return
 
@@ -455,7 +621,7 @@ func _apply_uv_offsets() -> void:
 				# Normal blinking
 				eye_uv_y = (closed_eye_min_y + closed_eye_max_y) * 0.5
 		EyeState.SURPRISE:
-			eye_uv_y = 0.420
+			eye_uv_y = 0.421
 		EyeState.DEFAULT:
 			eye_uv_y = 0.000
 

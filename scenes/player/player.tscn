@@ -5737,6 +5737,8 @@ avoidance_mask = 4
 script = ExtResource("3_1u1sw")
 head_mesh = NodePath("../Re4Lom Base Rig/rig/Skeleton3D/Head")
 player = NodePath("..")
+speech_db_threshold = -50.0
+speech_hold_time = 0.3
 
 [node name="Re4Lom Base Rig_rig_Skeleton3D_spine02_Hitbox_F#CollisionShape3D" type="CollisionShape3D" parent="." unique_id=912103734]
 transform = Transform3D(1.0000031, 0, 0, 0, 1.0000058, 0, 0, 0, 1.0000086, 0, 0.8833348, 0)
@@ -7672,7 +7674,7 @@ bone_idx = 4
 [node name="TakedownHitbox" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox" unique_id=958867971]
 
 [node name="TakedownAttackBox" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=1184713375]
-transform = Transform3D(0.031009443, 0.7687626, -0.6387815, -0.952533, -0.17091234, -0.25193122, -0.302851, 0.6162719, 0.7269732, 0.586274, -0.14511234, 0.42287216)
+transform = Transform3D(0.031009441, 0.7687625, -0.6387815, -0.95253295, -0.17091233, -0.25193122, -0.30285096, 0.6162719, 0.7269732, 0.586274, -0.14511234, 0.42287216)
 shape = SubResource("CapsuleShape3D_ntd1s")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=315213988]

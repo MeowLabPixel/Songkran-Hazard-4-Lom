@@ -42,11 +42,19 @@ window/size/viewport_width=1280
 window/size/viewport_height=720
 window/size/initial_position_type=4
 window/stretch/mode="canvas_items"
-window/stretch/aspect="expand"
+window/stretch/aspect="ignore"
+
+[editor]
+
+movie_writer/video_quality=1.0
+movie_writer/audio_bit_depth=32
+movie_writer/ogv/audio_quality=1.0
+movie_writer/ogv/encoding_speed=1
+movie_writer/movie_file="C:/Users/n2EIm/OneDrive/Desktop/Trailer_OutputTest/Cutscene_1.avi"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/StyleboxFancy/plugin.cfg", "res://addons/godot_ai/plugin.cfg")
+enabled=PackedStringArray("res://addons/StyleboxFancy/plugin.cfg", "res://addons/anthonyec.camera_preview/plugin.cfg", "res://addons/godot_ai/plugin.cfg")
 
 [global_group]
 

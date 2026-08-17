@@ -23,6 +23,7 @@ var original_rotations: Array[Vector3] = []
 var member_offsets: Array[float] = []
 var member_spin_multipliers: Array[float] = []
 
+var elapsed_time: float = 0.0
 var balloon_timer: float = 0.0
 var shot_timer: float = 0.0
 var next_balloon_time: float = 1.0
@@ -87,6 +88,8 @@ func _collect_members(node: Node) -> void:
 		_collect_members(child)
 
 func _process(delta: float) -> void:
+	elapsed_time += delta
+
 	# Update throwing/shooting timers
 	balloon_timer += delta
 	if balloon_timer >= next_balloon_time:
@@ -105,7 +108,7 @@ func _process(delta: float) -> void:
 	if not is_visible:
 		return
 
-	var time = Time.get_ticks_msec() / 1000.0
+	var time = elapsed_time
 	var members_count = members.size()
 	
 	for i in range(members_count):

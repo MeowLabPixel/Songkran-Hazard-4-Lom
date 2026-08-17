@@ -12,6 +12,10 @@ var current_phase: Phase = Phase.INIT
 var bg_scene = preload("res://scenes/MainMenu_BG.tscn")
 var bg_instance: Node = null
 
+@export var enable_ui: bool = true:
+	set(value):
+		enable_ui = value
+		_update_ui_visibility()
 @export var auto_transition: bool = false
 @export var disclaimer_prompt_en: String = "[ PRESS E TO ENTER ]"
 @export var disclaimer_prompt_th: String = "[ กดปุ่ม E เพื่อดำเนินต่อ ]"
@@ -56,6 +60,7 @@ func _ready() -> void:
 	prompt_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9, 1.0))
 	prompt_label.text = _get_continue_text()
 	prompt_label.modulate.a = 0.0
+	prompt_label.visible = enable_ui
 	
 	_create_language_changer()
 	
@@ -139,6 +144,12 @@ func _get_disclaimer_prompt() -> String:
 func _start_prompt_pulse() -> void:
 	if pulse_tween:
 		pulse_tween.kill()
+		pulse_tween = null
+	
+	if not enable_ui:
+		prompt_label.hide()
+		prompt_label.modulate.a = 0.0
+		return
 	
 	prompt_label.show()
 	prompt_label.modulate.a = 0.0
@@ -162,7 +173,7 @@ func _start_reveal() -> void:
 	_stop_prompt_pulse(0.2)
 	SoundManager.play_main_theme()
 	
-	if lang_changer_container:
+	if lang_changer_container and enable_ui:
 		var fade_out_lang = create_tween()
 		fade_out_lang.tween_property(lang_changer_container, "modulate:a", 0.0, 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	
@@ -431,6 +442,7 @@ func _reset_to_press_e() -> void:
 	can_transition = false
 	if lang_changer_container:
 		lang_changer_container.modulate.a = 1.0
+		lang_changer_container.visible = enable_ui
 	SoundManager.stop_music()
 	if reveal_tween:
 		reveal_tween.kill()
@@ -504,6 +516,7 @@ func _create_language_changer() -> void:
 	
 	# Position at top right
 	add_child(lang_changer_container)
+	lang_changer_container.visible = enable_ui
 	lang_changer_container.anchor_left = 1.0
 	lang_changer_container.anchor_right = 1.0
 	lang_changer_container.anchor_top = 0.0
@@ -516,6 +529,23 @@ func _create_language_changer() -> void:
 	lang_changer_container.offset_bottom = 135
 	
 	_update_language_buttons_style()
+
+func _update_ui_visibility() -> void:
+	if not is_inside_tree() or not is_node_ready():
+		return
+	if lang_changer_container:
+		lang_changer_container.visible = enable_ui
+	if not enable_ui:
+		if pulse_tween:
+			pulse_tween.kill()
+			pulse_tween = null
+		if prompt_label:
+			prompt_label.hide()
+			prompt_label.modulate.a = 0.0
+	else:
+		if prompt_label:
+			if current_phase == Phase.PRESS_E or (current_phase == Phase.IDLE and can_transition):
+				_start_prompt_pulse()
 
 func _update_language_buttons_style() -> void:
 	if btn_en and btn_th:

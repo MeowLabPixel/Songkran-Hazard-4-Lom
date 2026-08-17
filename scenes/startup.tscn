@@ -4,6 +4,7 @@
 
 [node name="Startup" type="CanvasLayer" unique_id=1626165567]
 layer = 2
+follow_viewport_enabled = true
 script = ExtResource("1_script")
 disclaimer_prompt_en = "[ PRESS E TO START! ]"
 disclaimer_prompt_th = "[ กดปุ่ม E เพื่อเริ่มเกม! ]"
@@ -17,7 +18,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.02, 0.02, 0.03, 1)
+color = Color(0, 0, 0, 1)
 
 [node name="BackgroundContainer" type="Node2D" parent="." unique_id=890054555]
 
