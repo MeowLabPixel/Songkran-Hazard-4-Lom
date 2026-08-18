@@ -23,6 +23,12 @@ func _enter() -> void:
 				if enemy.state_machine.current_state and enemy.state_machine.current_state.name == "StateAttack":
 					enemy.state_machine.transition_to("StateHunt")
 
+	# If die screen is disabled for footage capture, do not fade to black or switch scene
+	if get_tree().root.has_node("GameManager"):
+		var gm = get_tree().root.get_node("GameManager")
+		if not (gm.show_die_screen and gm.show_gameplay_ui):
+			return
+
 	# Wait 1.0 second, then transition to defeated scene
 	var timer = get_tree().create_timer(1.0)
 	timer.timeout.connect(func():

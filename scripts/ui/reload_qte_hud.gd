@@ -65,7 +65,10 @@ func setup() -> void:
 		_setup_qte_parameters()
 
 func _ready() -> void:
+	add_to_group("qte_hud")
 	_build_ui()
+	if get_tree().root.has_node("GameManager"):
+		visible = GameManager.show_reload_qte and GameManager.show_gameplay_ui
 
 func _setup_qte_parameters() -> void:
 	# Needle sweep duration is always exactly 2.0 seconds

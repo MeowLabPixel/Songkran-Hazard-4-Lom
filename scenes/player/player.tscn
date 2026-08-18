@@ -822,6 +822,8 @@ roughness = 0.0
 rim_enabled = true
 rim = 0.5
 rim_texture = ExtResource("21_iwuka")
+uv1_scale = Vector3(1, 0.847, 1)
+uv1_offset = Vector3(0, 0.588, 0)
 texture_filter = 5
 stencil_mode = 1
 stencil_flags = 2
@@ -838,6 +840,7 @@ roughness = 0.0
 rim_enabled = true
 rim = 0.5
 rim_texture = ExtResource("21_iwuka")
+uv1_offset = Vector3(0.001, 0.434, 0)
 texture_filter = 5
 stencil_mode = 1
 stencil_flags = 2
@@ -5705,7 +5708,7 @@ quick_turn_cooldown_duration = 0.33
 aim_bone = NodePath("Re4Lom Base Rig/rig/Skeleton3D/ArmLookAt")
 aim_bone2 = NodePath("Re4Lom Base Rig/rig/Skeleton3D/SpineLookAt")
 anim = NodePath("AnimationTree")
-MaxHP = 1001
+MaxHP = 500
 hitboxF = NodePath("Re4Lom Base Rig/rig/Skeleton3D/spine02/Hitbox_F2")
 hitboxB = NodePath("Re4Lom Base Rig/rig/Skeleton3D/spine02/Hitbox_B2")
 stun_detect = NodePath("Re4Lom Base Rig/rig/Skeleton3D/spine02/Stunned detect2")
@@ -7674,7 +7677,7 @@ bone_idx = 4
 [node name="TakedownHitbox" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox" unique_id=958867971]
 
 [node name="TakedownAttackBox" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=1184713375]
-transform = Transform3D(0.031009441, 0.7687625, -0.6387815, -0.95253295, -0.17091233, -0.25193122, -0.30285096, 0.6162719, 0.7269732, 0.586274, -0.14511234, 0.42287216)
+transform = Transform3D(0.03100944, 0.7687625, -0.6387815, -0.9525329, -0.17091233, -0.25193122, -0.30285093, 0.6162719, 0.7269732, 0.586274, -0.14511234, 0.42287216)
 shape = SubResource("CapsuleShape3D_ntd1s")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=315213988]
@@ -7864,37 +7867,6 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 41
 text = "AAAAAA"
-
-[node name="QTE" type="CanvasLayer" parent="Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D" unique_id=653981040]
-visible = false
-
-[node name="Label" type="Label" parent="Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/QTE" unique_id=1210491255]
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -264.0
-offset_top = -221.0
-offset_right = 264.0
-offset_bottom = -166.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_font_sizes/font_size = 40
-text = "spam A and D to break free"
-
-[node name="ProgressBar" type="ProgressBar" parent="Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/QTE" unique_id=1350376150]
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -177.0
-offset_top = -140.0
-offset_right = 177.0
-offset_bottom = -81.0
-grow_horizontal = 2
-grow_vertical = 0
 
 [node name="Die" type="CanvasLayer" parent="Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D" unique_id=174974560]
 

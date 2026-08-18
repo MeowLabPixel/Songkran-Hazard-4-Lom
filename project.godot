@@ -46,11 +46,11 @@ window/stretch/aspect="ignore"
 
 [editor]
 
-movie_writer/video_quality=1.0
+movie_writer/video_quality=0.9
 movie_writer/audio_bit_depth=32
 movie_writer/ogv/audio_quality=1.0
-movie_writer/ogv/encoding_speed=1
-movie_writer/movie_file="C:/Users/n2EIm/OneDrive/Desktop/Trailer_OutputTest/Cutscene_1.avi"
+movie_writer/ogv/encoding_speed=2
+movie_writer/movie_file="C:/Users/n2EIm/OneDrive/Desktop/Trailer_OutputTest/Closeup2.avi"
 
 [editor_plugins]
 

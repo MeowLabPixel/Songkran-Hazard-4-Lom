@@ -198,15 +198,16 @@ func _process(delta: float) -> void:
 	if not player:
 		if owner is Player:
 			player = owner as Player
-		else:
-			var players = get_tree().get_nodes_in_group("player")
-			if players.size() > 0:
-				player = players[0]
 		if not player:
 			return
-			
-	if player.HP <= 0:
+	var should_show_stat_ui = true
+	if get_tree().root.has_node("GameManager"):
+		should_show_stat_ui = GameManager.show_player_stat_ui and GameManager.show_gameplay_ui
+	
+	if not should_show_stat_ui or player.HP <= 0:
 		self.visible = false
+	else:
+		self.visible = true
 		
 	# Update active takedown shockwaves
 	if active_shockwaves.size() > 0:

@@ -51,6 +51,41 @@ func set_arm_recoil_enabled(enabled: bool) -> void:
 func set_crosshair_recoil_enabled(enabled: bool) -> void:
 	enable_crosshair_recoil = enabled
 
+# --- UI & Footage Capture settings ---
+var show_gameplay_ui: bool = true
+var show_player_stat_ui: bool = true
+var show_reload_qte: bool = true
+var show_grab_qte: bool = true
+var show_die_screen: bool = true
+var show_takedown_prompt: bool = true
+
+signal gameplay_ui_visibility_changed(is_visible: bool)
+
+func toggle_gameplay_ui() -> void:
+	set_gameplay_ui_visible(not show_gameplay_ui)
+
+func set_gameplay_ui_visible(is_visible: bool) -> void:
+	show_gameplay_ui = is_visible
+	show_player_stat_ui = is_visible
+	show_reload_qte = is_visible
+	show_grab_qte = is_visible
+	show_die_screen = is_visible
+	show_takedown_prompt = is_visible
+	print("[GameManager] Gameplay UI visibility toggled: ", is_visible)
+	gameplay_ui_visibility_changed.emit(is_visible)
+	
+	# Update active Player Stat UI
+	var ui_nodes = get_tree().get_nodes_in_group("player_ui") if get_tree() else []
+	for ui_node in ui_nodes:
+		if ui_node is CanvasLayer:
+			ui_node.visible = is_visible
+			
+	# Update active QTE HUDs
+	var qte_huds = get_tree().get_nodes_in_group("qte_hud") if get_tree() else []
+	for qte in qte_huds:
+		if qte is CanvasLayer:
+			qte.visible = is_visible
+
 # --- New Result Screen / Statistics variables ---
 enum Outcome { VICTORY, DEFEAT_PLAYER, DEFEAT_ANCHALEE }
 var game_outcome: Outcome = Outcome.VICTORY
@@ -262,6 +297,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.is_echo():
 		if event.keycode == KEY_BACKSPACE:
 			restart_game_to_disclaimer()
+		elif event.keycode == KEY_EQUAL:
+			toggle_gameplay_ui()
 
 func restart_game_to_disclaimer() -> void:
 	print("[GameManager] Backspace pressed. Resetting game and restarting to startup main menu.")

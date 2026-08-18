@@ -38,8 +38,11 @@ func _init(p_duration: float = 2.5, p_shakes: int = 5) -> void:
 	layer         = 128  # render on top of game world
 
 func _ready() -> void:
+	add_to_group("qte_hud")
 	_time_left = duration
 	_build_ui()
+	if get_tree().root.has_node("GameManager"):
+		visible = GameManager.show_grab_qte and GameManager.show_gameplay_ui
 
 # ---------- UI construction ----------
 

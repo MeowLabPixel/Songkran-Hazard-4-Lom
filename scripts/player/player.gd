@@ -96,11 +96,6 @@ var Hit_info = {
 
 
 
-#QTE
-@onready var qte: CanvasLayer = $Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/QTE
-@onready var qte_bar: ProgressBar = $Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/QTE/ProgressBar
-var start_qte = false
-
 #Die
 @onready var die: CanvasLayer = $Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/Die
 @onready var die_anim: AnimationPlayer = $Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/Die/AnimationPlayer
@@ -168,6 +163,38 @@ var near_enemy_list = []
 @export var max_scale: float = 2.0
 @export var crosshair_color: Color = Color.WHITE
 
+@export_group("UI & Footage Capture")
+@export var show_gameplay_ui: bool = true:
+	set(val):
+		show_gameplay_ui = val
+		if get_tree() and get_tree().root.has_node("GameManager"):
+			GameManager.set_gameplay_ui_visible(val)
+@export var show_player_stat_ui: bool = true:
+	set(val):
+		show_player_stat_ui = val
+		if get_tree() and get_tree().root.has_node("GameManager"):
+			GameManager.show_player_stat_ui = val
+@export var show_reload_qte: bool = true:
+	set(val):
+		show_reload_qte = val
+		if get_tree() and get_tree().root.has_node("GameManager"):
+			GameManager.show_reload_qte = val
+@export var show_grab_qte: bool = true:
+	set(val):
+		show_grab_qte = val
+		if get_tree() and get_tree().root.has_node("GameManager"):
+			GameManager.show_grab_qte = val
+@export var show_die_screen: bool = true:
+	set(val):
+		show_die_screen = val
+		if get_tree() and get_tree().root.has_node("GameManager"):
+			GameManager.show_die_screen = val
+@export var show_takedown_prompt: bool = true:
+	set(val):
+		show_takedown_prompt = val
+		if get_tree() and get_tree().root.has_node("GameManager"):
+			GameManager.show_takedown_prompt = val
+
 @onready var camera: Node3D = $Camera
 @onready var skeleton: Node3D = $"Re4Lom Base Rig/rig/Skeleton3D"
 @onready var rig: Node3D = $"Re4Lom Base Rig/rig"
@@ -208,6 +235,13 @@ const JUMP_VELOCITY = 4.5
 
 func _ready() -> void:
 	add_to_group("player")
+	if get_tree().root.has_node("GameManager"):
+		GameManager.show_gameplay_ui = show_gameplay_ui
+		GameManager.show_player_stat_ui = show_player_stat_ui
+		GameManager.show_reload_qte = show_reload_qte
+		GameManager.show_grab_qte = show_grab_qte
+		GameManager.show_die_screen = show_die_screen
+		GameManager.show_takedown_prompt = show_takedown_prompt
 	if not face_controller:
 		face_controller = get_node_or_null("PlayerFaceController") as PlayerFaceController
 	if get_tree().root.has_node("GameManager") and GameManager.difficulty == GameManager.Difficulty.CASUAL:
@@ -1150,8 +1184,14 @@ func check_if_near_stun():
 	if sm_player and sm_player.current_state and sm_player.current_state.name in ["Takedown", "Grab", "Get_hit", "Die"]:
 		is_near_stunt = false
 	
+	var should_show_prompt = is_near_stunt
+	if get_tree().root.has_node("GameManager"):
+		var gm = get_tree().root.get_node("GameManager")
+		if not (gm.show_takedown_prompt and gm.show_gameplay_ui):
+			should_show_prompt = false
+	
 	if takedown_prompt_label:
-		takedown_prompt_label.visible = is_near_stunt
+		takedown_prompt_label.visible = should_show_prompt
 
 func aim_bone_on(value):
 	aim_bone.active = value

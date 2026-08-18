@@ -251,8 +251,6 @@ func _push_surrounding_enemies_on_grab_enter() -> void:
 
 func _exit() -> void:
 	set_process(false)
-	owner.start_qte = false
-	owner.qte_bar.value = 0
 	
 	# Stop looping grab sound if not already stopped
 	if _grab_loop_player and is_instance_valid(_grab_loop_player):
