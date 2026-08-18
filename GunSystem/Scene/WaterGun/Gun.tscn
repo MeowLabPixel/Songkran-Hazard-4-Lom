@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cd2m7xntr1tlt" path="res://GunSystem/Script/GunController.gd" id="1_controller"]
 [ext_resource type="Script" uid="uid://b0gdn4ftbjtl2" path="res://GunSystem/Script/PistolWaterGun.gd" id="1_nbubd"]
 [ext_resource type="PackedScene" uid="uid://bljas2yeqo4rd" path="res://GunSystem/Scene/WaterLineVFX/WaterLine.tscn" id="2_n8a5k"]
+[ext_resource type="PackedScene" uid="uid://biyrwoh08cdgw" path="res://Jomp_Folder/VFX_Water/VFX2/vfx_water_splatter.tscn" id="4_66hm5"]
 [ext_resource type="Script" uid="uid://dy1eg8j8nbca8" path="res://GunSystem/Script/ShotgunWaterGun.gd" id="5_bkwqo"]
 [ext_resource type="Material" uid="uid://byydswggwlb1p" path="res://Water Gun Glock/Cell_Pistol.tres" id="5_ki7bh"]
 [ext_resource type="PackedScene" uid="uid://gjs0wjhh5kp8" path="res://GunSystem/Scene/WaterLineVFX/WaterMuzzle.tscn" id="5_xnxwk"]
@@ -761,7 +762,7 @@ current_water = 200.0
 script = ExtResource("1_nbubd")
 spawn_point = NodePath("Gunfix/SpawnPoint")
 shot_vfx_scene = ExtResource("2_n8a5k")
-hit_vfx_scene = ExtResource("5_xnxwk")
+hit_vfx_scene = ExtResource("4_66hm5")
 muzzle_vfx_scene = ExtResource("5_xnxwk")
 muzzle_scale = Vector3(0.2, 0.2, 0.2)
 impact_scale = Vector3(0.4, 0.4, 0.4)

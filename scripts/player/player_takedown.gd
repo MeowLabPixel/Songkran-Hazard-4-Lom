@@ -30,6 +30,7 @@ var anim_name = "TD/Take down anim"
 @export_range(0.01, 0.1, 0.005) var time_stop_ease_out_time: float = 0.04 ## Smooth easing recovery back to 1.0 time scale (seconds)
 
 @export_range(0.15, 0.75, 0.05) var recovery_downtime_delay: float = 0.35  ## Downtime delay after kick attack before movement triggers (seconds)
+@export_range(0.2, 1.5, 0.05) var takedown_vfx_forward_offset: float = 0.60  ## Forward offset distance in front of zombie head for takedown powder VFX (meters)
 
 var splash_area: Area3D = null
 var _hit_primary: bool = false
@@ -513,6 +514,12 @@ func _execute_primary_hit(enemy: Node) -> void:
 	var hit_dir = (enemy.global_position - owner.global_position).normalized()
 	hit_dir.y = 0.0
 	hit_dir = hit_dir.normalized()
+	var was_already_dead: bool = false
+	if "is_defeated" in enemy and enemy.is_defeated:
+		was_already_dead = true
+	if "is_takedown_defeat" in enemy and enemy.is_takedown_defeat:
+		was_already_dead = true
+
 	if enemy.has_method("take_hit"):
 		enemy.take_hit({
 			"damage": 1.33,
@@ -522,15 +529,15 @@ func _execute_primary_hit(enemy: Node) -> void:
 			"source": owner
 		})
 	
+	# 2. Trigger engine TIME STOP & crit VFX ONLY if this hit delivered the fatal kill
+	var is_fatal: bool = (not was_already_dead and enemy.get("last_hit_was_lethal") == true)
+	
+	# Spawn powder VFX with Player_only_vfx enabled on primary takedown hit (from zombie head slightly in front)
+	var hit_pos = _get_enemy_head_vfx_position(enemy)
+	VFXPowder.spawn(get_tree(), hit_pos, hit_dir, true, Vector3(1.2, 1.2, 1.2), is_fatal)
+	
 	# 1. ALWAYS slow down player and zombie animations briefly to convey physical impact
 	_trigger_anim_slow(enemy, anim_slow_duration, anim_slow_speed)
-	
-	# 2. Trigger engine TIME STOP ONLY if zombie is reduced to 0 HP (fatal kill)
-	var is_fatal: bool = false
-	if "current_hp" in enemy:
-		is_fatal = (enemy.current_hp <= 0)
-	if not is_fatal and ("is_takedown_defeat" in enemy or "is_defeated" in enemy):
-		is_fatal = (enemy.get("is_takedown_defeat") == true or enemy.get("is_defeated") == true)
 	
 	if is_fatal:
 		_trigger_time_stop(primary_time_stop_duration, primary_time_stop_scale)
@@ -589,6 +596,12 @@ func _execute_splash_hit(hit_info: Dictionary) -> void:
 	hit_dir.y = 0.0
 	hit_dir = hit_dir.normalized()
 	
+	var was_already_dead: bool = false
+	if "is_defeated" in enemy and enemy.is_defeated:
+		was_already_dead = true
+	if "is_takedown_defeat" in enemy and enemy.is_takedown_defeat:
+		was_already_dead = true
+
 	enemy.take_hit({
 		"damage": 1.33,
 		"hit_zone": zone_name,
@@ -597,16 +610,16 @@ func _execute_splash_hit(hit_info: Dictionary) -> void:
 		"source": owner
 	})
 	
+	# 2. Trigger engine TIME STOP ONLY if collateral splash hit delivered the fatal kill
+	var is_fatal_splash: bool = (not was_already_dead and enemy.get("last_hit_was_lethal") == true)
+		
+	# Spawn powder VFX with Player_only_vfx enabled on splash/domino hit (from zombie head slightly in front)
+	var hit_pos = _get_enemy_head_vfx_position(enemy)
+	VFXPowder.spawn(get_tree(), hit_pos, hit_dir, true, Vector3(1.0, 1.0, 1.0), is_fatal_splash)
+	
 	# 1. Trigger domino animation micro slow-down
 	_trigger_anim_slow(enemy, anim_slow_duration, anim_slow_speed)
 	
-	# 2. Trigger engine TIME STOP ONLY if collateral splash hit resulted in 0 HP (fatal kill)
-	var is_fatal_splash: bool = false
-	if "current_hp" in enemy:
-		is_fatal_splash = (enemy.current_hp <= 0)
-	if not is_fatal_splash and ("is_takedown_defeat" in enemy or "is_defeated" in enemy):
-		is_fatal_splash = (enemy.get("is_takedown_defeat") == true or enemy.get("is_defeated") == true)
-		
 	if is_fatal_splash:
 		_trigger_time_stop(splash_time_stop_duration, splash_time_stop_scale)
 		
@@ -615,6 +628,31 @@ func _execute_splash_hit(hit_info: Dictionary) -> void:
 	for cam in cams:
 		if cam.has_method("trigger_takedown_shake"):
 			cam.trigger_takedown_shake()
+
+func _get_enemy_head_vfx_position(enemy: Node) -> Vector3:
+	if not is_instance_valid(enemy):
+		return owner.global_position + Vector3(0, 1.4, 0)
+	
+	var head_pos: Vector3 = Vector3.ZERO
+	if enemy.has_method("get_head_position"):
+		head_pos = enemy.get_head_position()
+	elif enemy.has_method("_get_zone_bone_position"):
+		head_pos = enemy._get_zone_bone_position("head")
+	else:
+		head_pos = enemy.global_position + Vector3(0, 1.4, 0)
+	
+	# Fallback if bone returned origin at floor level
+	if head_pos.distance_to(enemy.global_position) < 0.2:
+		head_pos = enemy.global_position + Vector3(0, 1.4, 0)
+		
+	# Offset in front of the zombie (towards player) so the model mesh doesn't occlude the VFX
+	var to_player = (owner.global_position - enemy.global_position)
+	to_player.y = 0.0
+	if to_player.length_squared() < 0.01:
+		to_player = -enemy.global_transform.basis.z
+	to_player = to_player.normalized()
+	
+	return head_pos + (to_player * takedown_vfx_forward_offset) + Vector3(0, 0.08, 0)
 
 func _trigger_anim_slow(enemy: Node, duration: float, slow_speed_factor: float) -> void:
 	if not enable_hit_stop or duration <= 0.0:

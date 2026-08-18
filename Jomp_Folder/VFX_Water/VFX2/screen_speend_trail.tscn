@@ -1,0 +1,174 @@
+[gd_scene format=3 uid="uid://crs3d0m1ne4r3"]
+
+[ext_resource type="Texture2D" uid="uid://c3rgn0nmpb02o" path="res://Jomp_Folder/VFX_Water/VFX2/LeLu's Noise Pack/T_trail12444.png" id="1_kg78r"]
+
+[sub_resource type="VisualShaderNodeInput" id="VisualShaderNodeInput_5euib"]
+input_name = "time"
+
+[sub_resource type="VisualShaderNodeVectorOp" id="VisualShaderNodeVectorOp_i3egv"]
+default_input_values = [0, Vector2(0, 0), 1, Vector2(0, 0)]
+op_type = 0
+operator = 2
+
+[sub_resource type="VisualShaderNodeTexture" id="VisualShaderNodeTexture_5ailf"]
+output_port_for_preview = 0
+expanded_output_ports = [0]
+source = 5
+texture_type = 1
+
+[sub_resource type="VisualShaderNodeTexture2DParameter" id="VisualShaderNodeTexture2DParameter_gm5cq"]
+parameter_name = "Mask_Texture"
+texture_type = 1
+texture_repeat = 2
+
+[sub_resource type="VisualShaderNodeFloatOp" id="VisualShaderNodeFloatOp_gt38c"]
+output_port_for_preview = 0
+operator = 2
+
+[sub_resource type="VisualShaderNodeTexture2DParameter" id="VisualShaderNodeTexture2DParameter_qch0f"]
+parameter_name = "Extra_Texture"
+texture_type = 1
+color_default = 1
+texture_repeat = 2
+
+[sub_resource type="VisualShaderNodeTexture" id="VisualShaderNodeTexture_pfbm0"]
+output_port_for_preview = 0
+expanded_output_ports = [0]
+source = 5
+texture_type = 1
+
+[sub_resource type="VisualShaderNodeFloatOp" id="VisualShaderNodeFloatOp_rh6fp"]
+output_port_for_preview = 0
+
+[sub_resource type="VisualShaderNodeTexture2DParameter" id="VisualShaderNodeTexture2DParameter_0my40"]
+parameter_name = "Color_1D_Gradient"
+texture_type = 1
+texture_repeat = 2
+
+[sub_resource type="VisualShaderNodeTexture" id="VisualShaderNodeTexture_1ppi2"]
+expanded_output_ports = [0]
+source = 5
+texture_type = 1
+
+[sub_resource type="VisualShaderNodeTexture2DParameter" id="VisualShaderNodeTexture2DParameter_co0b6"]
+parameter_name = "Base_texture"
+texture_type = 1
+texture_repeat = 1
+
+[sub_resource type="VisualShaderNodeInput" id="VisualShaderNodeInput_5sffx"]
+input_name = "screen_uv"
+
+[sub_resource type="VisualShaderNodeInput" id="VisualShaderNodeInput_l567a"]
+input_name = "screen_uv"
+
+[sub_resource type="VisualShaderNodeTexture" id="VisualShaderNodeTexture_mv1dg"]
+output_port_for_preview = 0
+expanded_output_ports = [0]
+source = 5
+texture_type = 1
+
+[sub_resource type="VisualShaderNodeInput" id="VisualShaderNodeInput_gk8ag"]
+input_name = "screen_uv"
+
+[sub_resource type="VisualShaderNodeUVPolarCoord" id="VisualShaderNodeUVPolarCoord_pnd5s"]
+
+[sub_resource type="VisualShaderNodeFloatParameter" id="VisualShaderNodeFloatParameter_fa808"]
+parameter_name = "ZoomStrenght"
+default_value_enabled = true
+default_value = 1.0
+
+[sub_resource type="VisualShaderNodeFloatParameter" id="VisualShaderNodeFloatParameter_lebsx"]
+parameter_name = "Repete_curcle"
+default_value_enabled = true
+default_value = 1.0
+
+[sub_resource type="VisualShaderNodeUVFunc" id="VisualShaderNodeUVFunc_umam4"]
+
+[sub_resource type="VisualShaderNodeVec2Parameter" id="VisualShaderNodeVec2Parameter_ctew1"]
+parameter_name = "offset"
+
+[sub_resource type="VisualShader" id="VisualShader_588mj"]
+flags/depth_test_disabled = true
+flags/unshaded = true
+preview_params/Color_1D_Gradient = "Object(GradientTexture1D,\"resource_local_to_scene\":false,\"resource_name\":\"\",\"gradient\":Object(Gradient,\"resource_local_to_scene\":false,\"resource_name\":\"\",\"interpolation_mode\":0,\"interpolation_color_space\":0,\"offsets\":PackedFloat32Array(0.027722772, 0.46138614, 0.6455445),\"colors\":PackedColorArray(1, 1, 1, 0, 0.29693022, 0.8095598, 1.1060808, 0.7176471, 0.2861353, 1.3443749, 1.5266273, 0.50980395),\"script\":null)
+,\"width\":256,\"use_hdr\":false,\"script\":null)
+"
+nodes/vertex/0/position = Vector2(400, 146.66667)
+nodes/fragment/0/position = Vector2(1906.6666, 93.333336)
+nodes/fragment/2/node = SubResource("VisualShaderNodeTexture2DParameter_co0b6")
+nodes/fragment/2/position = Vector2(-306.66666, 506.66666)
+nodes/fragment/3/node = SubResource("VisualShaderNodeTexture_mv1dg")
+nodes/fragment/3/position = Vector2(-200, 40)
+nodes/fragment/4/node = SubResource("VisualShaderNodeInput_gk8ag")
+nodes/fragment/4/position = Vector2(-1346.6666, 53.333332)
+nodes/fragment/5/node = SubResource("VisualShaderNodeUVPolarCoord_pnd5s")
+nodes/fragment/5/position = Vector2(-893.3333, 80)
+nodes/fragment/6/node = SubResource("VisualShaderNodeFloatParameter_fa808")
+nodes/fragment/6/position = Vector2(-1306.6666, 266.66666)
+nodes/fragment/7/node = SubResource("VisualShaderNodeFloatParameter_lebsx")
+nodes/fragment/7/position = Vector2(-1280, 560)
+nodes/fragment/8/node = SubResource("VisualShaderNodeUVFunc_umam4")
+nodes/fragment/8/position = Vector2(-560, 53.333332)
+nodes/fragment/9/node = SubResource("VisualShaderNodeVec2Parameter_ctew1")
+nodes/fragment/9/position = Vector2(-920, 386.66666)
+nodes/fragment/10/node = SubResource("VisualShaderNodeInput_5euib")
+nodes/fragment/10/position = Vector2(-920, 586.6667)
+nodes/fragment/11/node = SubResource("VisualShaderNodeVectorOp_i3egv")
+nodes/fragment/11/position = Vector2(-600, 306.66666)
+nodes/fragment/12/node = SubResource("VisualShaderNodeTexture_5ailf")
+nodes/fragment/12/position = Vector2(426.66666, 546.6667)
+nodes/fragment/13/node = SubResource("VisualShaderNodeTexture2DParameter_gm5cq")
+nodes/fragment/13/position = Vector2(-66.666664, 920)
+nodes/fragment/14/node = SubResource("VisualShaderNodeFloatOp_gt38c")
+nodes/fragment/14/position = Vector2(466.66666, 93.333336)
+nodes/fragment/15/node = SubResource("VisualShaderNodeTexture2DParameter_qch0f")
+nodes/fragment/15/position = Vector2(706.6667, 800)
+nodes/fragment/16/node = SubResource("VisualShaderNodeTexture_pfbm0")
+nodes/fragment/16/position = Vector2(1120, 506.66666)
+nodes/fragment/17/node = SubResource("VisualShaderNodeFloatOp_rh6fp")
+nodes/fragment/17/position = Vector2(1133.3334, 93.333336)
+nodes/fragment/18/node = SubResource("VisualShaderNodeTexture2DParameter_0my40")
+nodes/fragment/18/position = Vector2(1426.6666, 400)
+nodes/fragment/19/node = SubResource("VisualShaderNodeTexture_1ppi2")
+nodes/fragment/19/position = Vector2(1560, 93.333336)
+nodes/fragment/20/node = SubResource("VisualShaderNodeInput_5sffx")
+nodes/fragment/20/position = Vector2(26.666666, 426.66666)
+nodes/fragment/21/node = SubResource("VisualShaderNodeInput_l567a")
+nodes/fragment/21/position = Vector2(720, 466.66666)
+nodes/fragment/connections = PackedInt32Array(18, 0, 19, 2, 19, 0, 0, 0, 19, 4, 0, 1, 14, 0, 17, 0, 12, 1, 14, 1, 3, 1, 14, 0, 15, 0, 16, 2, 16, 1, 17, 1, 21, 0, 16, 0, 17, 0, 19, 0, 13, 0, 12, 2, 20, 0, 12, 0, 2, 0, 3, 2, 8, 0, 3, 0, 7, 0, 5, 3, 5, 0, 8, 0, 6, 0, 5, 2, 4, 0, 5, 0, 11, 0, 8, 2, 9, 0, 11, 0, 10, 0, 11, 1)
+
+[sub_resource type="Gradient" id="Gradient_fch2p"]
+offsets = PackedFloat32Array(0, 0.3569794, 0.40503433, 0.48801744, 0.7208238, 1)
+colors = PackedColorArray(1, 1, 1, 0, 0.8117647, 0.827451, 0.8039216, 0.105882354, 1.5547385, 1.5547385, 1.5547385, 0.3019608, 0.75686276, 0.7607843, 0.75686276, 0.09411765, 1.276606, 1.3508713, 1.3720901, 0.16470589, 1.2192439, 1.2084564, 1.1791421, 0.1254902)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_hyi8s"]
+gradient = SubResource("Gradient_fch2p")
+
+[sub_resource type="Gradient" id="Gradient_v72ry"]
+offsets = PackedFloat32Array(0, 0.6972477)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_5euib"]
+gradient = SubResource("Gradient_v72ry")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.76638174, 0.44729346)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_dl072"]
+render_priority = 0
+shader = SubResource("VisualShader_588mj")
+shader_parameter/ZoomStrenght = 1.0
+shader_parameter/Repete_curcle = 10.0
+shader_parameter/offset = Vector2(-2.5, 0.01)
+shader_parameter/Base_texture = ExtResource("1_kg78r")
+shader_parameter/Mask_Texture = SubResource("GradientTexture2D_5euib")
+shader_parameter/Color_1D_Gradient = SubResource("GradientTexture1D_hyi8s")
+
+[sub_resource type="QuadMesh" id="QuadMesh_boi4j"]
+
+[node name="ScreenSpeendTrail" type="Node3D" unique_id=52591335]
+
+[node name="MeshInstance3D7" type="MeshInstance3D" parent="." unique_id=1206456354]
+transform = Transform3D(2.661076, 0, 0, 0, 2, 0, 0, 0, 2, -0.0009908676, 2, -7.966137)
+material_override = SubResource("ShaderMaterial_dl072")
+cast_shadow = 0
+mesh = SubResource("QuadMesh_boi4j")

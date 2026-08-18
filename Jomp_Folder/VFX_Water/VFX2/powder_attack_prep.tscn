@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://d0uix6t0t5q3g"]
+
+[ext_resource type="Material" uid="uid://1thj7r0jqmdp" path="res://Jomp_Folder/VFX_Water/Powder_Mat.tres" id="1_anpqn"]
+
+[sub_resource type="Curve" id="Curve_ctew1"]
+_data = [Vector2(0, 1), 0.0, -0.9896653, 0, 0, Vector2(1, 0), -0.9505374, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_14dsv"]
+curve = SubResource("Curve_ctew1")
+
+[sub_resource type="Curve" id="Curve_588mj"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -1.8261869, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_huvt3"]
+curve = SubResource("Curve_588mj")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_8gtee"]
+direction = Vector3(0, -1, 0)
+spread = 80.0
+initial_velocity_min = -2.0
+initial_velocity_max = -2.0
+gravity = Vector3(0, 0.8, 0)
+scale_min = 2.0
+scale_max = 4.0
+scale_curve = SubResource("CurveTexture_huvt3")
+alpha_curve = SubResource("CurveTexture_14dsv")
+turbulence_noise_strength = 0.0
+turbulence_noise_scale = 7.592
+turbulence_noise_speed_random = 0.0
+collision_mode = 1
+collision_friction = 0.0
+collision_bounce = 0.13
+
+[sub_resource type="SphereMesh" id="SphereMesh_d5sn6"]
+radius = 0.018
+height = 0.038
+
+[node name="Powder_Attack_Prep" type="GPUParticles3D" unique_id=1000376370]
+transform = Transform3D(0.085, 0, 0, 0, 0.58, 0, 0, 0, 0.085, 0, 0, 0)
+sorting_offset = 5.0
+material_override = ExtResource("1_anpqn")
+cast_shadow = 0
+amount = 20
+lifetime = 0.5
+speed_scale = 0.5
+fixed_fps = 60
+draw_order = 3
+transform_align = 2
+trail_lifetime = 8.97
+process_material = SubResource("ParticleProcessMaterial_8gtee")
+draw_pass_1 = SubResource("SphereMesh_d5sn6")

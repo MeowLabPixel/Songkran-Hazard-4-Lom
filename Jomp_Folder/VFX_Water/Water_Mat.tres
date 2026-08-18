@@ -1,0 +1,37 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://c1450jd25lw5i"]
+
+[sub_resource type="Gradient" id="Gradient_w71do"]
+offsets = PackedFloat32Array(0.328125, 1)
+colors = PackedColorArray(0, 1, 0.9529412, 1, 1.697393, 1.697393, 1.697393, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_eaj2a"]
+gradient = SubResource("Gradient_w71do")
+fill_from = Vector2(1, 1)
+fill_to = Vector2(0.4556314, 0.015358361)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_syrjo"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1.2784462, 1.2784462, 1.2784462, 1)
+grow = true
+grow_amount = 0.003
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
+[resource]
+next_pass = SubResource("StandardMaterial3D_syrjo")
+diffuse_mode = 3
+specular_mode = 1
+albedo_color = Color(2.1168277, 2.1168277, 2.1168277, 1)
+albedo_texture = SubResource("GradientTexture2D_eaj2a")
+metallic_specular = 1.0
+roughness = 0.0
+clearcoat_roughness = 1.0
+disable_receive_shadows = true
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(1.2784462, 1.2784462, 1.2784462, 1)
+stencil_outline_thickness = 0.003

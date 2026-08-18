@@ -63,7 +63,9 @@ func fire_sniper_super_shot():
 			break
 
 		# Apply damage to whatever was hit
-		_apply_damage_to_result(result)
+		var hit_info = _apply_damage_to_result(result)
+		var is_crit = hit_info.get("is_crit", false) if typeof(hit_info) == TYPE_DICTIONARY else false
+		var is_weakpoint = hit_info.get("is_weakpoint", false) if typeof(hit_info) == TYPE_DICTIONARY else false
 		# Play hit sound on penetration impact
 		play_hit_sound(result)
 
@@ -77,13 +79,14 @@ func fire_sniper_super_shot():
 				if normal.length_squared() < 0.01:
 					normal = Vector3.UP
 				hit_vfx.global_position = result.position + (normal * 0.01)
+
 				var up_dir = Vector3.UP
 				if abs(normal.dot(Vector3.UP)) > 0.999:
 					up_dir = Vector3.FORWARD
 				hit_vfx.look_at(hit_vfx.global_position + normal, up_dir)
+				hit_vfx.position += hit_vfx.global_transform.basis * impact_offset
 				hit_vfx.scale = impact_scale
-				if hit_vfx is GPUParticles3D:
-					hit_vfx.emitting = true
+				_trigger_vfx_node(hit_vfx, impact_animation_name, is_crit, is_weakpoint)
 				tree_vfx.create_timer(3.0).timeout.connect(func():
 					if is_instance_valid(hit_vfx):
 						hit_vfx.queue_free()

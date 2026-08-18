@@ -152,6 +152,7 @@ mesh = SubResource("CylinderMesh_wx4ac")
 transform = Transform3D(0.19860424, -3.0505376e-10, -0.023587221, -0.023587221, -5.155151e-09, -0.19860424, -6.101075e-11, 1, -1.0310303e-09, 6.1755664e-08, 0, 0)
 layers = 9
 material_override = SubResource("ShaderMaterial_6gyqw")
+cast_shadow = 0
 mesh = SubResource("CylinderMesh_wx4ac")
 
 [node name="AudioShoot" type="AudioStreamPlayer3D" parent="MeshInstance3D" unique_id=1466660413]

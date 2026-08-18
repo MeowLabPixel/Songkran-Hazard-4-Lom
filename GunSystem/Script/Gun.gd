@@ -282,10 +282,14 @@ func fire_pellet():
 	var start_pos: Vector3 = spawn_point.global_transform.origin if spawn_point else from
 	var end_pos: Vector3 = to
 	
+	var is_crit: bool = false
+	var is_weakpoint: bool = false
 	if result:
 		end_pos = result.position
 		# Apply damage to any enemy hit by the raycast
-		_apply_damage_to_result(result)
+		var hit_info = _apply_damage_to_result(result)
+		is_crit = hit_info.get("is_crit", false)
+		is_weakpoint = hit_info.get("is_weakpoint", false)
 		# Play watergun hit SFX
 		play_hit_sound(result)
 
@@ -298,18 +302,9 @@ func fire_pellet():
 			muzzle_vfx.position += spawn_point.global_transform.basis * muzzle_offset
 			muzzle_vfx.scale = muzzle_scale
 			
-			# Play Animation
-			if muzzle_vfx is GPUParticles3D:
-				muzzle_vfx.emitting = true
+			_trigger_vfx_node(muzzle_vfx, muzzle_animation_name)
 			
-			var anim_player = muzzle_vfx.get_node_or_null("AnimationPlayer")
-			if anim_player and anim_player is AnimationPlayer:
-				if muzzle_animation_name != "" and anim_player.has_animation(muzzle_animation_name):
-					anim_player.play(muzzle_animation_name)
-				else:
-					anim_player.play(anim_player.get_animation_list()[0])
-			
-			tree.create_timer(0.5).timeout.connect(func():
+			tree.create_timer(1.2).timeout.connect(func():
 				if is_instance_valid(muzzle_vfx):
 					muzzle_vfx.queue_free()
 			)
@@ -341,16 +336,7 @@ func fire_pellet():
 			hit_vfx.position += hit_vfx.global_transform.basis * impact_offset
 			hit_vfx.scale = impact_scale
 			
-			# Play Animation
-			if hit_vfx is GPUParticles3D:
-				hit_vfx.emitting = true
-				
-			var anim_player = hit_vfx.get_node_or_null("AnimationPlayer")
-			if anim_player and anim_player is AnimationPlayer:
-				if impact_animation_name != "" and anim_player.has_animation(impact_animation_name):
-					anim_player.play(impact_animation_name)
-				else:
-					anim_player.play(anim_player.get_animation_list()[0])
+			_trigger_vfx_node(hit_vfx, impact_animation_name, is_crit, is_weakpoint)
 			
 			tree.create_timer(3.0).timeout.connect(func():
 				if is_instance_valid(hit_vfx):
@@ -359,14 +345,105 @@ func fire_pellet():
 		else:
 			hit_vfx.queue_free()
 
+func _trigger_vfx_node(vfx_node: Node, anim_name: String = "", is_crit: bool = false, is_weakpoint: bool = false) -> void:
+	if not vfx_node:
+		return
+	
+	if vfx_node.has_method("play"):
+		vfx_node.play(true, is_crit)
+		return
+
+	var crit_node = vfx_node.find_child("HitCore_Crit", true, false)
+	var wind_node = vfx_node.find_child("Wind", true, false)
+	var norm_nodes: Array = []
+	for n_name in ["HitCore_Normal", "HitCore", "Hitsub"]:
+		var found = vfx_node.find_child(n_name, true, false)
+		if found:
+			norm_nodes.append(found)
+
+	# Trigger all GPUParticles3D
+	if vfx_node is GPUParticles3D:
+		var skip: bool = false
+		if is_crit and norm_nodes.has(vfx_node):
+			vfx_node.emitting = false
+			if "visible" in vfx_node: vfx_node.visible = false
+			skip = true
+		elif not is_crit and (vfx_node == crit_node or (crit_node and crit_node.is_ancestor_of(vfx_node))):
+			vfx_node.emitting = false
+			if "visible" in vfx_node: vfx_node.visible = false
+			skip = true
+		elif vfx_node == wind_node or (wind_node and wind_node.is_ancestor_of(vfx_node)):
+			if is_weakpoint:
+				if "visible" in vfx_node: vfx_node.visible = true
+				vfx_node.restart()
+				vfx_node.emitting = true
+			else:
+				vfx_node.emitting = false
+				if "visible" in vfx_node: vfx_node.visible = false
+			skip = true
+			
+		if not skip:
+			if "visible" in vfx_node: vfx_node.visible = true
+			vfx_node.restart()
+			vfx_node.emitting = true
+	
+	for child in vfx_node.find_children("*", "GPUParticles3D", true, false):
+		if child is GPUParticles3D:
+			if is_crit and norm_nodes.has(child):
+				child.emitting = false
+				if "visible" in child: child.visible = false
+				continue
+			elif not is_crit and (child == crit_node or (crit_node and crit_node.is_ancestor_of(child))):
+				child.emitting = false
+				if "visible" in child: child.visible = false
+				continue
+			elif child == wind_node or (wind_node and wind_node.is_ancestor_of(child)):
+				if is_weakpoint:
+					if "visible" in child: child.visible = true
+					child.restart()
+					child.emitting = true
+				else:
+					child.emitting = false
+					if "visible" in child: child.visible = false
+				continue
+				
+			if "visible" in child: child.visible = true
+			child.restart()
+			child.emitting = true
+
+	# Trigger all AnimationPlayers (supports nested nodes like WaterMuzzle inside VFX_WaterSplatter)
+	var anim_players: Array = []
+	if vfx_node is AnimationPlayer:
+		anim_players.append(vfx_node)
+	for child in vfx_node.find_children("*", "AnimationPlayer", true, false):
+		if child is AnimationPlayer:
+			anim_players.append(child)
+	
+	for ap in anim_players:
+		if ap is AnimationPlayer:
+			if anim_name != "" and ap.has_animation(anim_name):
+				ap.play(anim_name)
+			elif ap.has_animation("Muzzle"):
+				ap.play("Muzzle")
+			elif ap.get_animation_list().size() > 0:
+				ap.play(ap.get_animation_list()[0])
+
+	# Trigger all AnimationTrees if present
+	if vfx_node is AnimationTree:
+		vfx_node.active = true
+	for child in vfx_node.find_children("*", "AnimationTree", true, false):
+		if child is AnimationTree:
+			child.active = true
+
 
 func update_accuracy():
 	pass
 
-func _apply_damage_to_result(result: Dictionary) -> void:
+func _apply_damage_to_result(result: Dictionary) -> Dictionary:
+	var result_data = { "is_crit": false, "is_weakpoint": false }
 	var collider = result.get("collider")
 	if collider == null:
-		return
+		return result_data
 
 	var final_damage = damage
 	if get_tree().root.has_node("GameManager") and GameManager.difficulty == GameManager.Difficulty.CASUAL:
@@ -389,21 +466,40 @@ func _apply_damage_to_result(result: Dictionary) -> void:
 			if target:
 				if enemy and get_tree().root.has_node("GameManager"):
 					get_tree().root.get_node("GameManager").register_shot_hit()
+				
+				var was_already_dead: bool = false
+				if "is_defeated" in target and target.is_defeated:
+					was_already_dead = true
+				if "is_takedown_defeat" in target and target.is_takedown_defeat:
+					was_already_dead = true
+
 				target.take_hit({
 					"damage": final_damage,
 					"hit_zone": hitbox_zone.zone_name,
 					"position": result.position
 				})
 				
+				# Only trigger crit on the hit that delivered the lethal blow
+				if not was_already_dead and ("last_hit_was_lethal" in target and target.last_hit_was_lethal):
+					result_data["is_crit"] = true
+				
+				var entered_act1 = false
+				if "last_hit_entered_act1" in target:
+					entered_act1 = target.last_hit_entered_act1
+				else:
+					var zn = str(hitbox_zone.zone_name).to_lower()
+					entered_act1 = zn == "head" or zn == "weakpoint" or zn == "weak" or ("head" in zn) or ("weak" in zn) or ("foot" in zn) or ("feet" in zn) or ("leg" in zn)
+				result_data["is_weakpoint"] = entered_act1
+				
 				# On confirmed weakpoint hit impact, trigger camera shake ONLY if mode is WEAKPOINT_ONLY
 				# (If mode is ENABLED, shot fire already triggered camera shake on pull-trigger!)
 				var pc = _get_player_camera()
 				if pc and ("camera_shake_mode" in pc) and pc.camera_shake_mode == pc.CameraShakeMode.WEAKPOINT_ONLY:
-					var zn = str(hitbox_zone.zone_name).to_lower()
-					var is_weak = zn == "head" or zn == "weakpoint" or zn == "weak" or ("head" in zn) or ("weak" in zn) or ("foot" in zn) or ("feet" in zn) or ("leg" in zn)
-					if is_weak and pc.has_method("trigger_weakpoint_shake"):
+					var zn_shake = str(hitbox_zone.zone_name).to_lower()
+					var is_weak_shake = zn_shake == "head" or zn_shake == "weakpoint" or zn_shake == "weak" or ("head" in zn_shake) or ("weak" in zn_shake) or ("foot" in zn_shake) or ("feet" in zn_shake) or ("leg" in zn_shake)
+					if is_weak_shake and pc.has_method("trigger_weakpoint_shake"):
 						pc.trigger_weakpoint_shake()
-				return
+				return result_data
 
 	# ✅ Fallback (direct hit)
 	var node = collider
@@ -414,11 +510,23 @@ func _apply_damage_to_result(result: Dictionary) -> void:
 		if get_tree().root.has_node("GameManager"):
 			if not node.is_in_group("player") and not node.is_in_group("anchalee") and not ("Anchalee" in node.name):
 				get_tree().root.get_node("GameManager").register_shot_hit()
+				
+		var was_already_dead: bool = false
+		if "is_defeated" in node and node.is_defeated:
+			was_already_dead = true
+		if "is_takedown_defeat" in node and node.is_takedown_defeat:
+			was_already_dead = true
+
 		node.take_hit({
 			"damage": final_damage,
 			"hit_zone": "body",
 			"position": result.position
 		})
+		if not was_already_dead and ("last_hit_was_lethal" in node and node.last_hit_was_lethal):
+			result_data["is_crit"] = true
+		if "last_hit_entered_act1" in node:
+			result_data["is_weakpoint"] = node.last_hit_entered_act1
+	return result_data
 
 func pump_air():
 	if is_super_active:

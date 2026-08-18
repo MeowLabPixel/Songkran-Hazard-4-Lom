@@ -105,6 +105,10 @@ var _left_hand_aura_material: ShaderMaterial = null
 var _right_hand_aura_material: ShaderMaterial = null
 var _takedown_last_mask_dir: int = 0
 var current_attack_type: String = ""
+var _prep_particle_left: GPUParticles3D = null
+var _prep_particle_right: GPUParticles3D = null
+var last_hit_entered_act1: bool = false
+var last_hit_was_lethal: bool = false
 var _dead_walk_markers: Array[float] = [0.5, 1.0]
 var _last_norm_pos: float = -1.0
 var _last_step_time: int = 0
@@ -299,6 +303,7 @@ func _ready() -> void:
 
 	# Cache all MeshInstance3Ds for shader effects
 	_find_meshes_recursive(self, _enemy_meshes)
+	_setup_attack_prep_vfx()
 
 	state_machine.initialize("StateIdle")
 	state_machine.state_changed.connect(_on_state_changed)
@@ -322,6 +327,8 @@ func _disable_attack_hitboxes() -> void:
 
 # ─── HP / Damage ───────────────────────────────────────────────────────────
 func take_hit(hit_data: Dictionary) -> void:
+	last_hit_was_lethal = false
+	last_hit_entered_act1 = false
 	if is_defeated or is_takedown_defeat:
 		return
 		
@@ -421,6 +428,7 @@ func take_hit(hit_data: Dictionary) -> void:
 	state_machine.handle_hit(hit_data)
 
 	if current_hp <= 0:
+		last_hit_was_lethal = true
 		var playing_special_takedown = false
 		if state_machine and state_machine.current_state:
 			var curr = state_machine.current_state
@@ -453,8 +461,6 @@ func _trigger_defeat() -> void:
 			var ui = get_tree().get_first_node_in_group("player_ui")
 			var spawn_pos = _get_zone_bone_position(last_hit_zone)
 			if ui:
-				if ui.has_method("spawn_defeat_shockwave"):
-					ui.spawn_defeat_shockwave(spawn_pos)
 				if ui.has_method("spawn_kill_projectile"):
 					ui.spawn_kill_projectile(spawn_pos)
 			if get_tree().root.has_node("GameManager"):
@@ -526,31 +532,6 @@ func _on_state_changed(old_state: String, new_state: String) -> void:
 		print("[EnemyBase] State: %s → %s  |  HP: %d/%d" % [old_state, new_state, current_hp, MAX_HP])
 	if debug_label:
 		debug_label.text = "State: %s\n(%s → %s)" % [new_state, old_state, new_state]
-
-	if new_state == "StateTakedownable":
-		# Do not spawn takedown indicator shockwave if we were just hit by a takedown attack (e.g. splash/domino hit)
-		var time_now = Time.get_ticks_msec() / 1000.0
-		var time_since_takedown = time_now - _last_takedown_hit_time
-		if time_since_takedown > 0.5 and not is_takedown_defeat:
-			var ui = get_tree().get_first_node_in_group("player_ui")
-			if ui and ui.has_method("spawn_takedown_shockwave"):
-				var stun_bone = "DEF-spine.006" # Default to head
-				if state_machine:
-					var td = state_machine._states.get("StateTakedownable")
-					if td:
-						if td.stun_type == "left_foot":
-							stun_bone = "DEF-foot.L"
-						elif td.stun_type == "right_foot":
-							stun_bone = "DEF-foot.R"
-							
-				var spawn_pos = global_position
-				var skeleton = _find_skeleton(self)
-				if skeleton:
-					var bone_idx = skeleton.find_bone(stun_bone)
-					if bone_idx != -1:
-						spawn_pos = skeleton.global_transform * skeleton.get_bone_global_pose(bone_idx).origin
-						
-				ui.spawn_takedown_shockwave(spawn_pos)
 
 func _find_meshes_recursive(node: Node, meshes: Array[MeshInstance3D]) -> void:
 	if node is MeshInstance3D:
@@ -668,6 +649,78 @@ func _is_right_hand_mesh(mesh: MeshInstance3D) -> bool:
 	var name_lower = mesh.name.to_lower()
 	return "right_hand" in name_lower or "right_ hand" in name_lower
 
+func _setup_attack_prep_vfx() -> void:
+	var prep_scene = load("res://Jomp_Folder/VFX_Water/VFX2/powder_attack_prep.tscn") as PackedScene
+	if not prep_scene:
+		return
+		
+	var left_attach: Node = null
+	var right_attach: Node = null
+	
+	for skel_path in [
+		"ZombieModel/rig_001/Skeleton3D",
+		"ZombieModel/rig/Skeleton3D",
+		"ZombieModel/rig_002/Skeleton3D",
+		"ZombieModel/rig/GeneralSkeleton",
+		"ZombieModel/rig_002/GeneralSkeleton",
+		"All zombie fix/rig_001/Skeleton3D"
+	]:
+		var skel_node = get_node_or_null(skel_path)
+		if skel_node:
+			if not left_attach:
+				left_attach = skel_node.get_node_or_null("HitboxAttachLeftHand")
+				if not left_attach:
+					left_attach = skel_node.get_node_or_null("HitboxAttachLeftForeArm")
+			if not right_attach:
+				right_attach = skel_node.get_node_or_null("HitboxAttachRightHand")
+				if not right_attach:
+					right_attach = skel_node.get_node_or_null("HitboxAttachRightForeArm")
+			if left_attach and right_attach:
+				break
+				
+	if not left_attach:
+		left_attach = find_child("HitboxAttachLeftHand", true, false)
+		if not left_attach:
+			left_attach = find_child("HitboxAttachLeftForeArm", true, false)
+			
+	if not right_attach:
+		right_attach = find_child("HitboxAttachRightHand", true, false)
+		if not right_attach:
+			right_attach = find_child("HitboxAttachRightForeArm", true, false)
+			
+	if left_attach:
+		_prep_particle_left = prep_scene.instantiate() as GPUParticles3D
+		_prep_particle_left.emitting = false
+		if _prep_particle_left.process_material:
+			_prep_particle_left.process_material = _prep_particle_left.process_material.duplicate()
+			_prep_particle_left.process_material.gravity.x = 1.0 # Left arm: 1.0 x
+		left_attach.add_child(_prep_particle_left)
+		
+	if right_attach:
+		_prep_particle_right = prep_scene.instantiate() as GPUParticles3D
+		_prep_particle_right.emitting = false
+		if _prep_particle_right.process_material:
+			_prep_particle_right.process_material = _prep_particle_right.process_material.duplicate()
+			_prep_particle_right.process_material.gravity.x = -1.0 # Right arm: -1.0 x
+		right_attach.add_child(_prep_particle_right)
+
+func _update_attack_prep_vfx() -> void:
+	if is_defeated or is_takedown_defeat:
+		if _prep_particle_left and _prep_particle_left.emitting:
+			_prep_particle_left.emitting = false
+		if _prep_particle_right and _prep_particle_right.emitting:
+			_prep_particle_right.emitting = false
+		return
+		
+	var active_attack = get_active_attack_type()
+	var emit_left = (active_attack == "attack_2" or active_attack == "attack_grab")
+	var emit_right = (active_attack == "attack_1" or active_attack == "attack_grab")
+	
+	if _prep_particle_left and _prep_particle_left.emitting != emit_left:
+		_prep_particle_left.emitting = emit_left
+	if _prep_particle_right and _prep_particle_right.emitting != emit_right:
+		_prep_particle_right.emitting = emit_right
+
 # ─── Navigation ────────────────────────────────────────────────────────────
 func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
 	# Only apply avoidance velocity when the zombie is actively hunting.
@@ -706,6 +759,7 @@ func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
 func _physics_process(delta: float) -> void:
 	_update_act3_mesh_juice(delta)
 	_update_aura_overlays(delta)
+	_update_attack_prep_vfx()
 	_update_skeleton_tilt(delta)
 
 	
@@ -885,6 +939,8 @@ func step_2() -> void:
 	if not is_defeated:
 		SoundManager.play_3d("zombie_footstep", self, 0.0, -1.0, custom_pitch_scale)
 
+func get_head_position() -> Vector3:
+	return _get_zone_bone_position("head")
 
 func _get_zone_bone_position(zone: String) -> Vector3:
 	var skeleton = _find_skeleton(self)

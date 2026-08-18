@@ -381,6 +381,12 @@ func _on_qte_escaped() -> void:
 			SoundManager.play_3d("vo_leon_attack", player)
 		else:
 			SoundManager.play_3d("vo_leon_quickattack", player)
+			
+		# Spawn powder VFX with Player_only_vfx enabled on QTE win escape hit
+		if enemy:
+			var hit_pos = (player.global_position + enemy.global_position) * 0.5 + Vector3(0, 1.1, 0)
+			var hit_dir = (enemy.global_position - player.global_position).normalized()
+			VFXPowder.spawn(enemy.get_tree(), hit_pos, hit_dir, true, Vector3(1.2, 1.2, 1.2))
 		
 	var sm = player.get_node_or_null("Statemachine")
 	if sm:
@@ -608,7 +614,7 @@ func _on_hand_area_entered(area: Area3D) -> void:
 		Phase.ATTACK:
 			print("[StateAttack] Signal hit — target attacked!")
 			_hit_entities.append(hit_entity)
-			_deal_damage(hit_entity, attack_damage, "attack")
+			_deal_damage(hit_entity, attack_damage, "attack", area.global_position)
 		Phase.GRAB_REACHING:
 			if not _grab_made_contact:
 				if hit_entity.is_in_group("player"):
@@ -625,7 +631,7 @@ func _on_hand_area_entered(area: Area3D) -> void:
 					print("[StateAttack] Signal hit — grab intercepted by Anchalee!")
 					_grab_made_contact = true
 					_hit_entities.append(hit_entity)
-					_deal_damage(hit_entity, grab_damage, "grab_intercept")
+					_deal_damage(hit_entity, grab_damage, "grab_intercept", area.global_position)
 					_set_active_hitboxes(false)
 					_finish()
 
@@ -671,7 +677,7 @@ func _hand_touches_player() -> bool:
 					node = node.get_parent()
 	return false
 
-func _deal_damage(entity: Node3D, amount: int, source: String) -> void:
+func _deal_damage(entity: Node3D, amount: int, source: String, custom_hit_pos: Vector3 = Vector3.ZERO) -> void:
 	if entity and entity.has_method("take_damage"):
 		if entity.is_in_group("player") and source == "grab":
 			entity.take_damage(amount, true)
@@ -681,6 +687,19 @@ func _deal_damage(entity: Node3D, amount: int, source: String) -> void:
 		
 		# Play melee hit impact sound
 		SoundManager.play_3d("zombie_melee_hit", entity)
+		
+		# Spawn powder hit VFX for zombie melee attacks (Attack 1, Attack 2, Grab)
+		var base_pos = custom_hit_pos if custom_hit_pos != Vector3.ZERO else (entity.global_position + Vector3(0, 1.1, 0))
+		var to_attacker = (enemy.global_position - base_pos) if enemy else Vector3.FORWARD
+		to_attacker.y = 0.0
+		if to_attacker.length_squared() < 0.01:
+			to_attacker = enemy.global_transform.basis.z if enemy else Vector3.FORWARD
+		to_attacker = to_attacker.normalized()
+		
+		# Offset 0.4m outward from the player towards the attacking zombie to prevent sinking in the player mesh
+		var hit_pos = base_pos + (to_attacker * 0.4)
+		var hit_dir = -to_attacker
+		VFXPowder.spawn(enemy.get_tree() if enemy else get_tree(), hit_pos, hit_dir, false)
 		
 		# If it's the player, and this is a male zombie, play their cackle/laugh
 		var is_player = entity.is_in_group("player")

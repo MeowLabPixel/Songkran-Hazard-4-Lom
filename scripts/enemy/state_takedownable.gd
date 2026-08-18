@@ -40,6 +40,8 @@ func enter() -> void:
 
 func _start_act1() -> void:
 	_in_act1 = true
+	if enemy:
+		enemy.last_hit_entered_act1 = true
 	_act1_timer = 0.0
 	_act2_timer = 0.0
 	takedown_triggered = false

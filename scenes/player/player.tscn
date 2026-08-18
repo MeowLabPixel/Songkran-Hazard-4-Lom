@@ -5799,6 +5799,7 @@ hit_cam_duration_up = 0.3
 script = ExtResource("16_32hag")
 anim_slow_duration = 0.12
 anim_slow_speed = 0.05
+takedown_vfx_forward_offset = 0.4
 
 [node name="Re4Lom Base Rig" type="Node3D" parent="." unique_id=449863350]
 transform = Transform3D(-1, 0, -1.509958e-07, 0, 1, 0, 1.509958e-07, 0, -1, 0, 0.075, 0)
@@ -7361,6 +7362,10 @@ bones/221/position = Vector3(0, 0, 0)
 bones/221/rotation = Quaternion(-0.019959828, 1.1725697e-10, -0.11792231, 0.99282223)
 bones/221/scale = Vector3(1, 0.99999994, 1)
 
+[node name="GPUParticlesCollisionBox3D" type="GPUParticlesCollisionBox3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=982475209]
+transform = Transform3D(-1, 0, 1.509958e-07, 0, 1, 0, -1.509958e-07, 0, -1, -9.0597484e-07, 0.009999998, 6)
+size = Vector3(30, 0.18, 30)
+
 [node name="Hair" type="MeshInstance3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=1350622205]
 layers = 2
 mesh = SubResource("ArrayMesh_f78jo")
@@ -7677,7 +7682,7 @@ bone_idx = 4
 [node name="TakedownHitbox" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox" unique_id=958867971]
 
 [node name="TakedownAttackBox" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=1184713375]
-transform = Transform3D(0.03100944, 0.7687625, -0.6387815, -0.9525329, -0.17091233, -0.25193122, -0.30285093, 0.6162719, 0.7269732, 0.586274, -0.14511234, 0.42287216)
+transform = Transform3D(0.031009436, 0.7687625, -0.6387815, -0.95253277, -0.17091233, -0.25193122, -0.3028509, 0.6162719, 0.7269732, 0.586274, -0.14511234, 0.42287216)
 shape = SubResource("CapsuleShape3D_ntd1s")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=315213988]
