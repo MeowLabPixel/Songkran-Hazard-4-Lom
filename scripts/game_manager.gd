@@ -58,8 +58,32 @@ var show_reload_qte: bool = true
 var show_grab_qte: bool = true
 var show_die_screen: bool = true
 var show_takedown_prompt: bool = true
+var look_at_player_camera: bool = false
+var debug_visualize_raycast: bool = false
 
 signal gameplay_ui_visibility_changed(is_visible: bool)
+signal look_at_player_camera_changed(is_looking_at_player: bool)
+signal debug_visualize_raycast_changed(is_enabled: bool)
+
+func toggle_debug_visualize_raycast() -> void:
+	set_debug_visualize_raycast(not debug_visualize_raycast)
+
+func set_debug_visualize_raycast(enabled: bool) -> void:
+	debug_visualize_raycast = enabled
+	print("[GameManager] Debug Raycast Visualization toggled: ", enabled)
+	debug_visualize_raycast_changed.emit(enabled)
+
+func toggle_look_at_player_camera() -> void:
+	set_look_at_player_camera(not look_at_player_camera)
+
+func set_look_at_player_camera(enabled: bool) -> void:
+	look_at_player_camera = enabled
+	print("[GameManager] Look-at-Player Camera toggled: ", enabled)
+	look_at_player_camera_changed.emit(enabled)
+	var cams = get_tree().get_nodes_in_group("player_camera") if get_tree() else []
+	for cam in cams:
+		if cam.has_method("set_look_at_player"):
+			cam.set_look_at_player(enabled)
 
 func toggle_gameplay_ui() -> void:
 	set_gameplay_ui_visible(not show_gameplay_ui)
@@ -299,6 +323,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			restart_game_to_disclaimer()
 		elif event.keycode == KEY_EQUAL:
 			toggle_gameplay_ui()
+		elif event.keycode == KEY_MINUS:
+			toggle_look_at_player_camera()
+		elif event.keycode == KEY_0:
+			toggle_debug_visualize_raycast()
 
 func restart_game_to_disclaimer() -> void:
 	print("[GameManager] Backspace pressed. Resetting game and restarting to startup main menu.")

@@ -15,6 +15,25 @@ extends Node3D
 @export var target: Marker3D
 @export var targetref: Marker3D
 
+@export_group("Footage Capture & View Mode")
+@export var look_at_player: bool = false: set = set_look_at_player
+@export var look_at_player_distance_offset: float = 0.0
+@export var look_at_player_x: float = -1.28
+
+func set_look_at_player(val: bool) -> void:
+	look_at_player = val
+
+func is_look_at_player() -> bool:
+	return look_at_player
+
+func toggle_look_at_player() -> void:
+	set_look_at_player(not look_at_player)
+
+func get_forward_aim_basis() -> Basis:
+	if not look_at_player:
+		return global_transform.basis
+	return global_transform.basis.rotated(Vector3.UP, PI)
+
 @export_group("Aim Settings")
 @export var auto_swap_wall_distance: float = 0.5
 
@@ -164,7 +183,9 @@ var camera_tween:Tween
 enum cameraalign{LEFT=-1,RIGHT=1,CENTER=0}
 var current_camera_align:cameraalign = cameraalign.RIGHT
 
+var base_position_x: float = 0.0
 var base_position_y: float = 0.0
+var base_position_z: float = 0.0
 var action_offset_y: float = 0.0
 var offset_tween: Tween
 
@@ -338,12 +359,19 @@ func is_action_camera_active() -> bool:
 func _ready() -> void:
 	add_to_group("player_camera")
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	base_position_x = position.x
 	base_position_y = position.y
+	base_position_z = position.z
 	base_spring_length = defaut_rear_spring_arm_length
 	collision_target_length = defaut_rear_spring_arm_length
 	collision_smoothed_target = defaut_rear_spring_arm_length
 	collision_current_length = defaut_rear_spring_arm_length
 	
+	if get_tree() and get_tree().root.has_node("GameManager"):
+		var gm = get_tree().root.get_node("GameManager")
+		if "look_at_player_camera" in gm:
+			look_at_player = gm.look_at_player_camera
+
 	# Initialize camera rotation from character's starting rotation in the editor
 	if character:
 		var init_y = character.rotation.y
@@ -595,8 +623,12 @@ func _input(event: InputEvent)-> void:
 			character.aim_blocked_until_release = false
 			
 			var sm = character.get_node_or_null("Statemachine")
-			if sm and sm.current_state and sm.current_state.name == "Reload":
-				return
+			if sm and sm.current_state:
+				if sm.current_state.name == "Reload":
+					return
+				if sm.current_state.name == "Aim":
+					if sm.current_state.get("is_shot_queued") or sm.current_state.get("shot_exit_lock_timer") > 0.0:
+						return
 				
 		exit_aim()
 
@@ -654,8 +686,13 @@ func _apply_camera_rotation(delta: float = 0.016) -> void:
 		character.transform.basis = Basis()
 		character.rotate_object_local(Vector3(0,1,0), -(camera_rotation.x + takedown_yaw_offset))
 
-
-
+	if look_at_player:
+		rotate_object_local(Vector3(0, 1, 0), PI)
+		position.x = -look_at_player_x
+		position.z = -base_position_z + look_at_player_distance_offset
+	else:
+		position.x = base_position_x
+		position.z = base_position_z
 		
 	if GameManager.movement_type == GameManager.MovementType.TANK and not is_aiming_now and not is_grab_now:
 		rotate_object_local(Vector3(1, 0, 0), action_pitch)

@@ -30,8 +30,15 @@ func fire_projectiles():
 		fire_pellet()
 
 func fire_sniper_super_shot():
-	var direction: Vector3 = -camera.global_transform.basis.z
-	var from: Vector3 = camera.global_transform.origin
+	var pc = _get_player_camera()
+	var cam_basis = pc.get_forward_aim_basis() if (pc and pc.has_method("get_forward_aim_basis")) else (camera.global_transform.basis if camera else global_transform.basis)
+	var from: Vector3 = spawn_point.global_transform.origin if spawn_point else (camera.global_transform.origin if camera else global_transform.origin)
+	var direction: Vector3 = -cam_basis.z
+	var tree := get_tree()
+	if tree:
+		var player = tree.get_first_node_in_group("player")
+		if player and "true_aim_position" in player and player.true_aim_position != Vector3.ZERO:
+			direction = (player.true_aim_position - from).normalized()
 	var to: Vector3 = from + direction * 1000.0
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var start_pos: Vector3 = spawn_point.global_transform.origin if spawn_point else from
@@ -46,16 +53,13 @@ func fire_sniper_super_shot():
 		if node is CollisionObject3D:
 			exclude_nodes.append(node)
 		node = node.get_parent()
-	var tree := get_tree()
-	if not tree:
-		return
 	for player_node in tree.get_nodes_in_group("player"):
 		_add_collision_objects_recursive(player_node, exclude_nodes)
 	for n in exclude_nodes:
 		exclude.append(n.get_rid())
 
 	for i in range(max_penetration):
-		var query = PhysicsRayQueryParameters3D.create(from, to, 1 | 8192, exclude) # Detect Layer 1 (World) and Layer 14 (Hitboxes), ignore root body shapes
+		var query = PhysicsRayQueryParameters3D.create(from, to, 1 | 2 | 4 | 8192, exclude) # Detect Layer 1 (World), Layer 2/4 (Enemy bodies), and Layer 14 (Hitboxes)
 		query.collide_with_areas = true   # ← required to hit Area3D hitboxes
 		query.collide_with_bodies = true
 		var result = space_state.intersect_ray(query)
@@ -101,6 +105,8 @@ func fire_sniper_super_shot():
 		var shot_vfx = _get_pooled_shot_vfx()
 		if shot_vfx and shot_vfx.has_method("set_line"):
 			shot_vfx.set_line(start_pos, final_pos)
+
+	_draw_debug_raycast(start_pos, final_pos, final_pos != to)
 
 func on_super_end():
 	air = 0.0

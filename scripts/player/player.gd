@@ -105,6 +105,8 @@ var is_quick_turn: bool = false
 var is_stunned: bool = false
 var quick_turn_cooldown: float = 0.0
 var is_aimming:bool = false
+var aim_speed_multiplier: float = 1.0
+var target_aim_speed_multiplier: float = 1.0
 var focus_progress: float = 0.0
 var aim_blocked_until_release: bool = false
 var is_reload:bool = false
@@ -194,6 +196,30 @@ var near_enemy_list = []
 		show_takedown_prompt = val
 		if get_tree() and get_tree().root.has_node("GameManager"):
 			GameManager.show_takedown_prompt = val
+@export var look_at_player_camera: bool = false:
+	set(val):
+		look_at_player_camera = val
+		if camera and camera.has_method("set_look_at_player"):
+			camera.set_look_at_player(val)
+		if get_tree() and get_tree().root.has_node("GameManager"):
+			GameManager.look_at_player_camera = val
+@export var debug_visualize_raycast: bool = false:
+	set(val):
+		debug_visualize_raycast = val
+		if get_tree() and get_tree().root.has_node("GameManager"):
+			GameManager.debug_visualize_raycast = val
+
+func set_look_at_player_camera(val: bool) -> void:
+	look_at_player_camera = val
+
+func toggle_look_at_player_camera() -> void:
+	set_look_at_player_camera(not look_at_player_camera)
+
+func set_debug_visualize_raycast(val: bool) -> void:
+	debug_visualize_raycast = val
+
+func toggle_debug_visualize_raycast() -> void:
+	set_debug_visualize_raycast(not debug_visualize_raycast)
 
 @onready var camera: Node3D = $Camera
 @onready var skeleton: Node3D = $"Re4Lom Base Rig/rig/Skeleton3D"
@@ -204,6 +230,8 @@ var aim_target_head: Marker3D
 @export var aim_visual_offset: Vector3 = Vector3(0.0, 0.25, 0.0)
 @export var aim_parallax_correction: float = 1.5 # Dynamically pulls the gun right when aiming left
 var true_aim_position: Vector3 = Vector3.ZERO
+var _aim_debug_mesh: MeshInstance3D = null
+var _aim_debug_marker: MeshInstance3D = null
 var nav_agent: NavigationAgent3D = null
 var player_obstacle: NavigationObstacle3D = null
 
@@ -242,6 +270,12 @@ func _ready() -> void:
 		GameManager.show_grab_qte = show_grab_qte
 		GameManager.show_die_screen = show_die_screen
 		GameManager.show_takedown_prompt = show_takedown_prompt
+		if "look_at_player_camera" in GameManager:
+			look_at_player_camera = GameManager.look_at_player_camera
+			if camera and camera.has_method("set_look_at_player"):
+				camera.set_look_at_player(look_at_player_camera)
+		if "debug_visualize_raycast" in GameManager:
+			debug_visualize_raycast = GameManager.debug_visualize_raycast
 	if not face_controller:
 		face_controller = get_node_or_null("PlayerFaceController") as PlayerFaceController
 	if get_tree().root.has_node("GameManager") and GameManager.difficulty == GameManager.Difficulty.CASUAL:
@@ -470,7 +504,13 @@ func _process(delta: float) -> void:
 	if is_quick_turn:
 		target_influence = 0.0
 		
-	current_aim_influence = lerpf(current_aim_influence, target_influence, delta * 15.0)
+	if not is_aimming:
+		target_aim_speed_multiplier = 1.0
+	aim_speed_multiplier = lerpf(aim_speed_multiplier, target_aim_speed_multiplier, delta * 25.0)
+	var aim_blend_speed = (35.0 * aim_speed_multiplier) if is_aimming else 15.0
+	current_aim_influence = lerpf(current_aim_influence, target_influence, delta * aim_blend_speed)
+	if anim and aim_speed_multiplier > 1.0 and is_aimming:
+		anim.advance(delta * (aim_speed_multiplier - 1.0))
 	
 	# Determine head glance influence:
 	# 1.0 when Aiming
@@ -577,6 +617,9 @@ func _process(delta: float) -> void:
 
 func _update_aim_target(delta: float) -> void:
 	if aim_target and camera and camera.targetref:
+		var is_cam_looking_at_player = camera.has_method("is_look_at_player") and camera.is_look_at_player()
+		var cam_basis = camera.get_forward_aim_basis() if camera.has_method("get_forward_aim_basis") else camera.global_transform.basis
+
 		# Project the UI crosshair into 3D space so gun and head point EXACTLY at it!
 		var screen_size = get_viewport().get_visible_rect().size
 		var screen_center = screen_size / 2.0
@@ -584,8 +627,31 @@ func _update_aim_target(delta: float) -> void:
 		var offset_pixels = Vector2(camera.aim_offset.x, camera.aim_offset.y) * crosshair_speed
 		var crosshair_center = screen_center + offset_pixels
 		
-		var distance = camera.global_position.distance_to(camera.targetref.global_position)
-		var projected_target = camera.camera.project_position(crosshair_center, distance)
+		var projected_target: Vector3
+		var ray_origin: Vector3
+		var ray_dir: Vector3
+		
+		if not is_cam_looking_at_player and camera.camera:
+			var distance = camera.global_position.distance_to(camera.targetref.global_position)
+			projected_target = camera.camera.project_position(crosshair_center, distance)
+			ray_origin = camera.camera.project_ray_origin(crosshair_center)
+			ray_dir = camera.camera.project_ray_normal(crosshair_center)
+		else:
+			var fov_deg = camera.camera.fov if (camera and camera.camera) else 65.0
+			var half_h = tan(deg_to_rad(fov_deg) * 0.5)
+			var ndc_x = (crosshair_center.x - screen_center.x) / (screen_size.y * 0.5)
+			var ndc_y = (crosshair_center.y - screen_center.y) / (screen_size.y * 0.5)
+			var local_dir = Vector3(ndc_x * half_h, -ndc_y * half_h, -1.0).normalized()
+			ray_dir = (cam_basis * local_dir).normalized()
+			
+			var gun_spawn: Vector3 = Vector3.ZERO
+			if gun_controller and gun_controller.current_gun and gun_controller.current_gun.spawn_point:
+				gun_spawn = gun_controller.current_gun.spawn_point.global_transform.origin
+			if gun_spawn == Vector3.ZERO:
+				gun_spawn = to_global(Vector3(0.0, 1.4, 0.0))
+				
+			ray_origin = gun_spawn
+			projected_target = ray_origin + ray_dir * 15.0
 
 		var lean_modifier = skeleton.get_node_or_null("SpineLeanModifier") as PlayerLeanModifier
 		if lean_modifier:
@@ -593,15 +659,14 @@ func _update_aim_target(delta: float) -> void:
 			# We only apply the procedural bobbing offset so the LookAt modifier makes the chest/arms bounce!
 			var bob_x = lean_modifier.current_bob_x
 			var bob_y = lean_modifier.current_bob_y
-			var cam_basis = camera.global_transform.basis
 			var target_bob = (cam_basis.x * bob_x + cam_basis.y * bob_y) * 15.0 * lean_modifier.arm_bob_multiplier
 			
 			# Cast a ray from the camera exactly through the crosshair to find the physical target!
 			var space_state = get_world_3d().direct_space_state
-			var ray_origin = camera.camera.project_ray_origin(crosshair_center)
-			var ray_dir = camera.camera.project_ray_normal(crosshair_center)
 			var query = PhysicsRayQueryParameters3D.create(ray_origin, ray_origin + ray_dir * 1000.0)
-			query.collision_mask = 1 | 8192 # Detect Layer 1 (World) and Layer 14 (Hitboxes), ignore root body shapes
+			query.collision_mask = 1 | 2 | 4 | 8192 # Detect Layer 1 (World), Layer 2/4 (Enemy bodies), and Layer 14 (Hitboxes)
+			query.collide_with_areas = true
+			query.collide_with_bodies = true
 			
 			# Exclude the player from this targeting raycast
 			var exclude_nodes: Array = []
@@ -615,11 +680,7 @@ func _update_aim_target(delta: float) -> void:
 			if result:
 				raw_target_pos = result.position
 			
-			if true_aim_position == Vector3.ZERO:
-				true_aim_position = raw_target_pos
-			else:
-				# Smoothly lerp depth transitions so raycast edge shifts don't snap target position
-				true_aim_position = true_aim_position.lerp(raw_target_pos, delta * 15.0)
+			true_aim_position = raw_target_pos
 			
 			# Shift the visual target to compensate for spine/shoulder parallax
 			var total_offset = aim_visual_offset
@@ -627,11 +688,14 @@ func _update_aim_target(delta: float) -> void:
 			# Aiming across the screen causes horizontal parallax. Dynamically correct it for both sides!
 			total_offset.x += (-camera.aim_offset.x) * aim_parallax_correction
 				
-			var visual_shift = camera.global_transform.basis * total_offset
+			var visual_shift = cam_basis * total_offset
 			aim_target.global_position = projected_target + visual_shift
 		else:
-			aim_target.global_position = camera.targetref.global_position
-			aim_target.global_position.y = camera.targetref.global_position.y
+			if is_cam_looking_at_player:
+				aim_target.global_position = projected_target
+			else:
+				aim_target.global_position = camera.targetref.global_position
+				aim_target.global_position.y = camera.targetref.global_position.y
 			
 		if aim_target_head:
 			if GameManager.movement_type == GameManager.MovementType.TANK and not is_aimming and not is_grab:
@@ -645,14 +709,16 @@ func _update_aim_target(delta: float) -> void:
 			else:
 				# Calculate default forward target (centered shoulder offset with turning lead)
 				var default_forward_target: Vector3
-				if camera and is_instance_valid(camera.targetref):
+				if camera and is_instance_valid(camera.targetref) and not is_cam_looking_at_player:
 					var default_forward = camera.targetref.global_position
 					var default_player_local = to_local(default_forward)
 					default_player_local.x = 0.0
 					default_player_local.x -= angular_velocity * 0.75
 					default_forward_target = to_global(default_player_local)
 				else:
-					default_forward_target = global_transform.origin + (-global_transform.basis.z * 15.0) + Vector3(0, 1.6, 0)
+					var default_player_local = Vector3(0.0, 1.6, -15.0)
+					default_player_local.x -= angular_velocity * 0.75
+					default_forward_target = to_global(default_player_local)
 
 				# Determine glance target (raw NPC position or default forward — native LookAtModifier3D handles angle limit)
 				var raw_npc_pos = _find_nearby_npc_target()
@@ -701,6 +767,76 @@ func _update_aim_target(delta: float) -> void:
 				# Single consistent-speed head turn — smoothly handles all transitions
 				var turn_speed = lerpf(head_turn_speed, 24.0, current_focus_pitch_weight)
 				aim_target_head.position = aim_target_head.position.lerp(target_local, delta * turn_speed)
+
+		var laser_start: Vector3 = ray_origin
+		if gun_controller and gun_controller.current_gun and gun_controller.current_gun.spawn_point:
+			laser_start = gun_controller.current_gun.spawn_point.global_transform.origin
+		_update_aim_debug_visualizer(laser_start, true_aim_position, is_aimming)
+	else:
+		_update_aim_debug_visualizer(Vector3.ZERO, Vector3.ZERO, false)
+
+func _update_aim_debug_visualizer(start: Vector3, end: Vector3, is_active: bool) -> void:
+	var gm = get_tree().root.get_node_or_null("GameManager") if get_tree() and get_tree().root.has_node("GameManager") else null
+	var is_debug_enabled = gm and ("debug_visualize_raycast" in gm) and gm.debug_visualize_raycast
+	
+	if not is_debug_enabled or not is_active:
+		if is_instance_valid(_aim_debug_mesh):
+			_aim_debug_mesh.visible = false
+		if is_instance_valid(_aim_debug_marker):
+			_aim_debug_marker.visible = false
+		return
+		
+	if not is_instance_valid(_aim_debug_mesh):
+		_aim_debug_mesh = MeshInstance3D.new()
+		_aim_debug_mesh.name = "AimDebugRay"
+		_aim_debug_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var cyl = CylinderMesh.new()
+		cyl.top_radius = 0.008
+		cyl.bottom_radius = 0.008
+		var mat = StandardMaterial3D.new()
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.albedo_color = Color(0.2, 0.8, 1.0, 0.85)
+		cyl.material = mat
+		_aim_debug_mesh.mesh = cyl
+		if get_tree() and get_tree().current_scene:
+			get_tree().current_scene.add_child(_aim_debug_mesh)
+		
+	if not is_instance_valid(_aim_debug_marker):
+		_aim_debug_marker = MeshInstance3D.new()
+		_aim_debug_marker.name = "AimDebugHitMarker"
+		_aim_debug_marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var sph = SphereMesh.new()
+		sph.radius = 0.04
+		sph.height = 0.08
+		var mat = StandardMaterial3D.new()
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.albedo_color = Color(0.2, 1.0, 0.5, 1.0)
+		sph.material = mat
+		_aim_debug_marker.mesh = sph
+		if get_tree() and get_tree().current_scene:
+			get_tree().current_scene.add_child(_aim_debug_marker)
+
+	var distance = start.distance_to(end)
+	if distance > 0.01:
+		_aim_debug_mesh.visible = true
+		_aim_debug_marker.visible = true
+		
+		var cyl: CylinderMesh = _aim_debug_mesh.mesh as CylinderMesh
+		if cyl:
+			cyl.height = distance
+			
+		_aim_debug_mesh.global_position = (start + end) * 0.5
+		var dir = start.direction_to(end)
+		if abs(dir.dot(Vector3.UP)) > 0.99:
+			_aim_debug_mesh.look_at(end, Vector3.RIGHT)
+		else:
+			_aim_debug_mesh.look_at(end, Vector3.UP)
+		_aim_debug_mesh.rotate_object_local(Vector3.RIGHT, deg_to_rad(90))
+		
+		_aim_debug_marker.global_position = end
+	else:
+		_aim_debug_mesh.visible = false
+		_aim_debug_marker.visible = false
 
 func _find_nearby_npc_target() -> Vector3:
 	if not enable_npc_head_glance:
@@ -883,7 +1019,10 @@ func update_crosshair_accuracy(delta: float) -> void:
 	# Update gun current_spread based on focus progress
 	if gun_controller and gun_controller.current_gun:
 		var gun = gun_controller.current_gun
-		gun.current_spread = lerp(gun.max_spread, gun.min_spread, focus_progress)
+		if focus_progress >= 1.0:
+			gun.current_spread = 0.0
+		else:
+			gun.current_spread = lerp(gun.max_spread, gun.min_spread, focus_progress)
 
 func get_damage_multiplier() -> float:
 	var mult = 1.0
@@ -905,6 +1044,54 @@ func get_damage_multiplier() -> float:
 func notify_shot_fired() -> void:
 	# Reset focus on shooting
 	focus_progress = 0.0
+	snap_to_aim_instant()
+
+func boost_aim_transition_fast() -> void:
+	target_aim_speed_multiplier = 4.0
+	aim_speed_multiplier = maxf(aim_speed_multiplier, 2.0)
+
+func boost_aim_transition_2x() -> void:
+	boost_aim_transition_fast()
+
+func snap_to_aim_instant() -> void:
+	current_aim_influence = 1.0
+	if aim_bone:
+		aim_bone.influence = 1.0
+	if aim_bone2:
+		aim_bone2.influence = 1.0
+	if anim and anim_playback != "":
+		var pb = anim.get(anim_playback)
+		if pb and pb.has_method("travel"):
+			pb.travel("Aim")
+		if gun_controller and gun_controller.current_gun:
+			var g_name = gun_controller.current_gun.get_gun_name()
+			var req_name = "pis"
+			if g_name == "Water pistol":
+				req_name = "pis"
+			elif g_name == "Water shotgun":
+				req_name = "shot"
+			elif g_name == "Water sniper":
+				req_name = "rifle"
+			anim.set("parameters/Main/Aim/BlendTree/Transition/current_state", req_name)
+			anim.set("parameters/Main/Aim/BlendTree/Transition/transition_request", req_name)
+		anim.advance(0.0)
+	if skeleton and skeleton.has_method("force_update_all_bone_transforms"):
+		skeleton.force_update_all_bone_transforms()
+	_update_aim_target(0.0)
+
+func is_aim_transition_complete() -> bool:
+	var sm = get_node_or_null("Statemachine")
+	var is_aim_state = sm and sm.current_state and sm.current_state.name == "Aim"
+	if not (is_aimming or is_aim_state):
+		return false
+	if current_aim_influence < 0.999:
+		return false
+	if anim and anim_playback != "":
+		var pb = anim.get(anim_playback)
+		if pb and pb.has_method("get_current_node"):
+			if pb.get_current_node() != "Aim":
+				return false
+	return true
 
 func spawn_damage_popup(text_content: String, color: Color) -> void:
 	if not cross_hair:

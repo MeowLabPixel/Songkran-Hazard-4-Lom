@@ -240,28 +240,40 @@ func _add_collision_objects_recursive(node: Node, exclude_array: Array):
 		_add_collision_objects_recursive(child, exclude_array)
 
 func fire_pellet():
-	var horizontal_spread: float = deg_to_rad(randf_range(-current_spread, current_spread))
-	var vertical_spread: float = deg_to_rad(randf_range(-current_spread, current_spread))
-	
-	var from: Vector3 = camera.global_transform.origin
-	var direction: Vector3 = -camera.global_transform.basis.z
-	
 	var tree := get_tree()
 	if not tree:
 		return
 	var player = tree.get_first_node_in_group("player")
-	if player and "true_aim_position" in player:
+	var is_focused = player and ("focus_progress" in player) and player.focus_progress >= 1.0
+	
+	var horizontal_spread: float = 0.0
+	var vertical_spread: float = 0.0
+	if not is_focused and current_spread > 0.0:
+		horizontal_spread = deg_to_rad(randf_range(-current_spread, current_spread))
+		vertical_spread = deg_to_rad(randf_range(-current_spread, current_spread))
+	elif is_focused and (self is ShotgunWaterGun) and current_spread > 0.0:
+		horizontal_spread = deg_to_rad(randf_range(-current_spread, current_spread))
+		vertical_spread = deg_to_rad(randf_range(-current_spread, current_spread))
+	
+	var pc = _get_player_camera()
+	var cam_basis = pc.get_forward_aim_basis() if (pc and pc.has_method("get_forward_aim_basis")) else (camera.global_transform.basis if camera else global_transform.basis)
+	var from: Vector3 = spawn_point.global_transform.origin if spawn_point else (camera.global_transform.origin if camera else global_transform.origin)
+	var direction: Vector3 = -cam_basis.z
+	
+	if player and "true_aim_position" in player and player.true_aim_position != Vector3.ZERO:
 		direction = (player.true_aim_position - from).normalized()
 		
-	direction = direction.rotated(Vector3.UP, horizontal_spread)
-	direction = direction.rotated(camera.global_transform.basis.x, vertical_spread)
+	if horizontal_spread != 0.0:
+		direction = direction.rotated(Vector3.UP, horizontal_spread)
+	if vertical_spread != 0.0:
+		direction = direction.rotated(cam_basis.x, vertical_spread)
 
 	# Raycast
 	var to: Vector3 = from + direction * 1000.0	
 
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var query = PhysicsRayQueryParameters3D.create(from, to)
-	query.collision_mask = 1 | 8192 # Detect Layer 1 (World) and Layer 14 (Hitboxes), ignore root body shapes
+	query.collision_mask = 1 | 2 | 4 | 8192 # Detect Layer 1 (World), Layer 2/4 (Enemy bodies), and Layer 14 (Hitboxes)
 	query.collide_with_areas = true
 	query.collide_with_bodies = true
 	
@@ -315,6 +327,8 @@ func fire_pellet():
 		var shot_vfx = _get_pooled_shot_vfx()
 		if shot_vfx and shot_vfx.has_method("set_line"):
 			shot_vfx.set_line(start_pos, end_pos)
+
+	_draw_debug_raycast(from, end_pos, result.size() > 0)
 
 	if result and hit_vfx_scene:
 		var hit_vfx: Node3D = hit_vfx_scene.instantiate()
@@ -603,8 +617,15 @@ func _get_player_camera() -> Node:
 func _check_weakpoint_aim() -> bool:
 	if not camera:
 		return false
-	var from: Vector3 = camera.global_transform.origin
-	var direction: Vector3 = -camera.global_transform.basis.z
+	var pc = _get_player_camera()
+	var cam_basis = pc.get_forward_aim_basis() if (pc and pc.has_method("get_forward_aim_basis")) else camera.global_transform.basis
+	var from: Vector3 = spawn_point.global_transform.origin if spawn_point else camera.global_transform.origin
+	var direction: Vector3 = -cam_basis.z
+	var tree := get_tree()
+	if tree:
+		var player = tree.get_first_node_in_group("player")
+		if player and "true_aim_position" in player and player.true_aim_position != Vector3.ZERO:
+			direction = (player.true_aim_position - from).normalized()
 	var to: Vector3 = from + direction * 100.0
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var query = PhysicsRayQueryParameters3D.create(from, to)
@@ -673,3 +694,61 @@ func _get_pooled_shot_vfx() -> Node:
 		else:
 			vfx.queue_free()
 	return null
+
+func _draw_debug_raycast(start: Vector3, end: Vector3, is_hit: bool) -> void:
+	var gm = get_tree().root.get_node_or_null("GameManager") if get_tree() and get_tree().root.has_node("GameManager") else null
+	if not gm or not ("debug_visualize_raycast" in gm) or not gm.debug_visualize_raycast:
+		return
+		
+	var tree := get_tree()
+	if not tree or not tree.current_scene:
+		return
+		
+	var debug_root = Node3D.new()
+	debug_root.name = "DebugShotRay"
+	tree.current_scene.add_child(debug_root)
+	
+	var distance = start.distance_to(end)
+	if distance > 0.001:
+		var line_mesh = CylinderMesh.new()
+		line_mesh.top_radius = 0.015
+		line_mesh.bottom_radius = 0.015
+		line_mesh.height = distance
+		
+		var line_mat = StandardMaterial3D.new()
+		line_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		line_mat.albedo_color = Color(1.0, 0.2, 0.2, 0.9) if is_hit else Color(1.0, 0.8, 0.1, 0.9)
+		line_mesh.material = line_mat
+		
+		var line_instance = MeshInstance3D.new()
+		line_instance.mesh = line_mesh
+		line_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		debug_root.add_child(line_instance)
+		
+		line_instance.global_position = (start + end) * 0.5
+		var dir = start.direction_to(end)
+		if abs(dir.dot(Vector3.UP)) > 0.99:
+			line_instance.look_at(end, Vector3.RIGHT)
+		else:
+			line_instance.look_at(end, Vector3.UP)
+		line_instance.rotate_object_local(Vector3.RIGHT, deg_to_rad(90))
+	
+	if is_hit:
+		var sphere_mesh = SphereMesh.new()
+		sphere_mesh.radius = 0.06
+		sphere_mesh.height = 0.12
+		var sphere_mat = StandardMaterial3D.new()
+		sphere_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		sphere_mat.albedo_color = Color(0.1, 1.0, 0.3, 1.0)
+		sphere_mesh.material = sphere_mat
+		
+		var sphere_instance = MeshInstance3D.new()
+		sphere_instance.mesh = sphere_mesh
+		sphere_instance.global_position = end
+		sphere_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		debug_root.add_child(sphere_instance)
+		
+	tree.create_timer(3.0).timeout.connect(func():
+		if is_instance_valid(debug_root):
+			debug_root.queue_free()
+	)
