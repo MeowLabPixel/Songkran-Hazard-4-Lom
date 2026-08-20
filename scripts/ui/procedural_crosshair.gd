@@ -171,6 +171,10 @@ func _process(delta: float) -> void:
 		shot_recoil_timer = 0.0
 
 func _draw() -> void:
+	var gm = get_tree().root.get_node_or_null("GameManager") if get_tree() and get_tree().root.has_node("GameManager") else null
+	if gm and not (gm.show_crosshair and gm.show_gameplay_ui):
+		return
+
 	var p = get_player()
 	if p == null:
 		return

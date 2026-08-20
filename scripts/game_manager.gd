@@ -58,6 +58,7 @@ var show_reload_qte: bool = true
 var show_grab_qte: bool = true
 var show_die_screen: bool = true
 var show_takedown_prompt: bool = true
+var show_crosshair: bool = true
 var look_at_player_camera: bool = false
 var debug_visualize_raycast: bool = false
 
@@ -95,6 +96,7 @@ func set_gameplay_ui_visible(is_visible: bool) -> void:
 	show_grab_qte = is_visible
 	show_die_screen = is_visible
 	show_takedown_prompt = is_visible
+	show_crosshair = is_visible
 	print("[GameManager] Gameplay UI visibility toggled: ", is_visible)
 	gameplay_ui_visibility_changed.emit(is_visible)
 	

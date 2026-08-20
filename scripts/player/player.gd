@@ -196,6 +196,11 @@ var near_enemy_list = []
 		show_takedown_prompt = val
 		if get_tree() and get_tree().root.has_node("GameManager"):
 			GameManager.show_takedown_prompt = val
+@export var show_crosshair: bool = true:
+	set(val):
+		show_crosshair = val
+		if get_tree() and get_tree().root.has_node("GameManager"):
+			GameManager.show_crosshair = val
 @export var look_at_player_camera: bool = false:
 	set(val):
 		look_at_player_camera = val
@@ -270,6 +275,7 @@ func _ready() -> void:
 		GameManager.show_grab_qte = show_grab_qte
 		GameManager.show_die_screen = show_die_screen
 		GameManager.show_takedown_prompt = show_takedown_prompt
+		GameManager.show_crosshair = show_crosshair
 		if "look_at_player_camera" in GameManager:
 			look_at_player_camera = GameManager.look_at_player_camera
 			if camera and camera.has_method("set_look_at_player"):
@@ -989,8 +995,14 @@ func update_crosshair_accuracy(delta: float) -> void:
 	if not cross_hair:
 		return
 
-	cross_hair.visible = is_aimming
-	if not cross_hair.visible:
+	var should_show_ch = is_aimming
+	if get_tree().root.has_node("GameManager"):
+		var gm = get_tree().root.get_node("GameManager")
+		if not (gm.show_crosshair and gm.show_gameplay_ui):
+			should_show_ch = false
+
+	cross_hair.visible = should_show_ch
+	if not is_aimming:
 		focus_progress = 0.0
 		return
 
