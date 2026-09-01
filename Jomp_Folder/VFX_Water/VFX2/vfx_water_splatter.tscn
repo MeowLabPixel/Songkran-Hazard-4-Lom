@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://c8pfscwl6fp01" path="res://Jomp_Folder/VFX_Water/VFX2/hit_core_crit.tscn" id="3_g5e5h"]
 [ext_resource type="PackedScene" uid="uid://fkx65jqq5jyi" path="res://Jomp_Folder/VFX_Water/VFX2/wind.tscn" id="4_w5n0h"]
 [ext_resource type="Shader" uid="uid://c8i3l0mtrynhp" path="res://assets/BinbunVFX_Vol2/StylizedHitFX/shader/flare.gdshader" id="5_ente7"]
+[ext_resource type="Shader" uid="uid://cr146acufc0cf" path="res://Jomp_Folder/VFX_Water/BinbunVFXs/beam_vfx/src/shader/beam_flare_particle.gdshader" id="6_flare_particle"]
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_w5n0h"]
 
@@ -154,7 +155,7 @@ _data = {
 }
 
 [sub_resource type="Curve" id="Curve_ryt2f"]
-_data = [Vector2(0, 0), 0.0, 7.7099075, 0, 0, Vector2(1e-05, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -0.39127585, 0.0, 0, 0]
+_data = [Vector2(0, 0), 0.0, 7.7099075, 0, 0, Vector2(1e-05, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.45098042), -0.39127585, 0.0, 0, 0]
 point_count = 3
 
 [sub_resource type="CurveTexture" id="CurveTexture_5njuh"]
@@ -162,7 +163,7 @@ curve = SubResource("Curve_ryt2f")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_nhks5"]
 particle_flag_align_y = true
-emission_shape_offset = Vector3(0, 0, -0.25)
+emission_shape_offset = Vector3(0, 0, -0.35)
 emission_shape_scale = Vector3(1, 1, 0.05)
 emission_shape = 1
 emission_sphere_radius = 0.2
@@ -172,22 +173,190 @@ spread = 70.0
 initial_velocity_min = 7.0
 initial_velocity_max = 8.0
 gravity = Vector3(0, -15, 0)
+attractor_interaction_enabled = false
 scale_min = 2.0
 scale_max = 4.0
 scale_curve = SubResource("CurveTexture_5njuh")
 turbulence_noise_strength = 0.19
 turbulence_noise_scale = 0.0
-collision_mode = 1
-collision_friction = 0.25
-collision_bounce = 0.5
+collision_mode = 2
+collision_use_scale = true
+sub_emitter_mode = 3
+sub_emitter_amount_at_collision = 1
 
 [sub_resource type="SphereMesh" id="SphereMesh_00f0g"]
 radius = 0.011
 height = 0.07
 
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_8srmi"]
+emission_shape_scale = Vector3(1, 0, 1)
+emission_shape = 1
+emission_sphere_radius = 0.02
+inherit_velocity_ratio = 1.0
+direction = Vector3(0, 1, 0)
+spread = 43.916
+initial_velocity_min = 10.0
+initial_velocity_max = 10.0
+scale_min = 4.0
+scale_max = 4.0
+turbulence_noise_strength = 0.19
+turbulence_noise_scale = 0.0
+collision_mode = 2
+sub_emitter_mode = 3
+sub_emitter_amount_at_collision = 1
+
 [sub_resource type="SphereMesh" id="SphereMesh_w5n0h"]
 radius = 0.005
-height = 0.01
+height = 0.035
+
+[sub_resource type="Curve" id="Curve_splash_scale"]
+_data = [Vector2(0, 0.001), 0.0, 12.0, 0, 0, Vector2(0.08, 1), 0.0, 0.0, 0, 0, Vector2(0.67, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -3.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="CurveTexture" id="CurveTexture_splash_scale"]
+curve = SubResource("Curve_splash_scale")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_splash"]
+particle_flag_rotate_y = true
+emission_shape = 1
+emission_sphere_radius = 0.01
+gravity = Vector3(0, 0, 0)
+scale_min = 0.19999999
+scale_max = 0.25
+scale_curve = SubResource("CurveTexture_splash_scale")
+sub_emitter_mode = 4
+sub_emitter_amount_at_start = 2
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_splash1"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_splash1"]
+render_priority = 0
+shader = ExtResource("6_flare_particle")
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_splash1")
+shader_parameter/noise_twist = 0.0
+shader_parameter/scroll_speed = Vector2(0, 2)
+shader_parameter/beam_length = 4.0
+shader_parameter/secondary_color = Color(0.5845778, 0.8850181, 0.97916895, 0.3764706)
+shader_parameter/tertiary_color = Color(1, 1, 1, 1)
+shader_parameter/emission = 1.43
+shader_parameter/is_tertiary = true
+shader_parameter/mesh_scale = Vector3(1, -1, -1)
+shader_parameter/offset_y = 1.2
+shader_parameter/use_particle_lifetime = true
+shader_parameter/open_amount_start = 1.0
+shader_parameter/open_amount_end = 0.0
+shader_parameter/open_time_start = 0.22
+shader_parameter/open_time_end = 0.67
+shader_parameter/pinch_top = false
+shader_parameter/pinch_time_start = 0.11
+shader_parameter/pinch_time_end = 0.67
+shader_parameter/flash_to_white = false
+shader_parameter/flash_time_start = 0.0
+shader_parameter/flash_time_end = 0.67
+shader_parameter/edge_softness_start = 0.42
+shader_parameter/edge_softness_end = 0.42
+shader_parameter/edge_softness_time_start = 0.11
+shader_parameter/edge_softness_time_end = 0.67
+shader_parameter/open_amount = 1.0
+shader_parameter/speed_scale = 1.0
+shader_parameter/edge_softness = 0.5
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_splash1"]
+material = SubResource("ShaderMaterial_splash1")
+flip_faces = true
+top_radius = 0.13
+bottom_radius = 1.005
+height = 2.1
+cap_bottom = false
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_splash2"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_splash2"]
+render_priority = 0
+shader = ExtResource("6_flare_particle")
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_splash2")
+shader_parameter/noise_twist = 3.0
+shader_parameter/scroll_speed = Vector2(0, 2)
+shader_parameter/beam_length = 4.0
+shader_parameter/secondary_color = Color(0, 0.48704672, 1, 1)
+shader_parameter/tertiary_color = Color(0.18958849, 0.81428045, 1, 0.3764706)
+shader_parameter/emission = 1.2
+shader_parameter/is_tertiary = false
+shader_parameter/mesh_scale = Vector3(1, -1, -1)
+shader_parameter/offset_y = 0.743
+shader_parameter/use_particle_lifetime = true
+shader_parameter/open_amount_start = 1.0
+shader_parameter/open_amount_end = 0.0
+shader_parameter/open_time_start = 0.22
+shader_parameter/open_time_end = 0.67
+shader_parameter/pinch_top = true
+shader_parameter/pinch_time_start = 0.11
+shader_parameter/pinch_time_end = 0.67
+shader_parameter/flash_to_white = true
+shader_parameter/flash_time_start = 0.0
+shader_parameter/flash_time_end = 0.67
+shader_parameter/edge_softness_start = 0.0
+shader_parameter/edge_softness_end = 0.0
+shader_parameter/edge_softness_time_start = 0.11
+shader_parameter/edge_softness_time_end = 0.67
+shader_parameter/open_amount = 1.0
+shader_parameter/speed_scale = 1.0
+shader_parameter/edge_softness = 0.5
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_splash2"]
+material = SubResource("ShaderMaterial_splash2")
+flip_faces = true
+top_radius = 0.15
+bottom_radius = 0.0
+height = 1.1
+cap_bottom = false
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_splash3"]
+render_priority = 0
+shader = ExtResource("6_flare_particle")
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_splash1")
+shader_parameter/noise_twist = 0.0
+shader_parameter/scroll_speed = Vector2(0, 1)
+shader_parameter/beam_length = 4.0
+shader_parameter/secondary_color = Color(0.81041145, 0.95494926, 1, 0.3764706)
+shader_parameter/tertiary_color = Color(0.24220061, 0.6105753, 1, 1)
+shader_parameter/emission = 1.28
+shader_parameter/is_tertiary = true
+shader_parameter/mesh_scale = Vector3(1.2, -0.945, -1.2)
+shader_parameter/offset_y = 0.224
+shader_parameter/use_particle_lifetime = true
+shader_parameter/open_amount_start = 0.26999999396496
+shader_parameter/open_amount_end = 0.999999977648
+shader_parameter/open_time_start = 0.11
+shader_parameter/open_time_end = 0.67
+shader_parameter/pinch_top = false
+shader_parameter/pinch_time_start = 0.11
+shader_parameter/pinch_time_end = 0.67
+shader_parameter/flash_to_white = true
+shader_parameter/flash_time_start = 0.0
+shader_parameter/flash_time_end = 0.67
+shader_parameter/edge_softness_start = 0.0
+shader_parameter/edge_softness_end = 1.0
+shader_parameter/edge_softness_time_start = 0.11
+shader_parameter/edge_softness_time_end = 0.67
+shader_parameter/open_amount = 0.999999977648
+shader_parameter/speed_scale = 1.0
+shader_parameter/edge_softness = 0.5
+
+[sub_resource type="SphereMesh" id="SphereMesh_splash3"]
+material = SubResource("ShaderMaterial_splash3")
+flip_faces = true
+radius = 0.87
+height = 0.35
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_067u3"]
+particle_flag_rotate_y = true
+emission_shape = 1
+emission_sphere_radius = 0.01
+gravity = Vector3(0, 0, 0)
+scale_min = 0.049999997
+scale_max = 0.099999994
+scale_curve = SubResource("CurveTexture_splash_scale")
 
 [sub_resource type="Shader" id="Shader_g5e5h"]
 code = "shader_type spatial;
@@ -469,9 +638,9 @@ material_override = ExtResource("2_yg2ox")
 transparency = 0.6
 cast_shadow = 0
 emitting = false
+sub_emitter = NodePath("../DropletSplash_SubEmitter")
 one_shot = true
 explosiveness = 1.0
-randomness = 1.0
 fixed_fps = 60
 collision_base_size = 0.05
 draw_order = 3
@@ -479,21 +648,53 @@ transform_align = 2
 process_material = SubResource("ParticleProcessMaterial_nhks5")
 draw_pass_1 = SubResource("SphereMesh_00f0g")
 
-[node name="Sparks3" type="GPUParticles3D" parent="." unique_id=734952372]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.083019)
+[node name="Sparks_SubEmitter" type="GPUParticles3D" parent="." unique_id=734952372]
 material_override = ExtResource("2_yg2ox")
 transparency = 0.6
 cast_shadow = 0
 emitting = false
-amount = 4
+amount = 24
+sub_emitter = NodePath("../DropletSplash_SubEmitter2")
 one_shot = true
 explosiveness = 1.0
 randomness = 1.0
 fixed_fps = 60
 collision_base_size = 0.05
 draw_order = 3
-process_material = SubResource("ParticleProcessMaterial_nhks5")
+transform_align = 2
+process_material = SubResource("ParticleProcessMaterial_8srmi")
 draw_pass_1 = SubResource("SphereMesh_w5n0h")
+
+[node name="DropletSplash_SubEmitter" type="GPUParticles3D" parent="." unique_id=1289456721]
+transform = Transform3D(0.67, 0, 0, 0, 0.67, 0, 0, 0, 0.67, 0, 0, 0)
+cast_shadow = 0
+emitting = false
+amount = 32
+sub_emitter = NodePath("../Sparks_SubEmitter")
+lifetime = 0.3
+one_shot = true
+explosiveness = 1.0
+fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_splash")
+draw_passes = 3
+draw_pass_1 = SubResource("CylinderMesh_splash1")
+draw_pass_2 = SubResource("CylinderMesh_splash2")
+draw_pass_3 = SubResource("SphereMesh_splash3")
+
+[node name="DropletSplash_SubEmitter2" type="GPUParticles3D" parent="." unique_id=438958500]
+transform = Transform3D(0.67, 0, 0, 0, 0.67, 0, 0, 0, 0.67, 0, 0, 0)
+cast_shadow = 0
+emitting = false
+amount = 32
+lifetime = 0.3
+one_shot = true
+explosiveness = 1.0
+fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_067u3")
+draw_passes = 3
+draw_pass_1 = SubResource("CylinderMesh_splash1")
+draw_pass_2 = SubResource("CylinderMesh_splash2")
+draw_pass_3 = SubResource("SphereMesh_splash3")
 
 [node name="Hitsub" type="GPUParticles3D" parent="." unique_id=359056380]
 transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, -0.024593621)

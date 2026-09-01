@@ -321,6 +321,7 @@ _data = {
 
 [node name="DropletSplash" type="Node3D" parent="." unique_id=1655217680]
 transform = Transform3D(0.67, -5.5055942e-31, 9.2981196e-17, 0, 0.67, 3.967198e-15, -9.2981196e-17, -3.967198e-15, 0.67, 0, 0, 0)
+visible = false
 
 [node name="Node3D" type="Node3D" parent="DropletSplash" unique_id=1848220667]
 

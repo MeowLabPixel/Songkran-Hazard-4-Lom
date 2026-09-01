@@ -54,9 +54,18 @@ func play(is_player: bool = false, is_crit: bool = false) -> void:
 	var crit_node = find_child("HitCore_Crit", true, false)
 	var norm_node = find_child("HitCore_Normal", true, false)
 
+	# Collect any sub_emitter targets so they aren't directly emitted
+	var sub_emitters: Array = []
+	for p in find_children("*", "GPUParticles3D", true, false):
+		if p is GPUParticles3D and p.sub_emitter != ^"":
+			var target = p.get_node_or_null(p.sub_emitter)
+			if target: sub_emitters.append(target)
+
 	# Trigger all appropriate particles
 	for child in find_children("*", "GPUParticles3D", true, false):
 		if child is GPUParticles3D:
+			if sub_emitters.has(child):
+				continue
 			if not is_player and is_instance_valid(player_only_vfx) and (child == player_only_vfx or player_only_vfx.is_ancestor_of(child)):
 				continue
 			if is_player and is_instance_valid(enemies_only_vfx) and (child == enemies_only_vfx or enemies_only_vfx.is_ancestor_of(child)):

@@ -403,8 +403,20 @@ func _trigger_vfx_node(vfx_node: Node, anim_name: String = "", is_crit: bool = f
 			vfx_node.restart()
 			vfx_node.emitting = true
 	
+	# Collect any sub_emitter targets so they aren't directly emitted
+	var sub_emitters: Array = []
+	if vfx_node is GPUParticles3D and vfx_node.sub_emitter != ^"":
+		var target = vfx_node.get_node_or_null(vfx_node.sub_emitter)
+		if target: sub_emitters.append(target)
+	for p in vfx_node.find_children("*", "GPUParticles3D", true, false):
+		if p is GPUParticles3D and p.sub_emitter != ^"":
+			var target = p.get_node_or_null(p.sub_emitter)
+			if target: sub_emitters.append(target)
+
 	for child in vfx_node.find_children("*", "GPUParticles3D", true, false):
 		if child is GPUParticles3D:
+			if sub_emitters.has(child):
+				continue
 			if is_crit and norm_nodes.has(child):
 				child.emitting = false
 				if "visible" in child: child.visible = false

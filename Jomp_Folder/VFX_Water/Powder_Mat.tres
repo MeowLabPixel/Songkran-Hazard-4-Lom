@@ -24,8 +24,11 @@ metadata/_stencil_owned = true
 [resource]
 next_pass = SubResource("StandardMaterial3D_p6dk4")
 transparency = 1
+blend_mode = 1
+depth_draw_mode = 2
 diffuse_mode = 3
 specular_mode = 1
+vertex_color_use_as_albedo = true
 albedo_color = Color(1.0467088, 1.0467088, 1.0467088, 0.60784316)
 albedo_texture = SubResource("GradientTexture2D_8gtee")
 roughness = 0.8

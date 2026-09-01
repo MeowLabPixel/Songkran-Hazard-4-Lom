@@ -7363,7 +7363,7 @@ bones/221/scale = Vector3(1, 0.99999994, 1)
 
 [node name="GPUParticlesCollisionBox3D" type="GPUParticlesCollisionBox3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=982475209]
 transform = Transform3D(-1, 0, 1.509958e-07, 0, 1, 0, -1.509958e-07, 0, -1, 0, -0.145, 6)
-size = Vector3(30, 0.25, 30)
+size = Vector3(30, 0.29, 30)
 
 [node name="Hair" type="MeshInstance3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=1350622205]
 layers = 2
