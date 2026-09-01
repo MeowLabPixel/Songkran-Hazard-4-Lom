@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://cpoig6f6gkgby"]
+
+[ext_resource type="Texture2D" uid="uid://cejwsppa0vxa0" path="res://map/CleanPavement_04_basecolor.png" id="1_tbb35"]
+
+[resource]
+resource_name = "Sidewalk"
+vertex_color_use_as_albedo = true
+albedo_color = Color(0.7577994, 0.7577994, 0.7577994, 1)
+albedo_texture = ExtResource("1_tbb35")
+emission_enabled = true
+detail_blend_mode = 3
+uv1_triplanar = true
+uv1_triplanar_sharpness = 0.4034207
+uv1_world_triplanar = true
+texture_filter = 5

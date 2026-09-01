@@ -147,17 +147,22 @@ var _current_music_state: String = "None"
 
 
 func _load_sound_bank_from_disk() -> void:
-	sound_bank.clear()
+	var loaded_events: Array[SoundEvent] = []
 	var dir = DirAccess.open("res://audio_events")
 	if dir:
 		dir.list_dir_begin()
 		var file_name = dir.get_next()
 		while file_name != "":
-			if not dir.current_is_dir() and file_name.ends_with(".tres"):
-				var event = load("res://audio_events/" + file_name) as SoundEvent
-				if event:
-					sound_bank.append(event)
+			if not dir.current_is_dir():
+				var clean_name = file_name.trim_suffix(".remap").trim_suffix(".import")
+				if clean_name.ends_with(".tres") or clean_name.ends_with(".res"):
+					var event = load("res://audio_events/" + clean_name) as SoundEvent
+					if event and not loaded_events.has(event):
+						loaded_events.append(event)
 			file_name = dir.get_next()
+	
+	if not loaded_events.is_empty():
+		sound_bank = loaded_events
 	
 	_events.clear()
 	for event in sound_bank:
@@ -165,6 +170,8 @@ func _load_sound_bank_from_disk() -> void:
 			_events[event.name] = event
 			if not _active_instances.has(event.name):
 				_active_instances[event.name] = []
+	
+	print("[SoundManager] Initialized with %d sound events in bank (%d active registered)." % [sound_bank.size(), _events.size()])
 
 func _ready() -> void:
 	if Engine.is_editor_hint():

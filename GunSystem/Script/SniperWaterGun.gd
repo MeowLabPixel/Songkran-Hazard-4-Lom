@@ -38,7 +38,9 @@ func fire_sniper_super_shot():
 	if tree:
 		var player = tree.get_first_node_in_group("player")
 		if player and "true_aim_position" in player and player.true_aim_position != Vector3.ZERO:
-			direction = (player.true_aim_position - from).normalized()
+			var to_aim: Vector3 = player.true_aim_position - from
+			if to_aim.dot(-cam_basis.z) > 0.01:
+				direction = to_aim.normalized()
 	var to: Vector3 = from + direction * 1000.0
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var start_pos: Vector3 = spawn_point.global_transform.origin if spawn_point else from
@@ -59,7 +61,7 @@ func fire_sniper_super_shot():
 		exclude.append(n.get_rid())
 
 	for i in range(max_penetration):
-		var query = PhysicsRayQueryParameters3D.create(from, to, 1 | 2 | 4 | 8192, exclude) # Detect Layer 1 (World), Layer 2/4 (Enemy bodies), and Layer 14 (Hitboxes)
+		var query = PhysicsRayQueryParameters3D.create(from, to, 1 | 2 | 8192, exclude) # Detect Layer 1 (World), Layer 2 (Weakpoints), and Layer 14 (Hitboxes). Excludes Layer 3 CharacterBody3D
 		query.collide_with_areas = true   # ← required to hit Area3D hitboxes
 		query.collide_with_bodies = true
 		var result = space_state.intersect_ray(query)

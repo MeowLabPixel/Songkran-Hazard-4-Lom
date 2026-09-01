@@ -261,7 +261,9 @@ func fire_pellet():
 	var direction: Vector3 = -cam_basis.z
 	
 	if player and "true_aim_position" in player and player.true_aim_position != Vector3.ZERO:
-		direction = (player.true_aim_position - from).normalized()
+		var to_aim: Vector3 = player.true_aim_position - from
+		if to_aim.dot(-cam_basis.z) > 0.01:
+			direction = to_aim.normalized()
 		
 	if horizontal_spread != 0.0:
 		direction = direction.rotated(Vector3.UP, horizontal_spread)
@@ -273,7 +275,7 @@ func fire_pellet():
 
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var query = PhysicsRayQueryParameters3D.create(from, to)
-	query.collision_mask = 1 | 2 | 4 | 8192 # Detect Layer 1 (World), Layer 2/4 (Enemy bodies), and Layer 14 (Hitboxes)
+	query.collision_mask = 1 | 2 | 8192 # Detect Layer 1 (World), Layer 2 (Weakpoints), and Layer 14 (Hitboxes). Excludes Layer 3 CharacterBody3D
 	query.collide_with_areas = true
 	query.collide_with_bodies = true
 	
@@ -471,6 +473,8 @@ func _apply_damage_to_result(result: Dictionary) -> Dictionary:
 	if collider is Area3D and not collider.is_in_group("player_hitbox"):
 		# Better: search for HitboxZone
 		var hitbox_zone: HitboxZone = collider.get_node_or_null("HitboxZone")
+		if not hitbox_zone:
+			hitbox_zone = collider.find_child("HitboxZone", true, false) as HitboxZone
 		
 		if hitbox_zone:
 			var enemy = hitbox_zone._enemy
@@ -487,9 +491,14 @@ func _apply_damage_to_result(result: Dictionary) -> Dictionary:
 				if "is_takedown_defeat" in target and target.is_takedown_defeat:
 					was_already_dead = true
 
+				var effective_zone = hitbox_zone.zone_name
+				if player and "aim_target_enemy" in player and player.aim_target_enemy == target and "aim_target_zone" in player and player.aim_target_zone != "":
+					if effective_zone in ["body", "", "chest", "waist", "pelvis"]:
+						effective_zone = player.aim_target_zone
+
 				target.take_hit({
 					"damage": final_damage,
-					"hit_zone": hitbox_zone.zone_name,
+					"hit_zone": effective_zone,
 					"position": result.position
 				})
 				
@@ -501,7 +510,7 @@ func _apply_damage_to_result(result: Dictionary) -> Dictionary:
 				if "last_hit_entered_act1" in target:
 					entered_act1 = target.last_hit_entered_act1
 				else:
-					var zn = str(hitbox_zone.zone_name).to_lower()
+					var zn = str(effective_zone).to_lower()
 					entered_act1 = zn == "head" or zn == "weakpoint" or zn == "weak" or ("head" in zn) or ("weak" in zn) or ("foot" in zn) or ("feet" in zn) or ("leg" in zn)
 				result_data["is_weakpoint"] = entered_act1
 				
@@ -509,7 +518,7 @@ func _apply_damage_to_result(result: Dictionary) -> Dictionary:
 				# (If mode is ENABLED, shot fire already triggered camera shake on pull-trigger!)
 				var pc = _get_player_camera()
 				if pc and ("camera_shake_mode" in pc) and pc.camera_shake_mode == pc.CameraShakeMode.WEAKPOINT_ONLY:
-					var zn_shake = str(hitbox_zone.zone_name).to_lower()
+					var zn_shake = str(effective_zone).to_lower()
 					var is_weak_shake = zn_shake == "head" or zn_shake == "weakpoint" or zn_shake == "weak" or ("head" in zn_shake) or ("weak" in zn_shake) or ("foot" in zn_shake) or ("feet" in zn_shake) or ("leg" in zn_shake)
 					if is_weak_shake and pc.has_method("trigger_weakpoint_shake"):
 						pc.trigger_weakpoint_shake()
@@ -531,9 +540,13 @@ func _apply_damage_to_result(result: Dictionary) -> Dictionary:
 		if "is_takedown_defeat" in node and node.is_takedown_defeat:
 			was_already_dead = true
 
+		var fallback_zone = "body"
+		if player and "aim_target_enemy" in player and player.aim_target_enemy == node and "aim_target_zone" in player and player.aim_target_zone != "":
+			fallback_zone = player.aim_target_zone
+
 		node.take_hit({
 			"damage": final_damage,
-			"hit_zone": "body",
+			"hit_zone": fallback_zone,
 			"position": result.position
 		})
 		if not was_already_dead and ("last_hit_was_lethal" in node and node.last_hit_was_lethal):
@@ -617,19 +630,27 @@ func _get_player_camera() -> Node:
 func _check_weakpoint_aim() -> bool:
 	if not camera:
 		return false
+	var tree := get_tree()
+	if not tree:
+		return false
+	var player = tree.get_first_node_in_group("player")
+	if player and "aim_target_zone" in player and player.aim_target_zone != "":
+		var zn = str(player.aim_target_zone).to_lower()
+		if "head" in zn or "weak" in zn or "foot" in zn or "feet" in zn or "leg" in zn:
+			return true
+
 	var pc = _get_player_camera()
 	var cam_basis = pc.get_forward_aim_basis() if (pc and pc.has_method("get_forward_aim_basis")) else camera.global_transform.basis
 	var from: Vector3 = spawn_point.global_transform.origin if spawn_point else camera.global_transform.origin
 	var direction: Vector3 = -cam_basis.z
-	var tree := get_tree()
-	if tree:
-		var player = tree.get_first_node_in_group("player")
-		if player and "true_aim_position" in player and player.true_aim_position != Vector3.ZERO:
-			direction = (player.true_aim_position - from).normalized()
+	if player and "true_aim_position" in player and player.true_aim_position != Vector3.ZERO:
+		var to_aim: Vector3 = player.true_aim_position - from
+		if to_aim.dot(-cam_basis.z) > 0.01:
+			direction = to_aim.normalized()
 	var to: Vector3 = from + direction * 100.0
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var query = PhysicsRayQueryParameters3D.create(from, to)
-	query.collision_mask = 2 | 4 | 14 | 8192
+	query.collision_mask = 2 | 8192
 	query.collide_with_areas = true
 	query.collide_with_bodies = true
 	_update_player_exclude_cache()

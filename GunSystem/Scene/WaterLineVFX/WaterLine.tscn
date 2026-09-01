@@ -146,6 +146,7 @@ mesh = SubResource("CylinderMesh_miaar")
 [node name="BeamOuter2" type="MeshInstance3D" parent="MeshInstance3D" unique_id=801890077]
 transform = Transform3D(0.18887298, 2.4318858e-09, 0.06577991, 0.06577991, -1.4376655e-08, -0.18887298, 4.8637716e-10, 1, -2.875331e-09, 6.1755664e-08, 0, 0)
 material_override = SubResource("ShaderMaterial_n4wb0")
+cast_shadow = 0
 mesh = SubResource("CylinderMesh_wx4ac")
 
 [node name="BeamOuter3" type="MeshInstance3D" parent="MeshInstance3D" unique_id=637366122]

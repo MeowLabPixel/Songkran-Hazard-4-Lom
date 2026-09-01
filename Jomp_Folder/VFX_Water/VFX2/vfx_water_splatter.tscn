@@ -4,6 +4,7 @@
 [ext_resource type="Material" uid="uid://c1450jd25lw5i" path="res://Jomp_Folder/VFX_Water/Water_Mat.tres" id="2_yg2ox"]
 [ext_resource type="PackedScene" uid="uid://c8pfscwl6fp01" path="res://Jomp_Folder/VFX_Water/VFX2/hit_core_crit.tscn" id="3_g5e5h"]
 [ext_resource type="PackedScene" uid="uid://fkx65jqq5jyi" path="res://Jomp_Folder/VFX_Water/VFX2/wind.tscn" id="4_w5n0h"]
+[ext_resource type="Shader" uid="uid://c8i3l0mtrynhp" path="res://assets/BinbunVFX_Vol2/StylizedHitFX/shader/flare.gdshader" id="5_ente7"]
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_w5n0h"]
 
@@ -41,7 +42,7 @@ shader_parameter/scroll_speed = Vector2(0, 2)
 shader_parameter/beam_length = 4.0
 shader_parameter/secondary_color = Color(0.21176471, 0.6862745, 0.8117647, 0.3764706)
 shader_parameter/tertiary_color = Color(0.63875264, 0.75818527, 1, 1)
-shader_parameter/emission = 1.1999999731775999
+shader_parameter/emission = 1.1999999731776
 shader_parameter/is_tertiary = false
 shader_parameter/open_amount = 1.0
 shader_parameter/speed_scale = 1.0
@@ -86,7 +87,7 @@ tracks/0/enabled = true
 tracks/0/path = NodePath("Node3D")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
-tracks/0/keys = PackedFloat32Array(0, 1, 0.001, 0.001, 0.001, 0.025739752, 1, 1.5, 1.5, 1.5, 0.15, 1, 0.001, 0.001, 0.001)
+tracks/0/keys = PackedFloat32Array(0, 1, 0.001, 0.001, 0.001, 0.0257, 1, 1.5, 1.5, 1.5, 0.15, 1, 0.001, 0.001, 0.001)
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
@@ -98,6 +99,18 @@ tracks/1/keys = {
 "transitions": PackedFloat32Array(1, 1),
 "update": 1,
 "values": [true, false]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("../Hitsub:material_override:shader_parameter/clearance")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.0257, 0.14907447),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [1.41, 1.35, 2.0]
 }
 
 [sub_resource type="Animation" id="Animation_w5n0h"]
@@ -121,6 +134,18 @@ tracks/1/keys = {
 "update": 1,
 "values": [true]
 }
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("../Hitsub:material_override:shader_parameter/clearance")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [1.41]
+}
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_ente7"]
 _data = {
@@ -129,30 +154,36 @@ _data = {
 }
 
 [sub_resource type="Curve" id="Curve_ryt2f"]
-_data = [Vector2(0, 0), 0.0, 7.7099075, 0, 0, Vector2(0.30405408, 0.94382024), -1.2791698, -1.2791698, 0, 0, Vector2(1, 0), -0.39127585, 0.0, 0, 0]
+_data = [Vector2(0, 0), 0.0, 7.7099075, 0, 0, Vector2(1e-05, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -0.39127585, 0.0, 0, 0]
 point_count = 3
 
 [sub_resource type="CurveTexture" id="CurveTexture_5njuh"]
 curve = SubResource("Curve_ryt2f")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_nhks5"]
-direction = Vector3(1, 5, 5)
-spread = 80.0
-initial_velocity_min = 3.0
+particle_flag_align_y = true
+emission_shape_offset = Vector3(0, 0, -0.25)
+emission_shape_scale = Vector3(1, 1, 0.05)
+emission_shape = 1
+emission_sphere_radius = 0.2
+inherit_velocity_ratio = 1.0
+direction = Vector3(0, 0, -1)
+spread = 70.0
+initial_velocity_min = 7.0
 initial_velocity_max = 8.0
-gravity = Vector3(0, -20, 0)
+gravity = Vector3(0, -15, 0)
 scale_min = 2.0
-scale_max = 3.0
+scale_max = 4.0
 scale_curve = SubResource("CurveTexture_5njuh")
 turbulence_noise_strength = 0.19
 turbulence_noise_scale = 0.0
 collision_mode = 1
-collision_friction = 0.0
+collision_friction = 0.25
 collision_bounce = 0.5
 
 [sub_resource type="SphereMesh" id="SphereMesh_00f0g"]
-radius = 0.022
-height = 0.138
+radius = 0.011
+height = 0.07
 
 [sub_resource type="SphereMesh" id="SphereMesh_w5n0h"]
 radius = 0.005
@@ -272,8 +303,8 @@ curve = SubResource("Curve_h1ln1")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_b4c6n"]
 gravity = Vector3(0, 0, 0)
-scale_min = 2.5
-scale_max = 3.0
+scale_min = 5.0
+scale_max = 7.0
 scale_curve = SubResource("CurveTexture_mv1dg")
 color_ramp = SubResource("GradientTexture1D_mm7we")
 alpha_curve = SubResource("CurveTexture_trumn")
@@ -281,6 +312,124 @@ alpha_curve = SubResource("CurveTexture_trumn")
 [sub_resource type="QuadMesh" id="QuadMesh_067u3"]
 flip_faces = true
 size = Vector2(0.5, 0.5)
+
+[sub_resource type="Shader" id="Shader_0my40"]
+code = "shader_type spatial;
+render_mode unshaded, blend_add;
+
+group_uniforms Color;
+uniform vec3 primary_color : source_color = vec3(1.0);
+uniform vec3 secondary_color : source_color = vec3(1.0, 0.8, 0.4);
+uniform float emission = 2.0;
+uniform float emission_mult = 1.0;
+
+uniform float star_shape : hint_range(0.1, 2.0, 0.01) = 2.0;
+uniform float star_smoothness : hint_range(0.0, 1.0, 0.1) = 0.1;
+
+group_uniforms Alpha;
+uniform bool proximity_fade = false;
+uniform float proximity_fade_distance : hint_range(0.0, 8.0, 0.1) = 0.5;
+
+uniform sampler2D depth_texture : hint_depth_texture, repeat_disable, filter_nearest;
+
+void vertex() {
+	// Called for every vertex the material is visible on.
+}
+
+void fragment() {
+	vec2 uv = abs(UV * 2.0 - 1.0);
+	
+	
+	float decay = COLOR.a * 1.0;
+	float value = clamp(pow(uv.x, star_shape * decay) + pow(uv.y, star_shape * decay), 0.0, 2.0);
+	
+	value = smoothstep(0.95, 0.95 - star_smoothness, value);
+	
+	vec3 color = mix(secondary_color, primary_color, value);
+	
+	ALBEDO = color * COLOR.rgb * emission * emission_mult;
+	
+	ALPHA = value;
+	
+	// Proximity Fade
+	if(proximity_fade){
+		float proximity_depth_tex = textureLod(depth_texture, SCREEN_UV, 0.0).r;
+		vec4 ndc = OUTPUT_IS_SRGB ? vec4(vec3(SCREEN_UV, proximity_depth_tex) * 2.0 - 1.0, 1.0) : vec4(SCREEN_UV * 2.0 - 1.0, proximity_depth_tex, 1.0);
+		vec4 proximity_view_pos = INV_PROJECTION_MATRIX * ndc;
+		proximity_view_pos.xyz /= proximity_view_pos.w;
+		ALPHA *= clamp(1.0 - smoothstep(proximity_view_pos.z + proximity_fade_distance, proximity_view_pos.z, VERTEX.z), 0.0, 1.0);
+	}
+}
+
+//void light() {
+//	// Called for every pixel for every light affecting the material.
+//	// Uncomment to replace the default light processing function with this one.
+//}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ente7"]
+render_priority = 0
+shader = SubResource("Shader_0my40")
+shader_parameter/primary_color = Color(0, 0.96078444, 1, 1)
+shader_parameter/secondary_color = Color(0.43686545, 1, 0.95434374, 1)
+shader_parameter/emission = 10.0
+shader_parameter/emission_mult = 2.0
+shader_parameter/star_shape = 0.49999999254932
+shader_parameter/star_smoothness = 0.5000000074506
+shader_parameter/proximity_fade = false
+shader_parameter/proximity_fade_distance = 0.5
+
+[sub_resource type="Gradient" id="Gradient_5euib"]
+offsets = PackedFloat32Array(0, 0.9, 1)
+colors = PackedColorArray(0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_i3egv"]
+gradient = SubResource("Gradient_5euib")
+width = 512
+height = 512
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8srmi"]
+render_priority = 0
+shader = ExtResource("5_ente7")
+shader_parameter/primary_color = Color(1, 1, 1, 1)
+shader_parameter/secondary_color = Color(0.8454434, 0.83265877, 0.79248977, 1)
+shader_parameter/emission = 0.5
+shader_parameter/emission_mult = 1.0
+shader_parameter/alpha_as_factor = true
+shader_parameter/grow_factor = 0.0
+shader_parameter/flare_texture = SubResource("GradientTexture2D_i3egv")
+shader_parameter/streaks_amount = 3.0
+shader_parameter/variance1_amplitude = 1.0
+shader_parameter/variance2_amplitude = 10.0
+shader_parameter/edge_hardness = 0.0
+shader_parameter/edge_position = 0.1
+shader_parameter/proximity_fade = false
+shader_parameter/proximity_fade_distance = 1.0
+shader_parameter/billboard = false
+
+[sub_resource type="Curve" id="Curve_fyah4"]
+_data = [Vector2(0, 0), 0.0, 1.0168544, 0, 0, Vector2(0.33149174, 0.5617978), 0.049602617, 0.049602617, 0, 0, Vector2(1, 0), -0.14926313, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_gm5cq"]
+curve = SubResource("Curve_fyah4")
+
+[sub_resource type="Curve" id="Curve_gt38c"]
+_data = [Vector2(0, 0.37078655), 0.0, 1.0340889, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_qch0f"]
+curve = SubResource("Curve_gt38c")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_h1ln1"]
+gravity = Vector3(0, 0, 0)
+scale_min = 1.5
+scale_max = 2.0
+scale_curve = SubResource("CurveTexture_qch0f")
+alpha_curve = SubResource("CurveTexture_gm5cq")
 
 [node name="VFX_WaterSplatter" type="Node3D" unique_id=275418184]
 
@@ -325,7 +474,6 @@ explosiveness = 1.0
 randomness = 1.0
 fixed_fps = 60
 collision_base_size = 0.05
-local_coords = true
 draw_order = 3
 transform_align = 2
 process_material = SubResource("ParticleProcessMaterial_nhks5")
@@ -352,7 +500,7 @@ transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, -0.024593621)
 material_override = SubResource("ShaderMaterial_w5n0h")
 emitting = false
 amount = 1
-lifetime = 0.09999999999999999
+lifetime = 0.15000000000000002
 one_shot = true
 explosiveness = 1.0
 fixed_fps = 60
@@ -360,5 +508,11 @@ process_material = SubResource("ParticleProcessMaterial_b4c6n")
 draw_pass_1 = SubResource("QuadMesh_067u3")
 
 [node name="HitCore_Crit" parent="." unique_id=872683086 instance=ExtResource("3_g5e5h")]
+material_override = SubResource("ShaderMaterial_ente7")
+lifetime = 0.15000000000000002
 
 [node name="Wind" parent="." unique_id=364364466 instance=ExtResource("4_w5n0h")]
+material_override = SubResource("ShaderMaterial_8srmi")
+explosiveness = 1.0
+randomness = 1.0
+process_material = SubResource("ParticleProcessMaterial_h1ln1")

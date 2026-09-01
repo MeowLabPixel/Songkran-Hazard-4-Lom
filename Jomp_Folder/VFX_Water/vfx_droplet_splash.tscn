@@ -1,0 +1,349 @@
+[gd_scene format=3 uid="uid://gdyer64oxpgg"]
+
+[ext_resource type="Shader" uid="uid://c6psxsl3p763s" path="res://Jomp_Folder/VFX_Water/BinbunVFXs/beam_vfx/src/shader/beam_flare.gdshader" id="1_3kw3w"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_w5n0h"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wqooj"]
+render_priority = 0
+shader = ExtResource("1_3kw3w")
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_w5n0h")
+shader_parameter/noise_twist = 0.0
+shader_parameter/scroll_speed = Vector2(0, 2)
+shader_parameter/beam_length = 4.0
+shader_parameter/secondary_color = Color(0.5845778, 0.8850181, 0.97916895, 0.3764706)
+shader_parameter/tertiary_color = Color(1, 1, 1, 1)
+shader_parameter/emission = 1.42999996803664
+shader_parameter/is_tertiary = true
+shader_parameter/open_amount = 1.0
+shader_parameter/speed_scale = 1.0
+shader_parameter/edge_softness = 0.41999999061216
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_gjy2s"]
+lightmap_size_hint = Vector2i(33, 24)
+flip_faces = true
+top_radius = 0.13
+bottom_radius = 1.005
+height = 2.1
+cap_bottom = false
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_yg2ox"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_642oc"]
+render_priority = 0
+shader = ExtResource("1_3kw3w")
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_yg2ox")
+shader_parameter/noise_twist = 3.0
+shader_parameter/scroll_speed = Vector2(0, 2)
+shader_parameter/beam_length = 4.0
+shader_parameter/secondary_color = Color(0.21176471, 0.6862745, 0.8117647, 0.3764706)
+shader_parameter/tertiary_color = Color(0.63875264, 0.75818527, 1, 1)
+shader_parameter/emission = 1.1999999731776
+shader_parameter/is_tertiary = false
+shader_parameter/open_amount = 0.999999977648
+shader_parameter/speed_scale = 1.0
+shader_parameter/edge_softness = 0.0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_joboj"]
+flip_faces = true
+top_radius = 0.15
+bottom_radius = 0.0
+height = 1.1
+cap_bottom = false
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_g5pye"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vnqf2"]
+render_priority = 0
+shader = ExtResource("1_3kw3w")
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_g5pye")
+shader_parameter/noise_twist = 0.0
+shader_parameter/scroll_speed = Vector2(0, 1)
+shader_parameter/beam_length = 4.0
+shader_parameter/secondary_color = Color(0.5845778, 0.8850181, 0.97916895, 0.3764706)
+shader_parameter/tertiary_color = Color(0.6312426, 0.7704741, 0.9156357, 1)
+shader_parameter/emission = 1.27999997138944
+shader_parameter/is_tertiary = true
+shader_parameter/open_amount = 0.47999998927104
+shader_parameter/speed_scale = 0.999999977648
+shader_parameter/edge_softness = 0.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_puyi8"]
+lightmap_size_hint = Vector2i(26, 32)
+flip_faces = true
+radius = 0.87
+height = 0.565
+
+[sub_resource type="Animation" id="Animation_g5e5h"]
+resource_name = "Droplet"
+length = 0.3
+tracks/0/type = "scale_3d"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Node3D")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = PackedFloat32Array(0, 1, 0.001, 0.001, 0.001, 0.0257, 1, 1, 1, 1, 0.2, 1, 1, 1, 1, 0.3, 1, 0, 0, 0)
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Node3D:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.3),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [true, false]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Node3D/BeamFlare1:material_override:shader_parameter/open_amount")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0.06666667, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [1.0, 0.0]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Node3D/BeamFlare3:material_override:shader_parameter/open_amount")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0.033333335, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [0.47999998927104, 0.999999977648]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Node3D/BeamFlare2:mesh:top_radius")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0.033333335, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [0.15, 0.0]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Node3D/BeamFlare3:material_override:shader_parameter/tertiary_color")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(0.24220061, 0.6105753, 1, 1), Color(1, 1, 1, 1)]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Node3D/BeamFlare3:material_override:shader_parameter/secondary_color")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0, 0.19674519),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(0.81041145, 0.95494926, 1, 0.3764706), Color(1, 1, 1, 0.3764706)]
+}
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("Node3D/BeamFlare3:material_override:shader_parameter/edge_softness")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(0.033333335, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [0.0, 0.999999977648]
+}
+tracks/8/type = "value"
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/path = NodePath("Node3D/BeamFlare2:material_override:shader_parameter/secondary_color")
+tracks/8/interp = 1
+tracks/8/loop_wrap = true
+tracks/8/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(0, 0.48704672, 1, 1), Color(1, 1, 1, 1)]
+}
+tracks/9/type = "value"
+tracks/9/imported = false
+tracks/9/enabled = true
+tracks/9/path = NodePath("Node3D/BeamFlare2:material_override:shader_parameter/tertiary_color")
+tracks/9/interp = 1
+tracks/9/loop_wrap = true
+tracks/9/keys = {
+"times": PackedFloat32Array(0, 0.19674519),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(0.18958849, 0.81428045, 1, 0.3764706), Color(1, 1, 1, 0.3764706)]
+}
+
+[sub_resource type="Animation" id="Animation_w5n0h"]
+length = 0.001
+tracks/0/type = "scale_3d"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Node3D")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = PackedFloat32Array(0, 1, 1, 1, 1)
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Node3D:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Node3D/BeamFlare1:material_override:shader_parameter/open_amount")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [1.0]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Node3D/BeamFlare3:material_override:shader_parameter/open_amount")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.47999998927104]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Node3D/BeamFlare2:mesh:top_radius")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.15]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Node3D/BeamFlare3:material_override:shader_parameter/tertiary_color")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(0.6312426, 0.7704741, 0.9156357, 1)]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Node3D/BeamFlare3:material_override:shader_parameter/edge_softness")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("Node3D/BeamFlare3:material_override:shader_parameter/secondary_color")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(0.5845778, 0.8850181, 0.97916895, 0.3764706)]
+}
+tracks/8/type = "value"
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/path = NodePath("Node3D/BeamFlare2:material_override:shader_parameter/secondary_color")
+tracks/8/interp = 1
+tracks/8/loop_wrap = true
+tracks/8/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(0.21176471, 0.6862745, 0.8117647, 0.3764706)]
+}
+tracks/9/type = "value"
+tracks/9/imported = false
+tracks/9/enabled = true
+tracks/9/path = NodePath("Node3D/BeamFlare2:material_override:shader_parameter/tertiary_color")
+tracks/9/interp = 1
+tracks/9/loop_wrap = true
+tracks/9/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(0.63875264, 0.75818527, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_3kw3w"]
+_data = {
+&"Droplet": SubResource("Animation_g5e5h"),
+&"RESET": SubResource("Animation_w5n0h")
+}
+
+[node name="VFX_DropletSplash" type="Node3D" unique_id=275418184]
+
+[node name="DropletSplash" type="Node3D" parent="." unique_id=1655217680]
+transform = Transform3D(0.67, -5.5055942e-31, 9.2981196e-17, 0, 0.67, 3.967198e-15, -9.2981196e-17, -3.967198e-15, 0.67, 0, 0, 0)
+
+[node name="Node3D" type="Node3D" parent="DropletSplash" unique_id=1848220667]
+
+[node name="BeamFlare1" type="MeshInstance3D" parent="DropletSplash/Node3D" unique_id=496147892]
+transform = Transform3D(1.0000001, 8.742278e-08, -8.7422784e-08, 8.7422784e-08, -1.0000001, 8.7422784e-08, -8.742278e-08, -8.742279e-08, -1.0000001, 1.4254961e-38, 0.9421861, 5.578865e-15)
+layers = 9
+sorting_offset = 1.0
+material_override = SubResource("ShaderMaterial_wqooj")
+mesh = SubResource("CylinderMesh_gjy2s")
+
+[node name="BeamFlare2" type="MeshInstance3D" parent="DropletSplash/Node3D" unique_id=1016851004]
+transform = Transform3D(1.0000001, 8.742278e-08, -8.7422784e-08, 8.7422784e-08, -1.0000001, 8.7422784e-08, -8.742278e-08, -8.742279e-08, -1.0000001, -7.42807e-39, 0.5281683, 3.1273869e-15)
+sorting_offset = 2.0
+material_override = SubResource("ShaderMaterial_642oc")
+mesh = SubResource("CylinderMesh_joboj")
+
+[node name="BeamFlare3" type="MeshInstance3D" parent="DropletSplash/Node3D" unique_id=465589533]
+transform = Transform3D(1.2000008, 1.0490739e-07, -1.049074e-07, 1.049074e-07, -1.2000008, 1.0490735e-07, -1.0490739e-07, -1.0490736e-07, -1.2000008, 7.368406e-39, 0.13022427, 7.710828e-16)
+layers = 9
+sorting_offset = 1.0
+material_override = SubResource("ShaderMaterial_vnqf2")
+cast_shadow = 0
+mesh = SubResource("SphereMesh_puyi8")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="DropletSplash" unique_id=1439250941]
+libraries/ = SubResource("AnimationLibrary_3kw3w")

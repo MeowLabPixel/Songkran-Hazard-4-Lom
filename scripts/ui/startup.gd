@@ -17,6 +17,9 @@ var bg_instance: Node = null
 		enable_ui = value
 		_update_ui_visibility()
 @export var auto_transition: bool = false
+@export var fade_logo_after_press_e: bool = true
+@export var logo_fade_delay: float = 10.0
+@export var logo_fade_duration: float = 1.0
 @export var disclaimer_prompt_en: String = "[ PRESS E TO ENTER ]"
 @export var disclaimer_prompt_th: String = "[ กดปุ่ม E เพื่อดำเนินต่อ ]"
 
@@ -25,6 +28,7 @@ var bg_instance: Node = null
 
 var pulse_tween: Tween = null
 var reveal_tween: Tween = null
+var logo_fade_tween: Tween = null
 var sway_time: float = 0.0
 var sway_weight: float = 0.0
 var sway_configs: Dictionary = {}
@@ -168,10 +172,59 @@ func _stop_prompt_pulse(fade_out_duration: float = 0.2) -> void:
 		prompt_label.hide()
 	)
 
+func _start_logo_fade_timer() -> void:
+	_cancel_logo_fade()
+	if not fade_logo_after_press_e:
+		return
+	
+	logo_fade_tween = create_tween()
+	logo_fade_tween.tween_interval(logo_fade_delay)
+	logo_fade_tween.tween_callback(func():
+		if current_phase == Phase.IDLE or current_phase == Phase.REVEAL:
+			_fade_out_logo()
+	)
+
+func _cancel_logo_fade() -> void:
+	if logo_fade_tween and logo_fade_tween.is_valid():
+		logo_fade_tween.kill()
+	logo_fade_tween = null
+
+func _fade_out_logo() -> void:
+	if not bg_instance:
+		return
+	var logo_node = bg_instance.find_child("3_logo", true, false)
+	if logo_node and logo_node.material and logo_node.material is ShaderMaterial:
+		var mat = logo_node.material as ShaderMaterial
+		var current_alpha = mat.get_shader_parameter("Alpha")
+		if current_alpha == null:
+			current_alpha = 1.0
+		var fade = create_tween()
+		fade.tween_method(
+			func(val: float): mat.set_shader_parameter("Alpha", val),
+			current_alpha,
+			0.0,
+			logo_fade_duration
+		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+func set_fade_logo_enabled(enabled: bool) -> void:
+	fade_logo_after_press_e = enabled
+	if not enabled:
+		_cancel_logo_fade()
+		if bg_instance:
+			var logo_node = bg_instance.find_child("3_logo", true, false)
+			if logo_node and logo_node.material and logo_node.material is ShaderMaterial:
+				var mat = logo_node.material as ShaderMaterial
+				mat.set_shader_parameter("Alpha", 1.0)
+	else:
+		if current_phase == Phase.IDLE:
+			_start_logo_fade_timer()
+
+
 func _start_reveal() -> void:
 	_change_phase(Phase.REVEAL)
 	_stop_prompt_pulse(0.2)
 	SoundManager.play_main_theme()
+	_start_logo_fade_timer()
 	
 	if lang_changer_container and enable_ui:
 		var fade_out_lang = create_tween()
@@ -413,6 +466,7 @@ func _apply_sway_idle() -> void:
 		sprite.position = cfg["base_pos"] + offset * sway_weight
 
 func _start_transition() -> void:
+	_cancel_logo_fade()
 	_change_phase(Phase.TRANSITION)
 	_stop_prompt_pulse(0.5)
 	
@@ -439,6 +493,7 @@ func _start_transition() -> void:
 	)
 
 func _reset_to_press_e() -> void:
+	_cancel_logo_fade()
 	can_transition = false
 	if lang_changer_container:
 		lang_changer_container.modulate.a = 1.0
@@ -593,3 +648,6 @@ func return_to_swaymode() -> void:
 				1.0,
 				0.6
 			).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			fade_in.finished.connect(func():
+				_start_logo_fade_timer()
+			)

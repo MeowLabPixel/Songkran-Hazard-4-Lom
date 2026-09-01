@@ -6,6 +6,8 @@
 layer = 2
 follow_viewport_enabled = true
 script = ExtResource("1_script")
+fade_logo_after_press_e = false
+logo_fade_delay = 5.0
 disclaimer_prompt_en = "[ PRESS E TO START! ]"
 disclaimer_prompt_th = "[ กดปุ่ม E เพื่อเริ่มเกม! ]"
 

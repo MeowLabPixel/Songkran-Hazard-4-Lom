@@ -235,6 +235,9 @@ var aim_target_head: Marker3D
 @export var aim_visual_offset: Vector3 = Vector3(0.0, 0.25, 0.0)
 @export var aim_parallax_correction: float = 1.5 # Dynamically pulls the gun right when aiming left
 var true_aim_position: Vector3 = Vector3.ZERO
+var aim_target_zone: String = ""
+var aim_target_enemy: Node = null
+var aim_target_hitbox: Area3D = null
 var _aim_debug_mesh: MeshInstance3D = null
 var _aim_debug_marker: MeshInstance3D = null
 var nav_agent: NavigationAgent3D = null
@@ -637,6 +640,12 @@ func _update_aim_target(delta: float) -> void:
 		var ray_origin: Vector3
 		var ray_dir: Vector3
 		
+		var gun_spawn: Vector3 = Vector3.ZERO
+		if gun_controller and gun_controller.current_gun and gun_controller.current_gun.spawn_point:
+			gun_spawn = gun_controller.current_gun.spawn_point.global_transform.origin
+		if gun_spawn == Vector3.ZERO:
+			gun_spawn = to_global(Vector3(0.0, 1.4, 0.0))
+
 		if not is_cam_looking_at_player and camera.camera:
 			var distance = camera.global_position.distance_to(camera.targetref.global_position)
 			projected_target = camera.camera.project_position(crosshair_center, distance)
@@ -649,13 +658,6 @@ func _update_aim_target(delta: float) -> void:
 			var ndc_y = (crosshair_center.y - screen_center.y) / (screen_size.y * 0.5)
 			var local_dir = Vector3(ndc_x * half_h, -ndc_y * half_h, -1.0).normalized()
 			ray_dir = (cam_basis * local_dir).normalized()
-			
-			var gun_spawn: Vector3 = Vector3.ZERO
-			if gun_controller and gun_controller.current_gun and gun_controller.current_gun.spawn_point:
-				gun_spawn = gun_controller.current_gun.spawn_point.global_transform.origin
-			if gun_spawn == Vector3.ZERO:
-				gun_spawn = to_global(Vector3(0.0, 1.4, 0.0))
-				
 			ray_origin = gun_spawn
 			projected_target = ray_origin + ray_dir * 15.0
 
@@ -667,10 +669,20 @@ func _update_aim_target(delta: float) -> void:
 			var bob_y = lean_modifier.current_bob_y
 			var target_bob = (cam_basis.x * bob_x + cam_basis.y * bob_y) * 15.0 * lean_modifier.arm_bob_multiplier
 			
-			# Cast a ray from the camera exactly through the crosshair to find the physical target!
+			# Advance raycast origin to player plane so objects/enemies behind player cannot be hit
+			var ray_cast_start = ray_origin
+			var cam_forward = -cam_basis.z
+			var denom = ray_dir.dot(cam_forward)
+			if denom > 0.0001:
+				var player_ref = global_position + Vector3(0.0, 1.2, 0.0)
+				var t_plane = (player_ref - ray_origin).dot(cam_forward) / denom
+				if t_plane > 0.0:
+					ray_cast_start = ray_origin + ray_dir * t_plane
+
+			# Cast a ray from the crosshair start plane to find the physical target!
 			var space_state = get_world_3d().direct_space_state
-			var query = PhysicsRayQueryParameters3D.create(ray_origin, ray_origin + ray_dir * 1000.0)
-			query.collision_mask = 1 | 2 | 4 | 8192 # Detect Layer 1 (World), Layer 2/4 (Enemy bodies), and Layer 14 (Hitboxes)
+			var query = PhysicsRayQueryParameters3D.create(ray_cast_start, ray_cast_start + ray_dir * 1000.0)
+			query.collision_mask = 1 | 2 | 8192 # Detect Layer 1 (World), Layer 2 (Weakpoints), and Layer 14 (Hitboxes). Excludes Layer 3 CharacterBody3D capsule
 			query.collide_with_areas = true
 			query.collide_with_bodies = true
 			
@@ -682,11 +694,25 @@ func _update_aim_target(delta: float) -> void:
 			query.exclude = exclude_nodes
 			
 			var raw_target_pos = projected_target
+			var target_zone: String = ""
+			var target_enemy: Node = null
+			var target_hitbox: Area3D = null
+
 			var result = space_state.intersect_ray(query)
 			if result:
 				raw_target_pos = result.position
+				var col = result.get("collider")
+				if col is Area3D:
+					target_hitbox = col
+					var hz = col.get_node_or_null("HitboxZone") as HitboxZone
+					if hz:
+						target_zone = hz.zone_name
+						target_enemy = hz._enemy if hz._enemy else hz.get("_anchalee")
 			
 			true_aim_position = raw_target_pos
+			aim_target_zone = target_zone
+			aim_target_enemy = target_enemy
+			aim_target_hitbox = target_hitbox
 			
 			# Shift the visual target to compensate for spine/shoulder parallax
 			var total_offset = aim_visual_offset

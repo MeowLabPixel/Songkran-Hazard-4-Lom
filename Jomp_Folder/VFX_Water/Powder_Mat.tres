@@ -5,31 +5,37 @@ colors = PackedColorArray(0.6578363, 0.6578363, 0.6578363, 1, 1, 1, 1, 1)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_8gtee"]
 gradient = SubResource("Gradient_d68ey")
-fill_from = Vector2(0, 1)
+fill = 1
+fill_from = Vector2(0.5, 1)
+fill_to = Vector2(0.5, 0)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8gtee"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_p6dk4"]
 render_priority = 1
 transparency = 1
 shading_mode = 0
 albedo_color = Color(0.77884424, 0.77884424, 0.77884424, 0.5411765)
 grow = true
-grow_amount = 0.003
+grow_amount = 0.002
 stencil_mode = 3
 stencil_flags = 1
 stencil_compare = 5
 metadata/_stencil_owned = true
 
 [resource]
-next_pass = SubResource("StandardMaterial3D_8gtee")
+next_pass = SubResource("StandardMaterial3D_p6dk4")
 transparency = 1
 diffuse_mode = 3
 specular_mode = 1
-albedo_color = Color(2.1592627, 2.1592627, 2.1592627, 0.078431375)
+albedo_color = Color(1.0467088, 1.0467088, 1.0467088, 0.60784316)
 albedo_texture = SubResource("GradientTexture2D_8gtee")
-roughness = 0.0
-rim_tint = 0.93
+roughness = 0.8
+rim_enabled = true
+rim = 0.5
+rim_tint = 1.0
+clearcoat_roughness = 1.0
 disable_receive_shadows = true
+billboard_keep_scale = true
 stencil_mode = 1
 stencil_flags = 2
 stencil_color = Color(0.77884424, 0.77884424, 0.77884424, 0.5411765)
-stencil_outline_thickness = 0.003
+stencil_outline_thickness = 0.002
