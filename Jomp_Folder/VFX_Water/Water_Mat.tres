@@ -1,13 +1,13 @@
 [gd_resource type="StandardMaterial3D" format=3 uid="uid://c1450jd25lw5i"]
 
 [sub_resource type="Gradient" id="Gradient_w71do"]
-offsets = PackedFloat32Array(0.328125, 1)
-colors = PackedColorArray(0, 1, 0.9529412, 1, 1.697393, 1.697393, 1.697393, 1)
+offsets = PackedFloat32Array(0.20323741, 0.6420863, 0.9622302)
+colors = PackedColorArray(0, 1, 0.9529412, 0.44705883, 1.5654712, 1.6431913, 1.639534, 0.077720225, 1.697393, 1.697393, 1.697393, 0)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_eaj2a"]
 gradient = SubResource("Gradient_w71do")
-fill_from = Vector2(1, 1)
-fill_to = Vector2(0.4556314, 0.015358361)
+fill_from = Vector2(0.50341296, 1)
+fill_to = Vector2(0.4761092, 0)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_syrjo"]
 render_priority = 1
@@ -23,9 +23,10 @@ metadata/_stencil_owned = true
 
 [resource]
 next_pass = SubResource("StandardMaterial3D_syrjo")
+transparency = 1
 diffuse_mode = 3
 specular_mode = 1
-albedo_color = Color(2.1168277, 2.1168277, 2.1168277, 1)
+albedo_color = Color(1.8247963, 1.8247963, 1.8247963, 1)
 albedo_texture = SubResource("GradientTexture2D_eaj2a")
 metallic_specular = 1.0
 roughness = 0.0

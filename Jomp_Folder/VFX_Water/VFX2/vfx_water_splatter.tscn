@@ -155,7 +155,7 @@ _data = {
 }
 
 [sub_resource type="Curve" id="Curve_ryt2f"]
-_data = [Vector2(0, 0), 0.0, 7.7099075, 0, 0, Vector2(1e-05, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.45098042), -0.39127585, 0.0, 0, 0]
+_data = [Vector2(0, 0), 0.0, 7.7099075, 0, 0, Vector2(1e-05, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -0.39127585, 0.0, 0, 0]
 point_count = 3
 
 [sub_resource type="CurveTexture" id="CurveTexture_5njuh"]
@@ -170,12 +170,12 @@ emission_sphere_radius = 0.2
 inherit_velocity_ratio = 1.0
 direction = Vector3(0, 0, -1)
 spread = 70.0
-initial_velocity_min = 7.0
-initial_velocity_max = 8.0
+initial_velocity_min = 6.0
+initial_velocity_max = 7.0
 gravity = Vector3(0, -15, 0)
 attractor_interaction_enabled = false
-scale_min = 2.0
-scale_max = 4.0
+scale_min = 1.5
+scale_max = 2.0
 scale_curve = SubResource("CurveTexture_5njuh")
 turbulence_noise_strength = 0.19
 turbulence_noise_scale = 0.0
@@ -185,6 +185,7 @@ sub_emitter_mode = 3
 sub_emitter_amount_at_collision = 1
 
 [sub_resource type="SphereMesh" id="SphereMesh_00f0g"]
+material = ExtResource("2_yg2ox")
 radius = 0.011
 height = 0.07
 
@@ -197,8 +198,8 @@ direction = Vector3(0, 1, 0)
 spread = 43.916
 initial_velocity_min = 10.0
 initial_velocity_max = 10.0
-scale_min = 4.0
-scale_max = 4.0
+scale_min = 3.0
+scale_max = 3.5
 turbulence_noise_strength = 0.19
 turbulence_noise_scale = 0.0
 collision_mode = 2
@@ -221,8 +222,8 @@ particle_flag_rotate_y = true
 emission_shape = 1
 emission_sphere_radius = 0.01
 gravity = Vector3(0, 0, 0)
-scale_min = 0.19999999
-scale_max = 0.25
+scale_min = 0.14999999
+scale_max = 0.19999999
 scale_curve = SubResource("CurveTexture_splash_scale")
 sub_emitter_mode = 4
 sub_emitter_amount_at_start = 2
@@ -325,7 +326,7 @@ shader_parameter/is_tertiary = true
 shader_parameter/mesh_scale = Vector3(1.2, -0.945, -1.2)
 shader_parameter/offset_y = 0.224
 shader_parameter/use_particle_lifetime = true
-shader_parameter/open_amount_start = 0.26999999396496
+shader_parameter/open_amount_start = 0.0
 shader_parameter/open_amount_end = 0.999999977648
 shader_parameter/open_time_start = 0.11
 shader_parameter/open_time_end = 0.67
@@ -333,8 +334,8 @@ shader_parameter/pinch_top = false
 shader_parameter/pinch_time_start = 0.11
 shader_parameter/pinch_time_end = 0.67
 shader_parameter/flash_to_white = true
-shader_parameter/flash_time_start = 0.0
-shader_parameter/flash_time_end = 0.67
+shader_parameter/flash_time_start = 0.749999983236
+shader_parameter/flash_time_end = 0.999999977648
 shader_parameter/edge_softness_start = 0.0
 shader_parameter/edge_softness_end = 1.0
 shader_parameter/edge_softness_time_start = 0.11
@@ -634,7 +635,6 @@ libraries/ = SubResource("AnimationLibrary_ente7")
 
 [node name="Sparks2" type="GPUParticles3D" parent="." unique_id=689880440]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.083019)
-material_override = ExtResource("2_yg2ox")
 transparency = 0.6
 cast_shadow = 0
 emitting = false
@@ -646,7 +646,9 @@ collision_base_size = 0.05
 draw_order = 3
 transform_align = 2
 process_material = SubResource("ParticleProcessMaterial_nhks5")
+draw_passes = 2
 draw_pass_1 = SubResource("SphereMesh_00f0g")
+draw_pass_2 = null
 
 [node name="Sparks_SubEmitter" type="GPUParticles3D" parent="." unique_id=734952372]
 material_override = ExtResource("2_yg2ox")
@@ -711,6 +713,7 @@ draw_pass_1 = SubResource("QuadMesh_067u3")
 [node name="HitCore_Crit" parent="." unique_id=872683086 instance=ExtResource("3_g5e5h")]
 material_override = SubResource("ShaderMaterial_ente7")
 lifetime = 0.15000000000000002
+draw_order = 3
 
 [node name="Wind" parent="." unique_id=364364466 instance=ExtResource("4_w5n0h")]
 material_override = SubResource("ShaderMaterial_8srmi")
