@@ -30,6 +30,7 @@ var _jink_active_timer: float = 0.0
 var _jink_dir_sign: int = 1     # alternates left/right each jink
 var _failed_jinks: int = 0
 var _jink_phase: int = 0
+var _pushed_threats_in_jink: Array[Node] = []
 
 # Breathing audio tracking
 var _active_breath_sfx: Node = null
@@ -48,10 +49,12 @@ func enter() -> void:
 	_jink_active_timer = 0.0
 	_failed_jinks = 0
 	_jink_phase = 0
+	_pushed_threats_in_jink.clear()
 	_panting_timer = 0.0
 	_walk_time = 0.0
 
 func exit() -> void:
+	_pushed_threats_in_jink.clear()
 	# Stop walk/run breathing sound
 	if is_instance_valid(_active_breath_sfx):
 		_active_breath_sfx.stop()
@@ -193,9 +196,11 @@ func physics_update(delta: float) -> void:
 			
 	# Stop if we are close enough to the target destination (FriendArea) or if player is in friend area.
 	# However, if the player is actively moving, stay in Walk state to follow smoothly.
+	var in_combat = Anchalee.is_in_combat()
 	var is_player_moving = player and player.velocity.length_squared() > 0.1
 	var is_player_rotating = player and abs(player.get("angular_velocity")) > 0.1
-	if _walk_time >= 0.3 and not is_player_moving and not is_player_rotating and Anchalee.zombie_reaction_state != "back_up" and not Anchalee.trigger_post_getup_jink and not rear_threat:
+	var allow_idle = not is_player_moving and (not in_combat or not is_player_rotating)
+	if _walk_time >= 0.3 and allow_idle and Anchalee.zombie_reaction_state != "back_up" and not Anchalee.trigger_post_getup_jink and not rear_threat:
 		if (dist_to_target <= Anchalee.get_effective_follow_stop_distance() or Anchalee.is_player_in_friend_area or Anchalee.is_touching_player) and repulsion_vec.length() < 0.1:
 			state_machine.transition_to("AnchaleeStateIdle")
 			return
@@ -281,6 +286,7 @@ func physics_update(delta: float) -> void:
 				_jink_angle_rad = deg_to_rad(angle_deg)
 				_jink_active_timer = 0.24 # Phase 1 duration (25% faster)
 				_jink_phase = 1
+				_pushed_threats_in_jink.clear()
 				stuck_timer = 0.0
 				_failed_jinks += 1
 				Anchalee.zombie_reaction_state = "evading"
@@ -323,6 +329,7 @@ func physics_update(delta: float) -> void:
 			_jink_active_timer = jink_duration # 0.4s (25% faster)
 		elif _jink_phase == 2 and _jink_active_timer <= 0.0:
 			_jink_phase = 0
+			_pushed_threats_in_jink.clear()
 			_jink_cooldown_timer = jink_cooldown
 			
 	var is_far = not is_in_near_area
@@ -494,8 +501,11 @@ func _push_zombies_on_jink(delta: float) -> void:
 	for threat in Anchalee.nearby_threats:
 		if not is_instance_valid(threat) or threat.is_defeated:
 			continue
+		if threat in _pushed_threats_in_jink:
+			continue
 		var dist = Anchalee.global_position.distance_to(threat.global_position)
 		if dist <= 1.2:
+			_pushed_threats_in_jink.append(threat)
 			var push_dir = (threat.global_position - Anchalee.global_position)
 			push_dir.y = 0.0
 			if push_dir.length() > 0.01:

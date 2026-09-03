@@ -244,28 +244,33 @@ nodes/TimeScale/node = SubResource("AnimationNodeTimeScale_r2dw4")
 nodes/TimeScale/position = Vector2(544, 112)
 node_connections = [&"output", 0, &"TimeScale", &"TimeScale", 0, &"Animation"]
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_a4ska"]
-animation = &"Zombie Grab success"
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_gveae"]
+animation = &"Zombie Attempt Grab"
+play_mode = 1
+use_custom_timeline = true
+timeline_length = 0.76
+stretch_time_scale = false
+start_offset = 0.24000001
+loop_mode = 0
 
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_d72nx"]
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_cfjch"]
-graph_offset = Vector2(30.4, 60.8)
+graph_offset = Vector2(-163.70444, -37.795094)
 nodes/output/position = Vector2(800, 144)
-nodes/Animation/node = SubResource("AnimationNodeAnimation_a4ska")
-nodes/Animation/position = Vector2(0, 100)
 nodes/TimeScale/node = SubResource("AnimationNodeTimeScale_d72nx")
-nodes/TimeScale/position = Vector2(656, 144)
+nodes/TimeScale/position = Vector2(416, 64)
+nodes/Animation/node = SubResource("AnimationNodeAnimation_gveae")
+nodes/Animation/position = Vector2(-30.65588, 147.7569)
 node_connections = [&"output", 0, &"TimeScale", &"TimeScale", 0, &"Animation"]
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_t6lqi"]
+xfade_time = 0.3
 switch_mode = 2
 advance_mode = 2
-advance_condition = &"Success"
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_mkr51"]
 xfade_time = 0.15
-break_loop_at_end = true
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_a4ska"]
 
@@ -290,9 +295,9 @@ states/Start/position = Vector2(-1.6, 150)
 "states/Zombie Grab Loop/node" = SubResource("AnimationNodeBlendTree_djpli")
 "states/Zombie Grab Loop/position" = Vector2(652.8, -74.799995)
 "states/Zombie Grab success/node" = SubResource("AnimationNodeBlendTree_cfjch")
-"states/Zombie Grab success/position" = Vector2(803.04, 102.799995)
+"states/Zombie Grab success/position" = Vector2(795.04004, 83.59999)
 transitions = ["Zombie Grab success", "End", SubResource("AnimationNodeStateMachineTransition_t6lqi"), "Zombie Grab Loop", "Zombie Grab success", SubResource("AnimationNodeStateMachineTransition_mkr51"), "Start", "Zombie Attempt Grab", SubResource("AnimationNodeStateMachineTransition_a4ska"), "Zombie Attempt Grab", "Zombie Grab Loop", SubResource("AnimationNodeStateMachineTransition_a5bf2"), "Zombie Attempt Grab", "End", SubResource("AnimationNodeStateMachineTransition_nolcx"), "Zombie Grab Loop", "End", SubResource("AnimationNodeStateMachineTransition_gs8q6")]
-graph_offset = Vector2(171.76013, -91)
+graph_offset = Vector2(517.76013, -113)
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_d72nx"]
 advance_mode = 2
@@ -328,9 +333,9 @@ states/Start/position = Vector2(-1.6, 150.256)
 "states/Zombie Attack 2/node" = SubResource("AnimationNodeBlendTree_2m32b")
 "states/Zombie Attack 2/position" = Vector2(300, 150)
 states/grab/node = SubResource("AnimationNodeStateMachine_a4ska")
-states/grab/position = Vector2(299.56763, 258.8)
+states/grab/position = Vector2(299.5424, 260.39996)
 transitions = ["Start", "Zombie Attack 1", SubResource("AnimationNodeStateMachineTransition_d72nx"), "Start", "Zombie Attack 2", SubResource("AnimationNodeStateMachineTransition_cfjch"), "Start", "grab", SubResource("AnimationNodeStateMachineTransition_gv71b"), "Zombie Attack 1", "End", SubResource("AnimationNodeStateMachineTransition_c8k76"), "Zombie Attack 2", "End", SubResource("AnimationNodeStateMachineTransition_gf6jb"), "grab", "End", SubResource("AnimationNodeStateMachineTransition_lt40l")]
-graph_offset = Vector2(-233, -1)
+graph_offset = Vector2(13, -2)
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_gv71b"]
 animation = &"dEAD ZOMBIE Start up"
@@ -1727,10 +1732,10 @@ states/Start/position = Vector2(0, 150)
 "states/Zombie Idle/node" = SubResource("AnimationNodeBlendTree_r2dw4")
 "states/Zombie Idle/position" = Vector2(212.59999, 71.08001)
 states/attack/node = SubResource("AnimationNodeStateMachine_a5bf2")
-states/attack/position = Vector2(634.39996, 5.6)
+states/attack/position = Vector2(635.99994, 6.3999996)
 states/defeated/node = SubResource("AnimationNodeStateMachine_r1yio")
 states/defeated/position = Vector2(400, -100.8)
 states/hit/node = SubResource("AnimationNodeStateMachine_f7n70")
 states/hit/position = Vector2(681.60004, 156.00003)
 transitions = ["attack", "defeated", SubResource("AnimationNodeStateMachineTransition_ppr3h"), "hit", "defeated", SubResource("AnimationNodeStateMachineTransition_85o7v"), "attack", "hit", SubResource("AnimationNodeStateMachineTransition_0dr6x"), "Start", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_qdr1e"), "hit", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_54tec"), "attack", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_psfbe"), "Zombie Idle", "attack", SubResource("AnimationNodeStateMachineTransition_7rkpk"), "Zombie Idle", "defeated", SubResource("AnimationNodeStateMachineTransition_xlsxt"), "Zombie Idle", "hit", SubResource("AnimationNodeStateMachineTransition_1ylu7"), "Run zombie  ", "hit", SubResource("AnimationNodeStateMachineTransition_3twba"), "Run zombie  ", "attack", SubResource("AnimationNodeStateMachineTransition_qoxow"), "Run zombie  ", "defeated", SubResource("AnimationNodeStateMachineTransition_p1uri"), "Run zombie  ", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_jcmwy"), "hit", "Run zombie  ", SubResource("AnimationNodeStateMachineTransition_i2j6k"), "hit", "attack", SubResource("AnimationNodeStateMachineTransition_378r0"), "Run zombie  ", "Walk Zombie", SubResource("AnimationNodeStateMachineTransition_a51ae"), "Walk Zombie", "Run zombie  ", SubResource("AnimationNodeStateMachineTransition_xix8b"), "hit", "Walk Zombie", SubResource("AnimationNodeStateMachineTransition_ljb3q"), "Walk Zombie", "hit", SubResource("AnimationNodeStateMachineTransition_jr721"), "Walk Zombie", "attack", SubResource("AnimationNodeStateMachineTransition_kyw6q"), "Zombie Idle", "Walk Zombie", SubResource("AnimationNodeStateMachineTransition_1bsmv"), "Walk Zombie", "defeated", SubResource("AnimationNodeStateMachineTransition_ncjt2"), "Walk Zombie", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_r1yio"), "attack", "Walk Zombie", SubResource("AnimationNodeStateMachineTransition_1d2fh")]
-graph_offset = Vector2(136.72388, -73)
+graph_offset = Vector2(105.72388, -79)

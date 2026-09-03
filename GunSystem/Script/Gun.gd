@@ -266,7 +266,7 @@ func fire_pellet():
 			direction = to_aim.normalized()
 		
 	if horizontal_spread != 0.0:
-		direction = direction.rotated(Vector3.UP, horizontal_spread)
+		direction = direction.rotated(cam_basis.y, horizontal_spread)
 	if vertical_spread != 0.0:
 		direction = direction.rotated(cam_basis.x, vertical_spread)
 

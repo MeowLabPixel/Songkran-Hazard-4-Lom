@@ -145,6 +145,7 @@ func enter() -> void:
 	if trigger_attack_recovery:
 		trigger_attack_recovery = false
 		_attack_recovery_timer = 0.5 # Pause to allow attack recovery crossfade to play
+		_is_fleeing = false
 		_play_anim(enemy.anim_set.idle)
 	elif apply_offset >= 0.0:
 		_play_anim(enemy.anim_set.idle)
@@ -159,6 +160,7 @@ func enter() -> void:
 func exit() -> void:
 	_getup_block_timer = 0.0
 	_is_fleeing_grab = false
+	_attack_recovery_timer = 0.0
 	if enemy:
 		enemy.attack_blocked = false
 		if enemy.anim_player:
@@ -240,11 +242,10 @@ func physics_update(_delta: float) -> void:
 		enemy.move_and_slide()
 		return
 		
-	if _stun_recovery_timer > 0.0 or _attack_recovery_timer > 0.0:
+	if _stun_recovery_timer > 0.0:
 		if enemy:
 			enemy.attack_blocked = true
 		_stun_recovery_timer -= _delta
-		_attack_recovery_timer -= _delta
 		if _stun_recovery_timer <= 0.0 and _attack_recovery_timer <= 0.0:
 			if enemy and _getup_block_timer <= 0.0:
 				enemy.attack_blocked = false
@@ -253,6 +254,39 @@ func physics_update(_delta: float) -> void:
 		enemy.velocity = Vector3.ZERO
 		enemy.move_and_slide()
 		return
+
+	if _attack_recovery_timer > 0.0:
+		if enemy:
+			enemy.attack_blocked = true
+		_attack_recovery_timer -= _delta
+		if _stun_recovery_timer <= 0.0 and _attack_recovery_timer <= 0.0:
+			if enemy and _getup_block_timer <= 0.0:
+				enemy.attack_blocked = false
+
+		var player_rec := _get_player()
+		var player_dead = false
+		if player_rec and player_rec.has_method("is_dead") and player_rec.is_dead():
+			player_dead = true
+
+		var player_pos: Vector3 = player_rec.global_position if player_rec else enemy.global_position
+		var to_player: Vector3 = (player_pos - enemy.global_position)
+		to_player.y = 0.0
+		var dist_to_player: float = to_player.length()
+		var is_player_grabbed: bool = player_rec and player_rec.get("is_grab")
+
+		if not player_dead and not is_player_grabbed and walk_back_range > 0.0 and dist_to_player < walk_back_range and player_rec != null and _is_ready_for_walk_back():
+			_is_fleeing = true
+			_walk_back(to_player.normalized(), _delta)
+			return
+		else:
+			_is_fleeing = false
+			if nav_agent and nav_agent.avoidance_enabled:
+				nav_agent.set_velocity(Vector3.ZERO)
+			enemy.velocity = Vector3.ZERO
+			enemy.move_and_slide()
+			if _is_ready_for_walk_back():
+				_play_anim(enemy.anim_set.idle)
+			return
 		
 	var player := _get_player()
 	
@@ -323,7 +357,7 @@ func physics_update(_delta: float) -> void:
 	is_player_grabbed = player and player.get("is_grab")
 
 	# Walk back if too close during a grab struggle
-	if is_player_grabbed:
+	if is_player_grabbed and _is_ready_for_walk_back():
 		if dist_to_player < 1.5:
 			_is_fleeing_grab = true
 		elif dist_to_player >= 2.0:
@@ -336,7 +370,7 @@ func physics_update(_delta: float) -> void:
 
 	# ─── Walk back check ───────────────────────────────────────────────────────
 	# Walk back if attack is on cooldown OR attacks are blocked (e.g. player grabbed)
-	if is_restricted and not is_player_grabbed and walk_back_range > 0.0 and dist_to_player < walk_back_range:
+	if is_restricted and not is_player_grabbed and walk_back_range > 0.0 and dist_to_player < walk_back_range and _is_ready_for_walk_back():
 		_is_fleeing = true
 		_walk_back(dir_to_player, _delta)
 		return
@@ -614,6 +648,22 @@ func _play_anim(anim_name: String, sub_machine: String = "") -> void:
 	
 	super._play_anim(anim_name, sub_machine)
 
+func _is_ready_for_walk_back() -> bool:
+	if not enemy:
+		return false
+	if enemy.anim_tree and enemy.anim_tree.active:
+		var root_pb = enemy.anim_tree.get("parameters/playback") as AnimationNodeStateMachinePlayback
+		if root_pb:
+			var cur_node = String(root_pb.get_current_node())
+			# If still in the attack animation state, walk-back is not permitted yet
+			if cur_node == "attack":
+				return false
+			# Must either be in the idle animation or already walking
+			var idle_name = enemy.anim_set.idle if enemy.anim_set else "Zombie Idle"
+			var walk_name = _walk_anim if _walk_anim != "" else "Walk Zombie"
+			return cur_node == idle_name or cur_node == "Zombie Idle" or cur_node == walk_name
+	return true
+
 func _walk_back(dir_to_player: Vector3, delta: float) -> void:
 	var flee_dir: Vector3 = -dir_to_player
 	flee_dir.y = 0.0
@@ -744,7 +794,8 @@ func _get_player() -> Node3D:
 	return players[0] if players.size() > 0 else null
 
 func is_movement_blocked() -> bool:
-	return _getup_block_timer > 0.0 or _stun_recovery_timer > 0.0 or _attack_recovery_timer > 0.0
+	var attack_recovery_blocked = _attack_recovery_timer > 0.0 and not _is_fleeing
+	return _getup_block_timer > 0.0 or _stun_recovery_timer > 0.0 or attack_recovery_blocked
 
 func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 	if not enemy or not enemy.is_inside_tree() or base_dir.length() <= 0.01:

@@ -78,7 +78,7 @@ func is_grabbing_player() -> bool:
 		return false
 	if current_state and current_state.name == "StateAttack":
 		var sa = current_state as StateAttack
-		if sa and sa._phase in [StateAttack.Phase.GRAB_REACHING, StateAttack.Phase.GRAB_HOLDING]:
+		if sa and sa._phase in [StateAttack.Phase.GRAB_REACHING, StateAttack.Phase.GRAB_HOLDING, StateAttack.Phase.GRAB_RESOLVING]:
 			return true
 	var players = enemy.get_tree().get_nodes_in_group("player")
 	for p in players:

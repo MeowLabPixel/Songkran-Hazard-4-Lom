@@ -119,6 +119,9 @@ var _was_duck_open_window: bool = false
 var is_combat: bool = false
 var is_targeted_by_zombie: bool = false
 var is_low_hp: bool = false
+var is_sprint_active: bool = false
+var is_jink_active: bool = false
+var is_looking_at_forward_threat: bool = false
 
 var is_voiceline_playing: bool = false
 var _voiceline_timer: float = 0.0
@@ -391,6 +394,19 @@ func _auto_detect_anchalee_state(delta: float) -> void:
 	is_targeted_by_zombie = _check_is_targeted_by_zombie()
 	is_combat = _check_is_in_combat()
 
+	# Detect sprint, jink, and forward threat glance
+	is_sprint_active = false
+	is_jink_active = false
+	is_looking_at_forward_threat = false
+	if anchalee and is_instance_valid(anchalee):
+		if anchalee.has_method("is_sprinting_active"):
+			is_sprint_active = anchalee.is_sprinting_active()
+		if anchalee.has_method("is_jinking_active"):
+			is_jink_active = anchalee.is_jinking_active()
+		if "active_glance_target" in anchalee and "nearby_threats" in anchalee:
+			if anchalee.active_glance_target != null and anchalee.active_glance_target in anchalee.nearby_threats:
+				is_looking_at_forward_threat = true
+
 func _check_is_targeted_by_zombie() -> bool:
 	if not anchalee or not anchalee.is_inside_tree():
 		return false
@@ -445,12 +461,20 @@ func _evaluate_eye_state() -> void:
 		current_eye_state = EyeState.CRY
 		return
 
-	# Priority 2: SURPRISE Eyes (0.421) - Zombie enemy is targeting Anchalee
-	if is_targeted_by_zombie:
+	# Priority 2: SURPRISE Eyes (0.421) - Zombie enemy is targeting Anchalee OR looking at forward threat while sprinting
+	if is_targeted_by_zombie or (is_sprint_active and is_looking_at_forward_threat):
 		current_eye_state = EyeState.SURPRISE
 		return
 
-	# Priority 3: Ducking / Jinking State
+	# Priority 3: Sprinting / Jinking Closed Eyes (when not actively tracking a forward threat)
+	if is_jink_active or is_sprint_active:
+		if is_low_hp:
+			current_eye_state = EyeState.CRY
+		else:
+			current_eye_state = EyeState.CLOSED
+		return
+
+	# Priority 4: Ducking State
 	if is_ducking:
 		var current_duck_time = duck_anim_time
 		if duck_loop_length > 0.0:
@@ -487,7 +511,7 @@ func _evaluate_eye_state() -> void:
 			_reset_blink_timer()
 			_is_blinking = false
 
-	# Priority 4: Dynamic Auto-Blinking
+	# Priority 5: Dynamic Auto-Blinking
 	if _is_blinking:
 		if is_low_hp:
 			current_eye_state = EyeState.CRY
@@ -495,7 +519,7 @@ func _evaluate_eye_state() -> void:
 			current_eye_state = EyeState.CLOSED
 		return
 
-	# Priority 5: DEFAULT Eyes (0.000)
+	# Priority 6: DEFAULT Eyes (0.000)
 	current_eye_state = EyeState.DEFAULT
 
 func _evaluate_mouth_state() -> void:

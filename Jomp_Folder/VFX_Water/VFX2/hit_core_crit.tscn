@@ -81,12 +81,16 @@ point_count = 5
 curve = SubResource("Curve_h1ln1")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_gk8ag"]
+emission_shape_offset = Vector3(0, 0, 0.01)
+emission_shape_scale = Vector3(0.7, 0.5, 0)
+emission_shape = 3
+emission_box_extents = Vector3(1, 1, 1)
 spread = 180.0
 initial_velocity_min = 0.01
 initial_velocity_max = 0.01
 gravity = Vector3(0, 0, 0)
-scale_min = 8.0
-scale_max = 10.0
+scale_min = 2.0
+scale_max = 4.0
 scale_curve = SubResource("CurveTexture_mv1dg")
 alpha_curve = SubResource("CurveTexture_5sffx")
 
@@ -97,10 +101,9 @@ size = Vector2(0.3, 0.3)
 sorting_offset = 3.0
 material_override = SubResource("ShaderMaterial_1ppi2")
 emitting = false
-amount = 1
+amount = 3
 lifetime = 0.2
 one_shot = true
-explosiveness = 1.0
 randomness = 1.0
 fixed_fps = 60
 transform_align = 3

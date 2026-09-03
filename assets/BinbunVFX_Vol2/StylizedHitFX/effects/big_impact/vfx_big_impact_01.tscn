@@ -1,12 +1,25 @@
 [gd_scene format=3 uid="uid://dpntm33m1fs4l"]
 
-[ext_resource type="Script" uid="uid://cmpof68vvmhk2" path="res://assets/BinbunVFX_Vol2/StylizedHitFX/script/VFXImpactBB.gd" id="1_2yumw"]
-[ext_resource type="Shader" uid="uid://8mnb5nsi3n2" path="res://assets/BinbunVFX_Vol2/StylizedHitFX/shader/impact_sphere.gdshader" id="2_bskiu"]
-[ext_resource type="Shader" uid="uid://c3vn75lshe3xo" path="res://assets/BinbunVFX_Vol2/StylizedHitFX/shader/impact_slash.gdshader" id="3_5wh8n"]
-[ext_resource type="Shader" uid="uid://bssccbrmdo0rm" path="res://assets/BinbunVFX_Vol2/StylizedHitFX/shader/impact_core.gdshader" id="4_4awib"]
-[ext_resource type="Shader" uid="uid://ddaykxb1ucbsl" path="res://assets/BinbunVFX_Vol2/StylizedHitFX/shader/glow.gdshader" id="5_s5ly8"]
-[ext_resource type="Script" uid="uid://bwmucxp58uvvt" path="res://assets/BinbunVFX_Vol2/shared/script/VFXOmniLightBB.gd" id="6_jdbgp"]
-[ext_resource type="Shader" uid="uid://n0hv5j1ofiye" path="res://assets/BinbunVFX_Vol2/StylizedHitFX/shader/flare.gdshader" id="7_bskiu"]
+[ext_resource type="Script" uid="uid://bcu3w6xgbyscg" path="res://assets/BinbunVFX_Vol2/StylizedHitFX/script/VFXImpactBB.gd" id="1_2yumw"]
+[ext_resource type="Shader" uid="uid://c1tbbrwjij67e" path="res://assets/BinbunVFX_Vol2/StylizedHitFX/shader/impact_sphere.gdshader" id="2_bskiu"]
+[ext_resource type="Shader" uid="uid://q5pc5xpiai4a" path="res://assets/BinbunVFX_Vol2/StylizedHitFX/shader/impact_slash.gdshader" id="3_5wh8n"]
+[ext_resource type="Shader" uid="uid://ygayhvwdmwm8" path="res://assets/BinbunVFX_Vol2/StylizedHitFX/shader/impact_core.gdshader" id="4_4awib"]
+[ext_resource type="Shader" uid="uid://bm7jgi4typrbp" path="res://assets/BinbunVFX_Vol2/StylizedHitFX/shader/glow.gdshader" id="5_s5ly8"]
+[ext_resource type="Script" uid="uid://ltgdx2hpclxa" path="res://assets/BinbunVFX_Vol2/shared/script/VFXOmniLightBB.gd" id="6_jdbgp"]
+[ext_resource type="Shader" uid="uid://c8i3l0mtrynhp" path="res://assets/BinbunVFX_Vol2/StylizedHitFX/shader/flare.gdshader" id="7_bskiu"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_so55i"]
+sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+
+[sub_resource type="Sky" id="Sky_h0vf1"]
+sky_material = SubResource("ProceduralSkyMaterial_so55i")
+
+[sub_resource type="Environment" id="Environment_ukufa"]
+background_mode = 2
+sky = SubResource("Sky_h0vf1")
+tonemap_mode = 2
+glow_enabled = true
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_15hw4"]
 noise_type = 2
@@ -581,17 +594,9 @@ script = ExtResource("1_2yumw")
 primary_color = Color(1, 1, 1, 1)
 secondary_color = Color(1, 0.8, 0.4, 1)
 light_color = Color(1, 0.8, 0.4, 1)
-attenuation_model = null
-animate_volume = null
-volume_db = null
-unit_size = null
-max_db = null
-pitch_scale = null
-stream_paused = null
-audio_max_distance = null
-max_polyphony = null
-panning_strength = null
-bus = null
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1092397243]
+environment = SubResource("Environment_ukufa")
 
 [node name="MeshInstance3D3" type="MeshInstance3D" parent="." unique_id=2141584362]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.089589, 0)
@@ -632,6 +637,7 @@ lifetime = 0.6
 one_shot = true
 explosiveness = 1.0
 transform_align = 1
+transform_align_channel_filter = 1
 process_material = SubResource("ParticleProcessMaterial_1lthj")
 draw_pass_1 = SubResource("QuadMesh_hta2f")
 

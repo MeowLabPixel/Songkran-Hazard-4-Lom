@@ -62,9 +62,19 @@ func physics_update(delta: float) -> void:
 	
 	# Only transition to Walk if far away from player, backing up, sprinting, or significant movement when not at destination
 	var player_sprinting = Anchalee.player_is_sprinting
-	var is_far_away = dist_to_target > Anchalee.follow_start_distance
-	var should_start_walking = is_far_away or should_walk_back or player_sprinting or (not has_reached_destination and player and player.velocity.length_squared() > 1.0)
-	
+	var effective_start_dist = Anchalee.get_effective_follow_start_distance()
+	var is_far_away = dist_to_target > effective_start_dist
+	var is_in_combat = Anchalee.is_in_combat()
+	var is_player_actively_moving = player and player.velocity.length_squared() > 0.1
+
+	var should_start_walking = is_far_away or should_walk_back or player_sprinting or (is_in_combat and not has_reached_destination and is_player_actively_moving)
+
+	# In calm exploration (out of combat), do not chase orbiting FriendArea when player simply rotates in place
+	if not is_in_combat and not is_player_actively_moving and not player_sprinting:
+		var dist_to_player_center = (player.global_position - Anchalee.global_position).length() if player else dist_to_target
+		if dist_to_player_center <= effective_start_dist:
+			should_start_walking = false
+
 	if should_start_walking:
 		if should_walk_back:
 			Anchalee.is_walking_backward = true
@@ -96,9 +106,19 @@ func physics_update(delta: float) -> void:
 			state_machine.transition_to("AnchaleeStateWalk")
 			return
 	elif player:
-		# Rotate to match player's facing direction when stopped in Idle
-		var target_y = player.global_rotation.y
-		Anchalee.rotation.y = lerp_angle(Anchalee.rotation.y, target_y, 10.0 * delta)
+		# One-time body settle on stop: rotate body during initial 0.6s, then plant feet
+		if _idle_time <= 0.6:
+			if Anchalee.is_in_combat():
+				# In Combat: Rotate to match player's facing direction for battle readiness
+				var target_y = player.global_rotation.y
+				Anchalee.rotation.y = lerp_angle(Anchalee.rotation.y, target_y, 10.0 * delta)
+			else:
+				# Non-Combat: Rotate once to face directly toward the player's location on stop
+				var to_player = player.global_position - Anchalee.global_position
+				to_player.y = 0.0
+				if to_player.length() > 0.1:
+					var target_y = atan2(-to_player.x, -to_player.z)
+					Anchalee.rotation.y = lerp_angle(Anchalee.rotation.y, target_y, 8.0 * delta)
 
 func _get_repulsion() -> Vector3:
 	var repulsion_vec = Vector3.ZERO

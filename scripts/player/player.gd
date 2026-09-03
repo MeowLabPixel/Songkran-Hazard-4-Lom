@@ -233,7 +233,12 @@ func toggle_debug_visualize_raycast() -> void:
 var aim_target_head: Marker3D
 
 @export var aim_visual_offset: Vector3 = Vector3(0.0, 0.25, 0.0)
+@export var aim_horizontal_offset: float = 0.25 # Horizontal trim to center the gun arm onto crosshair
 @export var aim_parallax_correction: float = 1.5 # Dynamically pulls the gun right when aiming left
+@export var aim_depth_blend_time: float = 0.5 # Target duration (in seconds) for depth convergence and exit lerp transitions
+var _current_convergence_offset: Vector3 = Vector3.ZERO
+var _was_aiming_last_frame: bool = false
+var _player_collision_rids: Array = []
 var true_aim_position: Vector3 = Vector3.ZERO
 var aim_target_zone: String = ""
 var aim_target_enemy: Node = null
@@ -287,9 +292,11 @@ func _ready() -> void:
 			debug_visualize_raycast = GameManager.debug_visualize_raycast
 	if not face_controller:
 		face_controller = get_node_or_null("PlayerFaceController") as PlayerFaceController
+	if MaxHP == null:
+		MaxHP = 150
 	if get_tree().root.has_node("GameManager") and GameManager.difficulty == GameManager.Difficulty.CASUAL:
 		MaxHP = 210
-	else:
+	if HP == null:
 		HP = MaxHP
 
 	if not GameManager.movement_type_selected:
@@ -383,6 +390,13 @@ func _ready() -> void:
 	
 	pickup_detect.area_entered.connect(pickup_detect_area)
 
+	# Cache all player collision object RIDs so raycasts exclude them with zero runtime overhead
+	_player_collision_rids.clear()
+	_player_collision_rids.append(get_rid())
+	for node in find_children("*", "CollisionObject3D", true, false):
+		if node is CollisionObject3D:
+			_player_collision_rids.append(node.get_rid())
+
 	# Create programmatic takedown prompt UI
 	var prompt_layer = CanvasLayer.new()
 	add_child(prompt_layer)
@@ -441,7 +455,6 @@ func _ready() -> void:
 		skeleton.rotation = Vector3.ZERO
 		var lean_modifier = preload("res://scripts/player/player_lean_modifier.gd").new()
 		lean_modifier.name = "SpineLeanModifier"
-		lean_modifier.max_tilt_angle = max_tilt_angle
 		skeleton.add_child(lean_modifier)
 		
 		# Create a separate aim target for the head so it doesn't drop down during sprint/lean
@@ -464,8 +477,12 @@ func _ready() -> void:
 		# Enable secondary rotation so the spine can twist left/right to aim!
 		if aim_bone:
 			aim_bone.use_secondary_rotation = true
+			aim_bone.secondary_positive_limit_angle = PI
+			aim_bone.secondary_negative_limit_angle = PI
 		if aim_bone2:
 			aim_bone2.use_secondary_rotation = true
+			aim_bone2.secondary_positive_limit_angle = PI
+			aim_bone2.secondary_negative_limit_angle = PI
 			
 	if rig:
 		rig.rotation = Vector3.ZERO
@@ -509,7 +526,7 @@ func _process(delta: float) -> void:
 			cross_hair.hide()
 	
 	# Smoothly blend the aiming influence for spine/chest bones
-	var target_influence = 1.0 if is_aimming else 0.25
+	var target_influence = 1.0 if is_aimming else 0.0
 	if is_quick_turn:
 		target_influence = 0.0
 		
@@ -552,6 +569,7 @@ func _process(delta: float) -> void:
 		aim_bone.influence = current_aim_influence
 	if aim_bone2:
 		aim_bone2.influence = current_aim_influence
+	_update_skeleton_tilt(delta)
 		
 	if skeleton:
 		var head_lookat = skeleton.get_node_or_null("HeadLookAt")
@@ -619,7 +637,6 @@ func _process(delta: float) -> void:
 				anim.set("parameters/Main/Run/Pis/TimeScale/scale", dynamic_ts)
 				anim.set("parameters/Main/Run/Shot/TimeScale/scale", dynamic_ts)
 
-	_update_skeleton_tilt(delta)
 	_update_aim_target(delta)
 	_update_idle_turn_blend(delta)
 	check_if_near_stun()
@@ -636,9 +653,11 @@ func _update_aim_target(delta: float) -> void:
 		var offset_pixels = Vector2(camera.aim_offset.x, camera.aim_offset.y) * crosshair_speed
 		var crosshair_center = screen_center + offset_pixels
 		
-		var projected_target: Vector3
 		var ray_origin: Vector3
 		var ray_dir: Vector3
+		var visual_target: Vector3
+		var visual_distance: float = camera.global_position.distance_to(camera.targetref.global_position) if (camera and is_instance_valid(camera.targetref)) else 4.5
+		var effective_aim_dir: Vector3 = -cam_basis.z
 		
 		var gun_spawn: Vector3 = Vector3.ZERO
 		if gun_controller and gun_controller.current_gun and gun_controller.current_gun.spawn_point:
@@ -647,8 +666,7 @@ func _update_aim_target(delta: float) -> void:
 			gun_spawn = to_global(Vector3(0.0, 1.4, 0.0))
 
 		if not is_cam_looking_at_player and camera.camera:
-			var distance = camera.global_position.distance_to(camera.targetref.global_position)
-			projected_target = camera.camera.project_position(crosshair_center, distance)
+			visual_target = camera.camera.project_position(crosshair_center, visual_distance)
 			ray_origin = camera.camera.project_ray_origin(crosshair_center)
 			ray_dir = camera.camera.project_ray_normal(crosshair_center)
 		else:
@@ -659,75 +677,101 @@ func _update_aim_target(delta: float) -> void:
 			var local_dir = Vector3(ndc_x * half_h, -ndc_y * half_h, -1.0).normalized()
 			ray_dir = (cam_basis * local_dir).normalized()
 			ray_origin = gun_spawn
-			projected_target = ray_origin + ray_dir * 15.0
+			visual_target = ray_origin + ray_dir * 15.0
 
-		var lean_modifier = skeleton.get_node_or_null("SpineLeanModifier") as PlayerLeanModifier
-		if lean_modifier:
-			# Let player_lean_modifier.gd handle the actual bone tilt.
-			# We only apply the procedural bobbing offset so the LookAt modifier makes the chest/arms bounce!
-			var bob_x = lean_modifier.current_bob_x
-			var bob_y = lean_modifier.current_bob_y
-			var target_bob = (cam_basis.x * bob_x + cam_basis.y * bob_y) * 15.0 * lean_modifier.arm_bob_multiplier
-			
-			# Advance raycast origin to player plane so objects/enemies behind player cannot be hit
-			var ray_cast_start = ray_origin
-			var cam_forward = -cam_basis.z
-			var denom = ray_dir.dot(cam_forward)
-			if denom > 0.0001:
-				var player_ref = global_position + Vector3(0.0, 1.2, 0.0)
-				var t_plane = (player_ref - ray_origin).dot(cam_forward) / denom
-				if t_plane > 0.0:
-					ray_cast_start = ray_origin + ray_dir * t_plane
+		var projected_target = ray_origin + ray_dir * 1000.0
 
-			# Cast a ray from the crosshair start plane to find the physical target!
-			var space_state = get_world_3d().direct_space_state
-			var query = PhysicsRayQueryParameters3D.create(ray_cast_start, ray_cast_start + ray_dir * 1000.0)
-			query.collision_mask = 1 | 2 | 8192 # Detect Layer 1 (World), Layer 2 (Weakpoints), and Layer 14 (Hitboxes). Excludes Layer 3 CharacterBody3D capsule
-			query.collide_with_areas = true
-			query.collide_with_bodies = true
-			
-			# Exclude the player from this targeting raycast
-			var exclude_nodes: Array = []
-			for child in get_children():
-				if child is CollisionObject3D:
-					exclude_nodes.append(child.get_rid())
-			query.exclude = exclude_nodes
-			
-			var raw_target_pos = projected_target
-			var target_zone: String = ""
-			var target_enemy: Node = null
-			var target_hitbox: Area3D = null
+		# Advance raycast origin to player plane so objects/enemies behind player cannot be hit,
+		# but keep it safely 0.4m behind the chest so close-range zombie hitboxes are never overshot.
+		var ray_cast_start = ray_origin
+		var cam_forward = -cam_basis.z
+		var denom = ray_dir.dot(cam_forward)
+		if denom > 0.0001:
+			var player_ref = global_position + Vector3(0.0, 1.2, 0.0)
+			var t_plane = (player_ref - ray_origin).dot(cam_forward) / denom
+			var safe_t = maxf(0.0, t_plane - 0.4)
+			if safe_t > 0.0:
+				ray_cast_start = ray_origin + ray_dir * safe_t
 
-			var result = space_state.intersect_ray(query)
-			if result:
-				raw_target_pos = result.position
-				var col = result.get("collider")
-				if col is Area3D:
-					target_hitbox = col
-					var hz = col.get_node_or_null("HitboxZone") as HitboxZone
-					if hz:
-						target_zone = hz.zone_name
-						target_enemy = hz._enemy if hz._enemy else hz.get("_anchalee")
-			
-			true_aim_position = raw_target_pos
-			aim_target_zone = target_zone
-			aim_target_enemy = target_enemy
-			aim_target_hitbox = target_hitbox
-			
-			# Shift the visual target to compensate for spine/shoulder parallax
+		# Cast a ray from the crosshair start plane to find the physical target!
+		var space_state = get_world_3d().direct_space_state
+		var query = PhysicsRayQueryParameters3D.create(ray_cast_start, ray_cast_start + ray_dir * 1000.0)
+		query.collision_mask = 1 | 2 | 8192 # Detect Layer 1 (World), Layer 2 (Weakpoints), and Layer 14 (Hitboxes). Excludes Layer 3 CharacterBody3D capsule
+		query.collide_with_areas = true
+		query.collide_with_bodies = true
+		
+		# Exclude all player collision objects (capsule, hitboxes, takedown boxes, etc.) from this targeting raycast
+		query.exclude = _player_collision_rids
+		
+		var raw_target_pos = projected_target
+		var target_zone: String = ""
+		var target_enemy: Node = null
+		var target_hitbox: Area3D = null
+
+		var result = space_state.intersect_ray(query)
+		if result:
+			raw_target_pos = result.position
+			var col = result.get("collider")
+			if col is Area3D:
+				target_hitbox = col
+				var hz = col.get_node_or_null("HitboxZone") as HitboxZone
+				if hz:
+					target_zone = hz.zone_name
+					target_enemy = hz._enemy if hz._enemy else hz.get("_anchalee")
+		
+		true_aim_position = raw_target_pos
+		aim_target_zone = target_zone
+		aim_target_enemy = target_enemy
+		aim_target_hitbox = target_hitbox
+
+		var spine_pos = global_position + Vector3(0.0, 1.3, 0.0)
+		var depth_lerp_rate = 3.0 / aim_depth_blend_time if aim_depth_blend_time > 0.001 else 50.0
+
+		if is_aimming:
+			var aim_ray_dir = ray_dir if ray_dir != Vector3.ZERO else -cam_basis.z
+
+			# Depth convergence: calculate desired direction from gun muzzle to target hit
+			var conv_target = raw_target_pos
+			# Prevent extreme convergence angles only when pressed directly against a surface (< 0.2m from muzzle)
+			if gun_spawn.distance_to(conv_target) < 0.2:
+				conv_target = gun_spawn + aim_ray_dir * 0.2
+			var raw_shot_dir = (conv_target - gun_spawn).normalized()
+			var target_convergence_offset = raw_shot_dir - aim_ray_dir
+			# Clamp maximum convergence angle to ~10.4 degrees (limit length ~0.18)
+			# This allows close zombie head convergence while strictly preventing wild angle snaps at point-blank
+			target_convergence_offset = target_convergence_offset.limit_length(0.18)
+
+			# Smoothly lerp the convergence delta across depth transitions (sweeps smoothly over aim_depth_blend_time, zero snapping!)
+			_current_convergence_offset = _current_convergence_offset.lerp(target_convergence_offset, delta * depth_lerp_rate)
+
+			effective_aim_dir = (aim_ray_dir + _current_convergence_offset).normalized()
+
+			# Build an orthogonal coordinate frame aligned to the smooth effective aim direction
+			var aim_right = effective_aim_dir.cross(Vector3.UP).normalized()
+			if aim_right.length_squared() < 0.001:
+				aim_right = cam_basis.x
+			var aim_up = aim_right.cross(effective_aim_dir).normalized()
+
+			# Shift target perpendicular to the aim direction to compensate for right arm posture
 			var total_offset = aim_visual_offset
-			
-			# Aiming across the screen causes horizontal parallax. Dynamically correct it for both sides!
-			total_offset.x += (-camera.aim_offset.x) * aim_parallax_correction
+			total_offset.x += aim_horizontal_offset
 				
-			var visual_shift = cam_basis * total_offset
-			aim_target.global_position = projected_target + visual_shift
+			var visual_shift = aim_right * total_offset.x + aim_up * total_offset.y
+			var target_pos = spine_pos + effective_aim_dir * visual_distance + visual_shift
+			aim_target.global_position = target_pos
 		else:
+			# When exiting aim, safely lerp the convergence delta back to zero over aim_depth_blend_time
+			_current_convergence_offset = _current_convergence_offset.lerp(Vector3.ZERO, delta * depth_lerp_rate)
+			effective_aim_dir = ((-cam_basis.z) + _current_convergence_offset).normalized()
+			true_aim_position = raw_target_pos
+			
+			# Smoothly lerp aim_target back to the rest reference position over aim_depth_blend_time instead of suddenly snapping
+			var rest_target = camera.targetref.global_position if (camera and is_instance_valid(camera.targetref)) else spine_pos + (-cam_basis.z) * visual_distance
 			if is_cam_looking_at_player:
-				aim_target.global_position = projected_target
-			else:
-				aim_target.global_position = camera.targetref.global_position
-				aim_target.global_position.y = camera.targetref.global_position.y
+				rest_target = spine_pos + (-cam_basis.z) * visual_distance
+			aim_target.global_position = aim_target.global_position.lerp(rest_target, delta * depth_lerp_rate)
+
+		_was_aiming_last_frame = is_aimming
 			
 		if aim_target_head:
 			if GameManager.movement_type == GameManager.MovementType.TANK and not is_aimming and not is_grab:
@@ -775,7 +819,7 @@ func _update_aim_target(delta: float) -> void:
 				var ideal_target_global: Vector3
 				if is_aimming:
 					current_npc_glance_pos = Vector3.ZERO # Reset so glance resumes naturally on release
-					ideal_target_global = projected_target
+					ideal_target_global = spine_pos + effective_aim_dir * visual_distance
 				else:
 					ideal_target_global = current_npc_glance_pos
 					# Lock vertical to player head height during NPC glance so head only rotates horizontally
@@ -848,7 +892,39 @@ func _update_aim_debug_visualizer(start: Vector3, end: Vector3, is_active: bool)
 		if get_tree() and get_tree().current_scene:
 			get_tree().current_scene.add_child(_aim_debug_marker)
 
-	var distance = start.distance_to(end)
+	# Cast a true physics ray from gun muzzle towards intended target
+	var aim_dir = -global_transform.basis.z
+	if end != Vector3.ZERO and start.distance_squared_to(end) > 0.001:
+		aim_dir = (end - start).normalized()
+	elif camera and camera.camera:
+		aim_dir = -camera.camera.global_transform.basis.z
+
+	var ray_max_to = start + aim_dir * 1000.0
+	var space_state = get_world_3d().direct_space_state
+	var query = PhysicsRayQueryParameters3D.create(start, ray_max_to)
+	query.collision_mask = 1 | 2 | 8192 # Layer 1 (World), Layer 2 (Weakpoints), Layer 14 (Hitboxes)
+	query.collide_with_areas = true
+	query.collide_with_bodies = true
+
+	var exclude_nodes: Array = [get_rid()]
+	for child in get_children():
+		if child is CollisionObject3D:
+			exclude_nodes.append(child.get_rid())
+	query.exclude = exclude_nodes
+
+	var result = space_state.intersect_ray(query)
+	var final_hit_pos = ray_max_to
+	var is_obstructed = false
+
+	if result:
+		final_hit_pos = result.position
+		# If the gun muzzle ray hits an obstacle earlier than the intended camera aim point (by > 30cm)
+		if end != Vector3.ZERO and final_hit_pos.distance_to(start) < end.distance_to(start) - 0.3:
+			is_obstructed = true
+	else:
+		final_hit_pos = start + aim_dir * 50.0
+
+	var distance = start.distance_to(final_hit_pos)
 	if distance > 0.01:
 		_aim_debug_mesh.visible = true
 		_aim_debug_marker.visible = true
@@ -856,16 +932,22 @@ func _update_aim_debug_visualizer(start: Vector3, end: Vector3, is_active: bool)
 		var cyl: CylinderMesh = _aim_debug_mesh.mesh as CylinderMesh
 		if cyl:
 			cyl.height = distance
+			if cyl.material is StandardMaterial3D:
+				# Orange warning if muzzle is obstructed by cover, cyan if clear line-of-sight
+				(cyl.material as StandardMaterial3D).albedo_color = Color(1.0, 0.4, 0.1, 0.9) if is_obstructed else Color(0.2, 0.8, 1.0, 0.85)
 			
-		_aim_debug_mesh.global_position = (start + end) * 0.5
-		var dir = start.direction_to(end)
+		_aim_debug_mesh.global_position = (start + final_hit_pos) * 0.5
+		var dir = start.direction_to(final_hit_pos)
 		if abs(dir.dot(Vector3.UP)) > 0.99:
-			_aim_debug_mesh.look_at(end, Vector3.RIGHT)
+			_aim_debug_mesh.look_at(final_hit_pos, Vector3.RIGHT)
 		else:
-			_aim_debug_mesh.look_at(end, Vector3.UP)
+			_aim_debug_mesh.look_at(final_hit_pos, Vector3.UP)
 		_aim_debug_mesh.rotate_object_local(Vector3.RIGHT, deg_to_rad(90))
 		
-		_aim_debug_marker.global_position = end
+		_aim_debug_marker.global_position = final_hit_pos
+		var sph: SphereMesh = _aim_debug_marker.mesh as SphereMesh
+		if sph and sph.material is StandardMaterial3D:
+			(sph.material as StandardMaterial3D).albedo_color = Color(1.0, 0.2, 0.1, 1.0) if is_obstructed else Color(0.2, 1.0, 0.5, 1.0)
 	else:
 		_aim_debug_mesh.visible = false
 		_aim_debug_marker.visible = false
@@ -1499,9 +1581,12 @@ func on_hitbox_grabbed_with_area(area: Area3D) -> void:
 	self._last_grab_area = area
 	# Try to find an enemy node associated with the area
 	var possible_enemy = null
-	if area.has_node("../"):
-		# area is likely child of a BoneAttachment or enemy node
-		possible_enemy = area.get_parent()
+	var node: Node = area
+	while node != null:
+		if node.is_in_group("enemies"):
+			possible_enemy = node
+			break
+		node = node.get_parent()
 	# set a property for debugging/usage by states
 	self._last_grabber = possible_enemy
 	# Switch to Grab state on player's state machine

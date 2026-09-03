@@ -187,6 +187,12 @@ Pickup={
 ]
 }
 
+[layer_names]
+
+3d_render/layer_1="Player, NPC, Map"
+3d_render/layer_2="Player Hair"
+3d_render/layer_11="GPU particle colision"
+
 [physics]
 
 3d/physics_engine="Jolt Physics"
@@ -194,6 +200,7 @@ jolt_physics_3d/collisions/report_unsupported_scales=false
 
 [rendering]
 
+rendering_device/d3d12/max_resource_descriptors=262144
 textures/canvas_textures/default_texture_filter=2
 rendering_device/driver.windows="d3d12"
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=5

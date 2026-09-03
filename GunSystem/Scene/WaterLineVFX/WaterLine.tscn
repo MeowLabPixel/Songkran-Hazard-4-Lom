@@ -134,10 +134,12 @@ script = ExtResource("1_5ca5g")
 life_time = 0.06
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=647306067]
+layers = 8
 mesh = SubResource("BoxMesh_5ca5g")
 
 [node name="BeamCore" type="MeshInstance3D" parent="MeshInstance3D" unique_id=849158366]
 transform = Transform3D(0.2, -6.375992e-10, 5.574069e-18, 0, -4.371139e-08, -0.2, 1.2751984e-10, 1, -8.742278e-09, 0, 0, 0)
+layers = 8
 sorting_offset = -0.1
 material_override = SubResource("ShaderMaterial_i5gg4")
 cast_shadow = 0
@@ -145,13 +147,14 @@ mesh = SubResource("CylinderMesh_miaar")
 
 [node name="BeamOuter2" type="MeshInstance3D" parent="MeshInstance3D" unique_id=801890077]
 transform = Transform3D(0.18887298, 2.4318858e-09, 0.06577991, 0.06577991, -1.4376655e-08, -0.18887298, 4.8637716e-10, 1, -2.875331e-09, 6.1755664e-08, 0, 0)
+layers = 8
 material_override = SubResource("ShaderMaterial_n4wb0")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_wx4ac")
 
 [node name="BeamOuter3" type="MeshInstance3D" parent="MeshInstance3D" unique_id=637366122]
 transform = Transform3D(0.19860424, -3.0505376e-10, -0.023587221, -0.023587221, -5.155151e-09, -0.19860424, -6.101075e-11, 1, -1.0310303e-09, 6.1755664e-08, 0, 0)
-layers = 9
+layers = 8
 material_override = SubResource("ShaderMaterial_6gyqw")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_wx4ac")

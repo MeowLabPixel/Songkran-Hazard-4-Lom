@@ -512,9 +512,9 @@ func _evaluate_eye_state() -> void:
 	var current_hp: float = 100.0
 	var max_hp: float = 100.0
 	if player:
-		if "HP" in player:
+		if "HP" in player and player.HP != null:
 			current_hp = float(player.HP)
-		if "MaxHP" in player:
+		if "MaxHP" in player and player.MaxHP != null:
 			max_hp = float(player.MaxHP)
 
 	var is_low_hp: bool = (max_hp > 0.0) and ((current_hp / max_hp) <= 0.50)

@@ -299,6 +299,8 @@ func _start_grab_hold() -> void:
 		# Play Rookie Lee's QTE grab loop voice line
 		_player_grab_loop_sfx = SoundManager.play_3d("vo_leon_grab_loop", player)
 		_push_surrounding_enemies_on_grab(player)
+		if "_last_grabber" in player:
+			player._last_grabber = enemy
 		
 		var sm = player.get_node_or_null("Statemachine")
 		if sm and sm.has_method("_change_state"):
@@ -437,11 +439,11 @@ func _on_qte_caught() -> void:
 		
 	var anim = enemy.anim_set.grab_success
 	_force_anim(anim, "attack/grab")
-	_anim_duration = _anim_length(anim, "attack/grab")
+	_anim_duration = max(_anim_length(anim, "attack/grab"), 0.8)
 	_timer = 0.0
 
 func _tick_grab_resolving() -> void:
-	if _timer > 0.1 and _is_anim_finished():
+	if _timer >= _anim_duration:
 		if _go_knockdown_after_anim:
 			var knockdown = state_machine._states.get("StateKnockdown")
 			if knockdown:

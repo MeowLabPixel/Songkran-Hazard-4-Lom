@@ -3,10 +3,12 @@ class_name PlayerLeanModifier
 
 @export var pivot_bone: String = "DEF-spine"
 
-@export var max_tilt_angle: float = 3.0 # in degrees
+@export var max_tilt_angle: float = 6.0 # in degrees
 @export var max_backward_tilt_angle: float = 5.0 # in degrees
 @export var tilt_speed: float = 10.0
-@export var sprint_tilt_multiplier: float = 1.5 # extra tilt multiplier when sprinting
+@export var sprint_tilt_multiplier: float = 1.8 # extra tilt multiplier when sprinting (+25%)
+@export var mouse_rotation_tilt_boost: float = 1.8 # extra tilt multiplier when rotating with mouse during locomotion (+10%)
+@export var combined_side_tilt_reduction: float = 0.0 # reduction of side tilt during combined diagonal input W+A/D (-35%)
 @export var invert_turn_lean: bool = false # Toggle to invert turning lean direction
 
 @export_group("Body Bobbing")
@@ -138,8 +140,16 @@ func _process_modification() -> void:
 	sprint_transition_factor = lerpf(sprint_transition_factor, target_sprint_factor, delta * 5.0)
 	var current_sprint_mult = lerpf(1.0, sprint_tilt_multiplier, sprint_transition_factor)
 
-	var active_max_tilt = max_tilt_angle * current_sprint_mult
-	var active_backward_tilt = max_backward_tilt_angle * current_sprint_mult
+	# Mouse rotation tilt boost is 100% effective during walk/run, and 50% effective during sprint
+	var mouse_rot_effectiveness = lerpf(1.0, 0.50, sprint_transition_factor)
+	var effective_mouse_rot_boost = 1.0 + (mouse_rotation_tilt_boost - 1.0) * mouse_rot_effectiveness
+
+	# Dynamic mouse rotation boost on locomotive & sprint spine tilt
+	var rot_intensity = clampf(abs(angular_velocity) / 2.0, 0.0, 1.0)
+	var rot_boost = lerpf(1.0, effective_mouse_rot_boost, rot_intensity)
+
+	var active_max_tilt = max_tilt_angle * current_sprint_mult * rot_boost
+	var active_backward_tilt = max_backward_tilt_angle * current_sprint_mult * rot_boost
 
 	# 2. Local Velocity & Turning Velocity Symmetrical Base Pitch and Base Roll (100% Symmetrical Pitch/Roll Multipliers)
 	var player_basis = skeleton.global_transform.basis
@@ -151,32 +161,31 @@ func _process_modification() -> void:
 	
 	var vel_ratio_z = clampf(-local_vel.z / target_ref_speed_z, -1.2, 1.2) # Positive = forward velocity
 
-	var sprint_pitch_mult = lerpf(1.0, 1.20, sprint_transition_factor)
 	var base_pitch = 0.0
 	if vel_ratio_z > 0.0:
-		base_pitch = deg_to_rad(-vel_ratio_z * active_max_tilt * 0.81 * sprint_pitch_mult) # Negative pitch = Forward Lean (+20% during sprint)!
+		base_pitch = deg_to_rad(-vel_ratio_z * active_max_tilt * 0.81) # Negative pitch = Forward Lean (+25% during sprint, +10% during mouse rotation)!
 	else:
 		base_pitch = deg_to_rad(-vel_ratio_z * active_backward_tilt * 0.81) # Positive pitch = Backward Lean!
 
-	# Symmetrical lateral velocity and turning velocity combination (10.0 deg Max Mouse Turn Tilt Cap)
+	# Symmetrical lateral velocity and turning velocity combination (10.0 deg Max Mouse Turn Tilt Cap, boosted by effective_mouse_rot_boost)
 	var turn_sign = 1.0 if invert_turn_lean else -1.0
-	var turn_max_tilt_deg = 10.0 * current_sprint_mult
+	var turn_max_tilt_deg = 10.0 * current_sprint_mult * effective_mouse_rot_boost
 	var turn_max_tilt_rad = deg_to_rad(turn_max_tilt_deg)
-	var pure_turn_roll = deg_to_rad(clampf(angular_velocity * turn_sign * 2.25, -turn_max_tilt_deg, turn_max_tilt_deg))
+	var pure_turn_roll = deg_to_rad(clampf(angular_velocity * turn_sign * 2.25 * effective_mouse_rot_boost, -turn_max_tilt_deg, turn_max_tilt_deg))
 	
 	var phys_vel_ratio_x = clampf(-local_vel.x / target_ref_speed_x, -1.2, 1.2)
 	var phys_roll = deg_to_rad(phys_vel_ratio_x * active_max_tilt * 0.81)
 
 	# Blend physical movement roll and pure turning roll symmetrically (100% Equal Angle Width for OFF and ON)
-	var pure_turn_mag = deg_to_rad(clampf(-angular_velocity * 2.25, -turn_max_tilt_deg, turn_max_tilt_deg))
+	var pure_turn_mag = deg_to_rad(clampf(-angular_velocity * 2.25 * effective_mouse_rot_boost, -turn_max_tilt_deg, turn_max_tilt_deg))
 	var move_weight = clampf(Vector3(local_vel.x, 0.0, local_vel.z).length() / 2.0, 0.0, 1.0)
 	var moving_roll = phys_roll + pure_turn_mag * 0.40
 	var base_roll = lerpf(pure_turn_roll, moving_roll, move_weight)
 	base_roll = clampf(base_roll, -turn_max_tilt_rad, turn_max_tilt_rad)
 
-	# Smooth in-out lerp transition for combined diagonal side lean reduction (-25%)
+	# Smooth in-out lerp transition for combined diagonal side lean reduction (-35%)
 	var is_combined_input = (abs(_smooth_input_dir.x) > 0.1) and (abs(_smooth_input_dir.y) > 0.1)
-	var target_combined_factor = 0.75 if is_combined_input else 1.0
+	var target_combined_factor = (1.0 - combined_side_tilt_reduction) if is_combined_input else 1.0
 	_combined_side_factor = lerpf(_combined_side_factor, target_combined_factor, delta * 8.0)
 	base_roll *= _combined_side_factor
 
@@ -287,8 +296,9 @@ func _process_modification() -> void:
 		target_tilt_x = lerpf(stopping_overshoot_x, active_tilt_x, input_weight) * spine_tilt_multiplier
 		target_tilt_z = lerpf(stopping_overshoot_z, active_tilt_z, input_weight) * spine_tilt_multiplier
 
-	# Soft tilt boundary damping via lerpf (+/- 16 degrees safety boundary)
-	var max_allowed_rad = deg_to_rad(16.0)
+	# Soft tilt boundary damping via lerpf (dynamic safety boundary scaling with multipliers)
+	var max_allowed_deg = 16.0 * maxf(1.0, current_sprint_mult) * maxf(1.0, effective_mouse_rot_boost) * maxf(1.0, spine_tilt_multiplier)
+	var max_allowed_rad = deg_to_rad(max_allowed_deg)
 	if abs(target_tilt_x) > max_allowed_rad:
 		target_tilt_x = lerpf(target_tilt_x, sign(target_tilt_x) * max_allowed_rad, delta * 10.0)
 	if abs(target_tilt_z) > max_allowed_rad:

@@ -230,6 +230,9 @@ func _push_surrounding_enemies_on_grab_enter() -> void:
 	for enemy in enemies:
 		if not is_instance_valid(enemy) or enemy.is_defeated or enemy == _current_grabber:
 			continue
+		var sm = enemy.get_node_or_null("EnemyStateMachine")
+		if sm and sm.has_method("is_grabbing_player") and sm.is_grabbing_player():
+			continue
 		var dist_player = player_pos.distance_to(enemy.global_position)
 		var dist_grabber = grabber_pos.distance_to(enemy.global_position)
 		if dist_player <= 1.5 or dist_grabber <= 1.5:
@@ -383,6 +386,9 @@ func _push_nearby_enemies() -> void:
 	var enemies = get_tree().get_nodes_in_group("enemies")
 	for enemy in enemies:
 		if not is_instance_valid(enemy) or enemy.is_defeated or enemy in _pushed_enemies or enemy == _current_grabber:
+			continue
+		var sm = enemy.get_node_or_null("EnemyStateMachine")
+		if sm and sm.has_method("is_grabbing_player") and sm.is_grabbing_player():
 			continue
 			
 		var dist = owner.global_position.distance_to(enemy.global_position)

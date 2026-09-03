@@ -45,6 +45,16 @@ var _server_pid: int = -1
 var _server_keep_alive := false
 var _server_spawn_ms: int = 0
 var _server_exit_ms: int = 0
+## Elapsed-since-spawn when the pid-file first appeared. The warm watch window
+## starts here, not at process creation: a cold uvx download may consume most
+## of the cold-start budget before Python starts and publishes the file.
+var _server_pid_published_elapsed_ms: int = 0
+## Elapsed-since-spawn at the first watch tick that saw the spawn PID dead, or
+## 0 when it is alive / has been healed onto the real PID. Only meaningful
+## while a Windows trampoline handoff is being waited out (#797): it preserves
+## the true exit time so a diagnosis raised after the wait still reports when
+## the process actually died. Reset per spawn alongside `_server_spawn_ms`.
+var _spawn_dead_since_ms: int = 0
 
 ## Version metadata. `expected_version` is what the plugin shipped with;
 ## `actual_version` is what the live server reported via handshake_ack.
@@ -82,6 +92,42 @@ var _readopt_after_spawn_exit_retried: bool = false
 ## `_readopt_after_spawn_exit_retried` reset. Never true outside that
 ## one triggered walk.
 var _readopt_walk_pending: bool = false
+
+## Rounds of weak-proof (`status_name`-tier) recovery available against a
+## brand-verified stale-VERSION godot-ai occupant. Zero by default: the
+## startup walk may only kill via strong ownership proof. Armed by an
+## explicit user action that already authorizes replacing the old backend —
+## the post-self-update startup (`authorize_stale_recovery` from plugin.gd,
+## consented by the Update click) and the dock's recovery click. This is
+## what lets the walk finish an update against an attach-bridge-owned old
+## server: bridges pinned to the previous version respawn it the moment it
+## is killed, and each respawn is an external server with no strong proof,
+## so without this budget every lost port race dead-ends in INCOMPATIBLE
+## and the user is left toggling the plugin by hand. Never spent on a
+## same-version or foreign occupant; each spent round re-proves brand at
+## kill time. Reset on the proven recoveries — adoption and the verified
+## compatible handshake — so leftover rounds can't authorize a kill in a
+## later, unrelated episode. Pid-file publication deliberately does NOT
+## reset it: the server writes that file before binding either port, so a
+## bridge respawn can still steal the bind afterwards and the fast-exit
+## needs its remaining rounds (#890 review P1).
+var _stale_recovery_budget: int = 0
+
+## Single owner for kill/drain/respawn recovery. Startup probing and the
+## WebSocket version verdict observe the same backend from different async
+## paths; a retry budget bounds how often they may act, but does not stop both
+## paths acting at once. Keep one recovery transaction in flight and coalesce
+## stale handshake verdicts into it so an older continuation cannot kill the
+## fresh server that another continuation just spawned.
+var _recovery_in_flight: bool = false
+## Generation-scoped capability for the startup walk spawned by
+## `_recover_incompatible_server_impl`. The outer recovery keeps
+## `_recovery_in_flight` armed so handshakes and unrelated recovery calls still
+## coalesce, while this token lets only that exact owned walk spend another
+## bounded stale-recovery round if an attach bridge reclaims the port after the
+## kill. A later walk created by invalidation gets a different generation and
+## cannot inherit the authority.
+var _recovery_owned_startup_generation: int = -1
 
 ## Bounded deadline for the foreign-port adoption-confirmation watcher.
 ## Zero when disarmed.
@@ -145,9 +191,14 @@ var _active_blocking_thread: Thread = null
 ##
 ## Returns null (without joining) when `_invalidate_async_startup` took
 ## ownership of the thread mid-flight — the walk is stale at that point
-## and must bail at its next staleness check, so callers assign the
-## result to an untyped local BEFORE the staleness check (a typed
-## assignment would trip on the null first).
+## and must bail. Callers therefore assign the result to an untyped
+## local and bail on `_async_stale(...) or result == null` BEFORE any
+## typed use — a typed assignment (or a bool()/int() constructor, both
+## of which have no Nil form) trips on the null first. The null check is
+## not redundant with the generation check: a caller that loses the slot
+## without a generation bump — an invariant violation, but exactly what
+## a concurrent fire-and-forget `_run_blocking` user produces — must
+## still unwind instead of crashing on the Nil.
 func _run_blocking(work: Callable) -> Variant:
 	if not defer_blocking_work:
 		return work.call()
@@ -217,7 +268,30 @@ func get_status_dict() -> Dictionary:
 		"connection_blocked": _connection_blocked,
 		"conflict_port": _conflict_port,
 		"keep_alive": _server_keep_alive,
+		"stale_recovery_budget": _stale_recovery_budget,
 	}
+
+
+## Arm the bounded stale-occupant recovery (see `_stale_recovery_budget`).
+## Called before the startup walk when a completed self-update is detected
+## (plugin.gd) and by the dock recovery click — both are user actions that
+## already authorize replacing the previous-version backend. `max()` so a
+## click landing on an already-armed post-update episode never shrinks the
+## remaining rounds.
+func authorize_stale_recovery(rounds: int = 2) -> void:
+	_stale_recovery_budget = maxi(_stale_recovery_budget, rounds)
+
+
+## True when a spent round of stale-occupant recovery may target the live
+## occupant: budget remains and the occupant is a VERIFIED godot-ai whose
+## version differs from ours. An empty version (foreign or unverified
+## occupant) never qualifies — those stay on the strong-proof-only path.
+func _stale_recovery_available(live_version: String, expected_version: String) -> bool:
+	if _stale_recovery_budget <= 0:
+		return false
+	if live_version.is_empty():
+		return false
+	return live_version != expected_version
 
 
 func get_server_pid() -> int:
@@ -341,17 +415,49 @@ func handle_server_version_verified(expected_version: String, version: String) -
 	var compatibility := _server_version_compatibility(version, expected)
 	if compatibility.get("compatible", false):
 		_can_recover_incompatible = false
+		## A verified compatible handshake ends any stale-recovery episode —
+		## leftover authorized rounds must not survive into a later walk.
+		_stale_recovery_budget = 0
 		## Foreign-port and post-spawn handshakes both clear to READY
 		## on a successful handshake. Late re-arms from READY also land
 		## here and self-confirm.
 		transition_state(McpServerStateScript.READY)
 		_host._update_process_enabled()
 		return
+	## A stale handshake is expected while the startup/recovery owner is already
+	## replacing that exact old backend. Do not let the connection-side verdict
+	## invalidate the startup walk and launch a second kill transaction. The
+	## active owner re-probes the listener before acting and will either replace
+	## it or leave the normal incompatible diagnosis on failure.
+	if _recovery_in_flight and version != expected:
+		print("MCP | stale godot-ai v%s handshake coalesced into active recovery" % version)
+		return
 	var live := {"version": version, "status_code": 200, "name": "godot-ai"}
 	## Connection propagation + version-check disarm + process re-evaluation
 	## all live inside _set_incompatible_server now (#691) so the startup-walk
 	## recovery-failure and force-restart-failure paths get them too.
 	_set_incompatible_server(live, expected, ClientConfigurator.http_port())
+	## Post-update the WebSocket usually reaches the OLD backend before the
+	## startup walk finishes its probes — this verdict then cancels the walk
+	## (the `_invalidate_async_startup` in `_set_incompatible_server`'s
+	## fire-and-forget arm) and used to strand the update at INCOMPATIBLE
+	## even though the Update click already authorized replacing that
+	## backend. With authorized rounds left and a VERIFIED stale version,
+	## spend one and fire the same recovery flow the dock's Restart click
+	## runs — via the plugin wrapper so the connection unblocks on success,
+	## with `user_initiated=false` so the trigger can only spend, never
+	## re-arm. The INCOMPATIBLE latch it gates on is synchronous: the
+	## `_set_incompatible_server` head above runs before its first await.
+	if _stale_recovery_available(version, expected) and _host.has_method("recover_incompatible_server"):
+		_stale_recovery_budget -= 1
+		print(
+			"MCP | stale godot-ai v%s answered the WS handshake — replacing it (update/recovery authorized, %d retry round(s) left)"
+			% [version, _stale_recovery_budget]
+		)
+		## Fire-and-forget coroutine: this verdict lands on the main thread
+		## from `_process`, and the recovery owns the flow from here
+		## (mirroring the recovery click).
+		_host.recover_incompatible_server(false, version)
 
 
 func handle_server_version_unverified(expected_version: String) -> void:
@@ -401,7 +507,12 @@ static func _managed_record_has_version_drift(record_version: String, current_ve
 
 # ---- Incompatible-server bookkeeping ----------------------------------
 
-func _set_incompatible_server(live: Dictionary, expected_version: String, port: int) -> void:
+func _set_incompatible_server(
+	live: Dictionary,
+	expected_version: String,
+	port: int,
+	caller_owns_worker_slot := false
+) -> void:
 	## Latches the incompatible diagnosis into manager state and asks
 	## the dock to re-sweep client rows so they don't show stale green.
 	## Threads the caller's `live` snapshot through the recovery proof
@@ -414,10 +525,25 @@ func _set_incompatible_server(live: Dictionary, expected_version: String, port: 
 	## either. Everything user-visible (status message, connection block,
 	## version-check disarm) is latched synchronously before the first
 	## await; only the recovery verdict and the suggested-port diagnostic
-	## arrive with the worker. Sync callers (handshake verdicts, the
-	## force-restart failure arm) fire-and-forget the tail; the startup
-	## walk awaits it so `_run_blocking`'s single-active-worker tracking
-	## keeps one owner at a time.
+	## arrive with the worker.
+	##
+	## `_run_blocking` tracks a single active worker, so the tail below
+	## needs exclusive ownership of that slot. The startup walk awaits
+	## this call with `caller_owns_worker_slot=true` — it already owns the
+	## slot and serializes the tail behind its own blocking ops. Sync
+	## callers (the handshake verdicts via `handle_server_version_*`, the
+	## force-restart failure arm) fire-and-forget the tail and leave the
+	## flag false, so the head takes ownership for them: a handshake
+	## verdict lands from `_process` while a startup walk can still be
+	## suspended in `_run_blocking`, and starting the tail's worker then
+	## would steal the slot — the walk's op is orphaned from the
+	## `_invalidate_async_startup` join guarantee and its resume gets a
+	## null without a generation bump (the Nil-into-Dictionary crash on
+	## the incompatible-occupant walk). Cancelling the walk first mirrors
+	## the recovery click (#712): the diagnosis in hand supersedes
+	## whatever the walk was still probing for.
+	if not caller_owns_worker_slot:
+		_invalidate_async_startup()
 	transition_state(McpServerStateScript.INCOMPATIBLE)
 	_connection_blocked = true
 	_server_expected_version = expected_version
@@ -458,7 +584,7 @@ func _set_incompatible_server(live: Dictionary, expected_version: String, port: 
 			return {"proof": "", "pids": []}
 		return _host._evaluate_recovery_port_occupant_proof(port, live, record)
 	)
-	if _async_stale(async_gen):
+	if _async_stale(async_gen) or proof_result == null:
 		return
 	var proof: Dictionary = proof_result
 	var proof_name := str(proof.get("proof", ""))
@@ -475,7 +601,7 @@ func _set_incompatible_server(live: Dictionary, expected_version: String, port: 
 		var suggested_result: Variant = await _run_blocking(func() -> Variant:
 			return ClientConfigurator.suggest_free_port(port + 1)
 		)
-		if _async_stale(async_gen):
+		if _async_stale(async_gen) or suggested_result == null:
 			return
 		print("MCP | port %d occupant not recoverable (no ownership proof); suggested free port %d (set godot_ai/http_port)" % [port, int(suggested_result)])
 	## Second sweep so the dock's recovery affordance reflects the verdict
@@ -497,17 +623,25 @@ static func _incompatible_server_message(
 	## walking the process tree. See #416.
 	var package_path := _live_package_path_for_message(live)
 	var path_suffix := " (loaded from %s)" % package_path if not package_path.is_empty() else ""
+	## After a plugin update, the usual occupant is a backend kept alive by
+	## AI-client attach bridges still pinned to the previous version (their
+	## leases outrank us — #669/#839, we must not kill it). Name that repair
+	## first; "stop the old server" alone reads as a dead end when the server
+	## respawns the moment the user kills it.
+	var repair := (
+		"If AI-client attach bridges are keeping it alive, run Configure all to "
+		+ "repin them, then restart those client apps — the old server exits on "
+		+ "its own. Otherwise stop it manually or change both HTTP and WS ports."
+	)
 	if not version.is_empty():
 		if actual_ws_port > 0 and actual_ws_port != expected_ws_port:
 			return (
 				"Port %d is occupied by godot-ai server v%s using WS port %d%s; "
-				+ "plugin expects v%s with WS port %d. Stop the old server or "
-				+ "change both HTTP and WS ports."
-			) % [port, version, actual_ws_port, path_suffix, expected_version, expected_ws_port]
+				+ "plugin expects v%s with WS port %d. %s"
+			) % [port, version, actual_ws_port, path_suffix, expected_version, expected_ws_port, repair]
 		return (
-			"Port %d is occupied by godot-ai server v%s%s; plugin expects v%s. "
-			+ "Stop the old server or change both HTTP and WS ports."
-		) % [port, version, path_suffix, expected_version]
+			"Port %d is occupied by godot-ai server v%s%s; plugin expects v%s. %s"
+		) % [port, version, path_suffix, expected_version, repair]
 	var status_code := int(live.get("status_code", 0))
 	if status_code > 0:
 		return (
@@ -684,11 +818,12 @@ func _start_server_impl(async_gen: int) -> void:
 	## The worker closures re-check the host: the plugin can be freed while
 	## a bounded shell probe is still running, and the generation check only
 	## protects state after resume, not calls inside the task (#682 review).
-	var port_in_use := bool(await _run_blocking(func() -> Variant:
+	var port_in_use_result: Variant = await _run_blocking(func() -> Variant:
 		return is_instance_valid(_host) and _host._is_port_in_use(port)
-	))
-	if _async_stale(async_gen):
+	)
+	if _async_stale(async_gen) or port_in_use_result == null:
 		return
+	var port_in_use := bool(port_in_use_result)
 	if not port_in_use:
 		## #745: after an editor crash (or under multi-editor churn) the
 		## managed server keeps running, yet the bind probe can still say
@@ -708,7 +843,7 @@ func _start_server_impl(async_gen: int) -> void:
 				return {}
 			return _host._probe_live_server_status_for_port(port)
 		)
-		if _async_stale(async_gen):
+		if _async_stale(async_gen) or evidence_result == null:
 			return
 		var evidence: Dictionary = evidence_result
 		if _live_status_identifies_godot_ai(evidence):
@@ -731,7 +866,7 @@ func _start_server_impl(async_gen: int) -> void:
 				return {}
 			return _host._probe_live_server_status_for_port(port)
 		)
-		if _async_stale(async_gen):
+		if _async_stale(async_gen) or live_result == null:
 			return
 		var live: Dictionary = live_result
 		var live_version := str(_host._verified_status_version(live))
@@ -756,7 +891,7 @@ func _start_server_impl(async_gen: int) -> void:
 					return {"proof": "", "pids": []}
 				return _host._evaluate_strong_port_occupant_proof(port, live, record)
 			)
-			if _async_stale(async_gen):
+			if _async_stale(async_gen) or adoption_proof_result == null:
 				return
 			var adoption_proof: Dictionary = adoption_proof_result
 			var proof_pids: Array[int] = []
@@ -784,9 +919,13 @@ func _start_server_impl(async_gen: int) -> void:
 		if bool(_managed_record_has_version_drift(record_version, current_version)):
 			print("MCP | managed server v%s does not match plugin v%s, restarting"
 				% [record_version, current_version])
-		## Forward `live` so the recovery proof helper reuses our snapshot.
-		## The kill invalidates it, so the failure arm re-probes below.
-		var recovered: bool = await recover_strong_port_occupant(port, 3.0, live)
+		## One transaction owns strong-proof recovery and the bounded stale-version
+		## fallback. The WS handshake path can observe the same old server while
+		## these awaits are suspended; `_recovery_in_flight` makes that verdict
+		## coalesce here instead of starting a competing kill/respawn.
+		var recovered: bool = await _recover_startup_port_occupant(
+			port, live, live_version, current_version, async_gen
+		)
 		if _async_stale(async_gen):
 			return
 		if not recovered:
@@ -796,15 +935,17 @@ func _start_server_impl(async_gen: int) -> void:
 					return {}
 				return _host._probe_live_server_status_for_port(port)
 			)
-			if _async_stale(async_gen):
+			if _async_stale(async_gen) or post_recovery_result == null:
 				return
 			var post_recovery_live: Dictionary = post_recovery_result
-			## Awaited (#712): the diagnosis tail runs its own _run_blocking
-			## proof, and the walk must stay the single owner of the
-			## active-worker slot until that lands. The status message is
-			## latched before the tail's first await, so the push_warning
-			## below reads the final text either way.
-			await _set_incompatible_server(post_recovery_live, current_version, port)
+			## Awaited with caller_owns_worker_slot=true (#712): the
+			## diagnosis tail runs its own _run_blocking proof, and the walk
+			## stays the single owner of the active-worker slot by
+			## serializing that tail behind this await instead of letting it
+			## re-take the slot. The status message is latched before the
+			## tail's first await, so the push_warning below reads the final
+			## text either way.
+			await _set_incompatible_server(post_recovery_live, current_version, port, true)
 			if _async_stale(async_gen):
 				return
 			_startup_path = McpStartupPathScript.INCOMPATIBLE
@@ -822,7 +963,7 @@ func _start_server_impl(async_gen: int) -> void:
 	var server_cmd_result: Variant = await _run_blocking(func() -> Variant:
 		return ClientConfigurator.get_server_command()
 	)
-	if _async_stale(async_gen):
+	if _async_stale(async_gen) or server_cmd_result == null:
 		return
 	var server_cmd: Array = server_cmd_result
 	if server_cmd.is_empty():
@@ -940,6 +1081,8 @@ func _start_server_impl(async_gen: int) -> void:
 	if spawned_pid > 0:
 		_server_spawn_ms = Time.get_ticks_msec()
 		_server_exit_ms = 0
+		_server_pid_published_elapsed_ms = 0
+		_spawn_dead_since_ms = 0
 		_server_keep_alive = keep_alive_env_set
 		_host._server_started_this_session = true
 		transition_state(McpServerStateScript.SPAWNING)
@@ -967,7 +1110,162 @@ func _start_server_impl(async_gen: int) -> void:
 		push_warning("MCP | failed to start server")
 
 
-## Watch-loop callback (1 Hz, capped by SERVER_WATCH_MS).
+## Is the watched spawn PID's death still explainable as a launcher handoff
+## rather than a server exit? (#797)
+##
+## Observed on Windows 11 with a uv-created venv: one boot in four logged
+## "server exited after 5146ms" while the real server kept running and was
+## then adopted. The watched PID had died on a healthy boot, and because the
+## server had not yet written its pid-file there was nothing to heal onto, so
+## the watch crossed SPAWN_GRACE_MS and reported an exit — rescued only by the
+## crash-survivor adoption path.
+##
+## A uv venv's `python.exe` is a shim rather than the interpreter, and the real
+## server does run under a *different* PID than the one `OS.create_process`
+## hands back. But the original report's suspected mechanism — that the shim
+## exits once its child is up — is **disproven**, not merely unconfirmed. A
+## 12-boot run on Windows 11 with a uv venv found the spawned trampoline alive
+## on every boot, with the child owning both the pid-file and the listener; a
+## CI runner showed the same. The shim is a live parent for the process's whole
+## life, so it is not what kills the watched PID.
+##
+## Two consequences worth keeping straight. First, this gate is keyed to the
+## observable condition — watched PID dead, no pid-file yet — not to any theory
+## of why it died, so it stays correct whatever the cause. Second, and less
+## comfortable: in that same 12-boot run the false "server exited" line never
+## appeared AND the watched PID never died, so the guard never fired. Those
+## clean boots are evidence the symptom did not reproduce, NOT evidence this
+## guard fixes it. The true cause of the original 1-in-4 report is still
+## unknown; if it resurfaces, start from that rather than from the trampoline.
+##
+## `real_pid <= 0` means no pid-file exists yet, and that reliably means "this
+## server has not published one" rather than "stale leftover": `start_server`
+## wipes the pid-file immediately before every spawn. So an absent pid-file
+## plus a dead spawn PID inside the window is the handoff signature.
+##
+## Deliberately gated to Windows. POSIX uv venvs exec rather than trampoline,
+## so a dead spawn PID there really is a dead server, and delaying its
+## diagnosis would only slow down honest crash reporting on the platforms
+## where this cannot happen. `os_name` is a parameter rather than an
+## `OS.get_name()` call so the Windows path is exercisable from any host.
+static func is_spawn_handoff_pending(
+	os_name: String, real_pid: int, elapsed_ms: int, window_ms: int
+) -> bool:
+	if os_name != "Windows":
+		return false
+	if real_pid > 0:
+		return false
+	return elapsed_ms < window_ms
+
+
+## First-write-wins stamp for the elapsed time at which the spawn PID was first
+## observed dead (#797).
+##
+## A diagnosis raised after waiting out a handoff must still report when the
+## process actually exited, not when the wait gave up — the point of #797 is an
+## honest log line. Returns the existing stamp once one is set, so later ticks
+## in the same wait cannot overwrite it; `<= 0` means "not yet stamped",
+## matching how the field is cleared per spawn.
+static func first_death_stamp(current_stamp_ms: int, elapsed_ms: int) -> int:
+	return current_stamp_ms if current_stamp_ms > 0 else elapsed_ms
+
+
+## One-line forensic snapshot taken the moment a spawn is judged to have
+## fast-exited (#797).
+##
+## #797 reported `server exited after 5146ms` on a healthy Windows boot, once
+## in four. It is still unexplained: a 12-boot run on the reported
+## configuration reproduced neither the symptom nor its suspected mechanism —
+## the uv trampoline was alive on every boot, with the child owning the
+## pid-file and the listener, so the shim's exit is ruled out as the cause.
+## What killed that watched PID is unknown, and the log line at the time
+## carried no evidence to answer it with.
+##
+## So capture the state at the moment of judgement rather than asking the next
+## person to reproduce a 1-in-4 bug under observation. Everything here is read
+## through seams the surrounding diagnosis already uses, on a path that only
+## runs when a spawn is being declared dead, so it costs nothing in the
+## healthy case.
+## Deliberately does NOT scrape the port for listener PIDs. This runs from the
+## 1 Hz watch loop, on a live frame, so a `_find_all_pids_on_port` subprocess
+## here would stall the editor for a diagnostic. Deferring it via
+## `_run_blocking` was the alternative and is worse: that helper is
+## `await`-based, so it would turn this, `_diagnose_spawn_fast_exit` and
+## `check_server_health` into coroutines — making the watch callback resume
+## across arbitrary frames while its branches set terminal state and trigger
+## re-adoption walks. That is the teardown-ordering hazard
+## `_invalidate_async_startup` exists to contain, and it is not worth taking
+## on for a log line.
+##
+## Little is lost: the probe on the very next line already establishes whether
+## a godot-ai server answers on the port, and `_diagnose_spawn_port_conflict`
+## names a foreign occupant when there is one. If you are tempted to add the
+## PID list back, put it behind that existing conflict path rather than here.
+func _log_spawn_exit_forensics() -> void:
+	var spawn_pid := int(_server_pid)
+	var pid_file_pid := int(_host._read_pid_file_for_proof())
+	## Computed here rather than accepted as a parameter. The caller's
+	## `elapsed` IS `_spawn_dead_since_ms` — #837 passes the true death time so
+	## the user-facing "server exited after Nms" line stays honest — so taking
+	## it would make these two fields report the same number, collapsing the
+	## exact distinction they exist to record.
+	var diagnosed_at_ms := 0
+	if int(_server_spawn_ms) > 0:
+		diagnosed_at_ms = Time.get_ticks_msec() - int(_server_spawn_ms)
+	_host._log_buffer.log(format_spawn_exit_forensics({
+		"os": OS.get_name(),
+		"launch_mode": ClientConfigurator.get_server_launch_mode(),
+		"elapsed_ms": diagnosed_at_ms,
+		## Differs from elapsed_ms when a Windows handoff window was waited out
+		## (#824/#837): the true death time versus when we gave up on it.
+		"first_dead_ms": int(_spawn_dead_since_ms),
+		"spawn_pid": spawn_pid,
+		## Re-read rather than trusted from the watch tick: if the spawn PID is
+		## alive HERE, the death that triggered this was transient, which is a
+		## different bug from a process that really exited.
+		"spawn_alive": spawn_pid > 0 and bool(_host._pid_alive_for_proof(spawn_pid)),
+		"pid_file_pid": pid_file_pid,
+		"pid_file_alive": pid_file_pid > 0 and bool(_host._pid_alive_for_proof(pid_file_pid)),
+	}))
+
+
+## Render the forensic snapshot. Pure so the format is testable without a live
+## editor, and kept to one line so it survives log truncation in a bug report.
+static func format_spawn_exit_forensics(facts: Dictionary) -> String:
+	var spawn_pid := int(facts.get("spawn_pid", 0))
+	var pid_file_pid := int(facts.get("pid_file_pid", 0))
+	## The single most diagnostic bit, stated rather than left to be inferred:
+	## a live pid-file process while the watched one is gone is the launcher
+	## handoff shape; both gone is a real crash.
+	var shape := "unknown"
+	var spawn_alive := bool(facts.get("spawn_alive", false))
+	var file_alive := bool(facts.get("pid_file_alive", false))
+	if spawn_alive:
+		shape = "watched_pid_still_alive"
+	elif file_alive and pid_file_pid != spawn_pid:
+		shape = "handoff_child_alive"
+	elif not file_alive and pid_file_pid <= 0:
+		shape = "no_pid_file_published"
+	else:
+		shape = "all_dead"
+	return (
+		"#797 spawn-exit forensics: shape=%s os=%s launch=%s elapsed=%dms "
+		+ "first_dead=%dms spawn_pid=%d(alive=%s) pid_file_pid=%d(alive=%s)"
+	) % [
+		shape,
+		str(facts.get("os", "")),
+		str(facts.get("launch_mode", "")),
+		int(facts.get("elapsed_ms", 0)),
+		int(facts.get("first_dead_ms", 0)),
+		spawn_pid,
+		str(spawn_alive),
+		pid_file_pid,
+		str(file_alive),
+	]
+
+
+## Watch-loop callback (1 Hz, cold-start budget until pid-file publication,
+## then the warm budget from the publication tick).
 ## `--pid-file` is the source of truth on Windows / uvx where the
 ## launcher PID dies quickly after spawning the real interpreter.
 func check_server_health() -> void:
@@ -976,8 +1274,11 @@ func check_server_health() -> void:
 		return
 	var elapsed := Time.get_ticks_msec() - int(_server_spawn_ms)
 	var real_pid := PortResolver.read_pid_file()
+	if real_pid > 0 and _server_pid_published_elapsed_ms == 0:
+		_server_pid_published_elapsed_ms = elapsed
 	var spawn_pid := int(_server_pid)
 	if real_pid > 0 and real_pid != spawn_pid and PortResolver.pid_alive(real_pid):
+		_spawn_dead_since_ms = 0
 		_server_pid = real_pid
 		## The spawn record initially contains the launcher PID so same-session
 		## teardown can kill it. Heal it as soon as the server publishes its
@@ -986,14 +1287,68 @@ func check_server_health() -> void:
 		_host._write_managed_server_record(real_pid, _expected_server_version(), _server_keep_alive)
 		## #805: the spawn survived to publish its pid-file — proven
 		## recovery, so the fast-exit re-adopt budget refreshes.
+		##
+		## The stale-recovery budget is deliberately NOT reset here (#890
+		## review P1): the Python server writes its pid-file during import,
+		## BEFORE uvicorn binds HTTP or the WebSocket listener starts
+		## (src/godot_ai/__init__.py) — publication proves the child reached
+		## that line, not that it owns either port. A bridge respawn can
+		## still steal the bind after the pid-file lands, and zeroing here
+		## left that fast-exit with no recovery round. The budget resets on
+		## the genuinely proven recoveries: adoption and the verified
+		## compatible handshake.
 		_readopt_after_spawn_exit_retried = false
 	elif not PortResolver.pid_alive(spawn_pid):
+		_spawn_dead_since_ms = first_death_stamp(_spawn_dead_since_ms, elapsed)
+		if is_spawn_handoff_pending(
+			OS.get_name(), real_pid, elapsed, int(_host.SPAWN_HANDOFF_MS)
+		):
+			return
 		if elapsed >= int(_host.SPAWN_GRACE_MS) and not McpServerStateScript.is_terminal_diagnosis(_server_state):
-			_diagnose_spawn_fast_exit(elapsed)
+			_diagnose_spawn_fast_exit(_spawn_dead_since_ms)
 		return
-	if elapsed >= int(_host.SERVER_WATCH_MS):
-		## Survived startup — mid-session crashes surface via WebSocket disconnect.
+	var watch_elapsed := watch_window_elapsed_ms(
+		elapsed, real_pid, _server_pid_published_elapsed_ms
+	)
+	if watch_elapsed >= watch_budget_ms(
+		real_pid, int(_host.SERVER_WATCH_MS), int(_host.SERVER_COLD_START_WATCH_MS)
+	):
+		## #896: past the budget we stop watching either way, but a spawn that
+		## never published a pid-file did not "survive startup" — it just never
+		## proved anything. Say so, or the only remaining signal is a silent
+		## reconnect loop.
+		if real_pid <= 0:
+			print(
+				"MCP | server spawn never published a pid-file within %ds; "
+				% int(_host.SERVER_COLD_START_WATCH_MS / 1000)
+				+ "no longer watching it. If the editor stays disconnected, "
+				+ "check the Godot output log for the server's own errors."
+			)
 		_host._stop_server_watch()
+
+
+## How long to keep watching a spawn, given whether it has published its
+## pid-file yet.
+##
+## Pure so tests can drive the decision without a live spawn. `pid_from_file`
+## is the authoritative "the server got far enough to run" signal: the Python
+## server writes it during import, before uvicorn binds. Until it appears, a
+## live launcher PID proves only that `uvx` has not exited — on a cold start
+## that is usually a download still in progress, not a started server.
+static func watch_budget_ms(pid_from_file: int, warm_ms: int, cold_ms: int) -> int:
+	return warm_ms if pid_from_file > 0 else cold_ms
+
+
+## Elapsed time in the currently-active watch window. Before startup proof,
+## the window begins at process creation. Once the pid-file appears, begin a
+## fresh warm watch window so a 45-second download still gets 30 seconds of
+## early-exit coverage after Python starts.
+static func watch_window_elapsed_ms(
+	spawn_elapsed_ms: int, pid_from_file: int, pid_published_elapsed_ms: int
+) -> int:
+	if pid_from_file <= 0 or pid_published_elapsed_ms <= 0:
+		return spawn_elapsed_ms
+	return maxi(0, spawn_elapsed_ms - pid_published_elapsed_ms)
 
 
 ## The spawned server died inside the SPAWN_GRACE_MS window. Decide what
@@ -1010,7 +1365,10 @@ func check_server_health() -> void:
 ##      flapping occupant (alive at each fast-exit probe, gone by each
 ##      walk's probes — sustained multi-editor churn) latches a specific
 ##      CRASHED diagnosis on the second round instead of re-walking
-##      forever.
+##      forever. Exception: a verified stale-VERSION occupant with
+##      `_stale_recovery_budget` rounds left keeps re-walking (each walk
+##      spends one round in its recovery arm), so a bridge-respawn race
+##      after a self-update converges instead of latching.
 ##   2. #647: foreign process on the HTTP or WS port -> FOREIGN_PORT with
 ##      an actionable message (we can't read the child's "port already in
 ##      use" stderr). Checked before the --refresh retry: respawning
@@ -1018,11 +1376,31 @@ func check_server_health() -> void:
 ##   3. #172: stale uvx index -> one `--refresh` respawn.
 ##   4. Otherwise -> CRASHED, pointing at the Godot output log.
 func _diagnose_spawn_fast_exit(elapsed: int) -> void:
+	_log_spawn_exit_forensics()
 	var live: Dictionary = _host._probe_live_server_status_for_port(
 		ClientConfigurator.http_port()
 	)
 	if _live_status_identifies_godot_ai(live):
-		if not _readopt_after_spawn_exit_retried:
+		## Stale-version occupant with authorized recovery rounds left: allow
+		## another re-adopt walk even after the #805 one-shot is spent. This is
+		## the attach-bridge respawn race — a bridge pinned to the previous
+		## version respawns its cached backend the instant the old server is
+		## killed, and can beat our (possibly cold) spawn to the bind. Each
+		## extra walk spends one `_stale_recovery_budget` round in its recovery
+		## arm, so this stays bounded; the #805 flapping diagnosis below still
+		## latches for same-version/unverified occupants and once the budget is
+		## exhausted.
+		var stale_retry := _stale_recovery_available(
+			str(_host._verified_status_version(live)), _expected_server_version()
+		)
+		if not _readopt_after_spawn_exit_retried or stale_retry:
+			if _readopt_after_spawn_exit_retried:
+				## Second and later rounds ride the stale budget — spend HERE,
+				## not only in the walk's recovery arm: an occupant that flaps
+				## out of existence before each walk's probe (the #805 shape)
+				## would otherwise re-walk without ever spending, and the
+				## terminal latch below would never be reached.
+				_stale_recovery_budget -= 1
 			_readopt_after_spawn_exit_retried = true
 			_readopt_walk_pending = true
 			_host._log_buffer.log(
@@ -1160,6 +1538,8 @@ func respawn_with_refresh() -> void:
 	if spawn_pid > 0:
 		_server_spawn_ms = Time.get_ticks_msec()
 		_server_exit_ms = 0
+		_server_pid_published_elapsed_ms = 0
+		_spawn_dead_since_ms = 0
 		_server_keep_alive = keep_alive_env_set
 		var current_version := _expected_server_version()
 		_host._set_ws_auth_token(ws_token)
@@ -1188,6 +1568,10 @@ func adopt_compatible_server(
 	## session now has a live compatible server. Refresh the fast-exit
 	## re-adopt budget so a later, unrelated port race can heal again.
 	_readopt_after_spawn_exit_retried = false
+	## The stale-recovery episode (if any) is over: leftover authorized
+	## rounds must not carry into a later, unrelated walk where they could
+	## weak-proof-kill a server the user deliberately started.
+	_stale_recovery_budget = 0
 	if record_version == current_version and owner > 0 and record_owns_listener:
 		## Managed adoption keeps the record's token (loaded into
 		## _ws_auth_token at plugin startup) — the running server was
@@ -1237,6 +1621,44 @@ static func _compatible_adoption_log_message(
 	]
 
 
+## Single-owner recovery transaction for the contended startup walk. Strong
+## ownership proof gets first refusal; only a user-authorized, verified version
+## drift may fall back to weak proof. Keeping the flag across both awaits is
+## what lets the WS handshake path coalesce instead of cancelling this walk.
+func _recover_startup_port_occupant(
+	port: int,
+	live: Dictionary,
+	live_version: String,
+	current_version: String,
+	async_gen: int,
+) -> bool:
+	var owns_recovery := not _recovery_in_flight
+	var is_owned_startup := (
+		_recovery_in_flight and async_gen == _recovery_owned_startup_generation
+	)
+	if not owns_recovery and not is_owned_startup:
+		return false
+	if owns_recovery:
+		_recovery_in_flight = true
+	## Forward `live` so the strong proof helper reuses our snapshot. The kill
+	## invalidates it; every later consumer re-probes before using live status.
+	var recovered: bool = await recover_strong_port_occupant(port, 3.0, live)
+	if not _async_stale(async_gen) and not recovered and _stale_recovery_available(
+		live_version, current_version
+	):
+		_stale_recovery_budget -= 1
+		print(
+			"MCP | stale godot-ai v%s holds port %d — replacing it (update/recovery authorized, %d retry round(s) left)"
+			% [live_version, port, _stale_recovery_budget]
+		)
+		recovered = await _recover_stale_port_occupant_impl(port, 3.0)
+	## A nested recovery-owned startup must leave the outer transaction armed;
+	## only the path that acquired ownership here may release it.
+	if owns_recovery:
+		_recovery_in_flight = false
+	return recovered
+
+
 ## `pre_kill_live` is forwarded into the proof helper so it doesn't
 ## re-probe a port the caller already probed. The kill invalidates the
 ## snapshot — callers MUST re-probe before consuming live-status data
@@ -1255,7 +1677,7 @@ func recover_strong_port_occupant(port: int, wait_s: float, pre_kill_live: Dicti
 			return {"proof": "", "pids": []}
 		return _host._evaluate_strong_port_occupant_proof(port, pre_kill_live, record)
 	)
-	if _async_stale(async_gen):
+	if _async_stale(async_gen) or proof_result == null:
 		return false
 	var proof: Dictionary = proof_result
 	var targets: Array[int] = []
@@ -1264,7 +1686,7 @@ func recover_strong_port_occupant(port: int, wait_s: float, pre_kill_live: Dicti
 		return false
 
 	print("MCP | strong proof: %s" % str(proof.get("proof", "")))
-	var freed := bool(await _run_blocking(func() -> Variant:
+	var freed_result: Variant = await _run_blocking(func() -> Variant:
 		if not is_instance_valid(_host):
 			return false
 		## verify_brand=true: the proof above ran in a separate _run_blocking
@@ -1275,10 +1697,84 @@ func recover_strong_port_occupant(port: int, wait_s: float, pre_kill_live: Dicti
 			print("MCP | killed pids %s on port %d" % [str(killed), port])
 		_host._wait_for_port_free(port, wait_s)
 		return not bool(_host._is_port_in_use(port))
-	))
-	if _async_stale(async_gen):
+	)
+	if _async_stale(async_gen) or freed_result == null:
 		return false
-	if not freed:
+	if not bool(freed_result):
+		return false
+
+	_host._clear_managed_server_record()
+	_host._clear_pid_file()
+	return true
+
+
+## Weak-proof sibling of `recover_strong_port_occupant`, reserved for the
+## bounded stale-version episode (`_stale_recovery_budget` — callers gate on
+## `_stale_recovery_available` and spend a round BEFORE calling). Uses the
+## recovery-tier proof (`status_name` allowed) because the target is an
+## external previous-version server with no managed record or pid-file to
+## prove strong ownership with — the same authority the dock's recovery
+## click exercises, here spent under an equally explicit user action (the
+## Update click / a recovery click's retry). The kill still brand-verifies
+## every PID at kill time (#686), so a recycled or unrelated PID on the
+## port is never killed. No pre-probed `live` parameter on purpose: a prior
+## failed strong recovery may have partially changed the port's state, so
+## the worker re-probes — and re-verifies STALENESS on that fresh snapshot
+## (#890 CodeRabbit): the caller's version gate ran on an earlier probe,
+## and a same-version server that took the port in the interval must abort
+## this recovery, not be killed by it.
+func recover_stale_port_occupant(port: int, wait_s: float) -> bool:
+	if _recovery_in_flight:
+		return false
+	_recovery_in_flight = true
+	var recovered := await _recover_stale_port_occupant_impl(port, wait_s)
+	_recovery_in_flight = false
+	return recovered
+
+
+func _recover_stale_port_occupant_impl(port: int, wait_s: float) -> bool:
+	var async_gen := _async_generation
+	var record: Dictionary = _host._read_managed_server_record()
+	## Resolved on the main thread: the worker must not touch EditorSettings.
+	var expected_version := _expected_server_version()
+	var proof_result: Variant = await _run_blocking(func() -> Variant:
+		if not is_instance_valid(_host):
+			return {"proof": "", "pids": []}
+		var live: Dictionary = _host._probe_live_server_status_for_port(port)
+		var live_version := str(_host._verified_status_version(live))
+		if live_version.is_empty() or live_version == expected_version:
+			return {"proof": "", "pids": []}
+		return _host._evaluate_recovery_port_occupant_proof(port, live, record)
+	)
+	if _async_stale(async_gen) or proof_result == null:
+		return false
+	var proof: Dictionary = proof_result
+	var targets: Array[int] = []
+	targets.assign(proof.get("pids", []))
+	if targets.is_empty():
+		return false
+
+	print("MCP | stale-occupant proof: %s" % str(proof.get("proof", "")))
+	var freed_result: Variant = await _run_blocking(func() -> Variant:
+		if not is_instance_valid(_host):
+			return false
+		## Warm the current-version uv env in parallel with the kill + port
+		## drain below (#890 review P1): on the release that first ships this
+		## code the OLD updater ran the update, so no click-time pre-warm
+		## happened and the respawn would resolve cold — exactly the race
+		## this episode exists to win. Detached fire-and-forget via the host
+		## seam (stubbed in tests); worker-safe (CliFinder is mutex-guarded,
+		## no EditorSettings access).
+		_host._prewarm_server_package(expected_version)
+		var killed: Array = _host._kill_processes_and_windows_spawn_children(targets, true)
+		if not killed.is_empty():
+			print("MCP | killed pids %s on port %d" % [str(killed), port])
+		_host._wait_for_port_free(port, wait_s)
+		return not bool(_host._is_port_in_use(port))
+	)
+	if _async_stale(async_gen) or freed_result == null:
+		return false
+	if not bool(freed_result):
 		return false
 
 	_host._clear_managed_server_record()
@@ -1295,8 +1791,85 @@ func recover_strong_port_occupant(port: int, wait_s: float, pre_kill_live: Dicti
 func teardown_for_editor_exit() -> void:
 	if _server_keep_alive:
 		detach_server()
-	else:
-		stop_server()
+		return
+	## #824: a backend we spawned may be keeping one or more MCP clients alive
+	## through their `godot-ai attach` bridges. Killing it because *this* editor
+	## is closing takes the server out from under them: an in-flight call can
+	## become TRANSPORT_OUTCOME_UNKNOWN, and every bridge has to establish a new
+	## backend before the next editor can reconnect. A live lease means the
+	## backend has consumers beyond this editor, so hand it over instead.
+	var leased := active_lease_count_at_exit()
+	if leased > 0:
+		## Give up kill authority along with the process: dropping the managed
+		## record means the next editor adopts it through the external branch
+		## rather than as a managed server it may kill. The server's own
+		## pid-file is deliberately left in place — it is the backend's
+		## publication, not our claim on it, and adoption reads it.
+		##
+		## The Python side remains the reaper of record: a plugin-spawned
+		## backend keeps its idle backstop armed (only keep_server_on_exit
+		## disarms it) and that backstop is lease-aware, so this defers the
+		## stop to "no editors AND no leases AND grace elapsed" rather than
+		## leaking the process.
+		_host._clear_managed_server_record()
+		detach_server(
+			"detaching server: %d attach lease(s) still held, leaving it to the "
+			% leased
+			+ "server's own idle reaper"
+		)
+		return
+	stop_server()
+
+
+## Active attach-bridge leases on the backend this editor manages, or 0 when
+## there is nothing to consult (#824).
+##
+## Returns 0 — preserving the historical kill-on-exit behavior — for every
+## uncertain case: no managed PID, a probe that fails or times out, a server
+## that does not identify as godot-ai, or one too old to publish the field.
+## That direction is deliberate. A false 0 costs what today already costs
+## (the backend is stopped and bridges reconnect); a false positive would
+## leave a process running on a guess.
+##
+## Bounded by the status probe's own timeout (SERVER_STATUS_PROBE_TIMEOUT_MS),
+## which is what keeps editor exit from hanging on a wedged HTTP server.
+func active_lease_count_at_exit() -> int:
+	var pid := int(_server_pid)
+	if pid <= 0:
+		return 0
+	## Only a process we can still prove is our godot-ai server earns the
+	## benefit of the doubt. The lease count comes from whoever answers on the
+	## port, which is not by itself proof that it IS the process we are about
+	## to stop — another editor's backend, or an attach-owned one, could hold
+	## the port after ours died. Requiring the same alive+branded proof
+	## `stop_server` uses before its kill closes that gap: without it, a
+	## stranger's leases could talk this editor out of stopping its own server.
+	##
+	## Failing this check is harmless either way. A dead PID has nothing to
+	## kill, and a recycled-but-unbranded PID is rejected by stop_server's own
+	## gate (#686) — both land on the historical path.
+	if not _host._pid_alive_for_proof(pid):
+		return 0
+	if not _host._pid_cmdline_is_godot_ai_for_proof(pid):
+		return 0
+	return active_lease_count(
+		_host._probe_live_server_status_for_port(ClientConfigurator.http_port())
+	)
+
+
+## Read the advisory lease count out of a `/godot-ai/status` payload.
+##
+## Gated on the payload identifying as godot-ai, so an unrelated process
+## answering on the port cannot talk this editor out of a clean stop. A
+## missing field means an older backend that predates #824; it reads as 0,
+## which keeps that pairing on today's behavior.
+static func active_lease_count(live: Dictionary) -> int:
+	if not _live_status_identifies_godot_ai(live):
+		return 0
+	var raw: Variant = live.get("active_lease_count")
+	if raw == null:
+		return 0
+	return maxi(0, int(raw))
 
 
 ## keep_server_on_exit (#800): editor teardown that leaves the server
@@ -1306,14 +1879,21 @@ func teardown_for_editor_exit() -> void:
 ## session's start_server walk adopts the survivor through the existing
 ## record-matches branch (#758/#774). Explicit stops (dock Restart,
 ## update reload) still route through stop_server and kill as before.
-func detach_server() -> void:
+## `log_reason` names why the server is being left alive; the default is the
+## keep_server_on_exit wording this function was written for. #824 reuses the
+## same bookkeeping for the active-lease handover, and a shared log line would
+## have reported the wrong cause for it.
+func detach_server(
+	log_reason: String = "keep_server_on_exit: leaving server running"
+) -> void:
 	_invalidate_async_startup()
 	_host._stop_server_watch()
 	var detached_pid := int(_server_pid)
 	_server_pid = -1
+	_server_pid_published_elapsed_ms = 0
 	transition_state(McpServerStateScript.STOPPED)
 	if detached_pid > 0:
-		print("MCP | keep_server_on_exit: leaving server running (PID %d)" % detached_pid)
+		print("MCP | %s (PID %d)" % [log_reason, detached_pid])
 
 
 func stop_server() -> void:
@@ -1363,6 +1943,7 @@ func stop_server() -> void:
 		print("MCP | stopped server (PID %s)" % str(killed))
 	_server_pid = -1
 	_server_keep_alive = false
+	_server_pid_published_elapsed_ms = 0
 	_host._wait_for_port_free(port, 2.0)
 	## Preserve record/pid-file when port is still held — the drift
 	## branch on the next start_server retries the kill (#159 follow-up).
@@ -1370,7 +1951,7 @@ func stop_server() -> void:
 	transition_state(McpServerStateScript.STOPPED)
 
 	## Server's `_pydantic_core.pyd` hard-link is now released — sweep
-	## stale uvx builds before they trip the next `uvx mcp-proxy`.
+	## stale uvx builds before they trip the next attach launcher.
 	UvCacheCleanup.purge_stale_builds()
 
 
@@ -1422,7 +2003,16 @@ func can_recover_incompatible_server() -> bool:
 	return bool(_host._is_port_in_use(ClientConfigurator.http_port()))
 
 
-func recover_incompatible_server() -> bool:
+func recover_incompatible_server(stale_version: String = "") -> bool:
+	if _recovery_in_flight:
+		return false
+	_recovery_in_flight = true
+	var recovered := await _recover_incompatible_server_impl(stale_version)
+	_recovery_in_flight = false
+	return recovered
+
+
+func _recover_incompatible_server_impl(stale_version: String = "") -> bool:
 	if _server_state != McpServerStateScript.INCOMPATIBLE:
 		return false
 
@@ -1442,9 +2032,19 @@ func recover_incompatible_server() -> bool:
 	var proof_result: Variant = await _run_blocking(func() -> Variant:
 		if not is_instance_valid(_host):
 			return {"proof": "", "pids": []}
-		return _host._evaluate_recovery_port_occupant_proof(port, {}, record)
+		var live: Dictionary = {}
+		if not stale_version.is_empty():
+			## Automatic recovery was authorized by a handshake from this exact
+			## old version. Re-probe at proof time and refuse if that occupant has
+			## already been replaced; a delayed old handshake must never target the
+			## freshly-started current server via its new pid-file proof.
+			live = _host._probe_live_server_status_for_port(port)
+			var current_live_version := str(_host._verified_status_version(live))
+			if current_live_version != stale_version:
+				return {"proof": "", "pids": []}
+		return _host._evaluate_recovery_port_occupant_proof(port, live, record)
 	)
-	if _async_stale(async_gen):
+	if _async_stale(async_gen) or proof_result == null:
 		return false
 	var proof: Dictionary = proof_result
 	var targets: Array[int] = []
@@ -1456,9 +2056,17 @@ func recover_incompatible_server() -> bool:
 	## Move into STOPPING so the post-kill respawn passes the
 	## first-writer-wins guards.
 	transition_state(McpServerStateScript.STOPPING)
+	## Main-thread read for the worker below (EditorSettings-backed).
+	var recovery_expected_version := _expected_server_version()
 	var freed_result: Variant = await _run_blocking(func() -> Variant:
 		if not is_instance_valid(_host):
 			return false
+		## Warm the current-version uv env in parallel with the kill + drain
+		## so the respawn below wins the bind race even when no click-time
+		## pre-warm ran (#890 review P1 — the transition release's update runs
+		## the OLD updater). Same rationale and seam as
+		## recover_stale_port_occupant.
+		_host._prewarm_server_package(recovery_expected_version)
 		## verify_brand=true: the proof above ran in a separate
 		## _run_blocking task with main-thread frames in between — re-check
 		## each target at kill time so a PID recycled inside that gap isn't
@@ -1469,7 +2077,7 @@ func recover_incompatible_server() -> bool:
 		_host._wait_for_port_free(port, 5.0)
 		return not bool(_host._is_port_in_use(port))
 	)
-	if _async_stale(async_gen):
+	if _async_stale(async_gen) or freed_result == null:
 		return false
 	if not bool(freed_result):
 		## Kill failed; re-latch INCOMPATIBLE so the dock keeps the
@@ -1489,11 +2097,25 @@ func recover_incompatible_server() -> bool:
 	_can_recover_incompatible = false
 	_host._server_started_this_session = false
 	_server_pid = -1
+	_server_pid_published_elapsed_ms = 0
 	## Await the respawn walk: the plugin gates its connection unblock on
 	## the post-walk state (SPAWNING/READY), so returning true while the
 	## walk is still suspended would leave the connection blocked forever
 	## after a successful recovery click (#682 review).
+	## NOTE: arming the stale-recovery budget for the click lives in the
+	## plugin wrapper (`plugin.gd::recover_incompatible_server`), NOT here —
+	## the automatic handshake-mismatch trigger reuses this manager flow and
+	## must only SPEND budget; re-arming inside it would unbound the
+	## kill/respawn loop against a persistent bridge respawner.
+	## Keep the outer transaction armed while the respawn walk runs so stale WS
+	## handshakes and unrelated recovery calls still coalesce. Grant only this
+	## owned startup walk permission to spend a remaining recovery round if the
+	## old attach bridge reclaims the port between the kill and the respawn.
+	var owned_startup_gen := _async_generation
+	_recovery_owned_startup_generation = owned_startup_gen
 	await start_server()
+	if _recovery_owned_startup_generation == owned_startup_gen:
+		_recovery_owned_startup_generation = -1
 	return true
 
 
@@ -1568,7 +2190,7 @@ func force_restart_server() -> void:
 	## Same rationale as `stop_server`: the server child python just
 	## released its `pydantic_core` mapping, so this is the only window in
 	## which the hard-linked copies under `builds-v0\.tmp*` are deletable.
-	## Sweep before respawning so the upcoming `uvx mcp-proxy` build doesn't
+	## Sweep before respawning so the next uvx attach build doesn't
 	## inherit the same cleanup-failure path that triggered the restart.
 	UvCacheCleanup.purge_stale_builds()
 	reset_for_force_restart()
