@@ -1253,7 +1253,7 @@ func _physics_process(_delta: float) -> void:
 			Motion.velocity.x = move_toward(Motion.velocity.x, 0.0, 32.0 * _delta)
 			Motion.velocity.z = move_toward(Motion.velocity.z, 0.0, 32.0 * _delta)
 			
-			if s_name == "Reload" or (s_name == "Grab" and not sm.current_state.get("is_exiting")) or (is_aimming and Motion.input_dir == Vector2.ZERO) or s_name in ["Get_hit", "Knockdown", "Die", "Takedown"]:
+			if s_name == "Reload" or (s_name == "Grab" and not sm.current_state.get("is_exiting")) or (is_aimming and Motion.input_dir == Vector2.ZERO) or s_name in ["Knockdown", "Die", "Takedown"]:
 				var block_move = true
 				if s_name == "Reload":
 					var rel_state = sm.current_state
@@ -1369,11 +1369,71 @@ func is_invulnerable() -> bool:
 				
 	return false
 
-func take_damage(amount: int, ignore_stun_and_invulnerable: bool = false) -> void:
+func take_damage(amount: int, ignore_stun_and_invulnerable: bool = false, attacker: Node3D = null) -> void:
 	if not ignore_stun_and_invulnerable and (is_stunned or is_invulnerable()):
 		return
+
+	# Determine hit direction (front vs back) using spatial vector geometry
+	var location = null
+	var hit_source_pos: Vector3 = Vector3.ZERO
+	var has_hit_source: bool = false
+	
+	if is_instance_valid(attacker):
+		hit_source_pos = attacker.global_position
+		has_hit_source = true
+	else:
+		# Try to resolve attacker from overlapping attack areas
+		var detected_enemy: Node = null
+		if hitboxF:
+			for area in hitboxF.get_overlapping_areas():
+				if area.is_in_group("enemy_attack"):
+					detected_enemy = _find_enemy_from_area(area)
+					if detected_enemy:
+						break
+		if not detected_enemy and hitboxB:
+			for area in hitboxB.get_overlapping_areas():
+				if area.is_in_group("enemy_attack"):
+					detected_enemy = _find_enemy_from_area(area)
+					if detected_enemy:
+						break
+						
+		if is_instance_valid(detected_enemy) and detected_enemy is Node3D:
+			hit_source_pos = detected_enemy.global_position
+			has_hit_source = true
+		elif Hit_info.bullet and is_instance_valid(Hit_info.bullet):
+			hit_source_pos = Hit_info.bullet.global_position
+			has_hit_source = true
+		else:
+			# Fallback: check closest enemy within melee attack range
+			var nearest_dist = 3.5
+			var enemies = get_tree().get_nodes_in_group("enemies")
+			for enemy_node in enemies:
+				if is_instance_valid(enemy_node) and enemy_node is Node3D and not enemy_node.get("is_defeated"):
+					var d = global_position.distance_to(enemy_node.global_position)
+					if d < nearest_dist:
+						nearest_dist = d
+						hit_source_pos = enemy_node.global_position
+						has_hit_source = true
+
+	if has_hit_source:
+		var to_source = hit_source_pos - global_position
+		to_source.y = 0.0
+		if to_source.length_squared() > 0.001:
+			var local_dir = global_transform.basis.inverse() * to_source.normalized()
+			# In Godot local space: -Z is forward/front and +Z is backward/back
+			location = "front" if local_dir.z < 0.0 else "back"
+
+	if location == null:
+		# Fallback to existing Hit_info or default to front
+		if Hit_info.location != null:
+			location = Hit_info.location
+		else:
+			location = "front"
+			
+	Hit_info.location = location
+
 	lost_HP(amount)
-	print("[Player] Took %d damage — HP: %d/%d" % [amount, HP, MaxHP])
+	print("[Player] Took %d damage — HP: %d/%d (Hit: %s)" % [amount, HP, MaxHP, location])
 	if face_controller:
 		face_controller.notify_hit()
 
@@ -1384,28 +1444,6 @@ func take_damage(amount: int, ignore_stun_and_invulnerable: bool = false) -> voi
 	if sm and sm.current_state and sm.current_state.name != "Get_hit" and sm.current_state.name != "Grab" and sm.current_state.name != "Die" and sm.current_state.name != "Knockdown" and sm.current_state.name != "Takedown":
 		hit_damage_already_applied = true
 		pending_die_after_hit = is_fatal
-		
-		# Determine hit direction from currently overlapping enemy attacks
-		var location = null
-		if hitboxF:
-			for area in hitboxF.get_overlapping_areas():
-				if area.is_in_group("enemy_attack"):
-					location = "front"
-					break
-		if location == null and hitboxB:
-			for area in hitboxB.get_overlapping_areas():
-				if area.is_in_group("enemy_attack"):
-					location = "back"
-					break
-		
-		if location == null:
-			# Fallback: check if Hit_info already has a location (e.g. from bullet body_entered)
-			if Hit_info.location != null:
-				location = Hit_info.location
-			else:
-				location = "front"
-				
-		Hit_info.location = location
 		sm._change_state("Get_hit")
 	elif is_fatal:
 		force_die()
@@ -1554,9 +1592,17 @@ func _on_hitbox_body_entered(body: Node3D, location: String) -> void:
 	if not (body.is_in_group("bullet") or body.is_in_group("enemy_projectile") or body.is_in_group("projectile")):
 		return
 	
+	# Compute spatial position of projectile relative to player to avoid clipping box error
+	var final_location = location
+	var to_bullet = body.global_position - global_position
+	to_bullet.y = 0.0
+	if to_bullet.length_squared() > 0.001:
+		var local_dir = global_transform.basis.inverse() * to_bullet.normalized()
+		final_location = "front" if local_dir.z < 0.0 else "back"
+
 	# Bullet hit
 	Hit_info.bullet = body
-	Hit_info.location = location
+	Hit_info.location = final_location
 	hit_damage_already_applied = false
 	
 	var sm = get_node_or_null("Statemachine")

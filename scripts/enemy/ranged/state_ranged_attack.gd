@@ -143,7 +143,7 @@ func _fire_water_gun(player: Node3D) -> void:
 			hit_player = true
 
 		if hit_player:
-			player.take_damage(attack_damage)
+			player.take_damage(attack_damage, false, enemy)
 			print("[StateRangedAttack] Water gun hit player for %d (dist %.1f)" % [attack_damage, dist])
 		else:
 			print("[StateRangedAttack] Water gun blocked by: ", collider.name)
@@ -153,7 +153,7 @@ func _fire_water_gun(player: Node3D) -> void:
 func _throw_balloon(player: Node3D) -> void:
 	if not balloon_scene:
 		push_warning("[StateRangedAttack] No balloon_scene assigned")
-		player.take_damage(attack_damage)
+		player.take_damage(attack_damage, false, enemy)
 		return
 
 	var tree := enemy.get_tree()

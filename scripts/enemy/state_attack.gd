@@ -682,9 +682,9 @@ func _hand_touches_player() -> bool:
 func _deal_damage(entity: Node3D, amount: int, source: String, custom_hit_pos: Vector3 = Vector3.ZERO) -> void:
 	if entity and entity.has_method("take_damage"):
 		if entity.is_in_group("player") and source == "grab":
-			entity.take_damage(amount, true)
+			entity.take_damage(amount, true, enemy)
 		else:
-			entity.take_damage(amount)
+			entity.take_damage(amount, false, enemy)
 		print("[StateAttack] %s hit %s for %d damage" % [source, entity.name, amount])
 		
 		# Play melee hit impact sound

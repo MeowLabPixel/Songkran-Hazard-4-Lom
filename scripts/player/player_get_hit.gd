@@ -3,23 +3,40 @@ extends State
 @export var push_speed: float = 4.0
 @export var push_duration: float = 0.5
 
-@export_group("Camera Adjustments")
-@export var hit_cam_offset: float = -1.5
-@export var hit_cam_pitch: float = -15.0
-@export var hit_cam_spring_offset: float = 1.5
-@export var hit_cam_duration_down: float = 0.5
-@export var hit_cam_duration_up: float = 0.5
+@export_group("Camera Adjustments - Front Hit")
+@export var hit_front_dolly_distance: float = 1.4
+@export var hit_front_cam_offset_y: float = -0.15
+@export var hit_front_cam_pitch: float = -5.0
+
+@export_group("Camera Adjustments - Back Hit")
+@export var hit_back_dolly_distance: float = 0.4
+@export var hit_back_cam_offset_y: float = -0.2
+@export var hit_back_cam_pitch: float = 8.0
+
+@export_group("Camera Timing")
+@export var hit_cam_duration_down: float = 0.35
+@export var hit_cam_duration_up: float = 0.45
+
+@export_group("Hit Timing")
+@export var min_hit_duration: float = 0.65
+@export var max_hit_duration: float = 0.9
 
 var elapsed_time: float = 0.0
 var direction: Vector3 = Vector3.ZERO
 var velocity: Vector3 = Vector3.ZERO
 var camera_raised: bool = false
 var _anim_finished: bool = false
+var _transition_emitted: bool = false
 
 func _enter() -> void:
 	print(name)
 	owner.cancel_aim()
 	stop_moving()
+	
+	# Clear static Motion variables to prevent lingering movement velocity
+	Motion.input_dir = Vector2.ZERO
+	Motion.direction = Vector3.ZERO
+	Motion.velocity = Vector3.ZERO
 	
 	# Play Rookie Lee get hit voice line and physical hit sound
 	SoundManager.play_3d("vo_leon_gethit", owner)
@@ -40,7 +57,7 @@ func _enter() -> void:
 	# Muffle the music bus when player is hit
 	SoundManager.set_bus_muffled("Music", true)
 	
-	# Mark the player as stunned (this makes them invulnerable)
+	# Mark the player as stunned (makes them temporarily invulnerable)
 	owner.is_stunned = true
 	
 	# Disable player bone hitbox areas so zombies can't detect overlap during flinch
@@ -52,6 +69,7 @@ func _enter() -> void:
 	elapsed_time = 0.0
 	camera_raised = false
 	_anim_finished = false
+	_transition_emitted = false
 	
 	# Apply damage if not already done by take_damage
 	if not owner.hit_damage_already_applied:
@@ -61,7 +79,7 @@ func _enter() -> void:
 			owner.lost_HP(5) # default fallback damage
 			
 	# Play the appropriate animation based on hitbox location
-	var location = owner.Hit_info.location
+	var location = String(owner.Hit_info.location).to_lower() if owner.Hit_info.location != null else "front"
 	
 	# Travel to Hit state in the root machine
 	var root_playback = owner.anim.get("parameters/playback")
@@ -72,32 +90,37 @@ func _enter() -> void:
 	var hit_playback = owner.anim.get("parameters/Hit/playback")
 	if hit_playback:
 		if location == "back":
-			hit_playback.travel("Hit_Back")
+			hit_playback.start("Hit_Back")
 		else:
-			hit_playback.travel("Hit_Front")
+			hit_playback.start("Hit_Front")
 		
 	# Calculate push direction
 	calculate_push_direction(location)
 	
-	# Start camera transition (directional pitch reaction)
+	# Start camera transition (directional pitch reaction & dolly back)
 	var cam = owner.camera
 	if cam:
-		var target_pitch = hit_cam_pitch if location != "back" else 10.0
+		var target_offset_y = hit_front_cam_offset_y if location != "back" else hit_back_cam_offset_y
+		var target_pitch = hit_front_cam_pitch if location != "back" else hit_back_cam_pitch
+		var target_spring = hit_front_dolly_distance if location != "back" else hit_back_dolly_distance
+		
 		if cam.has_method("set_action_offset_y"):
-			cam.set_action_offset_y(hit_cam_offset, hit_cam_duration_down)
+			cam.set_action_offset_y(target_offset_y, hit_cam_duration_down)
 		if cam.has_method("set_action_pitch"):
 			cam.set_action_pitch(target_pitch, hit_cam_duration_down)
 		if cam.has_method("set_action_spring_length"):
-			cam.set_action_spring_length(hit_cam_spring_offset, hit_cam_duration_down)
+			cam.set_action_spring_length(target_spring, hit_cam_duration_down)
 		if cam.has_method("trigger_get_hit_shake"):
 			cam.trigger_get_hit_shake(location)
 	
-	# Listen for animation end to transition immediately
+	# Listen for animation end to transition (filtered by animation name)
 	if not owner.anim.animation_finished.is_connected(_on_hit_anim_finished):
 		owner.anim.animation_finished.connect(_on_hit_anim_finished)
 
-func _on_hit_anim_finished(_anim_name: String) -> void:
-	_anim_finished = true
+func _on_hit_anim_finished(anim_name: StringName) -> void:
+	var s = String(anim_name).to_lower()
+	if "hit" in s or "ded" in s or "dead" in s:
+		_anim_finished = true
 
 func _exit() -> void:
 	# Unmuffle the music bus when recovering
@@ -121,18 +144,26 @@ func _exit() -> void:
 	if owner.anim and owner.anim.animation_finished.is_connected(_on_hit_anim_finished):
 		owner.anim.animation_finished.disconnect(_on_hit_anim_finished)
 	
-	# Failsafe camera reset
+	# Reset camera if not already smoothly raised back
 	var cam = owner.camera
-	if cam:
+	if cam and not camera_raised:
 		if cam.has_method("set_action_offset_y"):
-			cam.set_action_offset_y(0.0, 0.2)
+			cam.set_action_offset_y(0.0, 0.25)
 		if cam.has_method("set_action_pitch"):
-			cam.set_action_pitch(0.0, 0.2)
+			cam.set_action_pitch(0.0, 0.25)
 		if cam.has_method("set_action_spring_length"):
-			cam.set_action_spring_length(0.0, 0.2)
+			cam.set_action_spring_length(0.0, 0.25)
+			
+	# Clear static Motion velocity so resuming locomotion starts clean
+	Motion.velocity = Vector3.ZERO
 
 func _update(delta: float) -> void:
 	elapsed_time += delta
+	
+	# Mute input motion during hit state so held keys cannot buffer movement
+	Motion.input_dir = Vector2.ZERO
+	Motion.direction = Vector3.ZERO
+	Motion.velocity = Vector3.ZERO
 	
 	# Handle push velocity during push_duration
 	if elapsed_time < push_duration:
@@ -144,7 +175,7 @@ func _update(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0.0, 10.0 * delta)
 		velocity.z = move_toward(velocity.z, 0.0, 10.0 * delta)
 		
-		# Raise camera back
+		# Raise camera back smoothly
 		if not camera_raised:
 			camera_raised = true
 			var cam = owner.camera
@@ -164,13 +195,31 @@ func _update(delta: float) -> void:
 		
 	owner.velocity = velocity
 	
-	# Transition when hit animation finishes via input queuing check
-	if _anim_finished:
+	# Check if root AnimationTree left "Hit" (transitioned to "Main")
+	var root_pb = owner.anim.get("parameters/playback")
+	var root_left_hit = false
+	if root_pb:
+		var root_node = String(root_pb.get_current_node())
+		if root_node != "Hit":
+			root_left_hit = true
+	
+	# Enforce minimum lockout duration (0.65s) before allowing state exit
+	var can_exit = (elapsed_time >= min_hit_duration) and (_anim_finished or root_left_hit or elapsed_time >= max_hit_duration)
+	
+	if can_exit and not _transition_emitted:
+		_transition_emitted = true
+		
+		# Fatal check
+		if owner.HP <= 0 or ("pending_die_after_hit" in owner and owner.pending_die_after_hit):
+			finished.emit("Die")
+			return
+			
 		var is_aim = Input.is_action_pressed("aim")
 		if is_aim and is_instance_valid(owner) and owner.has_method("can_aim") and owner.can_aim():
 			owner.aim_blocked_until_release = false
 			finished.emit("Aim")
 			return
+			
 		var raw_input = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 		var is_move = raw_input.length() > 0.1 or Input.is_action_pressed("ui_up") or Input.is_action_pressed("ui_down") or Input.is_action_pressed("ui_left") or Input.is_action_pressed("ui_right")
 		if is_move:
@@ -181,6 +230,7 @@ func _update(delta: float) -> void:
 func stop_moving() -> void:
 	velocity = Vector3.ZERO
 	owner.velocity = Vector3.ZERO
+	Motion.velocity = Vector3.ZERO
 
 func calculate_push_direction(location: String) -> void:
 	var input_dir = Vector2.ZERO

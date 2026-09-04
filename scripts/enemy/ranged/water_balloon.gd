@@ -70,7 +70,7 @@ func _splash() -> void:
 	if _damage > 0.0:
 		for player in tree.get_nodes_in_group("player"):
 			if player.global_position.distance_to(global_position) <= _radius:
-				player.take_damage(int(_damage))
+				player.take_damage(int(_damage), false, self)
 				print("[WaterBalloon] Splash hit player for %d" % int(_damage))
 
 	queue_free()
