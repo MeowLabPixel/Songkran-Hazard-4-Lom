@@ -52,7 +52,17 @@ func fire_sniper_super_shot():
 		ray_origin = global_transform.origin
 		ray_dir = -global_transform.basis.z
 
+	# Advance raycast origin along camera sightline to the player hand (0.05m in front of hand / where player holds the gun)
 	var ray_start: Vector3 = ray_origin
+	var cam_forward = -pc.get_forward_aim_basis().z if (pc and pc.has_method("get_forward_aim_basis")) else (-camera.global_transform.basis.z if camera else -global_transform.basis.z)
+	var denom = ray_dir.dot(cam_forward)
+	if denom > 0.0001:
+		var hand_pos = global_transform.origin
+		var hand_depth = (hand_pos - ray_origin).dot(cam_forward) + 0.05
+		var t_plane = hand_depth / denom
+		if t_plane > 0.0:
+			ray_start = ray_origin + ray_dir * t_plane
+
 	var to: Vector3 = ray_origin + ray_dir * 1000.0
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var start_pos: Vector3 = spawn_point.global_transform.origin if spawn_point else ray_origin

@@ -558,11 +558,13 @@ func _process(delta: float) -> void:
 		target_head_inf = 1.0
 	elif active_glance_npc and glance_recovery_cooldown <= 0.0 and not is_grab and not is_quick_turn and not is_cam_action:
 		target_head_inf = glance_inf
+	elif GameManager.movement_type == GameManager.MovementType.TANK and not is_grab and not is_cam_action:
+		target_head_inf = 0.0 if is_quick_turn else 1.0
 	else:
 		target_head_inf = 0.0
 
-	# Asymmetrical blending: brisk entry (10.0), smooth and gentle exit (glance_exit_speed)
-	var inf_blend_speed = 10.0 if target_head_inf > current_head_influence else glance_exit_speed
+	# Asymmetrical blending: brisk entry (10.0), smooth and gentle exit (glance_exit_speed or 12.0 for quickturn)
+	var inf_blend_speed = 10.0 if target_head_inf > current_head_influence else (12.0 if is_quick_turn else glance_exit_speed)
 	current_head_influence = lerpf(current_head_influence, target_head_inf, delta * inf_blend_speed)
 	
 	if aim_bone:
@@ -582,11 +584,8 @@ func _process(delta: float) -> void:
 			var current_secondary_limit = lerpf(glance_limit, PI, current_focus_pitch_weight)
 			head_lookat.secondary_positive_limit_angle = current_secondary_limit
 			head_lookat.secondary_negative_limit_angle = current_secondary_limit
-			# Fade out head look IK during quickturn to prevent neck snapping!
-			if GameManager.movement_type == GameManager.MovementType.TANK and not is_aimming and not is_grab:
-				head_lookat.influence = 1.0
-			else:
-				head_lookat.influence = current_head_influence
+			# Smooth head look IK influence across all movement modes and transitions
+			head_lookat.influence = current_head_influence
 			
 		var lean_modifier = skeleton.get_node_or_null("SpineLeanModifier")
 		if lean_modifier:
@@ -681,9 +680,17 @@ func _update_aim_target(delta: float) -> void:
 
 		var projected_target = ray_origin + ray_dir * 1000.0
 
-		# Cast a ray directly from the camera through the crosshair into the world!
-		# All player collision objects are safely excluded via _player_collision_rids.
+		# Advance raycast origin along camera sightline to the player hand (0.05m in front of hand / where player holds the gun)
 		var ray_cast_start = ray_origin
+		var cam_forward = -cam_basis.z
+		var denom = ray_dir.dot(cam_forward)
+		if denom > 0.0001:
+			var hand_pos = gun_controller.current_gun.global_transform.origin if (gun_controller and gun_controller.current_gun) else (global_position + Vector3(0.25, 1.25, -0.2))
+			var hand_depth = (hand_pos - ray_origin).dot(cam_forward) + 0.05
+			var t_plane = hand_depth / denom
+			if t_plane > 0.0:
+				ray_cast_start = ray_origin + ray_dir * t_plane
+
 		var space_state = get_world_3d().direct_space_state
 		var query = PhysicsRayQueryParameters3D.create(ray_cast_start, ray_cast_start + ray_dir * 1000.0)
 		query.collision_mask = 1 | 2 | 8192 # Detect Layer 1 (World), Layer 2 (Weakpoints), and Layer 14 (Hitboxes). Excludes Layer 3 CharacterBody3D capsule
@@ -767,11 +774,15 @@ func _update_aim_target(delta: float) -> void:
 		if aim_target_head:
 			if GameManager.movement_type == GameManager.MovementType.TANK and not is_aimming and not is_grab:
 				# Tank Control look-around head rotation based on mouse
-				var look_dir = Vector3(0, 0, -5.0)
+				var head_origin_global = skeleton.global_position + Vector3(0, 1.6, 0) if skeleton else global_position + Vector3(0, 1.6, 0)
 				var pitch = -camera.tank_look_around.y
 				var yaw = -camera.tank_look_around.x
-				var rotated_dir = look_dir.rotated(Vector3(1, 0, 0), pitch).rotated(Vector3(0, 1, 0), yaw)
-				var target_local = Vector3(0, 1.6, 0) + rotated_dir
+				var local_look_dir = Vector3(0, 0, -1.0).rotated(Vector3(1, 0, 0), pitch).rotated(Vector3(0, 1, 0), yaw)
+				var world_look_dir = global_transform.basis * local_look_dir
+				var fixed_depth_global = head_origin_global + world_look_dir * head_look_depth
+				var target_local = skeleton.to_local(fixed_depth_global) if skeleton else to_local(fixed_depth_global)
+				if absf(target_local.x) < 0.001:
+					target_local.x = 0.001
 				aim_target_head.position = aim_target_head.position.lerp(target_local, delta * 15.0)
 			else:
 				# Calculate default forward target (centered shoulder offset with turning lead)

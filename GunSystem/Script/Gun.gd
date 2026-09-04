@@ -282,8 +282,17 @@ func fire_pellet():
 	if vertical_spread != 0.0:
 		ray_dir = ray_dir.rotated(cam_basis.x, vertical_spread)
 
-	# Cast ray directly from the camera crosshair through the world
+	# Advance raycast origin along camera sightline to the player hand (0.05m in front of hand / where player holds the gun)
 	var ray_start: Vector3 = ray_origin
+	var cam_forward = -cam_basis.z
+	var denom = ray_dir.dot(cam_forward)
+	if denom > 0.0001:
+		var hand_pos = global_transform.origin
+		var hand_depth = (hand_pos - ray_origin).dot(cam_forward) + 0.05
+		var t_plane = hand_depth / denom
+		if t_plane > 0.0:
+			ray_start = ray_origin + ray_dir * t_plane
+
 	var to: Vector3 = ray_origin + ray_dir * 1000.0	
 
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
@@ -666,6 +675,7 @@ func _check_weakpoint_aim() -> bool:
 			return true
 
 	var pc = _get_player_camera()
+	var cam_basis = pc.get_forward_aim_basis() if (pc and pc.has_method("get_forward_aim_basis")) else (camera.global_transform.basis if camera else global_transform.basis)
 	var ray_origin: Vector3
 	var ray_dir: Vector3
 	if pc and ("camera" in pc) and pc.camera:
@@ -685,6 +695,15 @@ func _check_weakpoint_aim() -> bool:
 		ray_dir = -global_transform.basis.z
 
 	var ray_start: Vector3 = ray_origin
+	var cam_forward = -cam_basis.z
+	var denom = ray_dir.dot(cam_forward)
+	if denom > 0.0001:
+		var hand_pos = global_transform.origin
+		var hand_depth = (hand_pos - ray_origin).dot(cam_forward) + 0.05
+		var t_plane = hand_depth / denom
+		if t_plane > 0.0:
+			ray_start = ray_origin + ray_dir * t_plane
+
 	var to: Vector3 = ray_origin + ray_dir * 100.0
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var query = PhysicsRayQueryParameters3D.create(ray_start, to)
