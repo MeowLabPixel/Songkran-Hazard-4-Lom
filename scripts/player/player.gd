@@ -681,24 +681,15 @@ func _update_aim_target(delta: float) -> void:
 
 		var projected_target = ray_origin + ray_dir * 1000.0
 
-		# Advance raycast origin to player plane so objects/enemies behind player cannot be hit,
-		# but keep it safely 0.4m behind the chest so close-range zombie hitboxes are never overshot.
+		# Cast a ray directly from the camera through the crosshair into the world!
+		# All player collision objects are safely excluded via _player_collision_rids.
 		var ray_cast_start = ray_origin
-		var cam_forward = -cam_basis.z
-		var denom = ray_dir.dot(cam_forward)
-		if denom > 0.0001:
-			var player_ref = global_position + Vector3(0.0, 1.2, 0.0)
-			var t_plane = (player_ref - ray_origin).dot(cam_forward) / denom
-			var safe_t = maxf(0.0, t_plane - 0.4)
-			if safe_t > 0.0:
-				ray_cast_start = ray_origin + ray_dir * safe_t
-
-		# Cast a ray from the crosshair start plane to find the physical target!
 		var space_state = get_world_3d().direct_space_state
 		var query = PhysicsRayQueryParameters3D.create(ray_cast_start, ray_cast_start + ray_dir * 1000.0)
 		query.collision_mask = 1 | 2 | 8192 # Detect Layer 1 (World), Layer 2 (Weakpoints), and Layer 14 (Hitboxes). Excludes Layer 3 CharacterBody3D capsule
 		query.collide_with_areas = true
 		query.collide_with_bodies = true
+		query.hit_from_inside = true
 		
 		# Exclude all player collision objects (capsule, hitboxes, takedown boxes, etc.) from this targeting raycast
 		query.exclude = _player_collision_rids

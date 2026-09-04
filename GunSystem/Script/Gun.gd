@@ -257,27 +257,41 @@ func fire_pellet():
 	
 	var pc = _get_player_camera()
 	var cam_basis = pc.get_forward_aim_basis() if (pc and pc.has_method("get_forward_aim_basis")) else (camera.global_transform.basis if camera else global_transform.basis)
-	var from: Vector3 = spawn_point.global_transform.origin if spawn_point else (camera.global_transform.origin if camera else global_transform.origin)
-	var direction: Vector3 = -cam_basis.z
 	
-	if player and "true_aim_position" in player and player.true_aim_position != Vector3.ZERO:
-		var to_aim: Vector3 = player.true_aim_position - from
-		if to_aim.dot(-cam_basis.z) > 0.01:
-			direction = to_aim.normalized()
+	# Primary aim raycast directly from the camera through the screen crosshair
+	var ray_origin: Vector3
+	var ray_dir: Vector3
+	if pc and ("camera" in pc) and pc.camera:
+		var vp = pc.camera.get_viewport()
+		var screen_size = vp.get_visible_rect().size if vp else Vector2(1280, 720)
+		var screen_center = screen_size * 0.5
+		var crosshair_speed = screen_size.y * 1.25
+		var offset_pixels = Vector2(pc.aim_offset.x, pc.aim_offset.y) * crosshair_speed if ("aim_offset" in pc) else Vector2.ZERO
+		var crosshair_center = screen_center + offset_pixels
+		ray_origin = pc.camera.project_ray_origin(crosshair_center)
+		ray_dir = pc.camera.project_ray_normal(crosshair_center)
+	elif camera:
+		ray_origin = camera.global_transform.origin
+		ray_dir = -camera.global_transform.basis.z
+	else:
+		ray_origin = global_transform.origin
+		ray_dir = -global_transform.basis.z
 		
 	if horizontal_spread != 0.0:
-		direction = direction.rotated(cam_basis.y, horizontal_spread)
+		ray_dir = ray_dir.rotated(cam_basis.y, horizontal_spread)
 	if vertical_spread != 0.0:
-		direction = direction.rotated(cam_basis.x, vertical_spread)
+		ray_dir = ray_dir.rotated(cam_basis.x, vertical_spread)
 
-	# Raycast
-	var to: Vector3 = from + direction * 1000.0	
+	# Cast ray directly from the camera crosshair through the world
+	var ray_start: Vector3 = ray_origin
+	var to: Vector3 = ray_origin + ray_dir * 1000.0	
 
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-	var query = PhysicsRayQueryParameters3D.create(from, to)
+	var query = PhysicsRayQueryParameters3D.create(ray_start, to)
 	query.collision_mask = 1 | 2 | 8192 # Detect Layer 1 (World), Layer 2 (Weakpoints), and Layer 14 (Hitboxes). Excludes Layer 3 CharacterBody3D
 	query.collide_with_areas = true
 	query.collide_with_bodies = true
+	query.hit_from_inside = true
 	
 	var exclude_nodes: Array = []
 	var node: Node = self
@@ -293,7 +307,7 @@ func fire_pellet():
 	
 	var result: Dictionary = space_state.intersect_ray(query)
 	
-	var start_pos: Vector3 = spawn_point.global_transform.origin if spawn_point else from
+	var start_pos: Vector3 = spawn_point.global_transform.origin if spawn_point else ray_origin
 	var end_pos: Vector3 = to
 	
 	var is_crit: bool = false
@@ -330,7 +344,7 @@ func fire_pellet():
 		if shot_vfx and shot_vfx.has_method("set_line"):
 			shot_vfx.set_line(start_pos, end_pos)
 
-	_draw_debug_raycast(from, end_pos, result.size() > 0)
+	_draw_debug_raycast(start_pos, end_pos, result.size() > 0)
 
 	if result and hit_vfx_scene:
 		var hit_vfx: Node3D = hit_vfx_scene.instantiate()
@@ -652,19 +666,32 @@ func _check_weakpoint_aim() -> bool:
 			return true
 
 	var pc = _get_player_camera()
-	var cam_basis = pc.get_forward_aim_basis() if (pc and pc.has_method("get_forward_aim_basis")) else camera.global_transform.basis
-	var from: Vector3 = spawn_point.global_transform.origin if spawn_point else camera.global_transform.origin
-	var direction: Vector3 = -cam_basis.z
-	if player and "true_aim_position" in player and player.true_aim_position != Vector3.ZERO:
-		var to_aim: Vector3 = player.true_aim_position - from
-		if to_aim.dot(-cam_basis.z) > 0.01:
-			direction = to_aim.normalized()
-	var to: Vector3 = from + direction * 100.0
+	var ray_origin: Vector3
+	var ray_dir: Vector3
+	if pc and ("camera" in pc) and pc.camera:
+		var vp = pc.camera.get_viewport()
+		var screen_size = vp.get_visible_rect().size if vp else Vector2(1280, 720)
+		var screen_center = screen_size * 0.5
+		var crosshair_speed = screen_size.y * 1.25
+		var offset_pixels = Vector2(pc.aim_offset.x, pc.aim_offset.y) * crosshair_speed if ("aim_offset" in pc) else Vector2.ZERO
+		var crosshair_center = screen_center + offset_pixels
+		ray_origin = pc.camera.project_ray_origin(crosshair_center)
+		ray_dir = pc.camera.project_ray_normal(crosshair_center)
+	elif camera:
+		ray_origin = camera.global_transform.origin
+		ray_dir = -camera.global_transform.basis.z
+	else:
+		ray_origin = global_transform.origin
+		ray_dir = -global_transform.basis.z
+
+	var ray_start: Vector3 = ray_origin
+	var to: Vector3 = ray_origin + ray_dir * 100.0
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-	var query = PhysicsRayQueryParameters3D.create(from, to)
+	var query = PhysicsRayQueryParameters3D.create(ray_start, to)
 	query.collision_mask = 2 | 8192
 	query.collide_with_areas = true
 	query.collide_with_bodies = true
+	query.hit_from_inside = true
 	_update_player_exclude_cache()
 	if not _cached_player_rids.is_empty():
 		query.exclude = _cached_player_rids

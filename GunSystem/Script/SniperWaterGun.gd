@@ -30,40 +30,53 @@ func fire_projectiles():
 		fire_pellet()
 
 func fire_sniper_super_shot():
-	var pc = _get_player_camera()
-	var cam_basis = pc.get_forward_aim_basis() if (pc and pc.has_method("get_forward_aim_basis")) else (camera.global_transform.basis if camera else global_transform.basis)
-	var from: Vector3 = spawn_point.global_transform.origin if spawn_point else (camera.global_transform.origin if camera else global_transform.origin)
-	var direction: Vector3 = -cam_basis.z
 	var tree := get_tree()
-	if tree:
-		var player = tree.get_first_node_in_group("player")
-		if player and "true_aim_position" in player and player.true_aim_position != Vector3.ZERO:
-			var to_aim: Vector3 = player.true_aim_position - from
-			if to_aim.dot(-cam_basis.z) > 0.01:
-				direction = to_aim.normalized()
-	var to: Vector3 = from + direction * 1000.0
+	if not tree:
+		return
+	var pc = _get_player_camera()
+	var ray_origin: Vector3
+	var ray_dir: Vector3
+	if pc and ("camera" in pc) and pc.camera:
+		var vp = pc.camera.get_viewport()
+		var screen_size = vp.get_visible_rect().size if vp else Vector2(1280, 720)
+		var screen_center = screen_size * 0.5
+		var crosshair_speed = screen_size.y * 1.25
+		var offset_pixels = Vector2(pc.aim_offset.x, pc.aim_offset.y) * crosshair_speed if ("aim_offset" in pc) else Vector2.ZERO
+		var crosshair_center = screen_center + offset_pixels
+		ray_origin = pc.camera.project_ray_origin(crosshair_center)
+		ray_dir = pc.camera.project_ray_normal(crosshair_center)
+	elif camera:
+		ray_origin = camera.global_transform.origin
+		ray_dir = -camera.global_transform.basis.z
+	else:
+		ray_origin = global_transform.origin
+		ray_dir = -global_transform.basis.z
+
+	var ray_start: Vector3 = ray_origin
+	var to: Vector3 = ray_origin + ray_dir * 1000.0
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-	var start_pos: Vector3 = spawn_point.global_transform.origin if spawn_point else from
+	var start_pos: Vector3 = spawn_point.global_transform.origin if spawn_point else ray_origin
 	var exclude: Array[RID] = []
 	var max_penetration: int = 10
 	var final_pos: Vector3 = to
 
-	# Build player exclusions the same way fire_pellet() does
+	# Build exclusions using cached player RIDs
 	var exclude_nodes: Array = []
 	var node: Node = self
 	while node:
 		if node is CollisionObject3D:
-			exclude_nodes.append(node)
+			exclude_nodes.append(node.get_rid())
 		node = node.get_parent()
-	for player_node in tree.get_nodes_in_group("player"):
-		_add_collision_objects_recursive(player_node, exclude_nodes)
-	for n in exclude_nodes:
-		exclude.append(n.get_rid())
+	_update_player_exclude_cache()
+	exclude_nodes.append_array(_cached_player_rids)
+	exclude.append_array(exclude_nodes)
 
+	var current_from = ray_start
 	for i in range(max_penetration):
-		var query = PhysicsRayQueryParameters3D.create(from, to, 1 | 2 | 8192, exclude) # Detect Layer 1 (World), Layer 2 (Weakpoints), and Layer 14 (Hitboxes). Excludes Layer 3 CharacterBody3D
+		var query = PhysicsRayQueryParameters3D.create(current_from, to, 1 | 2 | 8192, exclude) # Detect Layer 1 (World), Layer 2 (Weakpoints), and Layer 14 (Hitboxes). Excludes Layer 3 CharacterBody3D
 		query.collide_with_areas = true   # ← required to hit Area3D hitboxes
 		query.collide_with_bodies = true
+		query.hit_from_inside = true
 		var result = space_state.intersect_ray(query)
 		if not result:
 			break
