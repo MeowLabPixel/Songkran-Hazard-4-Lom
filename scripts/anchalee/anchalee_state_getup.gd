@@ -28,8 +28,8 @@ func physics_update(delta: float) -> void:
 	if player and player.velocity.length_squared() > 0.01:
 		Anchalee.move_and_slide()
 	
-	# If player aims at Anchalee while she is getting up, abort getup and duck back down immediately!
-	if Anchalee.is_player_aiming_or_takedown():
+	# If player died or aims at Anchalee while she is getting up, abort getup and duck back down immediately!
+	if Anchalee.is_player_dead() or Anchalee.is_player_aiming_or_takedown():
 		state_machine.transition_to("AnchaleeStateDuck")
 		return
 	

@@ -266,7 +266,8 @@ func kill_anchalee() -> void:
 		player.force_die()
 
 ## Called by enemy attack hitboxes to damage Anchalee.
-func take_damage(amount: int, hit_data: Dictionary = {}) -> void:
+## Supports both Anchalee format (amount, hit_data_dict) and combat format (amount, ignore_stun_or_is_grab, attacker).
+func take_damage(amount: int, arg2: Variant = {}, attacker: Node3D = null) -> void:
 	if is_dead:
 		return
 		
@@ -277,6 +278,26 @@ func take_damage(amount: int, hit_data: Dictionary = {}) -> void:
 		
 	health -= amount
 	print("[Anchalee] Took %d damage -- HP: %d/%d" % [amount, health, max_health])
+	
+	var hit_data: Dictionary = {}
+	if arg2 is Dictionary:
+		hit_data = arg2
+	elif arg2 is bool:
+		var hit_dir := Vector3.ZERO
+		var hit_pos := Vector3.ZERO
+		if is_instance_valid(attacker):
+			hit_pos = attacker.global_position
+			hit_dir = (global_position - attacker.global_position).normalized()
+			hit_dir.y = 0.0
+			if hit_dir.length_squared() > 0.001:
+				hit_dir = hit_dir.normalized()
+		hit_data = {
+			"damage": amount,
+			"position": hit_pos,
+			"hit_direction": hit_dir,
+			"attacker": attacker
+		}
+	
 	trigger_hit_lean(hit_data)
 	if health <= 0:
 		kill_anchalee()
@@ -335,6 +356,29 @@ func get_player() -> Node3D:
 	if players.size() > 0:
 		return players[0]
 	return null
+
+func is_player_dead() -> bool:
+	var player = get_player()
+	if not is_instance_valid(player):
+		return false
+	if player.has_method("is_dead"):
+		if player.is_dead():
+			return true
+	elif player.get("is_dead") is bool and player.get("is_dead"):
+		return true
+	if "HP" in player and player.HP <= 0:
+		return true
+	var p_sm = player.get_node_or_null("Statemachine")
+	if p_sm and p_sm.get("current_state") and p_sm.current_state.name == "Die":
+		return true
+	return false
+
+func on_player_died() -> void:
+	if is_dead:
+		return
+	print("[Anchalee] Player died — entering infinite ducking state")
+	if state_machine and state_machine.get_current_state_name() != "AnchaleeStateDuck":
+		state_machine.transition_to("AnchaleeStateDuck")
 
 func is_in_combat() -> bool:
 	if nearby_threats.size() > 0:

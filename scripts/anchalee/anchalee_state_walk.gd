@@ -71,6 +71,10 @@ func exit() -> void:
 		Anchalee.is_walking_backward = false
 
 func physics_update(delta: float) -> void:
+	if Anchalee.is_player_dead():
+		state_machine.transition_to("AnchaleeStateDuck")
+		return
+
 	_walk_time += delta
 	if Anchalee.zombie_reaction_state == "none" and Anchalee.get_threat_count() >= 1:
 		var threats = Anchalee.get_threat_count()

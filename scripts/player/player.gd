@@ -1469,10 +1469,10 @@ func force_die() -> void:
 		if sm and sm.current_state and sm.current_state.name != "Die":
 			sm._change_state("Die")
 		
-		# Kill follower
+		# Notify follower to duck infinitely
 		var follower = get_tree().get_first_node_in_group("Anchalee")
-		if follower and follower.has_method("kill_anchalee"):
-			follower.kill_anchalee()
+		if follower and follower.has_method("on_player_died"):
+			follower.on_player_died()
 
 func is_dead() -> bool:
 	return HP <= 0

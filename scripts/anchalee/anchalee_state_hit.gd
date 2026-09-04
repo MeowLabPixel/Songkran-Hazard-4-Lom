@@ -35,7 +35,10 @@ func physics_update(delta: float) -> void:
 	
 	# Fallback timer in case AnimationTree state tracking is tricky.
 	if _timer > 1.5:
-		state_machine.transition_to("AnchaleeStateIdle")
+		if Anchalee.is_player_dead():
+			state_machine.transition_to("AnchaleeStateDuck")
+		else:
+			state_machine.transition_to("AnchaleeStateIdle")
 		return
 
 	if Anchalee.has_node("AnchaleeModel/AnimationTree"):
@@ -46,4 +49,7 @@ func physics_update(delta: float) -> void:
 			# If the hit animation has finished and returned to Idle
 			if current == "Idle" or current == "End" or current == "":
 				if _timer > 0.2: # Give it a brief moment to start playing
-					state_machine.transition_to("AnchaleeStateIdle")
+					if Anchalee.is_player_dead():
+						state_machine.transition_to("AnchaleeStateDuck")
+					else:
+						state_machine.transition_to("AnchaleeStateIdle")

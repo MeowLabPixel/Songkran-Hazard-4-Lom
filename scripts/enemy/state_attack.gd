@@ -681,7 +681,22 @@ func _hand_touches_player() -> bool:
 
 func _deal_damage(entity: Node3D, amount: int, source: String, custom_hit_pos: Vector3 = Vector3.ZERO) -> void:
 	if entity and entity.has_method("take_damage"):
-		if entity.is_in_group("player") and source == "grab":
+		if entity.is_in_group("Anchalee"):
+			var hit_dir = Vector3.ZERO
+			if enemy:
+				hit_dir = (entity.global_position - enemy.global_position).normalized()
+				hit_dir.y = 0.0
+				if hit_dir.length_squared() > 0.001:
+					hit_dir = hit_dir.normalized()
+			var hit_data = {
+				"damage": amount,
+				"position": custom_hit_pos if custom_hit_pos != Vector3.ZERO else (enemy.global_position if enemy else Vector3.ZERO),
+				"hit_direction": hit_dir,
+				"attacker": enemy,
+				"source": source
+			}
+			entity.take_damage(amount, hit_data, enemy)
+		elif entity.is_in_group("player") and source == "grab":
 			entity.take_damage(amount, true, enemy)
 		else:
 			entity.take_damage(amount, false, enemy)

@@ -9,6 +9,11 @@ func _enter() -> void:
 	if owner.has_method("force_die"):
 		owner.force_die()
 
+	# Trigger cinematic overhead pull-back death camera
+	var cam = owner.camera if "camera" in owner else owner.get_node_or_null("Camera")
+	if cam and cam.has_method("start_death_camera"):
+		cam.start_death_camera()
+
 	# If outcome wasn't already set to DEFEAT_ANCHALEE, set it to DEFEAT_PLAYER
 	if get_tree().root.has_node("GameManager"):
 		var gm = get_tree().root.get_node("GameManager")
@@ -23,14 +28,19 @@ func _enter() -> void:
 				if enemy.state_machine.current_state and enemy.state_machine.current_state.name == "StateAttack":
 					enemy.state_machine.transition_to("StateHunt")
 
+	# Notify follower (Anchalee) to enter infinite ducking state
+	for anchalee in get_tree().get_nodes_in_group("Anchalee"):
+		if is_instance_valid(anchalee) and anchalee.has_method("on_player_died"):
+			anchalee.on_player_died()
+
 	# If die screen is disabled for footage capture, do not fade to black or switch scene
 	if get_tree().root.has_node("GameManager"):
 		var gm = get_tree().root.get_node("GameManager")
 		if not (gm.show_die_screen and gm.show_gameplay_ui):
 			return
 
-	# Wait 1.0 second, then transition to defeated scene
-	var timer = get_tree().create_timer(1.0)
+	# Allow overhead crane pull-back shot to play (~2.8s), then fade to black over 1.2s (total ~4.0s)
+	var timer = get_tree().create_timer(2.8)
 	timer.timeout.connect(func():
 		var canvas_layer = CanvasLayer.new()
 		canvas_layer.layer = 99
@@ -42,7 +52,7 @@ func _enter() -> void:
 		owner.add_child(canvas_layer)
 		
 		var tween = owner.create_tween()
-		tween.tween_property(color_rect, "modulate:a", 1.0, 1.0)
+		tween.tween_property(color_rect, "modulate:a", 1.0, 1.2)
 		tween.finished.connect(func():
 			if get_tree().root.has_node("GameManager"):
 				var gm = get_tree().root.get_node("GameManager")

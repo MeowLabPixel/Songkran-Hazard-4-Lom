@@ -15,8 +15,8 @@ func enter() -> void:
 	_set_immune(true)
 	SoundManager.play_3d("anchalee_ducking_start", Anchalee)
 	
-	# Play scared duck loop voice line if ducking due to threats
-	var is_threat = Anchalee.zombie_reaction_state == "duck" or Anchalee.get_threat_count() > 0
+	# Play scared duck loop voice line if ducking due to threats or player death
+	var is_threat = Anchalee.zombie_reaction_state == "duck" or Anchalee.get_threat_count() > 0 or Anchalee.is_player_dead()
 	if is_threat:
 		_scared_duck_sfx = SoundManager.play_3d("vo_anchalee_Scared_Duck", Anchalee)
 	
@@ -44,6 +44,11 @@ func physics_update(delta: float) -> void:
 	
 	_duck_timer += delta
 	
+	# Priority 0: Player dead — ALWAYS stay ducked infinitely!
+	if Anchalee.is_player_dead():
+		_duck_timer = 0.0 # Reset duck timer continuously so she never gets up
+		return
+		
 	# Priority 1: Player aiming/takedown — ALWAYS stay ducked while player is actively aiming directly at her!
 	if Anchalee.is_player_aiming_or_takedown():
 		_duck_timer = 0.0 # Reset duck timer while player is actively aiming so she never gets up into gunfire

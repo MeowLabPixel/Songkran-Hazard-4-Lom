@@ -345,9 +345,124 @@ func exit_takedown_camera_transition() -> void:
 
 
 func is_action_camera_active() -> bool:
+	if is_death_camera_active:
+		return true
 	var is_offsetting = absf(action_offset_x) > 0.01 or absf(action_offset_y) > 0.01 or absf(action_pitch) > 0.01 or absf(action_spring_length) > 0.01
 	var is_tweening = (offset_x_tween != null and offset_x_tween.is_running()) or (offset_tween != null and offset_tween.is_running()) or (pitch_tween != null and pitch_tween.is_running()) or (spring_tween != null and spring_tween.is_running())
 	return is_offsetting or is_tweening
+
+# Cinematic Overhead Pull-Back Death Camera
+var is_death_camera_active: bool = false
+var death_cam_start_pos: Vector3 = Vector3.ZERO
+var death_cam_start_quat: Quaternion = Quaternion.IDENTITY
+var death_cam_target_center: Vector3 = Vector3.ZERO
+var death_cam_overhead_quat: Quaternion = Quaternion.IDENTITY
+var death_cam_mid_height: float = 3.5
+var death_cam_max_height: float = 6.0
+var death_cam_elapsed: float = 0.0
+var death_cam_phase1_duration: float = 1.3
+var death_cam_phase2_duration: float = 2.7
+var death_cam_start_fov: float = 65.0
+
+func start_death_camera() -> void:
+	if is_death_camera_active:
+		return
+	is_death_camera_active = true
+	death_cam_elapsed = 0.0
+	
+	# Terminate any running action/camera tweens
+	if offset_tween and offset_tween.is_valid(): offset_tween.kill()
+	if offset_x_tween and offset_x_tween.is_valid(): offset_x_tween.kill()
+	if pitch_tween and pitch_tween.is_valid(): pitch_tween.kill()
+	if spring_tween and spring_tween.is_valid(): spring_tween.kill()
+	if takedown_cam_tween and takedown_cam_tween.is_valid(): takedown_cam_tween.kill()
+	if camera_tween and camera_tween.is_valid(): camera_tween.kill()
+	if takedown_yaw_tween and takedown_yaw_tween.is_valid(): takedown_yaw_tween.kill()
+	if smoothing_speed_tween and smoothing_speed_tween.is_valid(): smoothing_speed_tween.kill()
+	
+	if camera:
+		death_cam_start_pos = camera.global_position
+		death_cam_start_quat = camera.global_transform.basis.get_rotation_quaternion()
+		death_cam_start_fov = camera.fov
+	else:
+		death_cam_start_pos = global_position
+		death_cam_start_quat = global_transform.basis.get_rotation_quaternion()
+		death_cam_start_fov = defaut_camera_fov
+		
+	# Center on the fallen character body (slightly elevated from floor)
+	if character:
+		death_cam_target_center = character.global_position + Vector3(0, 0.3, 0)
+	else:
+		death_cam_target_center = global_position + Vector3(0, 0.3, 0)
+		
+	# Check for ceiling clearance above player using raycast
+	var space_state = get_world_3d().direct_space_state
+	var ray = PhysicsRayQueryParameters3D.create(death_cam_target_center, death_cam_target_center + Vector3(0, 8.0, 0), 1)
+	ray.exclude = get_camera_exclusion_rids()
+	var hit = space_state.intersect_ray(ray)
+	
+	death_cam_max_height = 5.8
+	if hit:
+		death_cam_max_height = maxf(hit.position.y - death_cam_target_center.y - 0.5, 2.2)
+	death_cam_mid_height = clampf(death_cam_max_height * 0.60, 2.0, 3.4)
+	
+	# Determine overhead orientation:
+	# Looking straight down (-Y), with UP vector aligned to player's current view heading so screen doesn't snap/flip
+	var forward_heading = -global_transform.basis.z
+	forward_heading.y = 0.0
+	if forward_heading.length_squared() < 0.01 and character:
+		forward_heading = -character.global_transform.basis.z
+		forward_heading.y = 0.0
+	if forward_heading.length_squared() < 0.01:
+		forward_heading = Vector3.FORWARD
+	forward_heading = forward_heading.normalized()
+	
+	# Construct orthogonal overhead basis looking straight down (-Y) with forward_heading as camera Up
+	var look_down = Vector3(0, -1, 0)
+	var right = look_down.cross(forward_heading).normalized()
+	var true_up = right.cross(look_down).normalized()
+	var overhead_basis = Basis(right, true_up, -look_down)
+	death_cam_overhead_quat = overhead_basis.get_rotation_quaternion()
+
+func _process_death_camera(delta: float) -> void:
+	if not camera:
+		return
+		
+	death_cam_elapsed += delta
+	
+	# Phase 1: Smoothly rise and tilt down into centered top-down view (0.0 to 1.3s)
+	var phase1_t = clampf(death_cam_elapsed / death_cam_phase1_duration, 0.0, 1.0)
+	var smooth_p1 = 1.0 - pow(1.0 - phase1_t, 3.0)
+	
+	# Phase 2: Slow crane pull-back / zoom-out (1.3s to 4.0s)
+	var phase2_elapsed = maxf(0.0, death_cam_elapsed - death_cam_phase1_duration)
+	var phase2_t = clampf(phase2_elapsed / death_cam_phase2_duration, 0.0, 1.0)
+	var smooth_p2 = -(cos(PI * phase2_t) - 1.0) * 0.5
+	
+	# Interpolate horizontal position (center directly on player)
+	var cur_x = lerpf(death_cam_start_pos.x, death_cam_target_center.x, smooth_p1)
+	var cur_z = lerpf(death_cam_start_pos.z, death_cam_target_center.z, smooth_p1)
+	
+	# Height: Arc up to mid_height in Phase 1, then slowly pull back higher to max_height in Phase 2
+	var cur_y: float
+	if phase1_t < 1.0:
+		cur_y = lerpf(death_cam_start_pos.y, death_cam_target_center.y + death_cam_mid_height, smooth_p1)
+	else:
+		cur_y = lerpf(death_cam_target_center.y + death_cam_mid_height, death_cam_target_center.y + death_cam_max_height, smooth_p2)
+		
+	# Slerp rotation to top-down overhead
+	var cur_quat = death_cam_start_quat.slerp(death_cam_overhead_quat, smooth_p1)
+	
+	# Subtle rotational drift during Phase 2 (+2.5 degrees around Y) for cinematic film feel
+	if phase2_t > 0.0:
+		var drift_quat = Quaternion(Vector3.UP, deg_to_rad(2.5 * smooth_p2))
+		cur_quat = drift_quat * cur_quat
+		
+	camera.global_transform = Transform3D(Basis(cur_quat), Vector3(cur_x, cur_y, cur_z))
+	
+	# Subtle FOV expansion (+8 degrees) for dramatic scale during pull-back
+	var target_fov = death_cam_start_fov + 8.0
+	camera.fov = lerpf(death_cam_start_fov, target_fov, smooth_p2)
 
 
 @onready var defaut_edge_spring_arm_length: float = edge_spring_arm.spring_length
@@ -426,6 +541,10 @@ func check_auto_shoulder_swap() -> void:
 			swap_camera_align()
 
 func _process(delta: float) -> void:
+	if is_death_camera_active:
+		_process_death_camera(delta)
+		return
+
 	var is_aiming_now = character and character.is_aimming
 	var is_grab_now = character and character.is_grab
 	
@@ -601,6 +720,8 @@ func _process(delta: float) -> void:
 
 
 func _input(event: InputEvent)-> void:
+	if is_death_camera_active:
+		return
 	if event.is_action_pressed("ui_cancel"):
 		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -633,6 +754,8 @@ func _input(event: InputEvent)-> void:
 		exit_aim()
 
 func camera_look(mouse_movement: Vector2)-> void:
+	if is_death_camera_active:
+		return
 	var is_aiming_now = character and character.is_aimming
 	var is_grab_now = character and character.is_grab
 	
