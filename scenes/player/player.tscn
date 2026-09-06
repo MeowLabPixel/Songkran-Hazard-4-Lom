@@ -5794,8 +5794,8 @@ heightfield_mask = 1024
 script = ExtResource("3_1u1sw")
 head_mesh = NodePath("../Re4Lom Base Rig/rig/Skeleton3D/Head")
 player = NodePath("..")
-speech_db_threshold = -50.0
 speech_hold_time = 0.3
+talk_speed = 3.0
 
 [node name="Re4Lom Base Rig_rig_Skeleton3D_spine02_Hitbox_F#CollisionShape3D" type="CollisionShape3D" parent="." unique_id=912103734]
 transform = Transform3D(1.0000031, 0, 0, 0, 1.0000058, 0, 0, 0, 1.0000086, 0, 0.8833348, 0)

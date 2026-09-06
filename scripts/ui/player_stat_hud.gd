@@ -144,9 +144,11 @@ var _p_anim_player: AnimationPlayer = null
 var _p_head_rest_rot: Quaternion = Quaternion.IDENTITY
 var _current_head_look_influence: float = 1.0
 
-# Follower camera tracking references
+# Follower head rotation mimic & camera tracking references
+var _f_src_skel: Skeleton3D = null
 var _f_dst_skel: Skeleton3D = null
 var _f_head_idx: int = -1
+var _f_head_rest_rot: Quaternion = Quaternion.IDENTITY
 var _f_anim_player: AnimationPlayer = null
 
 var _last_debuff_text: String = ""
@@ -665,6 +667,7 @@ func _setup_single_portrait(character: Node, sv: SubViewport, cam: Camera3D,
 	else:
 		_f_eye_mat = _make_unique_material(head_mesh, _f_eye_idx)
 		_f_mouth_mat = _make_unique_material(head_mesh, _f_mouth_idx)
+		_f_src_skel = _find_skeleton(model_root)
 		_f_dst_skel = _find_skeleton(model_copy)
 		if _f_dst_skel:
 			_f_head_idx = _f_dst_skel.find_bone("DEF-spine.006")
@@ -673,6 +676,8 @@ func _setup_single_portrait(character: Node, sv: SubViewport, cam: Camera3D,
 					if "head" in _f_dst_skel.get_bone_name(b).to_lower():
 						_f_head_idx = b
 						break
+			if _f_head_idx != -1:
+				_f_head_rest_rot = _f_dst_skel.get_bone_rest(_f_head_idx).basis.get_rotation_quaternion()
 		_f_anim_player = _find_anim_player(model_copy)
 		if _f_anim_player:
 			_f_anim_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
@@ -768,6 +773,8 @@ func _ensure_editor_preview_skeletons() -> void:
 						if "head" in _f_dst_skel.get_bone_name(b).to_lower():
 							_f_head_idx = b
 							break
+				if _f_head_idx != -1:
+					_f_head_rest_rot = _f_dst_skel.get_bone_rest(_f_head_idx).basis.get_rotation_quaternion()
 		if f_prev and (not _f_anim_player or not is_instance_valid(_f_anim_player)):
 			_f_anim_player = _find_anim_player(f_prev)
 			if _f_anim_player:
@@ -1053,6 +1060,15 @@ func _sync_player_head_rotation(delta: float) -> void:
 
 		var final_rot := _p_head_rest_rot.slerp(head_rot, _current_head_look_influence)
 		_p_dst_skel.set_bone_pose_rotation(_p_head_idx, final_rot)
+
+	# 3. Mimic the follower's real-time head look rotation (from LookAtModifier3D / glance)
+	# Zero bone position translation is applied — the body and camera remain 100% stationary
+	if _f_src_skel and _f_dst_skel and is_instance_valid(_f_src_skel) and is_instance_valid(_f_dst_skel) and _f_head_idx != -1:
+		if _f_head_rest_rot == Quaternion.IDENTITY:
+			_f_head_rest_rot = _f_dst_skel.get_bone_rest(_f_head_idx).basis.get_rotation_quaternion()
+
+		var f_head_rot := _f_src_skel.get_bone_pose_rotation(_f_head_idx)
+		_f_dst_skel.set_bone_pose_rotation(_f_head_idx, f_head_rot)
 
 
 func _is_player_takedown_active() -> bool:
