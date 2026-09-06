@@ -47,8 +47,8 @@
 [ext_resource type="Texture2D" uid="uid://br7uywia14umb" path="res://Character Model For Programer/Leon/textures/Leon Face Expression.png" id="20_rw8a5"]
 [ext_resource type="Texture2D" uid="uid://b8b5fxfwflw0w" path="res://Character Model For Programer/Leon/textures/Face Rim Light Texture.png" id="21_iwuka"]
 [ext_resource type="Script" uid="uid://81js2e1h08il" path="res://player/Statemachine/base/state_machine.gd" id="30_a2xo5"]
-[ext_resource type="Script" uid="uid://dxr0w5vn4oq5s" path="res://player/test/UI.gd" id="40_jfgyi"]
 [ext_resource type="Script" uid="uid://capeimnw2ecqx" path="res://scripts/ui/procedural_crosshair.gd" id="41_procedural_crosshair"]
+[ext_resource type="Script" uid="uid://byamuh70f1nqy" path="res://scripts/ui/player_stat_hud.gd" id="48_1u1sw"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1u1sw"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -5787,7 +5787,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.27349845, 0)
 layers = 1024
 cull_mask = 4293919744
 size = Vector3(30, 0.74699706, 30)
-update_mode = 1
 follow_camera_enabled = true
 heightfield_mask = 1024
 
@@ -7737,7 +7736,7 @@ bone_idx = 4
 [node name="TakedownHitbox" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox" unique_id=958867971]
 
 [node name="TakedownAttackBox" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=1184713375]
-transform = Transform3D(0.031009447, 0.7687632, -0.63878113, -0.9525331, -0.17091249, -0.25193107, -0.30285102, 0.61627245, 0.72697276, 0.586274, -0.14511234, 0.42287216)
+transform = Transform3D(0.031009441, 0.76876307, -0.63878113, -0.95253295, -0.17091246, -0.25193107, -0.30285096, 0.61627233, 0.72697276, 0.586274, -0.14511234, 0.42287216)
 shape = SubResource("CapsuleShape3D_ntd1s")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=315213988]
@@ -7866,10 +7865,8 @@ margin = 0.001
 [node name="Camera3D" type="Camera3D" parent="Camera/edgeSpringArm3D/rearSpringArm3D" unique_id=1294684476]
 fov = 65.0
 
-[node name="Player Stat" type="CanvasLayer" parent="Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D" unique_id=1650775040 node_paths=PackedStringArray("water", "air")]
-script = ExtResource("40_jfgyi")
-water = NodePath("Water")
-air = NodePath("Air")
+[node name="Player Stat" type="CanvasLayer" parent="Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D" unique_id=1650775040]
+script = ExtResource("48_1u1sw")
 
 [node name="HP" type="Label" parent="Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/Player Stat" unique_id=1854887124]
 anchors_preset = 3

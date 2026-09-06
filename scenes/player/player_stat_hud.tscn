@@ -1,0 +1,354 @@
+[gd_scene format=3 uid="uid://paqigaicc31e"]
+
+[ext_resource type="Script" uid="uid://byamuh70f1nqy" path="res://scripts/ui/player_stat_hud.gd" id="1_hud"]
+[ext_resource type="Script" uid="uid://baowksfqadnv3" path="res://scripts/ui/hud_resource_bar.gd" id="2_bar"]
+[ext_resource type="Script" uid="uid://cjmmhbp1b5312" path="res://addons/StyleboxFancy/StyleBorder.gd" id="2_dyycn"]
+[ext_resource type="Script" uid="uid://bkl6g25jwb47h" path="res://addons/StyleboxFancy/StyleBoxFancy.gd" id="3_ow3p3"]
+[ext_resource type="Script" uid="uid://c0h1qjqj22nb8" path="res://scripts/ui/hud_hp_ring.gd" id="3_ring"]
+[ext_resource type="FontFile" uid="uid://cdcjipjgje6i5" path="res://scenes/font/iannnnn-DOG-Bold.ttf" id="4_font_dog"]
+[ext_resource type="FontFile" uid="uid://ou8xc5g0xeno" path="res://scenes/font/iannnnnVCD 2007 Bold.ttf" id="5_font_vcd"]
+[ext_resource type="Shader" uid="uid://137jbgcu1x15" path="res://shaders/circle_mask.gdshader" id="6_mask"]
+[ext_resource type="Texture2D" uid="uid://cxlr1a18s0ipc" path="res://scenes/Kill_Count_Ui.png" id="7_kill_tex"]
+[ext_resource type="Texture2D" uid="uid://be54mwe7sgnf6" path="res://scenes/General_Wide_UI_Box.png" id="8_time_tex"]
+
+[sub_resource type="Gradient" id="Gradient_khcbf"]
+offsets = PackedFloat32Array(0.9832317)
+colors = PackedColorArray(0.60522425, 0.60522425, 0.60522425, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_ligby"]
+gradient = SubResource("Gradient_khcbf")
+
+[sub_resource type="Gradient" id="Gradient_24imh"]
+colors = PackedColorArray(0, 0.5105224, 0.49157313, 1, 0.08866583, 0.9655736, 0.9892927, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_u1nmo"]
+gradient = SubResource("Gradient_24imh")
+fill_from = Vector2(0.5, 1)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="StyleBox" id="StyleBox_vrd77"]
+resource_local_to_scene = false
+resource_name = ""
+content_margin_left = -1.0
+content_margin_top = -1.0
+content_margin_right = -1.0
+content_margin_bottom = -1.0
+script = ExtResource("3_ow3p3")
+color = Color(0, 0, 0, 0.4745098)
+skew = Vector2(0.08, 0)
+texture = SubResource("GradientTexture2D_u1nmo")
+corner_radius_top_left = 303
+corner_radius_bottom_right = 150
+corner_curvature_top_left = 0.0
+corner_curvature_top_right = 2.0
+corner_curvature_bottom_right = 2.0
+corner_curvature_bottom_left = 0.0
+shadow_blur = 0
+shadow_offset = Vector2(-25, 0)
+shadow_spread = Vector2(50, 45)
+anti_aliasing = false
+metadata/_custom_type_script = "uid://bkl6g25jwb47h"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mask"]
+shader = ExtResource("6_mask")
+shader_parameter/softness = 0.02
+
+[sub_resource type="Environment" id="Environment_portrait"]
+background_mode = 1
+background_color = Color(0, 0, 0, 0)
+ambient_light_color = Color(0.65, 0.68, 0.75, 1)
+ambient_light_energy = 0.9
+
+[node name="PlayerStatHUD" type="CanvasLayer" unique_id=1492859394 node_paths=PackedStringArray("hud_root", "bottom_right_cluster", "water_bar", "air_bar", "debuff_label", "player_portrait", "player_svc", "player_viewport", "player_camera", "follower_portrait", "follower_svc", "follower_viewport", "follower_camera", "kill_rect", "kill_label", "time_rect", "time_label")]
+script = ExtResource("1_hud")
+hud_root = NodePath("HUDRoot")
+bottom_right_cluster = NodePath("HUDRoot/BottomRightCluster")
+water_bar = NodePath("HUDRoot/BottomRightCluster/ResourceBars/WaterBar")
+air_bar = NodePath("HUDRoot/BottomRightCluster/ResourceBars/AirBar")
+debuff_label = NodePath("HUDRoot/BottomRightCluster/ResourceBars/DebuffLabel")
+player_portrait = NodePath("HUDRoot/BottomRightCluster/PlayerPortrait")
+player_svc = NodePath("HUDRoot/BottomRightCluster/PlayerPortrait/PortraitSVC")
+player_viewport = NodePath("HUDRoot/BottomRightCluster/PlayerPortrait/PortraitSVC/PortraitViewport")
+player_camera = NodePath("HUDRoot/BottomRightCluster/PlayerPortrait/PortraitSVC/PortraitViewport/PortraitCamera")
+follower_portrait = NodePath("HUDRoot/BottomRightCluster/FollowerPortrait")
+follower_svc = NodePath("HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC")
+follower_viewport = NodePath("HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC/FollowerPortraitViewport")
+follower_camera = NodePath("HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC/FollowerPortraitViewport/FollowerPortraitCamera")
+kill_rect = NodePath("HUDRoot/KillCountHUD")
+kill_label = NodePath("HUDRoot/KillCountHUD/KillLabel")
+time_rect = NodePath("HUDRoot/TimeLimitHUD")
+time_label = NodePath("HUDRoot/TimeLimitHUD/TimeLabel")
+
+[node name="bg" type="TextureRect" parent="." unique_id=189499123]
+visible = false
+offset_right = 1318.0
+offset_bottom = 765.0
+texture = SubResource("GradientTexture1D_ligby")
+
+[node name="HUDRoot" type="Control" parent="." unique_id=1325266815]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="BottomRightCluster" type="Control" parent="HUDRoot" unique_id=1670153538]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="ResourceBars" type="Control" parent="HUDRoot/BottomRightCluster" unique_id=1116185688]
+layout_mode = 1
+anchors_preset = 0
+offset_left = -387.0
+offset_top = -142.0
+offset_right = -187.0
+offset_bottom = -30.0
+mouse_filter = 2
+
+[node name="WaterBG" type="Panel" parent="HUDRoot/BottomRightCluster/ResourceBars" unique_id=1695653174]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -97.0
+offset_top = -28.0
+offset_right = 114.0
+offset_bottom = 23.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBox_vrd77")
+
+[node name="WaterBar" type="Control" parent="HUDRoot/BottomRightCluster/ResourceBars" unique_id=2026125383]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 23.0
+offset_top = 35.0
+offset_right = 215.0
+offset_bottom = 73.0
+mouse_filter = 2
+script = ExtResource("2_bar")
+max_value = 200.0
+current_value = 100.0
+fill_color = Color(0, 0.76260984, 0.8630236, 1)
+bg_color = Color(1, 1, 1, 0.41568628)
+taper_ratio = 1.085
+border_thickness = 0.0
+label_text = "250"
+label_font = ExtResource("4_font_dog")
+label_outline_color = Color(0, 0, 0, 0.078431375)
+label_outline_size = 6
+
+[node name="AirBar" type="Control" parent="HUDRoot/BottomRightCluster/ResourceBars" unique_id=2117120930]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 23.0
+offset_top = 64.481
+offset_right = 215.0
+offset_bottom = 79.471
+mouse_filter = 2
+script = ExtResource("2_bar")
+current_value = 50.0
+fill_color = Color(0.698, 0.922, 0.949, 1)
+bg_color = Color(0.6894036, 0.6894036, 0.6894036, 1)
+taper_ratio = 2.285
+border_thickness = 0.0
+label_text = "100%"
+label_font = ExtResource("4_font_dog")
+label_font_size = 14
+label_outline_color = Color(0, 0, 0, 0.078431375)
+label_outline_size = 6
+
+[node name="DebuffLabel" type="Label" parent="HUDRoot/BottomRightCluster/ResourceBars" unique_id=1536270726]
+layout_mode = 1
+offset_left = 71.0
+offset_top = 79.0
+offset_right = 271.0
+offset_bottom = 97.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("5_font_vcd")
+theme_override_font_sizes/font_size = 20
+text = "+50% focus spd"
+horizontal_alignment = 1
+
+[node name="PlayerPortrait" type="Control" parent="HUDRoot/BottomRightCluster" unique_id=873633636]
+layout_mode = 1
+anchors_preset = 0
+offset_left = -179.0
+offset_top = -142.0
+offset_right = -67.0
+offset_bottom = -30.0
+mouse_filter = 2
+script = ExtResource("3_ring")
+current_value = 150.0
+ring_width = 5.0
+healthy_color = Color(0, 1, 0.3357575, 1)
+damaged_color = Color(0, 0.7005143, 1, 1)
+border_color = Color(1, 1, 1, 0.5882353)
+portrait_bg_color = Color(0, 0, 0, 0.5882353)
+
+[node name="PortraitSVC" type="SubViewportContainer" parent="HUDRoot/BottomRightCluster/PlayerPortrait" unique_id=1663591303]
+material = SubResource("ShaderMaterial_mask")
+layout_mode = 0
+offset_left = 10.0
+offset_top = 4.0
+offset_right = 102.0
+offset_bottom = 103.0
+mouse_filter = 2
+stretch = true
+
+[node name="PortraitViewport" type="SubViewport" parent="HUDRoot/BottomRightCluster/PlayerPortrait/PortraitSVC" unique_id=1952912585]
+own_world_3d = true
+transparent_bg = true
+handle_input_locally = false
+msaa_3d = 1
+size = Vector2i(92, 99)
+render_target_update_mode = 4
+
+[node name="PortraitCamera" type="Camera3D" parent="HUDRoot/BottomRightCluster/PlayerPortrait/PortraitSVC/PortraitViewport" unique_id=858003922]
+transform = Transform3D(-1, -6.724784e-10, -8.742019e-08, 0, 0.99997044, -0.0076922565, 8.742278e-08, -0.0076922565, -0.99997044, 0, 1.56, -0.65)
+projection = 1
+current = true
+size = 0.415
+near = 0.01
+far = 10.0
+
+[node name="KeyLight" type="DirectionalLight3D" parent="HUDRoot/BottomRightCluster/PlayerPortrait/PortraitSVC/PortraitViewport" unique_id=113265437]
+transform = Transform3D(-0.928477, 0.156384, -0.336861, 0, 0.907025, 0.421076, 0.371391, 0.390959, -0.842152, -0.4, 2, -1)
+light_color = Color(0.8840684, 0.8840684, 0.8840684, 1)
+light_energy = 1.4
+
+[node name="FillLight" type="DirectionalLight3D" parent="HUDRoot/BottomRightCluster/PlayerPortrait/PortraitSVC/PortraitViewport" unique_id=1514662545]
+transform = Transform3D(-0.847998, -0.109917, 0.518476, 0, 0.978258, 0.20739, -0.529999, 0.175867, -0.829561, 0.5, 1.7, -0.8)
+light_energy = 0.8
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="HUDRoot/BottomRightCluster/PlayerPortrait/PortraitSVC/PortraitViewport" unique_id=1892000886]
+environment = SubResource("Environment_portrait")
+
+[node name="FollowerPortrait" type="Control" parent="HUDRoot/BottomRightCluster" unique_id=985848355]
+layout_mode = 1
+anchors_preset = 0
+offset_left = -87.0
+offset_top = -189.0
+offset_right = -17.0
+offset_bottom = -119.0
+mouse_filter = 2
+script = ExtResource("3_ring")
+max_value = 100.0
+current_value = 150.0
+ring_width = 2.5
+border_width = 1.2
+border_color = Color(1, 1, 1, 0.5882353)
+portrait_bg_color = Color(0, 0, 0, 0.5882353)
+
+[node name="FollowerPortraitSVC" type="SubViewportContainer" parent="HUDRoot/BottomRightCluster/FollowerPortrait" unique_id=1833845433]
+material = SubResource("ShaderMaterial_mask")
+layout_mode = 0
+offset_left = 6.0
+offset_top = 2.0
+offset_right = 65.0
+offset_bottom = 64.0
+mouse_filter = 2
+stretch = true
+
+[node name="FollowerPortraitViewport" type="SubViewport" parent="HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC" unique_id=201408125]
+own_world_3d = true
+transparent_bg = true
+handle_input_locally = false
+msaa_3d = 1
+size = Vector2i(59, 62)
+render_target_update_mode = 4
+
+[node name="FollowerPortraitCamera" type="Camera3D" parent="HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC/FollowerPortraitViewport" unique_id=1107662328]
+transform = Transform3D(-0.99997056, 0.00076537824, 0.007654002, 0, 0.9950375, -0.09950092, -0.0076921745, -0.09949796, -0.9950082, 0.005, 1.385, -0.65)
+projection = 1
+current = true
+size = 0.415
+near = 0.01
+far = 10.0
+
+[node name="KeyLight" type="DirectionalLight3D" parent="HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC/FollowerPortraitViewport" unique_id=92327226]
+transform = Transform3D(-0.928477, 0.156384, -0.336861, 0, 0.907025, 0.421076, 0.371391, 0.390959, -0.842152, -0.4, 1.9, -1)
+light_color = Color(0.8840684, 0.8840684, 0.8840684, 1)
+light_energy = 1.4
+
+[node name="FillLight" type="DirectionalLight3D" parent="HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC/FollowerPortraitViewport" unique_id=472777334]
+transform = Transform3D(-0.847998, -0.109917, 0.518476, 0, 0.978258, 0.20739, -0.529999, 0.175867, -0.829561, 0.5, 1.6, -0.8)
+light_color = Color(0.8840684, 0.8840684, 0.8840684, 1)
+light_energy = 0.8
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC/FollowerPortraitViewport" unique_id=836332084]
+environment = SubResource("Environment_portrait")
+
+[node name="KillCountHUD" type="TextureRect" parent="HUDRoot" unique_id=599398462]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 24.0
+offset_right = -60.0
+offset_bottom = 184.0
+grow_horizontal = 0
+pivot_offset = Vector2(80, 80)
+texture = ExtResource("7_kill_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="KillLabel" type="Label" parent="HUDRoot/KillCountHUD" unique_id=207108783]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("4_font_dog")
+theme_override_font_sizes/font_size = 18
+text = "Kills: 0/20"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TimeLimitHUD" type="TextureRect" parent="HUDRoot" unique_id=1753309994]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -380.0
+offset_top = 64.0
+offset_right = -232.0
+offset_bottom = 112.0
+grow_horizontal = 0
+pivot_offset = Vector2(74, 24)
+texture = ExtResource("8_time_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TimeLabel" type="Label" parent="HUDRoot/TimeLimitHUD" unique_id=224073749]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("4_font_dog")
+theme_override_font_sizes/font_size = 18
+text = "TIME: 03:00"
+horizontal_alignment = 1
+vertical_alignment = 1

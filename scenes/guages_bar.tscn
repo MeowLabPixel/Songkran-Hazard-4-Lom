@@ -1,0 +1,143 @@
+[gd_scene format=3 uid="uid://cy2y7tsjqhane"]
+
+[ext_resource type="Script" uid="uid://cjmmhbp1b5312" path="res://addons/StyleboxFancy/StyleBorder.gd" id="1_bpjdd"]
+[ext_resource type="Script" uid="uid://bkl6g25jwb47h" path="res://addons/StyleboxFancy/StyleBoxFancy.gd" id="2_fn263"]
+
+[sub_resource type="Gradient" id="Gradient_8yl73"]
+colors = PackedColorArray(0, 0.5105224, 0.49157313, 1, 0.08866583, 0.9655736, 0.9892927, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_momvi"]
+gradient = SubResource("Gradient_8yl73")
+fill_from = Vector2(0.5, 1)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="StyleBox" id="StyleBox_0yo1d"]
+resource_local_to_scene = false
+resource_name = ""
+content_margin_left = -1.0
+content_margin_top = -1.0
+content_margin_right = -1.0
+content_margin_bottom = -1.0
+script = ExtResource("2_fn263")
+color = Color(0, 0, 0, 0.4745098)
+texture = SubResource("GradientTexture2D_momvi")
+corner_radius_top_left = 303
+corner_curvature_top_left = 0.0
+shadow_blur = 0
+shadow_offset = Vector2(-25, 0)
+shadow_spread = Vector2(50, 45)
+metadata/_custom_type_script = "uid://bkl6g25jwb47h"
+
+[sub_resource type="Resource" id="Resource_4o3kl"]
+script = ExtResource("1_bpjdd")
+width_left = 5
+width_top = 1
+inset_left = -4
+metadata/_custom_type_script = "uid://cjmmhbp1b5312"
+
+[sub_resource type="Gradient" id="Gradient_24imh"]
+colors = PackedColorArray(0, 0.5105224, 0.49157313, 1, 0.08866583, 0.9655736, 0.9892927, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_u1nmo"]
+gradient = SubResource("Gradient_24imh")
+fill_from = Vector2(0.5, 1)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="StyleBox" id="StyleBox_cxu57"]
+resource_local_to_scene = false
+resource_name = ""
+content_margin_left = -1.0
+content_margin_top = -1.0
+content_margin_right = -1.0
+content_margin_bottom = -1.0
+script = ExtResource("2_fn263")
+color = Color(0.96862745, 1, 1, 1)
+skew = Vector2(0.18, 0)
+borders = Array[ExtResource("1_bpjdd")]([SubResource("Resource_4o3kl")])
+texture = SubResource("GradientTexture2D_u1nmo")
+corner_radius_top_left = 303
+corner_radius_top_right = 49
+corner_curvature_top_left = 0.0
+corner_curvature_top_right = 0.0
+corner_curvature_bottom_right = 0.0
+shadow_blur = 0
+shadow_offset = Vector2(-25, 0)
+shadow_spread = Vector2(50, 45)
+metadata/_custom_type_script = "uid://bkl6g25jwb47h"
+
+[sub_resource type="Gradient" id="Gradient_6j24y"]
+colors = PackedColorArray(0.60482675, 0.8084839, 0.8209339, 1, 0.97877026, 0.9993245, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_n4lu6"]
+gradient = SubResource("Gradient_6j24y")
+fill_from = Vector2(0.5, 1)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="StyleBox" id="StyleBox_2jl3m"]
+resource_local_to_scene = false
+resource_name = ""
+content_margin_left = -1.0
+content_margin_top = -1.0
+content_margin_right = -1.0
+content_margin_bottom = -1.0
+script = ExtResource("2_fn263")
+color = Color(0.96862745, 1, 1, 1)
+skew = Vector2(1.22, 0)
+borders = Array[ExtResource("1_bpjdd")]([SubResource("Resource_4o3kl")])
+texture = SubResource("GradientTexture2D_n4lu6")
+corner_radius_top_left = 320
+corner_radius_top_right = 300
+corner_curvature_top_left = 0.0
+corner_curvature_top_right = 0.0
+shadow_offset = Vector2(20, 0)
+metadata/_custom_type_script = "uid://bkl6g25jwb47h"
+
+[node name="Guages Bar" type="Node2D" unique_id=978182391]
+
+[node name="WaterBG" type="Panel" parent="." unique_id=559449765]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 268.0
+offset_top = 227.0
+offset_right = 932.0
+offset_bottom = 371.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBox_0yo1d")
+
+[node name="Water" type="Panel" parent="." unique_id=165393585]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 341.0
+offset_top = 246.0
+offset_right = 940.0
+offset_bottom = 349.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBox_cxu57")
+
+[node name="Air" type="Panel" parent="." unique_id=979406182]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 352.0
+offset_top = 329.0
+offset_right = 956.0
+offset_bottom = 371.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBox_2jl3m")

@@ -352,6 +352,8 @@ func is_action_camera_active() -> bool:
 	return is_offsetting or is_tweening
 
 # Cinematic Overhead Pull-Back Death Camera
+@export var death_cam_dutch_tilt_angle: float = 15.0
+@export var death_cam_overhead_pitch: float = 85.0
 var is_death_camera_active: bool = false
 var death_cam_start_pos: Vector3 = Vector3.ZERO
 var death_cam_start_quat: Quaternion = Quaternion.IDENTITY
@@ -407,7 +409,7 @@ func start_death_camera() -> void:
 	death_cam_mid_height = clampf(death_cam_max_height * 0.60, 2.0, 3.4)
 	
 	# Determine overhead orientation:
-	# Looking straight down (-Y), with UP vector aligned to player's current view heading so screen doesn't snap/flip
+	# Looking down towards player with UP vector aligned to player's current view heading so screen doesn't snap/flip
 	var forward_heading = -global_transform.basis.z
 	forward_heading.y = 0.0
 	if forward_heading.length_squared() < 0.01 and character:
@@ -417,8 +419,9 @@ func start_death_camera() -> void:
 		forward_heading = Vector3.FORWARD
 	forward_heading = forward_heading.normalized()
 	
-	# Construct orthogonal overhead basis looking straight down (-Y) with forward_heading as camera Up
-	var look_down = Vector3(0, -1, 0)
+	# Construct orthogonal overhead basis at death_cam_overhead_pitch (e.g. 85 deg steep overhead plunge)
+	var pitch_rad = deg_to_rad(clampf(death_cam_overhead_pitch, 60.0, 90.0))
+	var look_down = (Vector3.DOWN * sin(pitch_rad) + forward_heading * cos(pitch_rad)).normalized()
 	var right = look_down.cross(forward_heading).normalized()
 	var true_up = right.cross(look_down).normalized()
 	var overhead_basis = Basis(right, true_up, -look_down)
@@ -457,6 +460,17 @@ func _process_death_camera(delta: float) -> void:
 	if phase2_t > 0.0:
 		var drift_quat = Quaternion(Vector3.UP, deg_to_rad(2.5 * smooth_p2))
 		cur_quat = drift_quat * cur_quat
+		
+	# Smoothly lerp into Dutch tilt motion (roll around optical view axis)
+	var mid_dutch = death_cam_dutch_tilt_angle * 0.75
+	var cur_dutch_deg: float
+	if phase1_t < 1.0:
+		cur_dutch_deg = lerpf(0.0, mid_dutch, smooth_p1)
+	else:
+		cur_dutch_deg = lerpf(mid_dutch, death_cam_dutch_tilt_angle, smooth_p2)
+		
+	var dutch_quat = Quaternion(Vector3.FORWARD, deg_to_rad(cur_dutch_deg))
+	cur_quat = cur_quat * dutch_quat
 		
 	camera.global_transform = Transform3D(Basis(cur_quat), Vector3(cur_x, cur_y, cur_z))
 	

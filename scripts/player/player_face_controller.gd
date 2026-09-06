@@ -551,7 +551,7 @@ func _evaluate_eye_state() -> void:
 		current_eye_state = EyeState.DEFAULT
 
 func _evaluate_mouth_state() -> void:
-	var active_speaking = is_speaking or _audio_is_speaking
+	var active_speaking = is_speaking or _audio_is_speaking or is_voiceline_playing
 	
 	if active_speaking:
 		if not _was_speaking:

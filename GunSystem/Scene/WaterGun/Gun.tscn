@@ -755,8 +755,6 @@ script = ExtResource("1_controller")
 pistol_gun = NodePath("Pistol")
 shotgun_gun = NodePath("Shotgun")
 sniper_gun = NodePath("Sniper")
-max_water = 200.0
-current_water = 200.0
 
 [node name="Pistol" type="Node3D" parent="." unique_id=1327767996 node_paths=PackedStringArray("spawn_point")]
 script = ExtResource("1_nbubd")
