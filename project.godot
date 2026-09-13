@@ -15,7 +15,6 @@ warnings/check_invalid_track_paths=false
 [application]
 
 config/name="Songkran Hazard 4-Lom"
-run/main_scene="uid://c6f2a78b5n4m8"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="uid://bvhvlnw1hbiv6"
 

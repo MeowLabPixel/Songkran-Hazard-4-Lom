@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://bg3ghc8hlmg8h"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4kbfs"]
+size = Vector3(16.153, 6.9, 0.17)
+
+[node name="InvisibleWall9" type="StaticBody3D" unique_id=81394259]
+transform = Transform3D(0.9981348, 0, 0.06104854, 0, 1, 0, -0.06104854, 0, 0.9981348, 0, 0, 0)
+collision_layer = 9
+collision_mask = 0
+
+[node name="WallShape" type="CollisionShape3D" parent="." unique_id=359527063]
+transform = Transform3D(0.052336004, 0, 0.99863, 0, 1, 0, -0.99863, 0, 0.052336004, 0.15718842, 0, -6.085391)
+shape = SubResource("BoxShape3D_4kbfs")
+debug_color = Color(18.892157, 0, 2.834349, 0.95686275)

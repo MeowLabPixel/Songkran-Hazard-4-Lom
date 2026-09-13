@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://beghhsjeqwhlr"]
+
+[ext_resource type="Texture2D" uid="uid://cvctj7idiknih" path="res://map/Buildings_Modular_Iron_Gate.png" id="1_hdawq"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_f513t"]
+size = Vector3(0.013, 2.4557495, 3.83)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0q6ha"]
+albedo_texture = ExtResource("1_hdawq")
+roughness = 0.5
+uv1_scale = Vector3(1.109, 0.4, 1)
+uv1_offset = Vector3(0.181, -0.229, 0)
+
+[node name="IronGate v2" type="MeshInstance3D" unique_id=1616262602]
+transform = Transform3D(-4.371139e-08, 0, -1.05, 0, 1, 0, 1, 0, -4.5896957e-08, 0, 0, 0)
+layers = 1025
+mesh = SubResource("BoxMesh_f513t")
+surface_material_override/0 = SubResource("StandardMaterial3D_0q6ha")
