@@ -35,7 +35,7 @@ content_margin_right = -1.0
 content_margin_bottom = -1.0
 script = ExtResource("3_ow3p3")
 color = Color(0, 0, 0, 0.4745098)
-skew = Vector2(0.08, 0)
+skew = Vector2(0.15, 0)
 texture = SubResource("GradientTexture2D_u1nmo")
 corner_radius_top_left = 303
 corner_radius_bottom_right = 150
@@ -80,9 +80,8 @@ time_rect = NodePath("HUDRoot/TimeLimitHUD")
 time_label = NodePath("HUDRoot/TimeLimitHUD/TimeLabel")
 
 [node name="bg" type="TextureRect" parent="." unique_id=189499123]
-visible = false
-offset_right = 1318.0
-offset_bottom = 765.0
+offset_right = 1280.0
+offset_bottom = 720.0
 texture = SubResource("GradientTexture1D_ligby")
 
 [node name="HUDRoot" type="Control" parent="." unique_id=1325266815]
@@ -214,7 +213,8 @@ stretch = true
 own_world_3d = true
 transparent_bg = true
 handle_input_locally = false
-msaa_3d = 1
+screen_space_aa = 2
+scaling_3d_scale = 2.0
 size = Vector2i(92, 99)
 render_target_update_mode = 4
 
@@ -268,7 +268,8 @@ stretch = true
 own_world_3d = true
 transparent_bg = true
 handle_input_locally = false
-msaa_3d = 1
+screen_space_aa = 2
+scaling_3d_scale = 2.0
 size = Vector2i(59, 62)
 render_target_update_mode = 4
 
@@ -298,9 +299,9 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -220.0
+offset_left = -156.0
 offset_top = 24.0
-offset_right = -60.0
+offset_right = 4.0
 offset_bottom = 184.0
 grow_horizontal = 0
 pivot_offset = Vector2(80, 80)
@@ -328,9 +329,9 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -380.0
+offset_left = -267.0
 offset_top = 64.0
-offset_right = -232.0
+offset_right = -119.0
 offset_bottom = 112.0
 grow_horizontal = 0
 pivot_offset = Vector2(74, 24)

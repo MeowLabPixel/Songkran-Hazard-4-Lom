@@ -1,0 +1,9 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://d1ek4iqlqrgur"]
+
+[ext_resource type="Texture2D" uid="uid://w71ux0oa0bi1" path="res://map/Landmark/openPBR_shader1_Base_color.png" id="1_g6bmi"]
+
+[resource]
+albedo_color = Color(1.353256, 1.353256, 1.353256, 1)
+albedo_texture = ExtResource("1_g6bmi")
+roughness = 0.15
+texture_filter = 4

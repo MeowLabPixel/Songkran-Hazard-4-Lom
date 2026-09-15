@@ -7736,7 +7736,7 @@ bone_idx = 4
 [node name="TakedownHitbox" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox" unique_id=958867971]
 
 [node name="TakedownAttackBox" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=1184713375]
-transform = Transform3D(0.031009441, 0.76876307, -0.63878113, -0.95253295, -0.17091246, -0.25193107, -0.30285096, 0.61627233, 0.72697276, 0.586274, -0.14511234, 0.42287216)
+transform = Transform3D(0.031009436, 0.7687629, -0.63878113, -0.95253277, -0.17091241, -0.25193107, -0.3028509, 0.61627215, 0.72697276, 0.586274, -0.14511234, 0.42287216)
 shape = SubResource("CapsuleShape3D_ntd1s")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=315213988]
@@ -7865,8 +7865,25 @@ margin = 0.001
 [node name="Camera3D" type="Camera3D" parent="Camera/edgeSpringArm3D/rearSpringArm3D" unique_id=1294684476]
 fov = 65.0
 
-[node name="Player Stat" type="CanvasLayer" parent="Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D" unique_id=1650775040]
+[node name="Player Stat" type="CanvasLayer" parent="Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D" unique_id=1650775040 node_paths=PackedStringArray("hud_root", "bottom_right_cluster", "water_bar", "air_bar", "debuff_label", "player_portrait", "player_svc", "player_viewport", "player_camera", "follower_portrait", "follower_svc", "follower_viewport", "follower_camera", "kill_rect", "kill_label", "time_rect", "time_label")]
 script = ExtResource("48_1u1sw")
+hud_root = NodePath("HUDRoot")
+bottom_right_cluster = NodePath("HUDRoot/BottomRightCluster")
+water_bar = NodePath("HUDRoot/BottomRightCluster/ResourceBars/WaterBar")
+air_bar = NodePath("HUDRoot/BottomRightCluster/ResourceBars/AirBar")
+debuff_label = NodePath("HUDRoot/BottomRightCluster/ResourceBars/DebuffLabel")
+player_portrait = NodePath("HUDRoot/BottomRightCluster/PlayerPortrait")
+player_svc = NodePath("HUDRoot/BottomRightCluster/PlayerPortrait/PortraitSVC")
+player_viewport = NodePath("HUDRoot/BottomRightCluster/PlayerPortrait/PortraitSVC/PortraitViewport")
+player_camera = NodePath("HUDRoot/BottomRightCluster/PlayerPortrait/PortraitSVC/PortraitViewport/PortraitCamera")
+follower_portrait = NodePath("HUDRoot/BottomRightCluster/FollowerPortrait")
+follower_svc = NodePath("HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC")
+follower_viewport = NodePath("HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC/FollowerPortraitViewport")
+follower_camera = NodePath("HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC/FollowerPortraitViewport/FollowerPortraitCamera")
+kill_rect = NodePath("HUDRoot/KillCountHUD")
+kill_label = NodePath("HUDRoot/KillCountHUD/KillLabel")
+time_rect = NodePath("HUDRoot/TimeLimitHUD")
+time_label = NodePath("HUDRoot/TimeLimitHUD/TimeLabel")
 
 [node name="HP" type="Label" parent="Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/Player Stat" unique_id=1854887124]
 anchors_preset = 3

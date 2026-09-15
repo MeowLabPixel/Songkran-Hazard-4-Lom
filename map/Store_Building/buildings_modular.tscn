@@ -3,7 +3,6 @@
 [ext_resource type="Material" uid="uid://havtbv60n4vj" path="res://map/Store_Building/Store_Building_Texture.tres" id="1_e23yt"]
 [ext_resource type="Material" uid="uid://bqxgdudp6dkbu" path="res://map/Store_Building/Store_Building_Window_Texture.tres" id="2_i5w2m"]
 [ext_resource type="PackedScene" uid="uid://dqqndhcvw68wn" path="res://map/Store_Building/4_storey_v_1_Big_balcony.tscn" id="3_6qgyl"]
-[ext_resource type="Texture2D" uid="uid://d3f2l1eshlt7a" path="res://map/Store_Building/Buildings_Modular_Buildings_BaseColor.png" id="3_f513t"]
 [ext_resource type="PackedScene" uid="uid://n6gos63ylf4g" path="res://map/Store_Building/4_storey_v_8_Big_balcony.tscn.tscn" id="4_n7bc7"]
 [ext_resource type="PackedScene" uid="uid://ctw3pf8lekk71" path="res://scenes/player/player.tscn" id="4_wties"]
 [ext_resource type="PackedScene" uid="uid://crxe4iulyuqcb" path="res://map/Store_Building/iron_gate_v_1.tscn" id="5_i5w2m"]
@@ -342,10 +341,6 @@ _data = {
 &"Take 001": SubResource("Animation_hly2i")
 }
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_i5w2m"]
-albedo_color = Color(0.873546, 0.873546, 0.873546, 1)
-albedo_texture = ExtResource("3_f513t")
-
 [node name="Buildings_Modular" type="Node3D" unique_id=1481632626]
 
 [node name="Buildings_Modular" type="Node3D" parent="." unique_id=1293351234]
@@ -419,231 +414,17 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -81.11377, 0, 0)
 [node name="4-Storey WIDE" parent="." unique_id=210526009 instance=ExtResource("9_0d1s4")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -99.11377, 0, 0)
 
-[node name="4-Storey WIDE - Conner Building2" parent="." unique_id=45363591 instance=ExtResource("10_qkoys")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -136.81377, 0, 0)
+[node name="4-Storey WIDE - Conner Building - Start" parent="." unique_id=706749304 instance=ExtResource("10_qkoys")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -131.81377, 0, 0)
 
-[node name="4-Storey WIDE - Conner Building3" parent="." unique_id=706749304 instance=ExtResource("10_qkoys")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -136.81377, 0, 0)
-
-[node name="4-Storey WIDE - Conner Building" parent="." unique_id=391450663 instance=ExtResource("11_ikgjp")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -153.81377, 0, 0)
+[node name="4-Storey WIDE - Conner Building -End" parent="." unique_id=391450663 instance=ExtResource("11_ikgjp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -147.81377, 0, 0)
 
 [node name="4-Storey WIDE2" parent="." unique_id=979777669 instance=ExtResource("12_cnotd")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -109.01377, 0, 0)
 
 [node name="4-Storey WIDE3" parent="." unique_id=1870597948 instance=ExtResource("13_wsg6d")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -119.01377, 0, 0)
-
-[node name="4-Storey WIDE4" type="Node3D" parent="." unique_id=1605066240]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -119.01377, 0, 0)
-
-[node name="fl4" type="MeshInstance3D" parent="4-Storey WIDE4" unique_id=2135648676]
-transform = Transform3D(50.199997, 0, 0, 0, 50, 0, 0, 0, 50.199997, -4.5999985, 10.686271, -1.0081313)
-mesh = SubResource("ArrayMesh_3xd2f")
-
-[node name="fl4 - side" type="MeshInstance3D" parent="4-Storey WIDE4/fl4" unique_id=2392883]
-transform = Transform3D(1.0000002, 0, 2.1316282e-14, 0, 1.0000004, 0, -2.1316282e-14, 0, 1.0000002, 0.09193826, 0, -7.450581e-09)
-mesh = SubResource("ArrayMesh_3xd2f")
-
-[node name="Window4" type="MeshInstance3D" parent="4-Storey WIDE4/fl4/fl4 - side" unique_id=2142173114]
-transform = Transform3D(-1.0000002, 0, -8.7422826e-08, 0, 0.4550003, 0, 8.7422826e-08, 0, -1.0000002, -0.019999743, -0.0027467161, -0.055021204)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window5" type="MeshInstance3D" parent="4-Storey WIDE4/fl4/fl4 - side" unique_id=1764897833]
-transform = Transform3D(-1.0000002, 0, -8.7422826e-08, 0, 0.4550003, 0, 8.7422826e-08, 0, -1.0000002, 0.01999998, -0.0027467161, -0.055021215)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window" type="MeshInstance3D" parent="4-Storey WIDE4/fl4/fl4 - side" unique_id=602600830]
-transform = Transform3D(1, 0, 0, 0, 0.455, 0, 0, 0, 1, -0.01999998, -0.0007203594, 0.038604304)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window2" type="MeshInstance3D" parent="4-Storey WIDE4/fl4/fl4 - side" unique_id=1444713515]
-transform = Transform3D(1, 0, 0, 0, 0.455, 0, 0, 0, 1, 0.02000001, -0.0007203594, 0.038604304)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Celling" type="MeshInstance3D" parent="4-Storey WIDE4/fl4" unique_id=2115395328]
-transform = Transform3D(1.9770001, 0, 0, 0, 0.5000002, 0, 0, 0, 1.0000001, 0.046, 0.028, 0)
-mesh = SubResource("ArrayMesh_x6sy2")
-
-[node name="Window4" type="MeshInstance3D" parent="4-Storey WIDE4/fl4" unique_id=929272099]
-transform = Transform3D(-1.0000002, 0, -8.7422826e-08, 0, 0.4550003, 0, 8.7422826e-08, 0, -1.0000002, -0.019999743, -0.0027467161, -0.055021204)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window5" type="MeshInstance3D" parent="4-Storey WIDE4/fl4" unique_id=1379119612]
-transform = Transform3D(-1.0000002, 0, -8.7422826e-08, 0, 0.4550003, 0, 8.7422826e-08, 0, -1.0000002, 0.01999998, -0.0027467161, -0.055021215)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window" type="MeshInstance3D" parent="4-Storey WIDE4/fl4" unique_id=1955936597]
-transform = Transform3D(1, 0, 0, 0, 0.455, 0, 0, 0, 1, -0.01999998, -0.0007203594, 0.038604304)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window2" type="MeshInstance3D" parent="4-Storey WIDE4/fl4" unique_id=1349295770]
-transform = Transform3D(1, 0, 0, 0, 0.455, 0, 0, 0, 1, 0.02000001, -0.0007203594, 0.038604304)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Floor" type="MeshInstance3D" parent="4-Storey WIDE4/fl4" unique_id=740759632]
-transform = Transform3D(1.977, 0, 7.1054265e-15, 0, 0.5, 0, -1.4047428e-14, 0, 1, 0.0458169, -0.02729854, -3.7252903e-09)
-mesh = SubResource("ArrayMesh_x6sy2")
-
-[node name="fl3" type="MeshInstance3D" parent="4-Storey WIDE4" unique_id=802384232]
-transform = Transform3D(50.199997, 0, 0, 0, 50, 0, 0, 0, 50.199997, -4.5999985, 8.06591, -1.0081313)
-mesh = SubResource("ArrayMesh_3xd2f")
-
-[node name="fl3 - side" type="MeshInstance3D" parent="4-Storey WIDE4/fl3" unique_id=962682607]
-transform = Transform3D(1.0000002, 0, 2.1316282e-14, 0, 1.0000004, 0, -2.1316282e-14, 0, 1.0000002, 0.09193826, 0, -7.450581e-09)
-mesh = SubResource("ArrayMesh_3xd2f")
-
-[node name="Window4" type="MeshInstance3D" parent="4-Storey WIDE4/fl3/fl3 - side" unique_id=1744369079]
-transform = Transform3D(-1.0000002, 0, -8.7422826e-08, 0, 0.4550003, 0, 8.7422826e-08, 0, -1.0000002, -0.019999743, -0.0027467161, -0.055021204)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window5" type="MeshInstance3D" parent="4-Storey WIDE4/fl3/fl3 - side" unique_id=950010006]
-transform = Transform3D(-1.0000002, 0, -8.7422826e-08, 0, 0.4550003, 0, 8.7422826e-08, 0, -1.0000002, 0.01999998, -0.0027467161, -0.055021215)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window" type="MeshInstance3D" parent="4-Storey WIDE4/fl3/fl3 - side" unique_id=844404672]
-transform = Transform3D(1, 0, 0, 0, 0.455, 0, 0, 0, 1, -0.01999998, -0.0007203594, 0.038604304)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window2" type="MeshInstance3D" parent="4-Storey WIDE4/fl3/fl3 - side" unique_id=1429032518]
-transform = Transform3D(1, 0, 0, 0, 0.455, 0, 0, 0, 1, 0.02000001, -0.0007203594, 0.038604304)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window4" type="MeshInstance3D" parent="4-Storey WIDE4/fl3" unique_id=1665499034]
-transform = Transform3D(-1.0000002, 0, -8.7422826e-08, 0, 0.4550003, 0, 8.7422826e-08, 0, -1.0000002, -0.019999743, -0.0027467161, -0.055021204)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window5" type="MeshInstance3D" parent="4-Storey WIDE4/fl3" unique_id=2062945734]
-transform = Transform3D(-1.0000002, 0, -8.7422826e-08, 0, 0.4550003, 0, 8.7422826e-08, 0, -1.0000002, 0.01999998, -0.0027467161, -0.055021215)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window" type="MeshInstance3D" parent="4-Storey WIDE4/fl3" unique_id=837206642]
-transform = Transform3D(1, 0, 0, 0, 0.455, 0, 0, 0, 1, -0.01999998, -0.0007203594, 0.038604304)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window2" type="MeshInstance3D" parent="4-Storey WIDE4/fl3" unique_id=57931023]
-transform = Transform3D(1, 0, 0, 0, 0.455, 0, 0, 0, 1, 0.02000001, -0.0007203594, 0.038604304)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Floor" type="MeshInstance3D" parent="4-Storey WIDE4/fl3" unique_id=1751438073]
-transform = Transform3D(1.977, 0, 7.1054265e-15, 0, 0.5, 0, -1.4047428e-14, 0, 1, 0.0458169, -0.02729854, -3.7252903e-09)
-mesh = SubResource("ArrayMesh_x6sy2")
-
-[node name="fl2" type="MeshInstance3D" parent="4-Storey WIDE4" unique_id=545198841]
-transform = Transform3D(50.199997, 0, 0, 0, 50, 0, 0, 0, 50.199997, -4.5999985, 5.382797, -1.0081313)
-mesh = SubResource("ArrayMesh_3xd2f")
-
-[node name="fl2 -side" type="MeshInstance3D" parent="4-Storey WIDE4/fl2" unique_id=542527057]
-transform = Transform3D(1.0000002, 0, 2.1316282e-14, 0, 1.0000004, 0, -2.1316282e-14, 0, 1.0000002, 0.09193826, 0, -7.450581e-09)
-mesh = SubResource("ArrayMesh_3xd2f")
-
-[node name="Storey4" type="MeshInstance3D" parent="4-Storey WIDE4/fl2/fl2 -side" unique_id=1718661431]
-transform = Transform3D(0.9462151, 0, 0, 0, 0.68, 0, 0, 0, 0.024900397, -0.00023058057, -0.0004618019, 0.03978806)
-mesh = SubResource("ArrayMesh_xshuk")
-surface_material_override/0 = SubResource("StandardMaterial3D_i5w2m")
-
-[node name="Window3" type="MeshInstance3D" parent="4-Storey WIDE4/fl2/fl2 -side" unique_id=1359861098]
-transform = Transform3D(1.27, 0, 0, 0, 0.494, 0, 0, 0, 1, -0.01574549, -0.0030691624, 0.040461108)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Door" type="MeshInstance3D" parent="4-Storey WIDE4/fl2/fl2 -side" unique_id=1704898683]
-transform = Transform3D(1.5699998, 0, 0, 0, 0.60499996, 0, 0, 0, 0.99999976, 0.013858408, -0.010647416, 0.039342944)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window" type="MeshInstance3D" parent="4-Storey WIDE4/fl2/fl2 -side" unique_id=1158864336]
-transform = Transform3D(-1.0000002, 0, -8.74228e-08, 0, 0.45500016, 0, 8.74228e-08, 0, -1.0000002, -0.019999743, -0.0007203445, -0.055021204)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window2" type="MeshInstance3D" parent="4-Storey WIDE4/fl2/fl2 -side" unique_id=989139679]
-transform = Transform3D(-1.0000002, 0, -8.74228e-08, 0, 0.45500016, 0, 8.74228e-08, 0, -1.0000002, 0.01999998, -0.0007203445, -0.055021208)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Floor" type="MeshInstance3D" parent="4-Storey WIDE4/fl2" unique_id=1180755318]
-transform = Transform3D(1.9770001, 0, 7.1054274e-15, 0, 0.50000006, 0, -1.4210855e-14, 0, 1.0000001, 0.045723915, -0.028883718, -3.7252903e-09)
-mesh = SubResource("ArrayMesh_x6sy2")
-
-[node name="Storey4" type="MeshInstance3D" parent="4-Storey WIDE4/fl2" unique_id=1197989638]
-transform = Transform3D(0.9462151, 0, 0, 0, 0.68, 0, 0, 0, 0.024900397, -0.00023058057, -0.0004618019, 0.03978806)
-mesh = SubResource("ArrayMesh_xshuk")
-surface_material_override/0 = SubResource("StandardMaterial3D_i5w2m")
-
-[node name="Window3" type="MeshInstance3D" parent="4-Storey WIDE4/fl2" unique_id=2111881201]
-transform = Transform3D(1.27, 0, 0, 0, 0.494, 0, 0, 0, 1, -0.01574549, -0.0030691624, 0.040461108)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Door" type="MeshInstance3D" parent="4-Storey WIDE4/fl2" unique_id=1038118008]
-transform = Transform3D(1.5699998, 0, 0, 0, 0.60499996, 0, 0, 0, 0.99999976, 0.013858408, -0.010647416, 0.039342944)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window" type="MeshInstance3D" parent="4-Storey WIDE4/fl2" unique_id=263128197]
-transform = Transform3D(-1.0000002, 0, -8.74228e-08, 0, 0.45500016, 0, 8.74228e-08, 0, -1.0000002, -0.019999743, -0.0007203445, -0.055021204)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window2" type="MeshInstance3D" parent="4-Storey WIDE4/fl2" unique_id=1610145366]
-transform = Transform3D(-1.0000002, 0, -8.74228e-08, 0, 0.45500016, 0, 8.74228e-08, 0, -1.0000002, 0.01999998, -0.0007203445, -0.055021208)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="fl1 - Big" type="MeshInstance3D" parent="4-Storey WIDE4" unique_id=971344819]
-transform = Transform3D(-50.00001, 0, -4.058165e-06, 0, 50.00001, 0, 4.3711398e-06, 0, -46.42, 0, 2.039954, -0.90519845)
-mesh = SubResource("ArrayMesh_et7i1")
-
-[node name="fl1 - side" type="MeshInstance3D" parent="4-Storey WIDE4/fl1 - Big" unique_id=1584387551]
-transform = Transform3D(0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0, 1, 0.09230614, 0, 9.313226e-09)
-mesh = SubResource("ArrayMesh_et7i1")
-
-[node name="pPlane1" type="MeshInstance3D" parent="4-Storey WIDE4/fl1 - Big/fl1 - side" unique_id=18150341]
-transform = Transform3D(9.047875, 0, 0, 0, 0, -4.8468, 0, 7.4705105, 0, 0, -0.015560143, 0.05347041)
-mesh = SubResource("ArrayMesh_w88y8")
-
-[node name="IronGate v2 -back" parent="4-Storey WIDE4/fl1 - Big/fl1 - side" unique_id=986574389 instance=ExtResource("6_f513t")]
-transform = Transform3D(-3.645527e-08, -7.6427346e-17, -0.02, -7.291054e-08, 0.02, -3.088399e-24, 0.834, 1.7484544e-09, -8.7422775e-10, 0, -0.018029084, 0.04998687)
-
-[node name="Door" type="MeshInstance3D" parent="4-Storey WIDE4/fl1 - Big/fl1 - side" unique_id=1942144444]
-transform = Transform3D(-1.7599998, 0, -2.9595168e-07, 0, 0.9199999, 0, 2.657526e-07, 0, -1.96, -0.0005451441, -0.016393792, -0.054759018)
-visible = false
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Door Edge" type="MeshInstance3D" parent="4-Storey WIDE4/fl1 - Big/fl1 - side/Door" unique_id=1377970153]
-transform = Transform3D(0.40511358, 0, 1.7763568e-15, 0, 0.97826064, 0, 0, 0, 0.049999993, 0, 0.027764855, 0.00011816248)
-mesh = SubResource("ArrayMesh_x6sy2")
-
-[node name="IronGate v2 - front" parent="4-Storey WIDE4/fl1 - Big/fl1 - side/Door" unique_id=173383 instance=ExtResource("6_f513t")]
-transform = Transform3D(-5.0838167e-08, 0, -0.009659093, 0, 0.021739133, 0, 0.42551017, 0, -9.305282e-10, -0.00030976534, -0.0017774887, -0.0009879824)
-
-[node name="Window" type="MeshInstance3D" parent="4-Storey WIDE4/fl1 - Big/fl1 - side" unique_id=1735443636]
-transform = Transform3D(-1.0000001, 0, -8.742275e-08, 0, 0.45499995, 0, 8.742276e-08, 0, -1.0000002, -0.019764662, -0.008299362, -0.057175454)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Window2" type="MeshInstance3D" parent="4-Storey WIDE4/fl1 - Big/fl1 - side" unique_id=198945985]
-transform = Transform3D(-1.0000001, 0, -8.742275e-08, 0, 0.45499995, 0, 8.742276e-08, 0, -1.0000002, 0.020234823, -0.008299362, -0.057175446)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Celling" type="MeshInstance3D" parent="4-Storey WIDE4/fl1 - Big" unique_id=2116541336]
-transform = Transform3D(1.977, 0, 0, 0, 0.545, 0, 0, 0, 1.3, 0.046000004, 0.017908666, -0.008486098)
-mesh = SubResource("ArrayMesh_x6sy2")
-
-[node name="Floor" type="MeshInstance3D" parent="4-Storey WIDE4/fl1 - Big" unique_id=253523836]
-transform = Transform3D(1.9769996, 0, 0, 0, 0.4999999, 0, -4.2632564e-14, 0, 1, 0.046, -0.041, -0.003)
-mesh = SubResource("ArrayMesh_x6sy2")
-
-[node name="pPlane1" type="MeshInstance3D" parent="4-Storey WIDE4/fl1 - Big" unique_id=1438781766]
-transform = Transform3D(9.047875, 0, 0, 0, 0, -4.8468, 0, 7.4705105, 0, 0, -0.015560143, 0.05347041)
-mesh = SubResource("ArrayMesh_w88y8")
-
-[node name="IronGate v2 -back" parent="4-Storey WIDE4/fl1 - Big" unique_id=40677775 instance=ExtResource("6_f513t")]
-transform = Transform3D(-3.645527e-08, -7.6427346e-17, -0.02, -7.291054e-08, 0.02, -3.088399e-24, 0.834, 1.7484544e-09, -8.7422775e-10, 0, -0.018029084, 0.04998687)
-
-[node name="Door" type="MeshInstance3D" parent="4-Storey WIDE4/fl1 - Big" unique_id=1721438738]
-transform = Transform3D(-1.7599989, 0, -2.9595154e-07, 0, 0.9199996, 0, 2.6575265e-07, 0, -1.96, -0.0025451183, -0.01639379, -0.05475901)
-mesh = SubResource("ArrayMesh_ehhyn")
-
-[node name="Door Edge" type="MeshInstance3D" parent="4-Storey WIDE4/fl1 - Big/Door" unique_id=1230781899]
-transform = Transform3D(0.40511358, 0, 1.7763568e-15, 0, 0.97826064, 0, 0, 0, 0.049999993, 0, 0.027764855, 0.00011816248)
-mesh = SubResource("ArrayMesh_x6sy2")
-
-[node name="IronGate v2 - front" parent="4-Storey WIDE4/fl1 - Big/Door" unique_id=193988197 instance=ExtResource("6_f513t")]
-transform = Transform3D(-5.0838167e-08, 0, -0.009659093, 0, 0.021739133, 0, 0.42551017, 0, -9.305282e-10, -0.00030976534, -0.0017774887, -0.0009879824)
-visible = false
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -120.71376, 0, -1)
 
 [node name="4-Storey v11" parent="." unique_id=49199518 instance=ExtResource("16_dhyrc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -93.01377, 0, 0)
@@ -689,3 +470,5 @@ transform = Transform3D(-4.371139e-08, 0, -1.05, 0, 1, 0, 1, 0, -4.5896957e-08, 
 
 [node name="IronGate v1" parent="." unique_id=902675367 instance=ExtResource("5_i5w2m")]
 transform = Transform3D(-4.371139e-08, 0, -1.05, 0, 1, 0, 1, 0, -4.5896957e-08, 19.027794, 1.3311723, 1.7643178)
+
+[editable path="4-Storey WIDE"]

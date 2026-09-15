@@ -188,7 +188,7 @@ material = ExtResource("2_yg2ox")
 radius = 0.011
 height = 0.07
 
-[sub_resource type="Shader" id="Shader_8srmi"]
+[sub_resource type="Shader" id="Shader_h1ln1"]
 code = "shader_type spatial;
 render_mode unshaded;
 
@@ -267,7 +267,7 @@ frequency = 0.007
 fractal_octaves = 2
 cellular_distance_function = 1
 
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_3ufwk"]
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_b4c6n"]
 generate_mipmaps = false
 noise = SubResource("FastNoiseLite_h1ln1")
 seamless = true
@@ -275,7 +275,7 @@ seamless_blend_skirt = 0.2
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_b4c6n"]
 render_priority = 0
-shader = SubResource("Shader_8srmi")
+shader = SubResource("Shader_h1ln1")
 shader_parameter/primary_color = Color(0.26820198, 1.4892775, 1.9969608, 1)
 shader_parameter/secondary_color = Color(1.694105, 3.285097, 3.4823272, 1)
 shader_parameter/emission = 2.0
@@ -283,7 +283,7 @@ shader_parameter/emission_mult = 1.0
 shader_parameter/pinch_amount = 0.4
 shader_parameter/alpha_as_factor = true
 shader_parameter/animation_factor = 0.999999977648
-shader_parameter/noise_texture = SubResource("NoiseTexture2D_3ufwk")
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_b4c6n")
 shader_parameter/noise_scale = Vector2(0.8, 0.2)
 shader_parameter/edge_hardness = 0.43999999016512
 shader_parameter/proximity_fade = false
@@ -293,7 +293,7 @@ shader_parameter/proximity_fade_distance = 0.5
 _data = [Vector2(0.005524859, 0), 0.0, 0.17431776, 0, 0, Vector2(0.24309394, 0.19101131), 2.2729678, 2.2729678, 0, 0, Vector2(1, 1), 0.049602356, 0.0, 0, 0]
 point_count = 3
 
-[sub_resource type="CurveTexture" id="CurveTexture_6uqxu"]
+[sub_resource type="CurveTexture" id="CurveTexture_067u3"]
 width = 128
 curve = SubResource("Curve_067u3")
 
@@ -301,7 +301,7 @@ curve = SubResource("Curve_067u3")
 offsets = PackedFloat32Array(0, 0.7032258)
 colors = PackedColorArray(0.9999997, 0.93628144, 0.5280932, 1, 0.66510856, 0, 0.028164864, 1)
 
-[sub_resource type="GradientTexture1D" id="GradientTexture1D_aq5mh"]
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_3q5o7"]
 gradient = SubResource("Gradient_3q5o7")
 
 [sub_resource type="Curve" id="Curve_up7bl"]
@@ -316,7 +316,7 @@ point_count = 2
 _data = [Vector2(0.005524859, 1), 0.0, -0.514014, 0, 0, Vector2(1, 0.5), -0.5283096, 0.0, 0, 0]
 point_count = 2
 
-[sub_resource type="CurveXYZTexture" id="CurveXYZTexture_v8nxm"]
+[sub_resource type="CurveXYZTexture" id="CurveXYZTexture_up7bl"]
 curve_x = SubResource("Curve_up7bl")
 curve_y = SubResource("Curve_hwb4w")
 curve_z = SubResource("Curve_lvs6b")
@@ -330,13 +330,83 @@ damping_min = 2.0
 damping_max = 2.0
 scale_min = 0.19999999
 scale_max = 0.39999998
-scale_curve = SubResource("CurveXYZTexture_v8nxm")
-color_ramp = SubResource("GradientTexture1D_aq5mh")
-alpha_curve = SubResource("CurveTexture_6uqxu")
+scale_curve = SubResource("CurveXYZTexture_up7bl")
+color_ramp = SubResource("GradientTexture1D_3q5o7")
+alpha_curve = SubResource("CurveTexture_067u3")
 
 [sub_resource type="QuadMesh" id="QuadMesh_am3wy"]
 size = Vector2(0.4, 0.8)
 center_offset = Vector3(0, 0.1, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8srmi"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1.8247963, 1.8247963, 1.8247963, 0.6)
+grow = true
+grow_amount = 0.001
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h1ln1"]
+next_pass = SubResource("StandardMaterial3D_8srmi")
+transparency = 1
+diffuse_mode = 3
+specular_mode = 1
+albedo_color = Color(1, 1, 1, 0.23529412)
+metallic_specular = 1.0
+roughness = 0.0
+rim_enabled = true
+rim_tint = 1.0
+clearcoat_roughness = 1.0
+disable_receive_shadows = true
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(1.8247963, 1.8247963, 1.8247963, 0.6)
+stencil_outline_thickness = 0.001
+
+[sub_resource type="Curve" id="Curve_b4c6n"]
+
+[sub_resource type="Curve" id="Curve_3q5o7"]
+
+[sub_resource type="Curve" id="Curve_o6r15"]
+_limits = [-1.0, 1.0, 0.0, 1.0]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveXYZTexture" id="CurveXYZTexture_11kf8"]
+curve_x = SubResource("Curve_b4c6n")
+curve_y = SubResource("Curve_3q5o7")
+curve_z = SubResource("Curve_o6r15")
+
+[sub_resource type="Curve" id="Curve_am3wy"]
+_data = [Vector2(0, 0), 0.0, 7.7099075, 0, 0, Vector2(0.15949367, 1), -1.2791698, -1.2791698, 0, 0, Vector2(1, 0), -0.39127585, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_4kggc"]
+curve = SubResource("Curve_am3wy")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ce7vx"]
+lifetime_randomness = 0.5
+particle_flag_align_y = true
+emission_shape_offset = Vector3(0, 0, -0.2)
+emission_shape_scale = Vector3(1, 1, 0)
+emission_shape = 2
+emission_sphere_radius = 0.3
+direction = Vector3(0, 10, -1)
+spread = 15.0
+flatness = 0.36
+initial_velocity_min = 5.0
+initial_velocity_max = 6.0
+orbit_velocity_curve = SubResource("CurveXYZTexture_11kf8")
+scale_min = 0.5
+scale_curve = SubResource("CurveTexture_4kggc")
+
+[sub_resource type="SphereMesh" id="SphereMesh_4n8j2"]
+radius = 0.029
+height = 0.044
 
 [sub_resource type="Curve" id="Curve_l7k2x"]
 _data = [Vector2(0.10130719, 0.02614379), 0.0, 0.0, 0, 0, Vector2(0.2973856, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -3.0, 0.0, 0, 0]
@@ -347,6 +417,7 @@ curve = SubResource("Curve_l7k2x")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_splash"]
 particle_flag_rotate_y = true
+emission_shape_offset = Vector3(0, 0.05, 0)
 emission_shape = 1
 emission_sphere_radius = 0.01
 gravity = Vector3(0, 0, 0)
@@ -826,7 +897,7 @@ sub_emitter = NodePath("../DropletSplash_SubEmitter")
 one_shot = true
 explosiveness = 1.0
 fixed_fps = 60
-collision_base_size = 0.02
+collision_base_size = 0.1
 draw_order = 3
 transform_align = 2
 process_material = SubResource("ParticleProcessMaterial_nhks5")
@@ -838,6 +909,7 @@ draw_pass_2 = null
 transform = Transform3D(1.8, 0, 0, 0, 1.8, 0, 0, 0, 1.8, 0, 0, 0.083019)
 material_override = SubResource("ShaderMaterial_b4c6n")
 emitting = false
+amount = 10
 lifetime = 0.25
 one_shot = true
 explosiveness = 0.9
@@ -845,6 +917,21 @@ fixed_fps = 60
 transform_align = 3
 process_material = SubResource("ParticleProcessMaterial_o6r15")
 draw_pass_1 = SubResource("QuadMesh_am3wy")
+
+[node name="Bubble_Small" type="GPUParticles3D" parent="." unique_id=897690085]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1.4, 8.589464e-16, 3.6648385e-14, -0.08377433)
+material_override = SubResource("StandardMaterial3D_h1ln1")
+cast_shadow = 0
+emitting = false
+amount = 50
+one_shot = true
+speed_scale = 2.0
+explosiveness = 1.0
+fixed_fps = 60
+draw_order = 3
+transform_align = 2
+process_material = SubResource("ParticleProcessMaterial_ce7vx")
+draw_pass_1 = SubResource("SphereMesh_4n8j2")
 
 [node name="DropletSplash_SubEmitter" type="GPUParticles3D" parent="." unique_id=1289456721]
 transform = Transform3D(0.67, 0, 0, 0, 0.67, 0, 0, 0, 0.67, 0, 0, 0)
@@ -856,6 +943,7 @@ lifetime = 0.3
 one_shot = true
 explosiveness = 1.0
 fixed_fps = 60
+collision_base_size = 0.02
 process_material = SubResource("ParticleProcessMaterial_splash")
 draw_passes = 3
 draw_pass_1 = SubResource("CylinderMesh_splash1")
