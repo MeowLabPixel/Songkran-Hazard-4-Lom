@@ -31,7 +31,7 @@ static func spawn(tree: SceneTree, pos: Vector3, normal: Vector3 = Vector3.UP, i
 	instance.play(is_player, is_crit)
 	return instance
 
-func play(is_player: bool = false, is_crit: bool = false) -> void:
+func play(is_player: bool = false, is_crit: bool = false, is_weakpoint: bool = false) -> void:
 	if not is_inside_tree():
 		return
 

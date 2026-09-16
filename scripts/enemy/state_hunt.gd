@@ -193,6 +193,8 @@ func physics_update(_delta: float) -> void:
 		_stuck_pause_timer -= _delta
 		if _stuck_pause_timer <= 0.0:
 			_stuck_timer = 0.0
+			if _last_steer_side == 0.0:
+				_last_steer_side = 1.0 if randf() < 0.5 else -1.0
 		if nav_agent and nav_agent.avoidance_enabled:
 			nav_agent.set_velocity(Vector3.ZERO)
 		else:
@@ -610,8 +612,9 @@ func physics_update(_delta: float) -> void:
 		if actual_speed < 0.1:
 			_stuck_timer += _delta
 			if _stuck_timer >= 0.5: # stuck for 0.5 seconds
-				_stuck_pause_timer = 1.0 # pause for 1.0 second
+				_stuck_pause_timer = 0.5 # pause for 0.5 second
 				_stuck_timer = 0.0
+				_last_steer_side = 1.0 if randf() < 0.5 else -1.0
 		else:
 			_stuck_timer = 0.0
 	else:
@@ -802,17 +805,21 @@ func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 		return base_dir
 		
 	var space_state = enemy.get_world_3d().direct_space_state
-	var start = enemy.global_position + Vector3(0, 1.0, 0) # Cast at chest height
+	var start = enemy.global_position + Vector3(0, 0.8, 0) # Cast at chest/center height
 	
 	# Helper to check if a specific direction is blocked by wall or other zombies
 	var is_blocked = func(dir: Vector3) -> bool:
-		# 1. Physics raycast check (environment/static obstacles)
-		var end = start + dir * 1.5
-		var query = PhysicsRayQueryParameters3D.create(start, end)
-		query.exclude = [enemy.get_rid()]
-		var result = space_state.intersect_ray(query)
-		if not result.is_empty():
-			return true
+		# 1. Physics raycast check (environment/static obstacles on Layer 1) across 3 probes (Center, Left shoulder, Right shoulder)
+		var side_offset = dir.cross(Vector3.UP).normalized() * 0.28
+		for offset in [Vector3.ZERO, -side_offset, side_offset]:
+			var p_start = start + offset
+			var p_end = p_start + dir * 1.5
+			var query = PhysicsRayQueryParameters3D.create(p_start, p_end)
+			query.collision_mask = 1 # Environment / Static World only (Layer 1)
+			query.exclude = [enemy.get_rid()]
+			var result = space_state.intersect_ray(query)
+			if not result.is_empty():
+				return true
 			
 		# 2. Check for other zombies blocking in that direction
 		for other in enemy.get_tree().get_nodes_in_group("enemies"):
@@ -829,15 +836,28 @@ func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 	if not is_blocked.call(base_dir):
 		return base_dir
 		
-	# Check if environment wall blocked base_dir
+	# Check if environment wall blocked base_dir across the 3 probes
 	var env_hit_pos: Vector3 = Vector3.ZERO
 	var env_hit_normal: Vector3 = Vector3.ZERO
-	var env_query = PhysicsRayQueryParameters3D.create(start, start + base_dir * 1.5)
-	env_query.exclude = [enemy.get_rid()]
-	var env_result = space_state.intersect_ray(env_query)
-	if not env_result.is_empty():
-		env_hit_pos = env_result.position
-		env_hit_normal = env_result.normal
+	var hit_side: float = 0.0 # -1.0 = left shoulder hit, 1.0 = right shoulder hit
+	var min_env_dist = 999.0
+	var side_offset = base_dir.cross(Vector3.UP).normalized() * 0.28
+	
+	for side_mult in [0.0, -1.0, 1.0]:
+		var offset = side_offset * side_mult
+		var p_start = start + offset
+		var p_end = p_start + base_dir * 1.5
+		var env_query = PhysicsRayQueryParameters3D.create(p_start, p_end)
+		env_query.collision_mask = 1 # Layer 1 only
+		env_query.exclude = [enemy.get_rid()]
+		var env_result = space_state.intersect_ray(env_query)
+		if not env_result.is_empty():
+			var dist = p_start.distance_to(env_result.position)
+			if dist < min_env_dist:
+				min_env_dist = dist
+				env_hit_pos = env_result.position
+				env_hit_normal = env_result.normal
+				hit_side = side_mult
 		
 	# Find closest blocking zombie to decide which way to turn first
 	var min_dist = 999.0
@@ -854,7 +874,7 @@ func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 					closest_other = other
 					
 	var zombie_dist = min_dist
-	var env_dist = start.distance_to(env_hit_pos) if env_hit_pos != Vector3.ZERO else 999.0
+	var env_dist = min_env_dist
 
 	var steer_left_first = true
 	if closest_other and zombie_dist <= env_dist:
@@ -874,32 +894,41 @@ func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 				steer_left_first = true # Steer left first away from zombie on right
 				_last_steer_side = 1.0
 	elif env_hit_pos != Vector3.ZERO:
-		var to_wall = (env_hit_pos - start)
-		to_wall.y = 0.0
-		if to_wall.length() > 0.01:
-			to_wall = to_wall.normalized()
-			var cross = base_dir.cross(to_wall)
-			if abs(cross.y) < 0.1 and env_hit_normal != Vector3.ZERO:
-				var cross_norm = base_dir.cross(env_hit_normal)
-				if cross_norm.y > 0:
-					steer_left_first = false # Wall normal leans right, steer right
-					_last_steer_side = -1.0
-				elif cross_norm.y < 0:
-					steer_left_first = true # Wall normal leans left, steer left
-					_last_steer_side = 1.0
-				else:
-					if _last_steer_side != 0.0:
-						steer_left_first = (_last_steer_side > 0.0)
-					else:
-						steer_left_first = true
+		if hit_side < 0.0:
+			# Left shoulder hit wall corner -> steer right first
+			steer_left_first = false
+			_last_steer_side = -1.0
+		elif hit_side > 0.0:
+			# Right shoulder hit wall corner -> steer left first
+			steer_left_first = true
+			_last_steer_side = 1.0
+		else:
+			var to_wall = (env_hit_pos - start)
+			to_wall.y = 0.0
+			if to_wall.length() > 0.01:
+				to_wall = to_wall.normalized()
+				var cross = base_dir.cross(to_wall)
+				if abs(cross.y) < 0.1 and env_hit_normal != Vector3.ZERO:
+					var cross_norm = base_dir.cross(env_hit_normal)
+					if cross_norm.y > 0:
+						steer_left_first = false # Wall normal leans right, steer right
+						_last_steer_side = -1.0
+					elif cross_norm.y < 0:
+						steer_left_first = true # Wall normal leans left, steer left
 						_last_steer_side = 1.0
-			else:
-				if cross.y > 0:
-					steer_left_first = false # Wall hit is on the left, steer right away from it
-					_last_steer_side = -1.0
+					else:
+						if _last_steer_side != 0.0:
+							steer_left_first = (_last_steer_side > 0.0)
+						else:
+							steer_left_first = true
+							_last_steer_side = 1.0
 				else:
-					steer_left_first = true # Wall hit is on the right, steer left away from it
-					_last_steer_side = 1.0
+					if cross.y > 0:
+						steer_left_first = false # Wall hit is on the left, steer right away from it
+						_last_steer_side = -1.0
+					else:
+						steer_left_first = true # Wall hit is on the right, steer left away from it
+						_last_steer_side = 1.0
 	else:
 		_last_steer_side = 0.0
 

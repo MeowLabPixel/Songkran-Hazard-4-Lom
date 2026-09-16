@@ -389,7 +389,7 @@ func _trigger_vfx_node(vfx_node: Node, anim_name: String = "", is_crit: bool = f
 		return
 	
 	if vfx_node.has_method("play"):
-		vfx_node.play(true, is_crit)
+		vfx_node.play(true, is_crit, is_weakpoint)
 		return
 
 	var crit_node = vfx_node.find_child("HitCore_Crit", true, false)

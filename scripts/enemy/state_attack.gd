@@ -614,6 +614,8 @@ func _on_hand_area_entered(area: Area3D) -> void:
 		
 	match _phase:
 		Phase.ATTACK:
+			if hit_entity.is_in_group("player") and hit_entity.has_method("is_invulnerable") and hit_entity.is_invulnerable():
+				return
 			print("[StateAttack] Signal hit — target attacked!")
 			_hit_entities.append(hit_entity)
 			_deal_damage(hit_entity, attack_damage, "attack", area.global_position)
@@ -680,7 +682,11 @@ func _hand_touches_player() -> bool:
 	return false
 
 func _deal_damage(entity: Node3D, amount: int, source: String, custom_hit_pos: Vector3 = Vector3.ZERO) -> void:
-	if entity and entity.has_method("take_damage"):
+	if not entity:
+		return
+	if entity.is_in_group("player") and entity.has_method("is_invulnerable") and entity.is_invulnerable():
+		return
+	if entity.has_method("take_damage"):
 		if entity.is_in_group("Anchalee"):
 			var hit_dir = Vector3.ZERO
 			if enemy:

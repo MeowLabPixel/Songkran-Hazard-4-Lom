@@ -747,9 +747,12 @@ func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
 	if is_fleeing:
 		move_vector = -forward_dir
 		
-	# Project safe_velocity onto the allowed movement vector
-	var move_speed = safe_velocity.dot(move_vector)
-	var target_vel = move_vector * max(0.0, move_speed)
+	# Compute desired movement speed from safe_velocity without zeroing on lateral steering
+	var move_speed = safe_velocity.length()
+	var forward_dot = safe_velocity.dot(move_vector)
+	if forward_dot < -0.2 and not is_fleeing:
+		move_speed = 0.0
+	var target_vel = move_vector * move_speed
 	
 	velocity = velocity.move_toward(target_vel, 8.0)
 	velocity.y = current_y

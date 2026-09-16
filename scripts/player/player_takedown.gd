@@ -146,8 +146,13 @@ func _enter() -> void:
 	owner.anim.get(owner.anim_playback).travel("Takedown")
 	if not owner.anim.animation_finished.is_connected(anim_done):
 		owner.anim.animation_finished.connect(anim_done)
-	owner.hitboxF.monitoring = false
-	owner.hitboxB.monitoring = false
+	if owner.has_method("set_hitboxes_enabled"):
+		owner.set_hitboxes_enabled(false)
+	else:
+		if owner.hitboxF:
+			owner.hitboxF.monitoring = false
+		if owner.hitboxB:
+			owner.hitboxB.monitoring = false
 	# Reference the pre-configured takedown hitbox in the scene (Keep disabled during windup phase)
 	splash_area = owner.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox")
 	if splash_area:
@@ -428,10 +433,13 @@ func _exit() -> void:
 				owner.anim.animation_finished.disconnect(anim_done)
 		if owner.stun_detect:
 			owner.stun_detect.monitorable = false
-		if owner.hitboxF:
-			owner.hitboxF.monitoring = true
-		if owner.hitboxB:
-			owner.hitboxB.monitoring = true
+		if owner.has_method("set_hitboxes_enabled"):
+			owner.set_hitboxes_enabled(true)
+		else:
+			if owner.hitboxF:
+				owner.hitboxF.monitoring = true
+			if owner.hitboxB:
+				owner.hitboxB.monitoring = true
 	
 	if is_instance_valid(splash_area):
 		splash_area.monitoring = false

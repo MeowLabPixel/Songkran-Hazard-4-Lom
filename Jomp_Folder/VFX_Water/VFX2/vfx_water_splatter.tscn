@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://biyrwoh08cdgw"]
 
+[ext_resource type="Script" uid="uid://etj63qqdid8y" path="res://scripts/vfx/vfx_water_splatter.gd" id="1_splatter_script"]
 [ext_resource type="Shader" uid="uid://c6psxsl3p763s" path="res://Jomp_Folder/VFX_Water/BinbunVFXs/beam_vfx/src/shader/beam_flare.gdshader" id="1_yg2ox"]
 [ext_resource type="Material" uid="uid://c1450jd25lw5i" path="res://Jomp_Folder/VFX_Water/Water_Mat.tres" id="2_yg2ox"]
 [ext_resource type="PackedScene" uid="uid://c8pfscwl6fp01" path="res://Jomp_Folder/VFX_Water/VFX2/hit_core_crit.tscn" id="3_g5e5h"]
@@ -391,16 +392,18 @@ curve = SubResource("Curve_am3wy")
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ce7vx"]
 lifetime_randomness = 0.5
 particle_flag_align_y = true
-emission_shape_offset = Vector3(0, 0, -0.2)
+emission_shape_offset = Vector3(0, 0, -0.3)
 emission_shape_scale = Vector3(1, 1, 0)
 emission_shape = 2
 emission_sphere_radius = 0.3
+inherit_velocity_ratio = 1.0
 direction = Vector3(0, 10, -1)
 spread = 15.0
 flatness = 0.36
 initial_velocity_min = 5.0
 initial_velocity_max = 6.0
 orbit_velocity_curve = SubResource("CurveXYZTexture_11kf8")
+gravity = Vector3(0, -8, 0)
 scale_min = 0.5
 scale_curve = SubResource("CurveTexture_4kggc")
 
@@ -556,6 +559,7 @@ emission_sphere_radius = 0.02
 direction = Vector3(0, 0, -1)
 initial_velocity_min = 6.0
 initial_velocity_max = 8.0
+gravity = Vector3(0, -18, 0)
 scale_min = 1.5
 scale_max = 2.0
 turbulence_noise_strength = 0.19
@@ -855,6 +859,7 @@ scale_curve = SubResource("CurveTexture_qch0f")
 alpha_curve = SubResource("CurveTexture_gm5cq")
 
 [node name="VFX_WaterSplatter" type="Node3D" unique_id=275418184]
+script = ExtResource("1_splatter_script")
 
 [node name="WaterMuzzle" type="Node3D" parent="." unique_id=1655217680]
 transform = Transform3D(0.67, -5.5055942e-31, 9.2981196e-17, 0, 0.67, 3.967198e-15, -9.2981196e-17, -3.967198e-15, 0.67, 0, 0, 0)
@@ -924,10 +929,12 @@ material_override = SubResource("StandardMaterial3D_h1ln1")
 cast_shadow = 0
 emitting = false
 amount = 50
+lifetime = 1.5
 one_shot = true
 speed_scale = 2.0
 explosiveness = 1.0
 fixed_fps = 60
+collision_base_size = 0.05
 draw_order = 3
 transform_align = 2
 process_material = SubResource("ParticleProcessMaterial_ce7vx")
@@ -953,10 +960,11 @@ draw_pass_3 = SubResource("SphereMesh_splash3")
 [node name="SmallSparks_SubEmitter" type="GPUParticles3D" parent="DropletSplash_SubEmitter" unique_id=734952372]
 transform = Transform3D(1.4925374, 0, 0, 0, 1.4925374, 0, 0, 0, 1.4925374, 0, 0, 0)
 layers = 1024
-material_override = ExtResource("2_yg2ox")
+material_override = SubResource("StandardMaterial3D_h1ln1")
 transparency = 0.6
 cast_shadow = 0
 emitting = false
+amount = 100
 sub_emitter = NodePath("DropletSplash_SubEmitter2")
 one_shot = true
 explosiveness = 1.0

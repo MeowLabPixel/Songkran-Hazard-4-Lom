@@ -1576,6 +1576,19 @@ func pickup_detect_area(area: Area3D):
 	if area.is_in_group("object"):
 		area._collect()
 
+func set_hitboxes_enabled(enabled: bool) -> void:
+	if hitboxF:
+		hitboxF.monitoring = enabled
+		hitboxF.monitorable = enabled
+	if hitboxB:
+		hitboxB.monitoring = enabled
+		hitboxB.monitorable = enabled
+	var nodes = get_tree().get_nodes_in_group("player_hitbox") if get_tree() else []
+	for area in nodes:
+		if area is Area3D:
+			area.monitoring = enabled
+			area.monitorable = enabled
+
 func _connect_player_hitboxes() -> void:
 	var nodes = get_tree().get_nodes_in_group("player_hitbox")
 	for area in nodes:
