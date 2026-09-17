@@ -1,0 +1,9 @@
+Starting pure anim test
+skel: true head_idx: 7 spine_idx: 1
+Initial Head global pose: (0.009888, 1.386255, 0.06893)
+Initial Spine pose pos: (-0.004286, 0.042893, 0.907543)
+After 0.5s Ducking: Head global pose: (0.009888, 1.386255, 0.06893)
+After 0.5s Ducking: Spine pose pos: (-0.001868, 0.040133, 0.37572)
+After force_update: Head global pose: (0.009888, 1.386255, 0.06893)
+After 2.0s Ducking: Head global pose: (0.009888, 1.386255, 0.06893)
+After 1.0s IDLE: Head global pose: (0.009888, 1.386255, 0.06893)

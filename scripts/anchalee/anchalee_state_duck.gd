@@ -24,7 +24,10 @@ func enter() -> void:
 		var tree = Anchalee.get_node("AnchaleeModel/AnimationTree")
 		tree.set("parameters/conditions/Duck_End", false)
 		var pb = tree.get("parameters/playback")
-		if pb: pb.travel("Duck")
+		if pb:
+			var curr := String(pb.get_current_node())
+			if curr != "GetupAct 1" and curr != "GetupAct 2":
+				pb.travel("Duck")
 
 func exit() -> void:
 	# Stop scared duck voice line
@@ -41,6 +44,14 @@ func physics_update(delta: float) -> void:
 	var player = Anchalee.get_player()
 	if player and player.velocity.length_squared() > 0.01:
 		Anchalee.move_and_slide()
+	
+	if Anchalee.has_node("AnchaleeModel/AnimationTree"):
+		var tree = Anchalee.get_node("AnchaleeModel/AnimationTree")
+		var pb = tree.get("parameters/playback")
+		if pb:
+			var curr := String(pb.get_current_node())
+			if curr != "Duck" and curr != "GetupAct 1" and curr != "GetupAct 2":
+				pb.travel("Duck")
 	
 	_duck_timer += delta
 	

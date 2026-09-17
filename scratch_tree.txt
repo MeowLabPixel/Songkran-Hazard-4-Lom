@@ -1,0 +1,28 @@
+--- DIRECT ANIMATION TREE TEST ---
+Root transitions count: 18
+Root Tr 0: 'Start' -> 'Idle' | xfade: 0.00 switch: 0 adv: 2
+Root Tr 1: 'Idle' -> 'Walk' | xfade: 0.20 switch: 0 adv: 1
+Root Tr 2: 'Idle' -> 'Hit' | xfade: 0.10 switch: 0 adv: 1
+Root Tr 3: 'Hit' -> 'Idle' | xfade: 0.15 switch: 2 adv: 2
+Root Tr 4: 'Idle' -> 'Duck' | xfade: 0.20 switch: 0 adv: 1
+Root Tr 5: 'Walk' -> 'Idle' | xfade: 0.20 switch: 0 adv: 1
+Root Tr 6: 'GetupAct 2' -> 'Idle' | xfade: 0.20 switch: 2 adv: 2
+Root Tr 7: 'GetupAct 2' -> 'Walk' | xfade: 0.20 switch: 2 adv: 1
+Root Tr 8: 'Duck' -> 'GetupAct 1' | xfade: 0.20 switch: 0 adv: 1
+Root Tr 9: 'GetupAct 1' -> 'GetupAct 2' | xfade: 0.20 switch: 2 adv: 2
+Root Tr 10: 'GetupAct 1' -> 'Die' | xfade: 0.15 switch: 0 adv: 1
+Root Tr 11: 'Duck' -> 'Die' | xfade: 0.15 switch: 0 adv: 1
+Root Tr 12: 'Hit' -> 'Die' | xfade: 0.15 switch: 0 adv: 1
+Root Tr 13: 'GetupAct 2' -> 'Die' | xfade: 0.15 switch: 0 adv: 1
+Root Tr 14: 'Idle' -> 'Die' | xfade: 0.15 switch: 0 adv: 1
+Root Tr 15: 'Walk' -> 'Die' | xfade: 0.15 switch: 0 adv: 1
+Root Tr 16: 'GetupAct 2' -> 'Hit' | xfade: 0.10 switch: 0 adv: 1
+Root Tr 17: 'Hit' -> 'Duck' | xfade: 0.20 switch: 0 adv: 1
+Idle_Loop transitions count: 7
+Tr 0: 'IDLE_HeadTurn ' -> 'IDLE  2' | xfade: 0.00 switch: 2 adv: 2
+Tr 1: 'Start' -> 'IDLE_HeadTurn ' | xfade: 0.00 switch: 0 adv: 2
+Tr 2: 'IDLE  2' -> 'IDLE  3' | xfade: 0.00 switch: 2 adv: 2
+Tr 3: 'IDLE  3' -> 'IDLE_HeadTurn ' | xfade: 0.10 switch: 2 adv: 2
+Tr 4: 'IDLE  3' -> 'End' | xfade: 0.00 switch: 0 adv: 1
+Tr 5: 'IDLE  2' -> 'End' | xfade: 0.00 switch: 0 adv: 1
+Tr 6: 'IDLE_HeadTurn ' -> 'End' | xfade: 0.00 switch: 0 adv: 1

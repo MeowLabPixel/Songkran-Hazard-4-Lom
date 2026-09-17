@@ -82,10 +82,64 @@ extends CanvasLayer
 		player_face_offset = v
 		_on_camera_setting_changed()
 
+@export var player_walk_camera_track: bool = true:
+	set(v):
+		player_walk_camera_track = v
+		_on_camera_setting_changed()
+
+@export var player_walk_face_offset: Vector3 = Vector3.ZERO:
+	set(v):
+		player_walk_face_offset = v
+		_on_camera_setting_changed()
+
+@export var player_walk_lerp_in_time: float = 0.35:
+	set(v):
+		player_walk_lerp_in_time = maxf(0.01, v)
+
+@export var player_walk_lerp_out_time: float = 0.45:
+	set(v):
+		player_walk_lerp_out_time = maxf(0.01, v)
+
 @export var follower_face_offset: Vector3 = Vector3(0.0, 0.04, 0.0):
 	set(v):
 		follower_face_offset = v
 		_on_camera_setting_changed()
+
+@export var follower_duck_camera_track: bool = true:
+	set(v):
+		follower_duck_camera_track = v
+		_on_camera_setting_changed()
+
+@export var follower_duck_face_offset: Vector3 = Vector3.ZERO:
+	set(v):
+		follower_duck_face_offset = v
+		_on_camera_setting_changed()
+
+@export var follower_duck_lerp_in_time: float = 0.8:
+	set(v):
+		follower_duck_lerp_in_time = maxf(0.01, v)
+
+@export var follower_duck_lerp_out_time: float = 0.7:
+	set(v):
+		follower_duck_lerp_out_time = maxf(0.01, v)
+
+@export var follower_walk_camera_track: bool = true:
+	set(v):
+		follower_walk_camera_track = v
+		_on_camera_setting_changed()
+
+@export var follower_walk_face_offset: Vector3 = Vector3.ZERO:
+	set(v):
+		follower_walk_face_offset = v
+		_on_camera_setting_changed()
+
+@export var follower_walk_lerp_in_time: float = 0.35:
+	set(v):
+		follower_walk_lerp_in_time = maxf(0.01, v)
+
+@export var follower_walk_lerp_out_time: float = 0.45:
+	set(v):
+		follower_walk_lerp_out_time = maxf(0.01, v)
 
 @export var cam_distance: float = 0.65:
 	set(v):
@@ -100,8 +154,25 @@ extends CanvasLayer
 	set(v):
 		head_look_lerp_speed = v
 
+@export_range(0.0, 1.0, 0.05) var follower_action_head_look_influence: float = 0.5:
+	set(v):
+		follower_action_head_look_influence = v
+
+@export var follower_head_look_lerp_speed: float = 6.0:
+	set(v):
+		follower_head_look_lerp_speed = v
+
+@export_group("Player Portrait Lean & Tilt")
+@export var player_portrait_lean_enabled: bool = true
+@export var player_portrait_lean_multiplier: float = 1.0
+@export var player_portrait_side_tilt_multiplier: float = 0.5
+@export var player_portrait_reverse_side_tilt: bool = false
+@export var player_portrait_tilt_speed: float = 12.0
+
 @export_group("Portrait Animation")
-@export var player_idle_speed_scale: float = 0.75
+@export var player_idle_speed_scale: float = 0.7
+@export var player_walk_idle_speed_scale: float = 1.1
+@export var player_sprint_idle_speed_scale: float = 1.6
 @export var follower_idle_speed_scale: float = 1.0
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -142,14 +213,32 @@ var _p_dst_skel: Skeleton3D = null
 var _p_head_idx: int = -1
 var _p_anim_player: AnimationPlayer = null
 var _p_head_rest_rot: Quaternion = Quaternion.IDENTITY
+var _p_current_head_rot: Quaternion = Quaternion.IDENTITY
 var _current_head_look_influence: float = 1.0
+var _p_current_tilt_x: float = 0.0
+var _p_current_tilt_z: float = 0.0
+var _p_lean_modifier: Node = null
+var _current_player_idle_speed: float = 0.7
+var _p_cam_curr_pos: Vector3 = Vector3(0.005, 1.56, -0.65)
+var _p_cam_curr_look: Vector3 = Vector3(0.0, 1.56, 0.0)
+var _p_current_walk_offset: Vector3 = Vector3.ZERO
+var _p_cam_initialized: bool = false
+var _p_last_active_state: String = "idle"
 
 # Follower head rotation mimic & camera tracking references
 var _f_src_skel: Skeleton3D = null
 var _f_dst_skel: Skeleton3D = null
 var _f_head_idx: int = -1
 var _f_head_rest_rot: Quaternion = Quaternion.IDENTITY
+var _f_current_head_rot: Quaternion = Quaternion.IDENTITY
+var _f_current_head_look_influence: float = 1.0
 var _f_anim_player: AnimationPlayer = null
+var _f_anim_tree: AnimationTree = null
+var _f_cam_curr_pos: Vector3 = Vector3(0.005, 1.385, -0.65)
+var _f_cam_curr_look: Vector3 = Vector3(0.0, 1.45, 0.0)
+var _f_current_action_offset: Vector3 = Vector3.ZERO
+var _f_cam_initialized: bool = false
+var _f_last_active_state: String = "idle"
 
 var _last_debuff_text: String = ""
 var _default_air_color: Color = Color("b2ebf2")
@@ -217,7 +306,7 @@ func _process(delta: float) -> void:
 	_update_counters()
 	_sync_faces()
 	_sync_player_head_rotation(delta)
-	_update_portrait_cameras()
+	_update_portrait_cameras(delta)
 
 # ═══════════════════════════════════════════════════════════════════════════
 #                    NODE BINDING & FALLBACK CREATION
@@ -269,6 +358,40 @@ func _bind_or_build_nodes() -> void:
 					player_idle_speed_scale = inst.player_idle_speed_scale
 				if "follower_idle_speed_scale" in inst:
 					follower_idle_speed_scale = inst.follower_idle_speed_scale
+				if "follower_duck_camera_track" in inst:
+					follower_duck_camera_track = inst.follower_duck_camera_track
+				if "follower_duck_face_offset" in inst:
+					follower_duck_face_offset = inst.follower_duck_face_offset
+				if "follower_duck_lerp_in_time" in inst:
+					follower_duck_lerp_in_time = inst.follower_duck_lerp_in_time
+				if "follower_duck_lerp_out_time" in inst:
+					follower_duck_lerp_out_time = inst.follower_duck_lerp_out_time
+				if "follower_walk_camera_track" in inst:
+					follower_walk_camera_track = inst.follower_walk_camera_track
+				if "follower_walk_face_offset" in inst:
+					follower_walk_face_offset = inst.follower_walk_face_offset
+				if "follower_walk_lerp_in_time" in inst:
+					follower_walk_lerp_in_time = inst.follower_walk_lerp_in_time
+				if "follower_walk_lerp_out_time" in inst:
+					follower_walk_lerp_out_time = inst.follower_walk_lerp_out_time
+				if "player_walk_camera_track" in inst:
+					player_walk_camera_track = inst.player_walk_camera_track
+				if "player_walk_face_offset" in inst:
+					player_walk_face_offset = inst.player_walk_face_offset
+				if "player_walk_lerp_in_time" in inst:
+					player_walk_lerp_in_time = inst.player_walk_lerp_in_time
+				if "player_walk_lerp_out_time" in inst:
+					player_walk_lerp_out_time = inst.player_walk_lerp_out_time
+				if "player_portrait_lean_enabled" in inst:
+					player_portrait_lean_enabled = inst.player_portrait_lean_enabled
+				if "player_portrait_lean_multiplier" in inst:
+					player_portrait_lean_multiplier = inst.player_portrait_lean_multiplier
+				if "player_portrait_side_tilt_multiplier" in inst:
+					player_portrait_side_tilt_multiplier = inst.player_portrait_side_tilt_multiplier
+				if "player_portrait_reverse_side_tilt" in inst:
+					player_portrait_reverse_side_tilt = inst.player_portrait_reverse_side_tilt
+				if "player_portrait_tilt_speed" in inst:
+					player_portrait_tilt_speed = inst.player_portrait_tilt_speed
 
 			inst.queue_free()
 
@@ -636,13 +759,13 @@ func _setup_single_portrait(character: Node, sv: SubViewport, cam: Camera3D,
 	# Duplicate model into the isolated viewport
 	var model_copy: Node = model_root.duplicate()
 	model_copy.position = Vector3.ZERO
-	_cleanup_portrait_model(model_copy)
+	_cleanup_portrait_model(model_copy, is_player)
 	sv.add_child(model_copy)
 	# Assign owner so scene-unique-name paths like %OriginalSkeleton resolve in the AnimationPlayer
 	_assign_owners(model_copy)
 
 	# Hide everything except head, hair, and collar/neck
-	var head_mesh: MeshInstance3D = _hide_non_head_meshes(model_copy)
+	var head_mesh: MeshInstance3D = _hide_non_head_meshes(model_copy, is_player)
 	if not head_mesh:
 		return false
 
@@ -679,8 +802,18 @@ func _setup_single_portrait(character: Node, sv: SubViewport, cam: Camera3D,
 			if _f_head_idx != -1:
 				_f_head_rest_rot = _f_dst_skel.get_bone_rest(_f_head_idx).basis.get_rotation_quaternion()
 		_f_anim_player = _find_anim_player(model_copy)
+		_f_anim_tree = _find_anim_tree(model_copy)
 		if _f_anim_player:
 			_f_anim_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+		if _f_anim_tree:
+			_f_anim_tree.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+			_f_anim_tree.active = true
+			var root_pb = _f_anim_tree.get("parameters/playback")
+			if root_pb:
+				root_pb.start("Idle")
+		_f_cam_curr_pos = cam_pos
+		_f_cam_curr_look = cam_look
+		_f_cam_initialized = true
 
 	# Start dedicated looping idle animation
 	_start_portrait_idle_animation(model_copy, is_player)
@@ -703,8 +836,8 @@ func _setup_editor_portraits() -> void:
 				var copy := p_model.duplicate()
 				copy.name = "EditorPreviewHead"
 				copy.position = Vector3.ZERO
-				_cleanup_portrait_model(copy)
-				_hide_non_head_meshes(copy)
+				_cleanup_portrait_model(copy, true)
+				_hide_non_head_meshes(copy, true)
 				player_viewport.add_child(copy)
 				_assign_owners(copy)
 				_start_portrait_idle_animation(copy, true)
@@ -720,8 +853,8 @@ func _setup_editor_portraits() -> void:
 				var copy := f_model.duplicate()
 				copy.name = "EditorPreviewHead"
 				copy.position = Vector3.ZERO
-				_cleanup_portrait_model(copy)
-				_hide_non_head_meshes(copy)
+				_cleanup_portrait_model(copy, false)
+				_hide_non_head_meshes(copy, false)
 				follower_viewport.add_child(copy)
 				_assign_owners(copy)
 				_start_portrait_idle_animation(copy, false)
@@ -779,7 +912,13 @@ func _ensure_editor_preview_skeletons() -> void:
 			_f_anim_player = _find_anim_player(f_prev)
 			if _f_anim_player:
 				_f_anim_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
-				_start_portrait_idle_animation(f_prev, false)
+		if f_prev and (not _f_anim_tree or not is_instance_valid(_f_anim_tree)):
+			_f_anim_tree = _find_anim_tree(f_prev)
+			if _f_anim_tree:
+				_f_anim_tree.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+				_f_anim_tree.active = true
+		if f_prev:
+			_start_portrait_idle_animation(f_prev, false)
 
 
 func _sync_editor_cameras() -> void:
@@ -803,11 +942,11 @@ func _find_model_root(character: Node, is_player: bool) -> Node:
 	return null
 
 
-func _cleanup_portrait_model(model: Node) -> void:
+func _cleanup_portrait_model(model: Node, is_player: bool = false) -> void:
 	var to_remove: Array[Node] = []
 	for node in _get_all_descendants(model):
 		var nname := node.name
-		if (node is AnimationTree
+		if ((is_player and node is AnimationTree)
 				or node is Area3D or node is CollisionShape3D
 				or node is CollisionPolygon3D or node is RayCast3D
 				or node is NavigationAgent3D or node is AudioStreamPlayer3D
@@ -815,7 +954,7 @@ func _cleanup_portrait_model(model: Node) -> void:
 				or node.is_class("LookAtModifier3D")
 				or nname.begins_with("SpineLeanModifier")):
 			to_remove.append(node)
-		elif node.get_script() and not (node is MeshInstance3D or node is Skeleton3D or node is Node3D or node is AnimationPlayer):
+		elif node.get_script() and not (node is MeshInstance3D or node is Skeleton3D or node is Node3D or node is AnimationPlayer or node is AnimationTree):
 			to_remove.append(node)
 
 	for node in to_remove:
@@ -824,21 +963,35 @@ func _cleanup_portrait_model(model: Node) -> void:
 			node.queue_free()
 
 
-func _hide_non_head_meshes(model: Node) -> MeshInstance3D:
+func _hide_non_head_meshes(model: Node, is_player: bool = false) -> MeshInstance3D:
 	var head: MeshInstance3D = null
 	for node in _get_all_descendants(model):
 		if node is MeshInstance3D:
-			var n := node.name.to_lower()
+			var n := node.name.to_lower().strip_edges()
 			if "head" in n or "face" in n:
 				node.visible = true
 				if head == null:
 					head = node as MeshInstance3D
 			elif "hair" in n:
 				node.visible = true
-			elif "neck" in n or "suit" in n or "cloth" in n or "top" in n:
-				node.visible = true
+			elif is_player:
+				if "neck" in n or "suit" in n or "cloth" in n or "top" in n or "slevee" in n or "sleeve" in n or "arm" in n:
+					node.visible = true
+				else:
+					node.visible = false
 			else:
-				node.visible = false
+				# Follower (Anchalee):
+				# Base neck/suit/clothing
+				if "neck" in n or "suit" in n or "cloth" in n:
+					node.visible = true
+				# Specific right arm parts:
+				elif n == "right slevee_001":
+					node.visible = true
+				# Specific left arm parts:
+				elif n == "left slevee_003" or n == "left slevee_004" or n == "lower_left_arm" or n == "left_hand":
+					node.visible = true
+				else:
+					node.visible = false
 	return head
 
 
@@ -1001,6 +1154,16 @@ func _start_portrait_idle_animation(model: Node, is_player: bool) -> void:
 	if not model or not is_instance_valid(model):
 		return
 
+	if not is_player:
+		var anim_tree := _find_anim_tree(model)
+		if anim_tree:
+			anim_tree.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+			anim_tree.active = true
+			var root_pb = anim_tree.get("parameters/playback")
+			if root_pb:
+				root_pb.start("Idle")
+			return
+
 	var anim_player := _find_anim_player(model)
 	if not anim_player:
 		return
@@ -1016,7 +1179,7 @@ func _start_portrait_idle_animation(model: Node, is_player: bool) -> void:
 					target_anim = a
 					break
 	else:
-		# Prefer Anchalee's IDLE animation
+		# Fallback to Anchalee's IDLE animation
 		target_anim = "IDLE "
 		if not anim_player.has_animation(target_anim):
 			for a in anim_player.get_animation_list():
@@ -1033,24 +1196,134 @@ func _start_portrait_idle_animation(model: Node, is_player: bool) -> void:
 
 
 func _sync_player_head_rotation(delta: float) -> void:
-	# 1. Advance portrait idle animations manually (SubViewport does not auto-tick AnimationPlayers)
+	# 1. Advance portrait idle animations manually (SubViewport does not auto-tick AnimationPlayers/AnimationTrees)
 	if _p_anim_player and is_instance_valid(_p_anim_player):
 		if not _p_anim_player.is_playing():
 			_start_portrait_idle_animation(_p_anim_player.get_parent(), true)
-		_p_anim_player.advance(delta * player_idle_speed_scale)
+		var target_speed := player_idle_speed_scale
+		if _is_player_sprinting():
+			target_speed = player_sprint_idle_speed_scale
+		elif _is_player_moving():
+			target_speed = player_walk_idle_speed_scale
+		_current_player_idle_speed = lerpf(_current_player_idle_speed, target_speed, delta * 8.0)
+		_p_anim_player.advance(delta * _current_player_idle_speed)
 
-	if _f_anim_player and is_instance_valid(_f_anim_player):
-		if not _f_anim_player.is_playing():
-			_start_portrait_idle_animation(_f_anim_player.get_parent(), false)
+	var is_duck := _is_follower_ducking()
+	var is_getup := _is_follower_getting_up()
+	var is_walk := _is_follower_walking()
+
+	if _f_anim_tree and is_instance_valid(_f_anim_tree):
+		if not _f_anim_tree.active:
+			_f_anim_tree.active = true
+
+		var portrait_pb: AnimationNodeStateMachinePlayback = _f_anim_tree.get("parameters/playback")
+		var portrait_idle_pb: AnimationNodeStateMachinePlayback = _f_anim_tree.get("parameters/Idle/Idle_Loop/playback")
+
+		if is_duck:
+			_f_anim_tree.set("parameters/conditions/Duck_End", false)
+			if portrait_pb:
+				var curr := String(portrait_pb.get_current_node())
+				if curr != "Duck" and curr != "Duck Start" and curr != "Duck Loop":
+					if curr != "GetupAct 1" and curr != "GetupAct 2":
+						portrait_pb.travel("Duck")
+		elif is_getup:
+			_f_anim_tree.set("parameters/conditions/Duck_End", true)
+			if portrait_pb:
+				var curr := String(portrait_pb.get_current_node())
+				if curr in ["Duck", "Duck Start", "Duck Loop"]:
+					portrait_pb.travel("GetupAct 1")
+		elif is_walk:
+			_f_anim_tree.set("parameters/conditions/Duck_End", true)
+			if portrait_pb:
+				var curr := String(portrait_pb.get_current_node())
+				if curr != "Walk":
+					portrait_pb.travel("Walk")
+		else:
+			# Standing Idle
+			_f_anim_tree.set("parameters/conditions/Duck_End", true)
+			if portrait_pb:
+				var curr := String(portrait_pb.get_current_node())
+				if curr in ["Duck", "Duck Start", "Duck Loop"]:
+					portrait_pb.travel("GetupAct 1")
+				elif curr != "Idle" and curr != "GetupAct 1" and curr != "GetupAct 2":
+					portrait_pb.travel("Idle")
+
+			# If real Anchalee is performing IDLE_HeadTurn, ensure portrait Idle_Loop transitions/blends into IDLE_HeadTurn
+			if portrait_pb and String(portrait_pb.get_current_node()) == "Idle" and portrait_idle_pb:
+				var real_anim_name := ""
+				if _follower and "current_anim_name" in _follower:
+					real_anim_name = _follower.current_anim_name
+				elif _follower:
+					var real_tree = _follower.get_node_or_null("AnchaleeModel/AnimationTree") as AnimationTree
+					if real_tree:
+						var r_idle_pb = real_tree.get("parameters/Idle/Idle_Loop/playback")
+						if r_idle_pb:
+							real_anim_name = String(r_idle_pb.get_current_node()).strip_edges()
+
+				if real_anim_name == "IDLE_HeadTurn":
+					var curr_idle_node := String(portrait_idle_pb.get_current_node()).strip_edges()
+					if curr_idle_node != "IDLE_HeadTurn":
+						portrait_idle_pb.travel("IDLE_HeadTurn ")
+
+		_f_anim_tree.advance(delta * follower_idle_speed_scale)
+	elif _f_anim_player and is_instance_valid(_f_anim_player):
+		var target_anim := "IDLE "
+		if is_duck:
+			target_anim = "Ducking "
+		elif is_getup:
+			target_anim = "Ducking get up"
+		elif is_walk:
+			target_anim = "Walk "
+
+		if _f_anim_player.current_animation != target_anim:
+			if _f_anim_player.has_animation(target_anim):
+				var anim := _f_anim_player.get_animation(target_anim)
+				if anim and (is_duck or is_walk):
+					anim.loop_mode = Animation.LOOP_LINEAR
+				_f_anim_player.play(target_anim, 0.2)
+		elif not _f_anim_player.is_playing():
+			_f_anim_player.play(target_anim)
+
 		_f_anim_player.advance(delta * follower_idle_speed_scale)
 
-	# 2. Mimic the player's real-time head look rotation (from HeadLookAt / glance)
+	# 2. Mimic the player's real-time head look rotation (from HeadLookAt / glance) & Lean/Tilt
 	# Zero bone position translation is applied — the body and camera remain 100% stationary
 	if _p_src_skel and _p_dst_skel and is_instance_valid(_p_src_skel) and is_instance_valid(_p_dst_skel) and _p_head_idx != -1:
+		# ── Procedural Lean & Tilt during Movement, Mouse Turning & Sprinting ──
+		if player_portrait_lean_enabled and _player and is_instance_valid(_player):
+			var target_tilt_x := 0.0
+			var target_tilt_z := 0.0
+			if not _p_lean_modifier or not is_instance_valid(_p_lean_modifier):
+				_p_lean_modifier = _player.find_child("SpineLeanModifier", true, false)
+			if _p_lean_modifier and is_instance_valid(_p_lean_modifier):
+				target_tilt_x = float(_p_lean_modifier.get("current_tilt_x"))
+				target_tilt_z = float(_p_lean_modifier.get("current_tilt_z"))
+			else:
+				var p_basis: Basis = _player.global_transform.basis
+				var p_vel: Vector3 = _player.velocity if "velocity" in _player else Vector3.ZERO
+				var local_vel := p_basis.inverse() * p_vel
+				var ang_vel: float = _player.angular_velocity if "angular_velocity" in _player else 0.0
+				target_tilt_x = clampf(-local_vel.z * 0.02, -0.15, 0.15)
+				target_tilt_z = clampf(-local_vel.x * 0.02 - ang_vel * 0.04, -0.20, 0.20)
+
+			var tilt_dir: float = -1.0 if player_portrait_reverse_side_tilt else 1.0
+
+			_p_current_tilt_x = lerpf(_p_current_tilt_x, target_tilt_x * player_portrait_lean_multiplier, delta * player_portrait_tilt_speed)
+			_p_current_tilt_z = lerpf(_p_current_tilt_z, target_tilt_z * player_portrait_lean_multiplier * player_portrait_side_tilt_multiplier * tilt_dir, delta * player_portrait_tilt_speed)
+
+			# Apply tilt to spine, chest, and shoulder bones
+			_apply_tilt_to_portrait_bone(_p_dst_skel, "DEF-spine", _p_current_tilt_x * 1.0, _p_current_tilt_z * 1.0)
+			_apply_tilt_to_portrait_bone(_p_dst_skel, "DEF-spine.003", _p_current_tilt_x * 0.6, _p_current_tilt_z * 0.6)
+			_apply_tilt_to_portrait_bone(_p_dst_skel, "ORG-shoulder.L", _p_current_tilt_x * 0.5, _p_current_tilt_z * 0.5)
+			_apply_tilt_to_portrait_bone(_p_dst_skel, "ORG-shoulder.R", _p_current_tilt_x * 0.5, _p_current_tilt_z * 0.5)
+
+		# ── Head Look-At & Glance Sync ──
 		if _p_head_rest_rot == Quaternion.IDENTITY:
 			_p_head_rest_rot = _p_dst_skel.get_bone_rest(_p_head_idx).basis.get_rotation_quaternion()
 
 		var head_rot := _p_src_skel.get_bone_pose_rotation(_p_head_idx)
+		if _p_current_head_rot == Quaternion.IDENTITY:
+			_p_current_head_rot = head_rot
 
 		# Reduce head look-at influence by 50% when takedown or grab success (player win QTE) are active
 		var is_action := _is_player_takedown_active() or _is_player_grab_success_active()
@@ -1058,8 +1331,9 @@ func _sync_player_head_rotation(delta: float) -> void:
 
 		_current_head_look_influence = move_toward(_current_head_look_influence, target_influence, head_look_lerp_speed * delta)
 
-		var final_rot := _p_head_rest_rot.slerp(head_rot, _current_head_look_influence)
-		_p_dst_skel.set_bone_pose_rotation(_p_head_idx, final_rot)
+		var target_rot := _p_head_rest_rot.slerp(head_rot, _current_head_look_influence)
+		_p_current_head_rot = _p_current_head_rot.slerp(target_rot, minf(1.0, head_look_lerp_speed * delta))
+		_p_dst_skel.set_bone_pose_rotation(_p_head_idx, _p_current_head_rot)
 
 	# 3. Mimic the follower's real-time head look rotation (from LookAtModifier3D / glance)
 	# Zero bone position translation is applied — the body and camera remain 100% stationary
@@ -1068,7 +1342,59 @@ func _sync_player_head_rotation(delta: float) -> void:
 			_f_head_rest_rot = _f_dst_skel.get_bone_rest(_f_head_idx).basis.get_rotation_quaternion()
 
 		var f_head_rot := _f_src_skel.get_bone_pose_rotation(_f_head_idx)
-		_f_dst_skel.set_bone_pose_rotation(_f_head_idx, f_head_rot)
+		if _f_current_head_rot == Quaternion.IDENTITY:
+			_f_current_head_rot = f_head_rot
+
+		# Reduce head look-at influence during action states (ducking, getting up)
+		var is_f_action := _is_follower_ducking() or _is_follower_getting_up()
+		var target_influence: float = follower_action_head_look_influence if is_f_action else 1.0
+
+		_f_current_head_look_influence = move_toward(_f_current_head_look_influence, target_influence, follower_head_look_lerp_speed * delta)
+
+		var target_rot := _f_head_rest_rot.slerp(f_head_rot, _f_current_head_look_influence)
+		_f_current_head_rot = _f_current_head_rot.slerp(target_rot, minf(1.0, follower_head_look_lerp_speed * delta))
+		_f_dst_skel.set_bone_pose_rotation(_f_head_idx, _f_current_head_rot)
+
+
+func _is_follower_ducking() -> bool:
+	if not _follower or not is_instance_valid(_follower):
+		return false
+	var sm = _follower.get_node_or_null("StateMachine")
+	if sm and sm.get("current_state"):
+		var sname: String = sm.current_state.name
+		if sname in ["AnchaleeStateDuck", "Duck", "AnchaleeStateJink", "Jink"]:
+			return true
+	var fc = _follower.get_node_or_null("AnchaleeFaceController")
+	if fc and fc.get("is_ducking"):
+		return true
+	return false
+
+
+func _is_follower_getting_up() -> bool:
+	if not _follower or not is_instance_valid(_follower):
+		return false
+	var sm = _follower.get_node_or_null("StateMachine")
+	if sm and sm.get("current_state"):
+		var sname: String = sm.current_state.name
+		if sname in ["AnchaleeStateGetUp", "GetUp"]:
+			return true
+	return false
+
+
+func _is_follower_walking() -> bool:
+	if not _follower or not is_instance_valid(_follower):
+		return false
+	var sm = _follower.get_node_or_null("StateMachine")
+	if sm and sm.get("current_state"):
+		var sname: String = sm.current_state.name
+		if sname in ["AnchaleeStateWalk", "Walk"]:
+			return true
+	var anim_tree = _follower.get_node_or_null("AnchaleeModel/AnimationTree") as AnimationTree
+	if anim_tree and anim_tree.active:
+		var root_pb = anim_tree.get("parameters/playback")
+		if root_pb and String(root_pb.get_current_node()).strip_edges() == "Walk":
+			return true
+	return false
 
 
 func _is_player_takedown_active() -> bool:
@@ -1103,6 +1429,30 @@ func _is_player_grab_success_active() -> bool:
 	return false
 
 
+func _is_player_sprinting() -> bool:
+	if not _player or not is_instance_valid(_player):
+		return false
+	var sm = _player.get_node_or_null("Statemachine")
+	if sm and sm.get("current_state") and sm.current_state.name == "Sprint":
+		return true
+	if _p_lean_modifier and is_instance_valid(_p_lean_modifier) and _p_lean_modifier.get("is_sprinting"):
+		return true
+	return false
+
+
+func _is_player_moving() -> bool:
+	if not _player or not is_instance_valid(_player):
+		return false
+	if _player.get("velocity") is Vector3 and _player.velocity.length_squared() > 0.05:
+		return true
+	var sm = _player.get_node_or_null("Statemachine")
+	if sm and sm.get("current_state"):
+		var sname: String = sm.current_state.name
+		if sname in ["Walk", "Run", "Sprint", "Movement", "Move"]:
+			return true
+	return false
+
+
 func _sync_portrait_poses(_delta: float) -> void:
 	pass
 
@@ -1128,40 +1478,184 @@ func _on_camera_setting_changed() -> void:
 		follower_svc.queue_redraw()
 
 
-func _apply_camera_settings() -> void:
+func _apply_camera_settings(delta: float = 0.0) -> void:
 	# ── Player Portrait Camera ──
 	if player_camera:
 		player_camera.current = true
 		player_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 		player_camera.size = player_cam_size
+
+		var is_p_walking := _is_player_moving()
+
+		# Establish player idle base camera position
+		var p_idle_base_pos: Vector3
+		var p_idle_base_look: Vector3
 		if camera_track_head and _p_dst_skel and is_instance_valid(_p_dst_skel) and _p_head_idx != -1:
 			var head_pose: Transform3D = _p_dst_skel.get_bone_global_pose(_p_head_idx)
 			var head_pos: Vector3 = _p_dst_skel.global_transform * head_pose.origin
 			var face_center: Vector3 = head_pos + player_face_offset
-			player_camera.position = Vector3(face_center.x, face_center.y, face_center.z - cam_distance)
-			player_camera.look_at(Vector3(face_center.x, face_center.y, face_center.z), Vector3.UP)
+			p_idle_base_pos = Vector3(face_center.x, face_center.y, face_center.z - cam_distance)
+			p_idle_base_look = Vector3(face_center.x, face_center.y, face_center.z)
 		else:
-			player_camera.position = player_cam_pos
-			player_camera.look_at(player_cam_look, Vector3.UP)
+			p_idle_base_pos = player_cam_pos
+			p_idle_base_look = player_cam_look
+
+		var target_p_offset := player_walk_face_offset if is_p_walking else Vector3.ZERO
+		var p_lerp_time := player_walk_lerp_in_time if is_p_walking else player_walk_lerp_out_time
+		var p_blend_weight: float = 1.0 - exp(- (5.0 / maxf(0.01, p_lerp_time)) * delta) if delta > 0.0 else 1.0
+		_p_current_walk_offset = _p_current_walk_offset.lerp(target_p_offset, p_blend_weight)
+
+		var target_pos: Vector3
+		var target_look: Vector3
+
+		# When active movement tracking is enabled, track active head bone during movement
+		# When returning to idle, target directly toward p_idle_base_pos + walk offset
+		var should_track_p_active_head := (player_walk_camera_track and is_p_walking)
+
+		if (camera_track_head or should_track_p_active_head) and _p_dst_skel and is_instance_valid(_p_dst_skel) and _p_head_idx != -1:
+			var head_pose: Transform3D = _p_dst_skel.get_bone_global_pose(_p_head_idx)
+			var head_pos: Vector3 = _p_dst_skel.global_transform * head_pose.origin
+			var face_center: Vector3 = head_pos + player_face_offset + _p_current_walk_offset
+			target_pos = Vector3(face_center.x, face_center.y, face_center.z - cam_distance)
+			target_look = Vector3(face_center.x, face_center.y, face_center.z)
+		else:
+			target_pos = p_idle_base_pos + _p_current_walk_offset
+			target_look = p_idle_base_look + _p_current_walk_offset
+
+		if not _p_cam_initialized or Engine.is_editor_hint() or delta <= 0.0:
+			_p_cam_curr_pos = target_pos
+			_p_cam_curr_look = target_look
+			_p_cam_initialized = true
+			_p_last_active_state = "idle"
+			_p_current_walk_offset = target_p_offset
+		else:
+			if is_p_walking:
+				_p_last_active_state = "walk"
+			else:
+				if _p_last_active_state == "walk":
+					if _p_cam_curr_pos.distance_to(target_pos) < 0.001 and _p_current_walk_offset.distance_to(Vector3.ZERO) < 0.001:
+						_p_cam_curr_pos = target_pos
+						_p_cam_curr_look = target_look
+						_p_last_active_state = "idle"
+
+			_p_cam_curr_pos = _p_cam_curr_pos.lerp(target_pos, p_blend_weight)
+			_p_cam_curr_look = _p_cam_curr_look.lerp(target_look, p_blend_weight)
+
+		player_camera.position = _p_cam_curr_pos
+		player_camera.look_at(_p_cam_curr_look, Vector3.UP)
 
 	# ── Follower Portrait Camera ──
 	if follower_camera:
 		follower_camera.current = true
 		follower_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 		follower_camera.size = follower_cam_size
+		var portrait_pb: AnimationNodeStateMachinePlayback = _f_anim_tree.get("parameters/playback") if (_f_anim_tree and is_instance_valid(_f_anim_tree)) else null
+		var curr_node := String(portrait_pb.get_current_node()) if portrait_pb else ""
+		var is_duck_crouched := curr_node in ["Duck", "Duck Start", "Duck Loop", "GetupAct 1"]
+		var is_walking_state := (curr_node == "Walk") or _is_follower_walking()
+		var is_getup_act2 := (curr_node == "GetupAct 2")
+		if is_duck_crouched or is_getup_act2:
+			is_walking_state = false
+		
+		# Determine the idle base camera anchor
+		var f_idle_base_pos: Vector3
+		var f_idle_base_look: Vector3
 		if camera_track_head and _f_dst_skel and is_instance_valid(_f_dst_skel) and _f_head_idx != -1:
 			var head_pose: Transform3D = _f_dst_skel.get_bone_global_pose(_f_head_idx)
 			var head_pos: Vector3 = _f_dst_skel.global_transform * head_pose.origin
 			var face_center: Vector3 = head_pos + follower_face_offset
-			follower_camera.position = Vector3(face_center.x, face_center.y, face_center.z - cam_distance)
-			follower_camera.look_at(Vector3(face_center.x, face_center.y, face_center.z), Vector3.UP)
+			f_idle_base_pos = Vector3(face_center.x, face_center.y, face_center.z - cam_distance)
+			f_idle_base_look = Vector3(face_center.x, face_center.y, face_center.z)
 		else:
-			follower_camera.position = follower_cam_pos
-			follower_camera.look_at(follower_cam_look, Vector3.UP)
+			f_idle_base_pos = follower_cam_pos
+			f_idle_base_look = follower_cam_look
+
+		var target_f_offset := Vector3.ZERO
+		var f_lerp_time: float = follower_walk_lerp_out_time
+		if is_duck_crouched:
+			target_f_offset = follower_duck_face_offset
+			f_lerp_time = follower_duck_lerp_in_time
+		elif is_getup_act2:
+			target_f_offset = Vector3.ZERO
+			f_lerp_time = follower_duck_lerp_out_time
+		elif is_walking_state:
+			target_f_offset = follower_walk_face_offset
+			f_lerp_time = follower_walk_lerp_in_time
+		else:
+			if _f_last_active_state == "duck":
+				f_lerp_time = follower_duck_lerp_out_time
+			elif _f_last_active_state == "walk":
+				f_lerp_time = follower_walk_lerp_out_time
+		
+		var f_blend_weight: float = 1.0 - exp(- (5.0 / maxf(0.01, f_lerp_time)) * delta) if delta > 0.0 else 1.0
+		_f_current_action_offset = _f_current_action_offset.lerp(target_f_offset, f_blend_weight)
+		
+		var target_pos: Vector3
+		var target_look: Vector3
+
+		# When active crouch tracking is enabled during Duck/Crouch, track the active crouched head bone
+		# When returning to idle (GetupAct 2 or lerp-out), target directly toward f_idle_base_pos + offset
+		var should_track_active_head := (follower_duck_camera_track and is_duck_crouched) \
+			or (follower_walk_camera_track and is_walking_state)
+
+		if (camera_track_head or should_track_active_head) and _f_dst_skel and is_instance_valid(_f_dst_skel) and _f_head_idx != -1:
+			var head_pose: Transform3D = _f_dst_skel.get_bone_global_pose(_f_head_idx)
+			var head_pos: Vector3 = _f_dst_skel.global_transform * head_pose.origin
+			var face_center: Vector3 = head_pos + follower_face_offset + _f_current_action_offset
+			target_pos = Vector3(face_center.x, face_center.y, face_center.z - cam_distance)
+			target_look = Vector3(face_center.x, face_center.y, face_center.z)
+		else:
+			target_pos = f_idle_base_pos + _f_current_action_offset
+			target_look = f_idle_base_look + _f_current_action_offset
+			
+		if not _f_cam_initialized or Engine.is_editor_hint() or delta <= 0.0:
+			_f_cam_curr_pos = target_pos
+			_f_cam_curr_look = target_look
+			_f_cam_initialized = true
+			_f_last_active_state = "idle"
+			_f_current_action_offset = target_f_offset
+		else:
+			if is_duck_crouched or is_getup_act2:
+				_f_last_active_state = "duck"
+			elif is_walking_state:
+				_f_last_active_state = "walk"
+			else:
+				if _f_last_active_state == "duck" or _f_last_active_state == "walk":
+					if _f_cam_curr_pos.distance_to(target_pos) < 0.001 and _f_current_action_offset.distance_to(Vector3.ZERO) < 0.001:
+						_f_cam_curr_pos = target_pos
+						_f_cam_curr_look = target_look
+						_f_last_active_state = "idle"
+			
+			_f_cam_curr_pos = _f_cam_curr_pos.lerp(target_pos, f_blend_weight)
+			_f_cam_curr_look = _f_cam_curr_look.lerp(target_look, f_blend_weight)
+			
+		follower_camera.position = _f_cam_curr_pos
+		follower_camera.look_at(_f_cam_curr_look, Vector3.UP)
 
 
-func _update_portrait_cameras() -> void:
-	_apply_camera_settings()
+func _update_portrait_cameras(delta: float = 0.0) -> void:
+	_apply_camera_settings(delta)
+
+
+func _apply_tilt_to_portrait_bone(skeleton: Skeleton3D, bone_name: String, tilt_x: float, tilt_z: float) -> void:
+	if not skeleton or not is_instance_valid(skeleton):
+		return
+	if abs(tilt_x) < 0.0001 and abs(tilt_z) < 0.0001:
+		return
+	var bone_idx := skeleton.find_bone(bone_name)
+	if bone_idx == -1:
+		return
+	var group_tilt_basis := Basis.from_euler(Vector3(tilt_x, 0.0, tilt_z))
+	var pose := skeleton.get_bone_pose(bone_idx)
+	var parent_idx := skeleton.get_bone_parent(bone_idx)
+	var local_tilt_basis: Basis
+	if parent_idx == -1:
+		local_tilt_basis = group_tilt_basis
+	else:
+		var parent_global_pose := skeleton.get_bone_global_pose(parent_idx)
+		local_tilt_basis = parent_global_pose.basis.inverse() * group_tilt_basis * parent_global_pose.basis
+	pose.basis = (local_tilt_basis * pose.basis).orthonormalized()
+	skeleton.set_bone_pose(bone_idx, pose)
 
 
 func _find_skeleton(root: Node) -> Skeleton3D:
@@ -1187,6 +1681,17 @@ func _find_anim_player(root: Node) -> AnimationPlayer:
 	for child in _get_all_descendants(root):
 		if child is AnimationPlayer:
 			return child as AnimationPlayer
+	return null
+
+
+func _find_anim_tree(root: Node) -> AnimationTree:
+	if not root:
+		return null
+	if root is AnimationTree:
+		return root as AnimationTree
+	for child in _get_all_descendants(root):
+		if child is AnimationTree:
+			return child as AnimationTree
 	return null
 
 

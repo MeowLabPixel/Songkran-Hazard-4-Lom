@@ -52,11 +52,13 @@ func adjust_for_surface(custom_normal: Vector3 = Vector3.ZERO) -> void:
 	if is_ground:
 		# Ground / floor splash: splash upward and radially in all 360-degree angles
 		mat.direction = Vector3(0, 0, -1)
-		mat.spread = 70.0
+		mat.spread = 35.0
 		mat.flatness = 0.0
-		mat.emission_shape_offset = Vector3(0, 0, -0.05)
-		mat.initial_velocity_min = 4.5
-		mat.initial_velocity_max = 6.0
+		mat.emission_shape_offset = Vector3(0, 0, -0.5)
+		mat.emission_sphere_radius = 0.05
+		mat.initial_velocity_min = 3.0
+		mat.initial_velocity_max = 4.0
+		mat.gravity = Vector3(0, -7.0, 0)
 	else:
 		# Wall / Zombie / vertical splash: keep original upward spray along surface
 		mat.direction = Vector3(0, 10, -1)
