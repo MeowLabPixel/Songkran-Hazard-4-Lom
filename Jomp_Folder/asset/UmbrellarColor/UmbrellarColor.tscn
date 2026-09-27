@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://bs3ep1uokmq5i"]
+
+[ext_resource type="PackedScene" uid="uid://dkldo33aask4n" path="res://Jomp_Folder/asset/UmbrellarColor/UmbrellarColor.fbx" id="1_jnmp8"]
+[ext_resource type="PackedScene" uid="uid://cbc26ykrl3wv0" path="res://Jomp_Folder/asset/UmbrellarColor/UmbrellarPoleColor.fbx" id="2_qvfbb"]
+
+[node name="UmbrellarColor" type="Node3D" unique_id=1884304809]
+
+[node name="UmbrellarColor" parent="." unique_id=819109283 instance=ExtResource("1_jnmp8")]
+transform = Transform3D(0.422, 0, 0, 0, 0.422, 0, 0, 0, 0.422, 0, 0, 0)
+
+[node name="UmbrellarPoleColor" parent="." unique_id=1785678350 instance=ExtResource("2_qvfbb")]
+transform = Transform3D(0.422, 0, 0, 0, 0.422, 0, 0, 0, 0.422, 0, 0, 0)

@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://chf2gr1lglo8n"]
+
+[ext_resource type="PackedScene" uid="uid://buw46plgs74ab" path="res://Jomp_Folder/asset/IceBox/IceBoxBase.fbx" id="1_7wpcf"]
+[ext_resource type="PackedScene" uid="uid://m2b6khllwwoj" path="res://Jomp_Folder/asset/IceBox/IceBoxLid.fbx" id="2_5epw4"]
+[ext_resource type="PackedScene" uid="uid://bxbrkxs8wiupi" path="res://Jomp_Folder/asset/IceBox/IceInIceBox.fbx" id="3_5epw4"]
+
+[node name="IceBox" type="Node3D" unique_id=1507817967]
+
+[node name="IceBoxBase" parent="." unique_id=773576697 instance=ExtResource("1_7wpcf")]
+
+[node name="IceBoxLid" parent="." unique_id=2059866151 instance=ExtResource("2_5epw4")]
+transform = Transform3D(1, 0, 0, 0, -0.5734761, 0.8192223, 0, -0.8192223, -0.5734761, 0, 3.8852887, -1.7363862)
+
+[node name="IceInIceBox" parent="." unique_id=76320147 instance=ExtResource("3_5epw4")]
+transform = Transform3D(1, 0, 0, 0, 0.99868435, 0.051279522, 0, -0.051279522, 0.99868435, 0, 2.2618666, 0)

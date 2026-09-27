@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://cnu2ng64f3jda"]
+
+[ext_resource type="PackedScene" uid="uid://bx5ghdotslbgg" path="res://Jomp_Folder/asset/Tree/Tree/TreeTrunk.fbx" id="1_vk1kc"]
+[ext_resource type="PackedScene" uid="uid://cmwm1uc0iurhw" path="res://Jomp_Folder/asset/Tree/Tree/TreeLeaf.fbx" id="2_g2up2"]
+
+[node name="Tree" type="Node3D" unique_id=443521385]
+
+[node name="TreeLeaf" parent="." unique_id=2103133825 instance=ExtResource("2_g2up2")]
+
+[node name="TreeTrunk" parent="." unique_id=627572675 instance=ExtResource("1_vk1kc")]

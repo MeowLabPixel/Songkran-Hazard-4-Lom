@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://fb7m8nraaw26"]
+
+[ext_resource type="PackedScene" uid="uid://rgm3r4pkjix6" path="res://Jomp_Folder/asset/LongTable/TableLongStander.fbx" id="1_36334"]
+[ext_resource type="PackedScene" uid="uid://bipc38s2ubhp2" path="res://Jomp_Folder/asset/LongTable/LongTable.fbx" id="2_4qblr"]
+
+[node name="LongTable" type="Node3D" unique_id=525360120]
+
+[node name="TableLongStander" parent="." unique_id=791963552 instance=ExtResource("1_36334")]
+
+[node name="LongTable" parent="." unique_id=710564710 instance=ExtResource("2_4qblr")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.155, 0)

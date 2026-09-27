@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://nvg0ffsvj8tm"]
+
+[ext_resource type="PackedScene" uid="uid://ckp6uxc7rkd3b" path="res://Jomp_Folder/asset/TrafficBarrier/TrafficBarrier.glb" id="1_peodi"]
+
+[node name="TrafficBarrier" type="Node3D" unique_id=34352923]
+
+[node name="TrafficBarrier" parent="." unique_id=334203523 instance=ExtResource("1_peodi")]

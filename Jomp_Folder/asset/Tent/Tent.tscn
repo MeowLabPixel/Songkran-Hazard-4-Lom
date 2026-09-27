@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://bhfj6vjbe1jpm"]
+
+[ext_resource type="PackedScene" uid="uid://c4v2lc51ihjvy" path="res://Jomp_Folder/asset/Tent/Tent.fbx" id="1_y5afk"]
+[ext_resource type="PackedScene" uid="uid://buo5pmvh5i6ei" path="res://Jomp_Folder/asset/Tent/TentPole.fbx" id="2_h0fub"]
+
+[node name="Tent" type="Node3D" unique_id=981283034]
+
+[node name="Tent" parent="." unique_id=238893838 instance=ExtResource("1_y5afk")]
+
+[node name="TentPole" parent="." unique_id=1423507121 instance=ExtResource("2_h0fub")]

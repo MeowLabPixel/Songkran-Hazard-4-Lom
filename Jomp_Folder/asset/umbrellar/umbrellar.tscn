@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://c4iamqrnerevy"]
+
+[ext_resource type="PackedScene" uid="uid://b2ntkl1iqr5s7" path="res://Jomp_Folder/asset/umbrellar/Umbrellar.fbx" id="1_4s6wt"]
+[ext_resource type="PackedScene" uid="uid://b1ntpnkyysnqr" path="res://Jomp_Folder/asset/umbrellar/UmbrellarPole.fbx" id="2_mulxq"]
+
+[node name="Umbrellar" type="Node3D" unique_id=1910560369]
+
+[node name="Umbrellar" parent="." unique_id=740893323 instance=ExtResource("1_4s6wt")]
+
+[node name="UmbrellarPole" parent="." unique_id=720782335 instance=ExtResource("2_mulxq")]
+transform = Transform3D(0.42155305, 0, 0, 0, 0.42155305, 0, 0, 0, 0.42155305, 0, 0, 0)

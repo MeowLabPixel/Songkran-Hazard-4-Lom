@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://iuclhg4stxgd"]
+
+[ext_resource type="PackedScene" uid="uid://dieip02mbkh1d" path="res://Jomp_Folder/asset/WaterBucket/WaterBowl.fbx" id="1_dcgkh"]
+[ext_resource type="PackedScene" uid="uid://b1ho3wte2va1w" path="res://Jomp_Folder/asset/WaterBucket/WaterBuckerLid.fbx" id="2_kb5mn"]
+[ext_resource type="PackedScene" uid="uid://ca0aglwm4u7ju" path="res://Jomp_Folder/asset/WaterBucket/Water_WaterBucket.fbx" id="3_o3l8b"]
+[ext_resource type="PackedScene" uid="uid://bebjlmtkokw0y" path="res://Jomp_Folder/asset/WaterBucket/WaterBucketBase.fbx" id="4_ao5gh"]
+
+[node name="WaterBucket" type="Node3D" unique_id=1823829689]
+
+[node name="WaterBowl" parent="." unique_id=204528700 instance=ExtResource("1_dcgkh")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.16966069, 3.569184, 0.80171806)
+
+[node name="WaterBuckerLid" parent="." unique_id=617025687 instance=ExtResource("2_kb5mn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.405266, -1.0624804)
+
+[node name="Water_WaterBucket" parent="." unique_id=414497925 instance=ExtResource("3_o3l8b")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5127826, 0)
+
+[node name="WaterBucketBase" parent="." unique_id=64949389 instance=ExtResource("4_ao5gh")]
