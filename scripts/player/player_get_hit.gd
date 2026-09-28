@@ -60,11 +60,11 @@ func _enter() -> void:
 	# Mark the player as stunned (makes them temporarily invulnerable)
 	owner.is_stunned = true
 	
-	# Disable player bone hitbox areas so zombies can't detect overlap during flinch
-	_set_player_hitbox_areas_monitoring(false)
-	
-	# Disable all zombie attack/grab hitboxes during hit state
-	_set_all_enemy_hitboxes(false)
+	# Disable player hitboxes so zombies can't detect overlap during flinch
+	if owner.has_method("set_hitboxes_enabled"):
+		owner.set_hitboxes_enabled(false)
+	else:
+		_set_player_hitbox_areas_monitoring(false)
 	
 	elapsed_time = 0.0
 	camera_raised = false
@@ -134,11 +134,11 @@ func _exit() -> void:
 	owner.is_stunned = false
 	owner.aim_blocked_until_release = false
 	
-	# Re-enable player bone hitbox areas
-	_set_player_hitbox_areas_monitoring(true)
-	
-	# Re-enable all zombie attack/grab hitboxes
-	_set_all_enemy_hitboxes(true)
+	# Re-enable player hitboxes
+	if is_instance_valid(owner) and owner.has_method("set_hitboxes_enabled"):
+		owner.set_hitboxes_enabled(true)
+	else:
+		_set_player_hitbox_areas_monitoring(true)
 	
 	# Disconnect animation callback
 	if owner.anim and owner.anim.animation_finished.is_connected(_on_hit_anim_finished):
@@ -250,6 +250,12 @@ func calculate_push_direction(location: String) -> void:
 func _set_player_hitbox_areas_monitoring(enabled: bool) -> void:
 	if not owner:
 		return
+	if "hitboxF" in owner and owner.hitboxF:
+		owner.hitboxF.set_deferred("monitoring", enabled)
+		owner.hitboxF.set_deferred("monitorable", enabled)
+	if "hitboxB" in owner and owner.hitboxB:
+		owner.hitboxB.set_deferred("monitoring", enabled)
+		owner.hitboxB.set_deferred("monitorable", enabled)
 	var nodes = owner.get_tree().get_nodes_in_group("player_hitbox")
 	for area in nodes:
 		if area is Area3D:

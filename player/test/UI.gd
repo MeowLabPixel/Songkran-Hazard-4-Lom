@@ -383,7 +383,8 @@ func _update_debuff_display() -> void:
 		
 		if new_debuff_text != "":
 			# Pop animation!
-			debuff_label.pivot_offset = debuff_label.get_minimum_size() / 2.0
+			if debuff_label.pivot_offset == Vector2.ZERO:
+				debuff_label.pivot_offset = debuff_label.size / 2.0
 			debuff_label.scale = Vector2.ZERO
 			debuff_label.modulate.a = 0.0
 			

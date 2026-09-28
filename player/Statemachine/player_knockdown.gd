@@ -8,16 +8,26 @@ func _enter() -> void:
 	stop_moving()
 	owner.cancel_aim()
 	owner.anim.get(owner.anim_playback).travel("Knockdown")
-	owner.hitboxF.monitoring = false
-	owner.hitboxB.monitoring = false
+	if owner.has_method("set_hitboxes_enabled"):
+		owner.set_hitboxes_enabled(false)
+	else:
+		if owner.hitboxF:
+			owner.hitboxF.monitoring = false
+		if owner.hitboxB:
+			owner.hitboxB.monitoring = false
 	if not owner.anim.animation_finished.is_connected(anim_done):
 		owner.anim.animation_finished.connect(anim_done)
 	var timer := get_tree().create_timer(3.0)
 	timer.timeout.connect(_knockdown_fallback)
 
 func _exit() -> void:
-	owner.hitboxF.monitoring = true
-	owner.hitboxB.monitoring = true
+	if is_instance_valid(owner) and owner.has_method("set_hitboxes_enabled"):
+		owner.set_hitboxes_enabled(true)
+	else:
+		if owner.hitboxF:
+			owner.hitboxF.monitoring = true
+		if owner.hitboxB:
+			owner.hitboxB.monitoring = true
 	if owner.anim and owner.anim.animation_finished.is_connected(anim_done):
 		owner.anim.animation_finished.disconnect(anim_done)
 	owner.aim_blocked_until_release = false

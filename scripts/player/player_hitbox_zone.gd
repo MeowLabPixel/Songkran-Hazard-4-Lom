@@ -79,6 +79,8 @@ func _sanitize_scale(area: Area3D) -> void:
 func _on_area_entered(area: Area3D) -> void:
 	if not area.is_in_group("enemy_attack"):
 		return
+	if _player and _player.has_method("is_invulnerable") and _player.is_invulnerable():
+		return
 
 	var attack_type := "attack"
 

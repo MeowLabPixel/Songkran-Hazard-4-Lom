@@ -290,6 +290,7 @@ func _check_qte_input() -> void:
 			
 			# Emit hit signal to trigger player quick reload animation
 			qte_hit.emit()
+			get_tree().call_group("player_ui", "on_qte_prompt_hit")
 			
 			# Visual success flash
 			_flash_center_success()
@@ -513,13 +514,15 @@ func _resolve(success: bool) -> void:
 		if get_tree().root.has_node("GameManager"):
 			lang = GameManager.selected_language
 			
+		var is_perfect = (hit_count == prompts.size() and hit_count > 0 and not failed)
+		
 		if failed:
 			final_air = current_air_at_resolve
 			print("[ReloadQteHud debug] Failed. Setting final_air = current_air_at_resolve: ", final_air)
 			_prompt_label.text = "การรีโหลดล้มเหลว" if lang == "th" else "RELOAD FAILED"
 			_prompt_label.add_theme_color_override("font_color", Color(0.8, 0.2, 0.2)) # Red
 			SoundManager.play_2d("watergun_pistol_reload")
-		elif hit_count == prompts.size() and hit_count > 0:
+		elif is_perfect:
 			final_air = max_air
 			_prompt_label.text = "จังหวะสมบูรณ์แบบ!" if lang == "th" else "PERFECT QTE!"
 			_prompt_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5)) # Green
@@ -536,6 +539,8 @@ func _resolve(success: bool) -> void:
 			_prompt_label.add_theme_color_override("font_color", Color(0.2, 0.9, 0.5)) # Standard green/cyan
 			SoundManager.play_2d("watergun_pistol_reload")
 			
+		get_tree().call_group("player_ui", "on_qte_reload_ended", is_perfect, final_air)
+		
 		_prompt_label.scale = Vector2.ZERO
 		create_tween().tween_property(_prompt_label, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK)
 		

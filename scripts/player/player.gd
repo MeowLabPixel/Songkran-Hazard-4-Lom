@@ -1363,6 +1363,9 @@ func _physics_process(_delta: float) -> void:
 #		curr_gun = gun_list[curr_gun_index]
 
 func is_invulnerable() -> bool:
+	if is_stunned:
+		return true
+
 	# 1. Check StateMachine state
 	var sm = get_node_or_null("Statemachine")
 	if sm and sm.current_state:

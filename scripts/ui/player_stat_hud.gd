@@ -246,6 +246,21 @@ var _font_sub: Font = null
 var _font_body: Font = null
 var _mask_shader: Shader = null
 
+# Combat reaction state tracking
+var _last_water_val: float = -1.0
+var _last_air_val: float = -1.0
+var _last_player_hp: float = -1.0
+var _last_follower_hp: float = -1.0
+var _last_player_hit_state: bool = false
+var _last_follower_hit_state: bool = false
+var _last_player_grab_state: bool = false
+
+# 3D Portrait camera impact shake
+var _p_cam_impact_trauma: float = 0.0
+var _p_cam_impact_offset: Vector3 = Vector3.ZERO
+var _f_cam_impact_trauma: float = 0.0
+var _f_cam_impact_offset: Vector3 = Vector3.ZERO
+
 # ═══════════════════════════════════════════════════════════════════════════
 #                            LIFECYCLE
 # ═══════════════════════════════════════════════════════════════════════════
@@ -289,8 +304,11 @@ func _process(delta: float) -> void:
 
 	# ── Visibility ──
 	var should_show := true
-	if get_tree().root.has_node("GameManager"):
-		should_show = GameManager.show_player_stat_ui and GameManager.show_gameplay_ui
+	var gm: Node = get_tree().root.get_node_or_null("GameManager") if (get_tree() and get_tree().root) else null
+	if gm:
+		var show_stat: bool = bool(gm.get("show_player_stat_ui")) if "show_player_stat_ui" in gm else true
+		var show_gp: bool = bool(gm.get("show_gameplay_ui")) if "show_gameplay_ui" in gm else true
+		should_show = show_stat and show_gp
 	if _player and "HP" in _player and _player.HP <= 0:
 		should_show = false
 
@@ -1012,8 +1030,27 @@ func _make_unique_material(head: MeshInstance3D, surface_idx: int) -> StandardMa
 func _update_player_hp() -> void:
 	if not _player or not player_portrait:
 		return
-	player_portrait.max_value = float(_player.MaxHP) if "MaxHP" in _player else 150.0
-	player_portrait.current_value = float(_player.HP) if "HP" in _player else 0.0
+	var hp := float(_player.HP) if "HP" in _player else 0.0
+	var max_hp := float(_player.MaxHP) if "MaxHP" in _player else 150.0
+	player_portrait.max_value = max_hp
+	player_portrait.current_value = hp
+
+	var is_hit := _is_player_in_hit()
+	var is_grabbed := _is_player_in_grab()
+
+	if _last_player_hp >= 0.0 and hp < _last_player_hp:
+		player_portrait.trigger_hit_reaction(1.0)
+		_p_cam_impact_trauma = 1.0
+	elif is_hit and not _last_player_hit_state:
+		player_portrait.trigger_hit_reaction(1.0)
+		_p_cam_impact_trauma = 1.0
+
+	if is_grabbed != _last_player_grab_state:
+		player_portrait.set_grabbed(is_grabbed)
+
+	_last_player_hp = hp
+	_last_player_hit_state = is_hit
+	_last_player_grab_state = is_grabbed
 
 
 func _update_bars() -> void:
@@ -1028,6 +1065,25 @@ func _update_bars() -> void:
 		water_bar.current_value = cw
 		water_bar.label_text = str(int(cw))
 
+		if _last_water_val >= 0.0:
+			if cw < _last_water_val - 0.01:
+				water_bar.trigger_shot_reaction()
+			elif cw > _last_water_val + 0.01:
+				water_bar.trigger_reload_pulse()
+		_last_water_val = cw
+
+	# ── Reload QTE State Sync ──
+	var is_reloading_qte := false
+	if _player and is_instance_valid(_player):
+		var sm = _player.get_node_or_null("Statemachine")
+		if sm and sm.current_state and sm.current_state.name == "Reload":
+			is_reloading_qte = true
+		elif get_tree() and get_tree().get_nodes_in_group("qte_hud").size() > 0:
+			is_reloading_qte = true
+
+	if air_bar:
+		air_bar.set_reload_qte(is_reloading_qte)
+
 	# ── Air ──
 	if _gun_controller and _gun_controller.current_gun and air_bar:
 		var gun = _gun_controller.current_gun
@@ -1038,6 +1094,13 @@ func _update_bars() -> void:
 		var pct := int((air_val / max_air) * 100.0) if max_air > 0.0 else 0
 		air_bar.label_text = str(pct) + "%"
 
+		if _last_air_val >= 0.0 and not is_reloading_qte:
+			if air_val < _last_air_val - 0.01:
+				air_bar.trigger_shot_reaction()
+			elif air_val > _last_air_val + 0.01:
+				air_bar.trigger_reload_pulse()
+		_last_air_val = air_val
+
 		if gun.is_super_active:
 			air_bar.fill_color = C_AIR_SUPER_ACTIVE
 		elif gun.is_super_ready:
@@ -1046,14 +1109,41 @@ func _update_bars() -> void:
 			air_bar.fill_color = _default_air_color
 
 
+func on_qte_prompt_hit() -> void:
+	if air_bar and is_instance_valid(air_bar):
+		air_bar.trigger_qte_hit_reaction()
+
+
+func on_qte_reload_ended(is_perfect: bool, final_air: float) -> void:
+	if air_bar and is_instance_valid(air_bar):
+		_last_air_val = final_air
+		if is_perfect:
+			air_bar.trigger_qte_perfect_flash()
+		elif final_air >= air_bar.max_value - 0.1:
+			air_bar.trigger_qte_full_air_flash()
+
+
 func _update_follower() -> void:
 	if not follower_portrait:
 		return
 
 	if _follower and is_instance_valid(_follower) and not _follower.is_dead:
 		follower_portrait.visible = true
-		follower_portrait.max_value = float(_follower.max_health)
-		follower_portrait.current_value = float(_follower.health)
+		var f_hp := float(_follower.health)
+		var f_max_hp := float(_follower.max_health)
+		follower_portrait.max_value = f_max_hp
+		follower_portrait.current_value = f_hp
+
+		var is_f_hit := _is_follower_in_hit()
+		if _last_follower_hp >= 0.0 and f_hp < _last_follower_hp:
+			follower_portrait.trigger_hit_reaction(1.0)
+			_f_cam_impact_trauma = 1.0
+		elif is_f_hit and not _last_follower_hit_state:
+			follower_portrait.trigger_hit_reaction(1.0)
+			_f_cam_impact_trauma = 1.0
+
+		_last_follower_hp = f_hp
+		_last_follower_hit_state = is_f_hit
 	else:
 		follower_portrait.visible = false
 
@@ -1069,8 +1159,9 @@ func _update_debuff() -> void:
 	var air_pct: float = gun.air / gun.max_air if gun.max_air > 0.0 else 0.0
 
 	var lang := "en"
-	if get_tree().root.has_node("GameManager"):
-		lang = GameManager.selected_language
+	var gm: Node = get_tree().root.get_node_or_null("GameManager") if (get_tree() and get_tree().root) else null
+	if gm and "selected_language" in gm:
+		lang = str(gm.selected_language)
 
 	var new_text := ""
 	var color := Color.WHITE
@@ -1091,7 +1182,8 @@ func _update_debuff() -> void:
 		debuff_label.add_theme_color_override("font_color", color)
 
 		if new_text != "":
-			debuff_label.pivot_offset = debuff_label.get_minimum_size() * 0.5
+			if debuff_label.pivot_offset == Vector2.ZERO:
+				debuff_label.pivot_offset = debuff_label.size * 0.5
 			debuff_label.scale = Vector2.ZERO
 			debuff_label.modulate.a = 0.0
 			var tw := create_tween().set_parallel(true)
@@ -1105,17 +1197,18 @@ func _update_debuff() -> void:
 
 func _update_counters() -> void:
 	var lang := "en"
-	if get_tree().root.has_node("GameManager"):
-		lang = GameManager.selected_language
+	var gm: Node = get_tree().root.get_node_or_null("GameManager") if (get_tree() and get_tree().root) else null
+	if gm and "selected_language" in gm:
+		lang = str(gm.selected_language)
 
-	if kill_label:
-		var kills: int = GameManager.kill_count
-		var limit: int = GameManager.kill_limit
+	if kill_label and gm:
+		var kills: int = int(gm.get("kill_count")) if "kill_count" in gm else 0
+		var limit: int = int(gm.get("kill_limit")) if "kill_limit" in gm else 0
 		kill_label.text = ("กำจัด: %d/%d" if lang == "th" else "Kills: %d/%d") % [kills, limit]
 
-	if time_label:
-		var elapsed: float = GameManager.survival_time_elapsed
-		var limit_t: float = GameManager.SURVIVAL_LIMIT
+	if time_label and gm:
+		var elapsed: float = float(gm.get("survival_time_elapsed")) if "survival_time_elapsed" in gm else 0.0
+		var limit_t: float = float(gm.get("SURVIVAL_LIMIT")) if "SURVIVAL_LIMIT" in gm else 0.0
 		var left := maxf(0.0, limit_t - elapsed)
 		var mins := int(left) / 60
 		var secs := int(left) % 60
@@ -1440,6 +1533,39 @@ func _is_player_sprinting() -> bool:
 	return false
 
 
+func _is_player_in_hit() -> bool:
+	if not _player or not is_instance_valid(_player):
+		return false
+	var sm = _player.get_node_or_null("Statemachine")
+	if sm and sm.get("current_state") and sm.current_state.name == "Get_hit":
+		return true
+	return false
+
+
+func _is_player_in_grab() -> bool:
+	if not _player or not is_instance_valid(_player):
+		return false
+	var sm = _player.get_node_or_null("Statemachine")
+	if sm and sm.get("current_state") and sm.current_state.name == "Grab":
+		var grab_state = sm.current_state
+		if "is_exiting" in grab_state and grab_state.is_exiting:
+			if "last_anim" in grab_state and grab_state.last_anim == "Grab/Win":
+				return false
+		return true
+	return false
+
+
+func _is_follower_in_hit() -> bool:
+	if not _follower or not is_instance_valid(_follower):
+		return false
+	var sm = _follower.get_node_or_null("StateMachine")
+	if sm and sm.get("current_state"):
+		var sname: String = sm.current_state.name
+		if sname in ["AnchaleeStateHit", "Hit"]:
+			return true
+	return false
+
+
 func _is_player_moving() -> bool:
 	if not _player or not is_instance_valid(_player):
 		return false
@@ -1541,8 +1667,26 @@ func _apply_camera_settings(delta: float = 0.0) -> void:
 			_p_cam_curr_pos = _p_cam_curr_pos.lerp(target_pos, p_blend_weight)
 			_p_cam_curr_look = _p_cam_curr_look.lerp(target_look, p_blend_weight)
 
-		player_camera.position = _p_cam_curr_pos
-		player_camera.look_at(_p_cam_curr_look, Vector3.UP)
+		# Process 3D impact shake trauma for player
+		if _p_cam_impact_trauma > 0.0:
+			_p_cam_impact_trauma = maxf(0.0, _p_cam_impact_trauma - delta * 4.0)
+			var impact_intensity := _p_cam_impact_trauma * _p_cam_impact_trauma * 0.04
+			_p_cam_impact_offset = Vector3(
+				randf_range(-1.0, 1.0) * impact_intensity,
+				randf_range(-1.0, 1.0) * impact_intensity,
+				randf_range(-0.5, 0.5) * impact_intensity
+			)
+		elif _is_player_in_grab():
+			_p_cam_impact_offset = Vector3(
+				randf_range(-0.005, 0.005),
+				randf_range(-0.005, 0.005),
+				-0.012
+			)
+		else:
+			_p_cam_impact_offset = Vector3.ZERO
+
+		player_camera.position = _p_cam_curr_pos + _p_cam_impact_offset
+		player_camera.look_at(_p_cam_curr_look + Vector3(_p_cam_impact_offset.x * 0.5, _p_cam_impact_offset.y * 0.5, 0.0), Vector3.UP)
 
 	# ── Follower Portrait Camera ──
 	if follower_camera:
@@ -1629,8 +1773,20 @@ func _apply_camera_settings(delta: float = 0.0) -> void:
 			_f_cam_curr_pos = _f_cam_curr_pos.lerp(target_pos, f_blend_weight)
 			_f_cam_curr_look = _f_cam_curr_look.lerp(target_look, f_blend_weight)
 			
-		follower_camera.position = _f_cam_curr_pos
-		follower_camera.look_at(_f_cam_curr_look, Vector3.UP)
+		# Process 3D impact shake trauma for follower
+		if _f_cam_impact_trauma > 0.0:
+			_f_cam_impact_trauma = maxf(0.0, _f_cam_impact_trauma - delta * 4.0)
+			var f_impact_intensity := _f_cam_impact_trauma * _f_cam_impact_trauma * 0.04
+			_f_cam_impact_offset = Vector3(
+				randf_range(-1.0, 1.0) * f_impact_intensity,
+				randf_range(-1.0, 1.0) * f_impact_intensity,
+				randf_range(-0.5, 0.5) * f_impact_intensity
+			)
+		else:
+			_f_cam_impact_offset = Vector3.ZERO
+
+		follower_camera.position = _f_cam_curr_pos + _f_cam_impact_offset
+		follower_camera.look_at(_f_cam_curr_look + Vector3(_f_cam_impact_offset.x * 0.5, _f_cam_impact_offset.y * 0.5, 0.0), Vector3.UP)
 
 
 func _update_portrait_cameras(delta: float = 0.0) -> void:
