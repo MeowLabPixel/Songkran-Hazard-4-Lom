@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://didd3tgsedeu4"]
+
+[ext_resource type="PackedScene" uid="uid://biwqv4wqb3v0b" path="res://Jomp_Folder/asset/Tree/Tree2/TreeLeaf2.fbx" id="1_j0aj4"]
+[ext_resource type="PackedScene" uid="uid://164kk2uyboxb" path="res://Jomp_Folder/asset/Tree/Tree2/TreeTrunk2.fbx" id="2_81biq"]
+
+[node name="Tree2" type="Node3D" unique_id=1615913116]
+
+[node name="TreeLeaf2" parent="." unique_id=1316854473 instance=ExtResource("1_j0aj4")]
+transform = Transform3D(1.5768584, 0, 0, 0, 1.5768584, 0, 0, 0, 1.5768584, 0, 0, 0)
+
+[node name="TreeTrunk2" parent="." unique_id=1961271163 instance=ExtResource("2_81biq")]
+transform = Transform3D(1.5768584, 0, 0, 0, 1.5768584, 0, 0, 0, 1.5768584, 0, 0, 0)

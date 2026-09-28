@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://6s3stn65hdix"]
+
+[ext_resource type="PackedScene" uid="uid://cx1qfrbt8sxi7" path="res://Jomp_Folder/asset/MailBox/MialBoxBase.fbx" id="1_lnoq3"]
+[ext_resource type="PackedScene" uid="uid://2hguscc33qtu" path="res://Jomp_Folder/asset/MailBox/MailBox.glb" id="2_umhpk"]
+
+[node name="MailBox" type="Node3D" unique_id=1788277483]
+
+[node name="MialBoxBase" parent="." unique_id=1513257359 instance=ExtResource("1_lnoq3")]
+
+[node name="MailBox" parent="." unique_id=603153950 instance=ExtResource("2_umhpk")]

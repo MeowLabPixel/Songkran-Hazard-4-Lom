@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://bct31ytgtiwqy"]
+
+[ext_resource type="PackedScene" uid="uid://ck5w2ct2aua3l" path="res://Jomp_Folder/asset/BuntingFlagLong/BuntingFlagLong.fbx" id="1_rygqn"]
+[ext_resource type="PackedScene" uid="uid://d2hwc5klo1g84" path="res://Jomp_Folder/asset/BuntingFlagLong/PoleBuntingFlagLong.fbx" id="2_sy2p3"]
+
+[node name="BuntingFlagLong" type="Node3D" unique_id=1451120966]
+
+[node name="BuntingFlagLong" parent="." unique_id=467305937 instance=ExtResource("1_rygqn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 15, 0)
+
+[node name="PoleBuntingFlagLong" parent="." unique_id=492554847 instance=ExtResource("2_sy2p3")]
