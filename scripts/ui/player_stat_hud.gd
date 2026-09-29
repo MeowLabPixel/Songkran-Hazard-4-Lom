@@ -1114,6 +1114,11 @@ func on_qte_prompt_hit() -> void:
 		air_bar.trigger_qte_hit_reaction()
 
 
+func on_qte_prompt_miss() -> void:
+	if air_bar and is_instance_valid(air_bar):
+		air_bar.trigger_qte_fail_reaction()
+
+
 func on_qte_reload_ended(is_perfect: bool, final_air: float) -> void:
 	if air_bar and is_instance_valid(air_bar):
 		_last_air_val = final_air
@@ -1121,6 +1126,8 @@ func on_qte_reload_ended(is_perfect: bool, final_air: float) -> void:
 			air_bar.trigger_qte_perfect_flash()
 		elif final_air >= air_bar.max_value - 0.1:
 			air_bar.trigger_qte_full_air_flash()
+		else:
+			air_bar.trigger_qte_fail_reaction()
 
 
 func _update_follower() -> void:

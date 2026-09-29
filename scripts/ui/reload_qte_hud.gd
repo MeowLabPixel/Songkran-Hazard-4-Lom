@@ -239,6 +239,7 @@ func _process_qte(delta: float) -> void:
 		if not p.hit and not p.missed and current_progress > (p.center + prompt_size):
 			p.missed = true
 			failed = true
+			get_tree().call_group("player_ui", "on_qte_prompt_miss")
 			if fail_ends_reload:
 				_resolve(false)
 			
@@ -341,6 +342,7 @@ func _check_qte_input() -> void:
 	else:
 		# Miss penalty: flash red and play click
 		_flash_center_failure()
+		get_tree().call_group("player_ui", "on_qte_prompt_miss")
 		
 		# If it is early, we don't fail immediately, letting the player try again.
 		# If it is late (not early), we register QTE failure.

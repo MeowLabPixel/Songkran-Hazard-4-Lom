@@ -291,17 +291,50 @@ extends Control
 @export var reload_flash_color: Color = Color(1.0, 1.0, 1.0, 0.55)
 
 @export_group("QTE Reactions & Flashes")
-## Positional shake intensity in pixels applied on QTE prompt hits.
-@export var qte_hit_shake_intensity: float = 6.0
+## Positional shake intensity in pixels applied when a QTE prompt is missed or failed (empty zone hit).
+@export var qte_fail_shake_intensity: float = 7.5
 
-## Vertical thickness scale punch multiplier applied when a QTE prompt is hit.
-@export var qte_hit_v_scale: float = 1.30
+## Flash color overlay when player mistimes or fails a QTE prompt (empty zone hit).
+@export var qte_fail_red_flash_color: Color = Color(1.0, 0.2, 0.2, 0.90)
+
+## Flash fade duration in seconds when player mistimes or fails a QTE prompt.
+@export var qte_fail_flash_duration: float = 0.45
+
+## Click in the inspector to test the QTE Fail Shake & Red Flash reaction (works live in editor).
+@export var test_qte_fail_reaction: bool = false:
+	set(v):
+		if v:
+			trigger_qte_fail_reaction()
+
+## Vertical scale compression factor during the initial squash phase of a QTE squish (e.g. 0.25).
+@export var qte_squish_compress_scale: float = 0.25
+
+## Vertical thickness scale squish multiplier applied when a QTE prompt is hit or on standard 100% complete.
+@export var qte_hit_v_scale: float = 1.35
+
+## Vertical thickness scale squish multiplier applied on perfect QTE completion (springs bigger).
+@export var qte_perfect_v_scale: float = 1.50
+
+## Direction in which the QTE squish thickness expands:
+## - "Center": Anchors the center line so it squishes symmetrically from both above and below.
+## - "Upward": Anchors the bottom edge so it pulses upward.
+## - "Downward": Anchors the top edge so it pulses downward.
+@export_enum("Center", "Upward", "Downward") var qte_hit_v_direction: String = "Center":
+	set(v):
+		qte_hit_v_direction = "Center" if v == null or v == "" else v
+		queue_redraw()
 
 ## Flash color overlay when a QTE prompt is hit.
 @export var qte_hit_flash_color: Color = Color(1.0, 1.0, 1.0, 0.65)
 
 ## Flash fade duration in seconds when a QTE prompt is hit.
 @export var qte_hit_flash_duration: float = 0.22
+
+## Click in the inspector to test the satisfying QTE Hit Squish & Flash reaction (works live in editor).
+@export var test_qte_hit_squish: bool = false:
+	set(v):
+		if v:
+			trigger_qte_hit_reaction()
 
 ## Click in the inspector to test the QTE Hit Shake & Punch reaction (works live in editor).
 @export var test_qte_hit_shake: bool = false:
@@ -344,6 +377,7 @@ var _lost_chunk_timer: float = 0.0
 ## Internal juice reaction edge kick, vertical scale, and flash
 var _juice_edge_kick: float = 0.0
 var _juice_scale_y: float = 1.0
+var _active_v_direction: String = ""
 var _juice_flash_alpha: float = 0.0
 var _juice_flash_color: Color = Color.WHITE
 var _juice_tween: Tween = null
@@ -420,6 +454,7 @@ func trigger_shot_reaction(include_offset: bool = true) -> void:
 		if is_inside_tree() and _flash_tween and _flash_tween.is_valid():
 			_flash_tween.kill()
 
+	_active_v_direction = shot_kick_v_direction
 	if include_offset:
 		var kick_dir: float = 1.0 if fill_from_right else -1.0
 		_juice_edge_kick = kick_dir * shot_kick_offset_px
@@ -455,24 +490,58 @@ func trigger_qte_hit_reaction() -> void:
 		if is_inside_tree() and _flash_tween and _flash_tween.is_valid():
 			_flash_tween.kill()
 
-	_shake_trauma = 1.0
-	_juice_scale_y = qte_hit_v_scale
+	_active_v_direction = qte_hit_v_direction
 	if not _is_qte_completion_flash_active:
 		_juice_flash_alpha = 1.0
 		_juice_flash_color = qte_hit_flash_color
 	queue_redraw()
 
 	if not is_inside_tree():
+		_juice_scale_y = qte_hit_v_scale
 		return
 
 	_juice_tween = create_tween()
-	_juice_tween.tween_property(self, "_juice_scale_y", 1.0, 0.22) \
+	# Phase 1: Rapid squash compress down (0.25)
+	_juice_tween.tween_property(self, "_juice_scale_y", qte_squish_compress_scale, 0.04) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	# Phase 2: Explosive spring overshoot up to 1.35x
+	_juice_tween.tween_property(self, "_juice_scale_y", qte_hit_v_scale, 0.08) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	# Phase 3: Satisfying elastic bounce back to 1.0
+	_juice_tween.tween_property(self, "_juice_scale_y", 1.0, 0.24) \
 		.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 	_juice_tween.tween_callback(queue_redraw)
 
 	if not _is_qte_completion_flash_active:
 		_flash_tween = create_tween()
 		_flash_tween.tween_property(self, "_juice_flash_alpha", 0.0, qte_hit_flash_duration) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+func trigger_qte_fail_reaction() -> void:
+	if not enable_juice:
+		return
+	if is_inside_tree() and _juice_tween and _juice_tween.is_valid():
+		_juice_tween.kill()
+	if not _is_qte_completion_flash_active:
+		if is_inside_tree() and _flash_tween and _flash_tween.is_valid():
+			_flash_tween.kill()
+
+	_active_v_direction = qte_hit_v_direction
+	if enable_shake:
+		_shake_trauma = 1.0
+
+	if not _is_qte_completion_flash_active:
+		_juice_flash_alpha = 1.0
+		_juice_flash_color = qte_fail_red_flash_color
+	queue_redraw()
+
+	if not is_inside_tree():
+		return
+
+	if not _is_qte_completion_flash_active:
+		_flash_tween = create_tween()
+		_flash_tween.tween_property(self, "_juice_flash_alpha", 0.0, qte_fail_flash_duration) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
@@ -485,6 +554,7 @@ func trigger_reload_pulse() -> void:
 		if is_inside_tree() and _flash_tween and _flash_tween.is_valid():
 			_flash_tween.kill()
 
+	_active_v_direction = shot_kick_v_direction
 	var kick_dir: float = 1.0 if fill_from_right else -1.0
 	var target_kick := kick_dir * reload_kick_offset_px
 	var target_scale_y := reload_pulse_v_scale
@@ -527,6 +597,7 @@ func trigger_qte_full_air_flash() -> void:
 	if is_inside_tree() and _flash_tween and _flash_tween.is_valid():
 		_flash_tween.kill()
 
+	_active_v_direction = qte_hit_v_direction
 	_is_qte_completion_flash_active = true
 	_juice_flash_alpha = 1.0
 	_juice_flash_color = qte_complete_white_flash_color
@@ -536,11 +607,16 @@ func trigger_qte_full_air_flash() -> void:
 		return
 
 	_juice_tween = create_tween()
-	_juice_tween.tween_property(self, "_juice_scale_y", 1.18, 0.08) \
+	# Phase 1: Rapid squash compress down (0.25)
+	_juice_tween.tween_property(self, "_juice_scale_y", qte_squish_compress_scale, 0.04) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_juice_tween.tween_property(self, "_juice_scale_y", 1.0, 0.25) \
+	# Phase 2: Explosive spring overshoot up to 1.35x
+	_juice_tween.tween_property(self, "_juice_scale_y", qte_hit_v_scale, 0.08) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	# Phase 3: Satisfying elastic bounce back to 1.0
+	_juice_tween.tween_property(self, "_juice_scale_y", 1.0, 0.24) \
 		.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
-	_juice_tween.tween_callback(queue_redraw)
+	_juice_tween.chain().tween_callback(queue_redraw)
 
 	_flash_tween = create_tween()
 	_flash_tween.tween_property(self, "_juice_flash_alpha", 0.0, qte_complete_flash_duration) \
@@ -556,6 +632,7 @@ func trigger_qte_perfect_flash() -> void:
 	if is_inside_tree() and _flash_tween and _flash_tween.is_valid():
 		_flash_tween.kill()
 
+	_active_v_direction = qte_hit_v_direction
 	_is_qte_completion_flash_active = true
 	_juice_flash_alpha = 1.0
 	_juice_flash_color = qte_perfect_green_flash_color
@@ -565,11 +642,16 @@ func trigger_qte_perfect_flash() -> void:
 		return
 
 	_juice_tween = create_tween()
-	_juice_tween.tween_property(self, "_juice_scale_y", 1.25, 0.08) \
+	# Phase 1: Rapid squash compress down (0.25)
+	_juice_tween.tween_property(self, "_juice_scale_y", qte_squish_compress_scale, 0.04) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_juice_tween.tween_property(self, "_juice_scale_y", 1.0, 0.3) \
+	# Phase 2: Explosive spring overshoot BIGGER to 1.50x
+	_juice_tween.tween_property(self, "_juice_scale_y", qte_perfect_v_scale, 0.09) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	# Phase 3: Satisfying elastic bounce back to 1.0
+	_juice_tween.tween_property(self, "_juice_scale_y", 1.0, 0.28) \
 		.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
-	_juice_tween.tween_callback(queue_redraw)
+	_juice_tween.chain().tween_callback(queue_redraw)
 
 	_flash_tween = create_tween()
 	_flash_tween.tween_property(self, "_juice_flash_alpha", 0.0, qte_perfect_flash_duration) \
@@ -610,7 +692,8 @@ func _process(delta: float) -> void:
 	# ── Trauma shake calculation ──
 	if enable_shake and _shake_trauma > 0.0:
 		_shake_trauma = maxf(0.0, _shake_trauma - delta * 4.5)
-		var amt := _shake_trauma * _shake_trauma * qte_hit_shake_intensity
+		var intensity := qte_fail_shake_intensity if qte_fail_shake_intensity > 0.0 else 7.5
+		var amt := _shake_trauma * _shake_trauma * intensity
 		_shake_offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * amt
 		queue_redraw()
 	else:
@@ -673,7 +756,8 @@ func _draw() -> void:
 
 	if has_v_scale:
 		var pivot_y: float = h * 0.5
-		match shot_kick_v_direction:
+		var dir := _active_v_direction if _active_v_direction != "" else (qte_hit_v_direction if _is_reload_qte_active else shot_kick_v_direction)
+		match dir:
 			"Upward":
 				pivot_y = h
 			"Downward":

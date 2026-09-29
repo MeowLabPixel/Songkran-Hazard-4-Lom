@@ -532,11 +532,14 @@ func _process(delta: float) -> void:
 		
 	if not is_aimming:
 		target_aim_speed_multiplier = 1.0
-	aim_speed_multiplier = lerpf(aim_speed_multiplier, target_aim_speed_multiplier, delta * 25.0)
+	aim_speed_multiplier = lerpf(aim_speed_multiplier, target_aim_speed_multiplier, clampf(1.0 - exp(-25.0 * delta), 0.0, 1.0))
 	var aim_blend_speed = (35.0 * aim_speed_multiplier) if is_aimming else 15.0
-	current_aim_influence = lerpf(current_aim_influence, target_influence, delta * aim_blend_speed)
+	current_aim_influence = lerpf(current_aim_influence, target_influence, clampf(1.0 - exp(-aim_blend_speed * delta), 0.0, 1.0))
+	current_aim_influence = clampf(current_aim_influence, 0.0, 1.0)
 	if anim and aim_speed_multiplier > 1.0 and is_aimming:
-		anim.advance(delta * (aim_speed_multiplier - 1.0))
+		var pb = anim.get(anim_playback)
+		if pb and pb.has_method("get_current_node") and pb.get_current_node() != "Aim":
+			anim.advance(delta * (aim_speed_multiplier - 1.0))
 	
 	# Determine head glance influence:
 	# 1.0 when Aiming
@@ -568,9 +571,9 @@ func _process(delta: float) -> void:
 	current_head_influence = lerpf(current_head_influence, target_head_inf, delta * inf_blend_speed)
 	
 	if aim_bone:
-		aim_bone.influence = current_aim_influence
+		aim_bone.influence = clampf(current_aim_influence, 0.0, 1.0)
 	if aim_bone2:
-		aim_bone2.influence = current_aim_influence
+		aim_bone2.influence = clampf(current_aim_influence, 0.0, 1.0)
 	_update_skeleton_tilt(delta)
 		
 	if skeleton:
@@ -1213,6 +1216,7 @@ func is_aim_transition_complete() -> bool:
 		if pb and pb.has_method("get_current_node"):
 			if pb.get_current_node() != "Aim":
 				return false
+	target_aim_speed_multiplier = 1.0
 	return true
 
 func spawn_damage_popup(text_content: String, color: Color) -> void:

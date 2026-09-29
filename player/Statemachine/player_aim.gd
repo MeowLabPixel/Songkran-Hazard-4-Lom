@@ -37,11 +37,12 @@ func _enter() -> void:
 		if owner.gun_controller and owner.gun_controller.current_gun:
 			var gun = owner.gun_controller.current_gun
 			if not (gun is PistolWaterGun and gun.is_super_active):
-				is_shot_queued = true
-				if owner.has_method("boost_aim_transition_fast"):
-					owner.boost_aim_transition_fast()
-				aim_entry_timer = min(aim_entry_timer, 0.15)
-				set_gun_aim_anim()
+				if gun.can_shoot():
+					is_shot_queued = true
+					if owner.has_method("boost_aim_transition_fast"):
+						owner.boost_aim_transition_fast()
+					aim_entry_timer = min(aim_entry_timer, 0.15)
+					set_gun_aim_anim()
 
 	if not Input.is_action_pressed("aim") and not is_shot_queued and not is_waiting_quick_shot_delay:
 		owner.is_aimming = false
@@ -79,26 +80,28 @@ func _update(_delta:float) -> void:
 			if owner.gun_controller and owner.gun_controller.current_gun:
 				var gun = owner.gun_controller.current_gun
 				if not (gun is PistolWaterGun and gun.is_super_active):
-					if aim_entry_timer <= 0.0 and owner.is_aim_transition_complete():
-						_trigger_shot()
-					else:
-						is_shot_queued = true
-						if owner.has_method("boost_aim_transition_fast"):
-							owner.boost_aim_transition_fast()
-						aim_entry_timer = min(aim_entry_timer, 0.1)
-						set_gun_aim_anim()
+					if gun.can_shoot():
+						if aim_entry_timer <= 0.0 and owner.is_aim_transition_complete():
+							_trigger_shot()
+						else:
+							is_shot_queued = true
+							if owner.has_method("boost_aim_transition_fast"):
+								owner.boost_aim_transition_fast()
+							aim_entry_timer = min(aim_entry_timer, 0.1)
+							set_gun_aim_anim()
 		elif Input.is_action_pressed("click"):
 			if owner.gun_controller and owner.gun_controller.current_gun:
 				var gun = owner.gun_controller.current_gun
 				if gun is PistolWaterGun and gun.is_super_active:
-					if aim_entry_timer <= 0.0 and owner.is_aim_transition_complete():
-						_trigger_shot()
-					else:
-						is_shot_queued = true
-						if owner.has_method("boost_aim_transition_fast"):
-							owner.boost_aim_transition_fast()
-						aim_entry_timer = min(aim_entry_timer, 0.1)
-						set_gun_aim_anim()
+					if gun.can_shoot():
+						if aim_entry_timer <= 0.0 and owner.is_aim_transition_complete():
+							_trigger_shot()
+						else:
+							is_shot_queued = true
+							if owner.has_method("boost_aim_transition_fast"):
+								owner.boost_aim_transition_fast()
+							aim_entry_timer = min(aim_entry_timer, 0.1)
+							set_gun_aim_anim()
 				
 	# If aim button was released, exit once shot animation is done and no shot is queued
 	if not Input.is_action_pressed("aim") and shot_exit_lock_timer <= 0.0 and not is_shot_queued and not is_waiting_quick_shot_delay:
@@ -147,14 +150,15 @@ func _state_input(_event: InputEvent) -> void:
 		if owner.gun_controller and owner.gun_controller.current_gun:
 			var gun = owner.gun_controller.current_gun
 			if not (gun is PistolWaterGun and gun.is_super_active):
-				if aim_entry_timer <= 0.0 and owner.is_aim_transition_complete():
-					_trigger_shot()
-				else:
-					is_shot_queued = true
-					if owner.has_method("boost_aim_transition_fast"):
-						owner.boost_aim_transition_fast()
-					aim_entry_timer = min(aim_entry_timer, 0.15)
-					set_gun_aim_anim()
+				if gun.can_shoot():
+					if aim_entry_timer <= 0.0 and owner.is_aim_transition_complete():
+						_trigger_shot()
+					else:
+						is_shot_queued = true
+						if owner.has_method("boost_aim_transition_fast"):
+							owner.boost_aim_transition_fast()
+						aim_entry_timer = min(aim_entry_timer, 0.15)
+						set_gun_aim_anim()
 
 func _trigger_shot() -> void:
 	if _is_firing_shot:
@@ -163,6 +167,10 @@ func _trigger_shot() -> void:
 		return
 	var gun = owner.gun_controller.current_gun
 	if not gun.can_shoot():
+		if "target_aim_speed_multiplier" in owner:
+			owner.target_aim_speed_multiplier = 1.0
+		if "aim_speed_multiplier" in owner:
+			owner.aim_speed_multiplier = 1.0
 		return
 		
 	_is_firing_shot = true
