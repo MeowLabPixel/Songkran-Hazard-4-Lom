@@ -355,11 +355,9 @@ metadata/_stencil_owned = true
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h1ln1"]
 next_pass = SubResource("StandardMaterial3D_8srmi")
 transparency = 1
-blend_mode = 1
-cull_mode = 2
 diffuse_mode = 3
 specular_mode = 1
-albedo_color = Color(1, 1, 1, 0.25882354)
+albedo_color = Color(1, 1, 1, 0.21568628)
 metallic_specular = 1.0
 roughness = 0.19
 rim_enabled = true
