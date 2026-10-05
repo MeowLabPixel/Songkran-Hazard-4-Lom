@@ -19,20 +19,23 @@ grow_amount = 0.003
 stencil_mode = 3
 stencil_flags = 1
 stencil_compare = 5
+stencil_reference = 20
 metadata/_stencil_owned = true
 
 [resource]
 next_pass = SubResource("StandardMaterial3D_syrjo")
 transparency = 1
+blend_mode = 1
 diffuse_mode = 3
 specular_mode = 1
 albedo_color = Color(2.1168277, 2.1168277, 2.1168277, 1)
 albedo_texture = SubResource("GradientTexture2D_eaj2a")
 metallic_specular = 1.0
-roughness = 0.0
+roughness = 0.07
 clearcoat_roughness = 1.0
 disable_receive_shadows = true
 stencil_mode = 1
 stencil_flags = 2
+stencil_reference = 20
 stencil_color = Color(1.4586968, 1.4586968, 1.4586968, 0.5882353)
 stencil_outline_thickness = 0.003

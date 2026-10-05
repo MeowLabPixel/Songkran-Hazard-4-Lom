@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://gjs0wjhh5kp8" path="res://GunSystem/Scene/WaterLineVFX/WaterMuzzle.tscn" id="5_xnxwk"]
 [ext_resource type="Script" uid="uid://c43b2dn4ajns1" path="res://GunSystem/Script/SniperWaterGun.gd" id="6_8ckxr"]
 [ext_resource type="Material" uid="uid://bqftme5b56mhk" path="res://Water Gun Glock/Cell_Vottle.tres" id="6_fimos"]
+[ext_resource type="Texture2D" uid="uid://brbgm4470it67" path="res://Water Gun Glock/WaterGun_Base_color.png" id="8_g3y85"]
 [ext_resource type="Material" uid="uid://dypclgi7i7ecp" path="res://Water Gun Shotty/Cell_Shotgun.tres" id="9_66hm5"]
 [ext_resource type="Texture2D" uid="uid://db2pkqmf0ltqe" path="res://Water Gun Shotty/ShotGunfix_openPBR_shader1_Base_color.png" id="9_ce350"]
 [ext_resource type="Material" uid="uid://2d51ux46uptw" path="res://Water Gun Shotty/Cell_Bottle_Shotgun.tres" id="10_g3y85"]
@@ -157,6 +158,35 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_b5th1")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6ffqx"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.5882353)
+grow = true
+grow_amount = 0.006
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+stencil_reference = 14
+metadata/_stencil_owned = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vauwm"]
+next_pass = SubResource("StandardMaterial3D_6ffqx")
+diffuse_mode = 3
+specular_mode = 2
+albedo_texture = ExtResource("8_g3y85")
+metallic_specular = 1.0
+roughness = 0.0
+rim_enabled = true
+rim = 0.5
+clearcoat = 0.0
+stencil_mode = 1
+stencil_flags = 2
+stencil_reference = 14
+stencil_color = Color(0, 0, 0, 0.5882353)
+stencil_outline_thickness = 0.006
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_rfc7b"]
 _surfaces = [{
@@ -791,7 +821,7 @@ surface_material_override/0 = ExtResource("5_ki7bh")
 
 [node name="Pump" type="MeshInstance3D" parent="Pistol/Gunfix" unique_id=1337274281]
 mesh = SubResource("ArrayMesh_ml4ph")
-surface_material_override/0 = ExtResource("5_ki7bh")
+surface_material_override/0 = SubResource("StandardMaterial3D_vauwm")
 
 [node name="Thing" type="MeshInstance3D" parent="Pistol/Gunfix" unique_id=282299992]
 mesh = SubResource("ArrayMesh_jcqlq")

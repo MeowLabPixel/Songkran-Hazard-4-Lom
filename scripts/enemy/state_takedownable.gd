@@ -130,6 +130,8 @@ func physics_update(delta: float) -> void:
 	if _in_act1:
 		# Apply act1 velocity
 		if enemy and stun_type == "head":
+			if enemy.is_on_wall():
+				_act1_velocity = Vector3.ZERO
 			enemy.velocity = _act1_velocity
 			enemy.move_and_slide()
 			

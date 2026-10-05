@@ -8,11 +8,11 @@ transparency = 1
 shading_mode = 0
 albedo_color = Color(0, 0, 0, 0.5882353)
 grow = true
-grow_amount = 0.003
+grow_amount = 0.008
 stencil_mode = 3
 stencil_flags = 1
 stencil_compare = 5
-stencil_reference = 2
+stencil_reference = 4
 metadata/_stencil_owned = true
 
 [resource]
@@ -26,6 +26,6 @@ rim = 0.5
 texture_filter = 5
 stencil_mode = 1
 stencil_flags = 2
-stencil_reference = 2
+stencil_reference = 4
 stencil_color = Color(0, 0, 0, 0.5882353)
-stencil_outline_thickness = 0.003
+stencil_outline_thickness = 0.008

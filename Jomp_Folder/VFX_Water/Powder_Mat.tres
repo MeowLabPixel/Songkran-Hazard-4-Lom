@@ -1,7 +1,7 @@
 [gd_resource type="StandardMaterial3D" format=3 uid="uid://1thj7r0jqmdp"]
 
 [sub_resource type="Gradient" id="Gradient_d68ey"]
-colors = PackedColorArray(0.6578363, 0.6578363, 0.6578363, 1, 1, 1, 1, 1)
+colors = PackedColorArray(0.6578363, 0.6578363, 0.6578363, 1, 0.8848981, 0.8848981, 0.8848981, 1)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_8gtee"]
 gradient = SubResource("Gradient_d68ey")
@@ -24,8 +24,9 @@ metadata/_stencil_owned = true
 [resource]
 next_pass = SubResource("StandardMaterial3D_p6dk4")
 transparency = 1
-blend_mode = 1
-depth_draw_mode = 2
+blend_mode = 4
+cull_mode = 2
+depth_draw_mode = 1
 diffuse_mode = 3
 specular_mode = 1
 vertex_color_use_as_albedo = true

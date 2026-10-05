@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://byamuh70f1nqy" path="res://scripts/ui/player_stat_hud.gd" id="1_hud"]
 [ext_resource type="Script" uid="uid://baowksfqadnv3" path="res://scripts/ui/hud_resource_bar.gd" id="2_bar"]
 [ext_resource type="Script" uid="uid://cjmmhbp1b5312" path="res://addons/StyleboxFancy/StyleBorder.gd" id="2_dyycn"]
+[ext_resource type="Texture2D" uid="uid://d1t8twawsj6jq" path="res://scenes/bg_test_forUI.png" id="2_ow3p3"]
 [ext_resource type="Script" uid="uid://bkl6g25jwb47h" path="res://addons/StyleboxFancy/StyleBoxFancy.gd" id="3_ow3p3"]
 [ext_resource type="Script" uid="uid://c0h1qjqj22nb8" path="res://scripts/ui/hud_hp_ring.gd" id="3_ring"]
 [ext_resource type="FontFile" uid="uid://cdcjipjgje6i5" path="res://scenes/font/iannnnn-DOG-Bold.ttf" id="4_font_dog"]
@@ -11,15 +12,8 @@
 [ext_resource type="Texture2D" uid="uid://cxlr1a18s0ipc" path="res://scenes/Kill_Count_Ui.png" id="7_kill_tex"]
 [ext_resource type="Texture2D" uid="uid://be54mwe7sgnf6" path="res://scenes/General_Wide_UI_Box.png" id="8_time_tex"]
 
-[sub_resource type="Gradient" id="Gradient_khcbf"]
-offsets = PackedFloat32Array(0.9832317)
-colors = PackedColorArray(0.60522425, 0.60522425, 0.60522425, 1)
-
-[sub_resource type="GradientTexture1D" id="GradientTexture1D_ligby"]
-gradient = SubResource("Gradient_khcbf")
-
 [sub_resource type="Gradient" id="Gradient_24imh"]
-colors = PackedColorArray(0, 0.5105224, 0.49157313, 1, 0.08866583, 0.9655736, 0.9892927, 1)
+colors = PackedColorArray(0.9866621, 0.8308222, 0.12995844, 1, 0.99323857, 0.45742697, 0.74243355, 1)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_u1nmo"]
 gradient = SubResource("Gradient_24imh")
@@ -34,18 +28,44 @@ content_margin_top = -1.0
 content_margin_right = -1.0
 content_margin_bottom = -1.0
 script = ExtResource("3_ow3p3")
-color = Color(0, 0, 0, 0.4745098)
-skew = Vector2(-0.07, 0)
+skew = Vector2(0.7, 0)
 texture = SubResource("GradientTexture2D_u1nmo")
-corner_radius_top_left = 533
-corner_radius_bottom_left = 701
+corner_radius_top_left = 11
+corner_radius_top_right = 24
+corner_radius_bottom_left = 55
 corner_curvature_top_left = 2.0
-corner_curvature_top_right = -2.1100000000000003
+corner_curvature_top_right = -7.0
 corner_curvature_bottom_right = 7.0
 corner_curvature_bottom_left = 3.4350000000000005
-shadow_blur = 0
-shadow_offset = Vector2(-25, 0)
-shadow_spread = Vector2(50, 45)
+shadow_enabled = true
+shadow_color = Color(0, 0.08721436, 0.3158576, 1)
+shadow_offset = Vector2(1.99, 2.68)
+shadow_spread = Vector2(9.365, 9.874)
+anti_aliasing = false
+metadata/_custom_type_script = "uid://bkl6g25jwb47h"
+
+[sub_resource type="StyleBox" id="StyleBox_dyycn"]
+resource_local_to_scene = false
+resource_name = ""
+content_margin_left = -1.0
+content_margin_top = -1.0
+content_margin_right = -1.0
+content_margin_bottom = -1.0
+script = ExtResource("3_ow3p3")
+texture = SubResource("GradientTexture2D_u1nmo")
+corner_detail = 20
+corner_radius_top_left = 868
+corner_radius_top_right = 868
+corner_radius_bottom_right = 868
+corner_radius_bottom_left = 868
+corner_curvature_top_left = 1.0250000000000004
+corner_curvature_top_right = 1.0250000000000004
+corner_curvature_bottom_right = 1.0250000000000004
+corner_curvature_bottom_left = 1.0250000000000004
+shadow_enabled = true
+shadow_color = Color(0, 0.08721436, 0.3158576, 1)
+shadow_offset = Vector2(-1.755, 0)
+shadow_spread = Vector2(13.885, 15.744)
 anti_aliasing = false
 metadata/_custom_type_script = "uid://bkl6g25jwb47h"
 
@@ -58,6 +78,30 @@ background_mode = 1
 background_color = Color(0, 0, 0, 0)
 ambient_light_color = Color(0.65, 0.68, 0.75, 1)
 ambient_light_energy = 0.9
+
+[sub_resource type="StyleBox" id="StyleBox_ow3p3"]
+resource_local_to_scene = false
+resource_name = ""
+content_margin_left = -1.0
+content_margin_top = -1.0
+content_margin_right = -1.0
+content_margin_bottom = -1.0
+script = ExtResource("3_ow3p3")
+texture = SubResource("GradientTexture2D_u1nmo")
+corner_detail = 20
+corner_radius_top_left = 868
+corner_radius_top_right = 868
+corner_radius_bottom_right = 868
+corner_radius_bottom_left = 868
+corner_curvature_top_left = 1.0250000000000004
+corner_curvature_top_right = 1.0250000000000004
+corner_curvature_bottom_right = 1.0250000000000004
+corner_curvature_bottom_left = 1.0250000000000004
+shadow_enabled = true
+shadow_color = Color(0, 0.08721436, 0.3158576, 1)
+shadow_spread = Vector2(10.745, 11.594)
+anti_aliasing = false
+metadata/_custom_type_script = "uid://bkl6g25jwb47h"
 
 [node name="PlayerStatHUD" type="CanvasLayer" unique_id=1492859394 node_paths=PackedStringArray("hud_root", "bottom_right_cluster", "water_bar", "air_bar", "debuff_label", "player_portrait", "player_svc", "player_viewport", "player_camera", "follower_portrait", "follower_svc", "follower_viewport", "follower_camera", "kill_rect", "kill_label", "time_rect", "time_label")]
 script = ExtResource("1_hud")
@@ -95,10 +139,11 @@ player_portrait_reverse_side_tilt = true
 player_portrait_tilt_speed = 8.0
 
 [node name="bg" type="TextureRect" parent="." unique_id=189499123]
-visible = false
 offset_right = 1280.0
 offset_bottom = 720.0
-texture = SubResource("GradientTexture1D_ligby")
+texture = ExtResource("2_ow3p3")
+expand_mode = 1
+flip_h = true
 
 [node name="HUDRoot" type="Control" parent="." unique_id=1325266815]
 layout_mode = 3
@@ -116,6 +161,8 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = -18.0
+offset_right = -18.0
 grow_horizontal = 0
 grow_vertical = 0
 mouse_filter = 2
@@ -137,10 +184,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -70.0
-offset_top = -19.540436
-offset_right = 105.0
-offset_bottom = 32.99997
+offset_left = -39.0
+offset_top = -30.00003
+offset_right = 179.0
+offset_bottom = 55.99997
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 4
@@ -150,26 +197,34 @@ theme_override_styles/panel = SubResource("StyleBox_vrd77")
 [node name="WaterBar" type="Control" parent="HUDRoot/BottomRightCluster/ResourceBars" unique_id=2026125383]
 layout_mode = 1
 anchors_preset = 0
-offset_left = 87.0
-offset_top = 41.459564
-offset_right = 202.0
-offset_bottom = 68.99997
+offset_left = 86.0
+offset_top = 31.0
+offset_right = 203.0
+offset_bottom = 65.0
 layout_direction = 1
 mouse_filter = 2
 script = ExtResource("2_bar")
 max_value = 250.0
 current_value = 150.0
-fill_color = Color(0.059373558, 0.9467775, 1, 1)
-bg_color = Color(1, 1, 1, 0.41568628)
-border_color = Color(1, 1, 1, 0.5686275)
+fill_color = Color(0.3529412, 0.7607843, 1, 1)
+bg_color = Color(0.09803922, 0.08627451, 0.45490196, 0)
+border_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
 taper_ratio = 0.505
-border_thickness = 0.99
+border_thickness = 1.6800000000000002
+corner_radius = 0.5
+corner_radius_top_left = 4.0
+corner_radius_bottom_left = 4.0
+bar_shadow_enabled = true
+bar_shadow_offset = Vector2(3.23, 3.495)
 label_text = "250"
 label_font = ExtResource("4_font_dog")
-label_font_size = 30
-label_outline_color = Color(0, 0, 0, 0.078431375)
+label_font_size = 26
+label_outline_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
 label_outline_size = 6
-label_offset = Vector2(-86.425, -3.095)
+label_offset = Vector2(0, -3.095)
+label_shadow_enabled = true
+label_shadow_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+label_shadow_offset = Vector2(1, 1)
 lost_chunk_color = Color(0.87486136, 0.9958452, 1, 1)
 lost_chunk_speed = 12.0
 gain_chunk_color = Color(0.3019608, 0.9490196, 0.69803923, 1)
@@ -184,34 +239,41 @@ shot_kick_v_scale = 1.0
 [node name="AirBar" type="Control" parent="HUDRoot/BottomRightCluster/ResourceBars" unique_id=2117120930]
 layout_mode = 1
 anchors_preset = 0
-offset_left = 48.0
-offset_top = 72.459564
-offset_right = 205.0
-offset_bottom = 86.99997
+offset_left = 50.0
+offset_top = 70.99997
+offset_right = 218.0
+offset_bottom = 104.99997
 mouse_filter = 2
 script = ExtResource("2_bar")
-current_value = 100.0
-fill_color = Color(0.7696371, 0.9752631, 1, 1)
-bg_color = Color(0.6894036, 0.6894036, 0.6894036, 1)
-border_color = Color(1, 1, 1, 0.1764706)
-taper_ratio = 2.565
+current_value = 50.0
+fill_color = Color(0.76862746, 0.9764706, 1, 1)
+border_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+taper_ratio = 0.735
 border_thickness = 0.0
+corner_radius = 1.0
+segment_corner_radius = 3.0
+bar_shadow_enabled = true
+bar_shadow_color = Color(0.09803922, 0.08627451, 0.45490196, 0.52156866)
+bar_shadow_offset = Vector2(0.315, 3.21)
+bar_shadow_spread = -0.5
 label_text = "100%"
 label_font = ExtResource("4_font_dog")
-label_font_size = 14
-label_outline_color = Color(0, 0, 0, 0.078431375)
-label_outline_size = 6
-label_offset = Vector2(-84.09, -7.02)
+label_font_size = 24
+label_outline_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+label_offset = Vector2(0, -1.84)
+label_shadow_enabled = true
+label_shadow_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+label_shadow_offset = Vector2(1, 1)
 reload_qte_label_offset = Vector2(-10, 0)
 lost_chunk_color = Color(0.9998151, 0.54629606, 0.4078534, 1)
 lost_chunk_delay = 0.15
 lost_chunk_speed = 12.0
 segmented_mode = true
 segment_pct = 10.0
-segment_gap = 4.0
-slot_empty_color = Color(0.73675454, 0.73675454, 0.73675454, 0.8784314)
-slot_border_thickness = 0.95
-slot_border_color = Color(1, 1, 1, 0.5686275)
+segment_gap = 0.805
+slot_empty_color = Color(0.57254905, 0.38431373, 0.50980395, 0)
+slot_border_thickness = 1.0
+slot_border_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
 shot_kick_offset_px = 15.0
 reload_kick_offset_px = -150.0
 qte_perfect_v_scale = 2.0
@@ -225,12 +287,15 @@ qte_perfect_flash_duration = 2.0
 [node name="DebuffLabel" type="Label" parent="HUDRoot/BottomRightCluster/ResourceBars" unique_id=1536270726]
 layout_mode = 1
 anchors_preset = -1
-offset_left = 107.00006
-offset_top = 14.9999695
-offset_right = 202.00006
-offset_bottom = 36.99997
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
+offset_left = 113.0
+offset_top = 1.9999695
+offset_right = 208.0
+offset_bottom = 23.99997
+theme_override_colors/font_shadow_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+theme_override_colors/font_outline_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("5_font_vcd")
 theme_override_font_sizes/font_size = 25
 text = "+50% focus spd"
@@ -246,20 +311,42 @@ offset_right = -67.0
 offset_bottom = -30.0
 mouse_filter = 2
 script = ExtResource("3_ring")
-current_value = 100.0
-ring_width = 5.0
-healthy_color = Color(0, 1, 0.3357575, 1)
-border_color = Color(1, 1, 1, 0.6431373)
-portrait_bg_color = Color(0, 0, 0, 0.5882353)
-lost_chunk_color = Color(1.429, 0.33715072, 0.33715072, 1)
+ring_width = 9.48
+border_width = -0.23
+healthy_color = Color(0.49411765, 0.99215686, 0.79607844, 1)
+damaged_color = Color(1, 0.7699452, 0.37504625, 1)
+border_color = Color(0.050980393, 0.85490197, 0.89411765, 1)
+portrait_bg_color = Color(0.09803922, 0.08627451, 0.45490196, 0.59607846)
+lost_chunk_color = Color(0, 0.8422947, 1, 1)
+
+[node name="PlayerBG" type="Panel" parent="HUDRoot/BottomRightCluster/PlayerPortrait" unique_id=93043242]
+show_behind_parent = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -50.0
+offset_top = -51.0
+offset_right = 56.0
+offset_bottom = 54.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBox_dyycn")
 
 [node name="PortraitSVC" type="SubViewportContainer" parent="HUDRoot/BottomRightCluster/PlayerPortrait" unique_id=1663591303]
 material = SubResource("ShaderMaterial_mask")
 layout_mode = 0
 offset_left = 8.0
 offset_top = 4.0
-offset_right = 104.0
-offset_bottom = 103.0
+offset_right = 200.0
+offset_bottom = 202.0
+scale = Vector2(0.5, 0.5)
+offset_transform_enabled = true
+offset_transform_visual_only = false
 mouse_filter = 2
 stretch = true
 
@@ -267,10 +354,11 @@ stretch = true
 own_world_3d = true
 transparent_bg = true
 handle_input_locally = false
-msaa_3d = 1
 screen_space_aa = 2
+mesh_lod_threshold = 0.0
 scaling_3d_scale = 2.0
-size = Vector2i(96, 99)
+anisotropic_filtering_level = 0
+size = Vector2i(192, 198)
 render_target_update_mode = 4
 
 [node name="PortraitCamera" type="Camera3D" parent="HUDRoot/BottomRightCluster/PlayerPortrait/PortraitSVC/PortraitViewport" unique_id=858003922]
@@ -296,26 +384,50 @@ environment = SubResource("Environment_portrait")
 [node name="FollowerPortrait" type="Control" parent="HUDRoot/BottomRightCluster" unique_id=985848355]
 layout_mode = 1
 anchors_preset = 0
-offset_left = -87.0
-offset_top = -189.0
-offset_right = -17.0
-offset_bottom = -119.0
+offset_left = -107.0
+offset_top = -234.0
+offset_right = -37.0
+offset_bottom = -164.0
+scale = Vector2(1.3667796, 1.3667796)
 mouse_filter = 2
 script = ExtResource("3_ring")
 max_value = 100.0
-current_value = 150.0
-ring_width = 2.5
-border_width = 1.2
-border_color = Color(1, 1, 1, 0.5882353)
-portrait_bg_color = Color(0, 0, 0, 0.5882353)
+current_value = 90.0
+ring_width = 5.365
+border_width = -0.23
+healthy_color = Color(0.49411765, 0.99215686, 0.79607844, 1)
+damaged_color = Color(1, 0.7699452, 0.37504625, 1)
+border_color = Color(0.050980393, 0.85490197, 0.89411765, 1)
+portrait_bg_color = Color(0.09803922, 0.08627451, 0.45490196, 0.59607846)
+lost_chunk_color = Color(0, 0.8422947, 1, 1)
+
+[node name="FollowerBG" type="Panel" parent="HUDRoot/BottomRightCluster/FollowerPortrait" unique_id=463983475]
+show_behind_parent = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -29.87852
+offset_top = -29.14682
+offset_right = 15.087364
+offset_bottom = 14.213074
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(1.3667796, 1.3667796)
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBox_ow3p3")
 
 [node name="FollowerPortraitSVC" type="SubViewportContainer" parent="HUDRoot/BottomRightCluster/FollowerPortrait" unique_id=1833845433]
 material = SubResource("ShaderMaterial_mask")
 layout_mode = 0
 offset_left = 5.0
-offset_top = 3.0000293
-offset_right = 65.0
-offset_bottom = 64.72004
+offset_top = 5.0000296
+offset_right = 185.0
+offset_bottom = 184.02702
+scale = Vector2(0.333, 0.333)
 mouse_filter = 2
 stretch = true
 
@@ -323,14 +435,15 @@ stretch = true
 own_world_3d = true
 transparent_bg = true
 handle_input_locally = false
-msaa_3d = 2
+msaa_3d = 3
 screen_space_aa = 2
-scaling_3d_scale = 2.0
-size = Vector2i(60, 61)
+mesh_lod_threshold = 0.0
+scaling_3d_scale = 0.99
+size = Vector2i(180, 179)
 render_target_update_mode = 4
 
 [node name="FollowerPortraitCamera" type="Camera3D" parent="HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC/FollowerPortraitViewport" unique_id=1107662328]
-transform = Transform3D(-0.9998818, -0.0015304657, -0.015306465, 0, 0.9950376, -0.09949217, 0.01538279, -0.09948031, -0.99492073, -0.01, 1.385, -0.65)
+transform = Transform3D(-0.9998818, -0.0015304652, -0.015306465, 0, 0.9950373, -0.09949217, 0.01538279, -0.09948028, -0.99492073, -0.01, 1.385, -0.65)
 projection = 1
 current = true
 size = 0.425
@@ -355,15 +468,31 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -156.0
+offset_left = -158.0
 offset_top = 24.0
-offset_right = 4.0
+offset_right = 2.0
 offset_bottom = 184.0
 grow_horizontal = 0
 pivot_offset = Vector2(80, 80)
 texture = ExtResource("7_kill_tex")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="KillCountBG" type="TextureRect" parent="HUDRoot/KillCountHUD" unique_id=523062725]
+modulate = Color(0.12621796, 0.11172748, 0.56576514, 1)
+show_behind_parent = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -137.0
+offset_top = -4.0
+offset_right = -20.0
+offset_bottom = 164.0
+grow_horizontal = 0
+pivot_offset = Vector2(80, 80)
+texture = ExtResource("7_kill_tex")
+expand_mode = 1
 
 [node name="KillLabel" type="Label" parent="HUDRoot/KillCountHUD" unique_id=207108783]
 layout_mode = 1
@@ -372,7 +501,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.08721436, 0.3158576, 1)
+theme_override_colors/font_outline_color = Color(0, 0.08721436, 0.3158576, 1)
 theme_override_constants/outline_size = 4
 theme_override_fonts/font = ExtResource("4_font_dog")
 theme_override_font_sizes/font_size = 18
@@ -385,15 +515,31 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -267.0
+offset_left = -275.0
 offset_top = 64.0
-offset_right = -119.0
+offset_right = -127.0
 offset_bottom = 112.0
 grow_horizontal = 0
 pivot_offset = Vector2(74, 24)
 texture = ExtResource("8_time_tex")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="TimeLimitBG" type="TextureRect" parent="HUDRoot/TimeLimitHUD" unique_id=1214027948]
+modulate = Color(0.12621796, 0.11172748, 0.56576514, 1)
+show_behind_parent = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -136.0
+offset_top = -3.0
+offset_right = -9.0
+offset_bottom = 51.0
+grow_horizontal = 0
+pivot_offset = Vector2(74, 24)
+texture = ExtResource("8_time_tex")
+expand_mode = 1
 
 [node name="TimeLabel" type="Label" parent="HUDRoot/TimeLimitHUD" unique_id=224073749]
 layout_mode = 1
@@ -402,7 +548,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.08721436, 0.3158576, 1)
+theme_override_colors/font_outline_color = Color(0, 0.08721436, 0.3158576, 1)
 theme_override_constants/outline_size = 4
 theme_override_fonts/font = ExtResource("4_font_dog")
 theme_override_font_sizes/font_size = 18

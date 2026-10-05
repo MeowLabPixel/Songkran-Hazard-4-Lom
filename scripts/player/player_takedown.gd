@@ -337,6 +337,10 @@ func _is_enemy_takedown_protected(enemy: Node) -> bool:
 		var kd = sm.current_state as StateKnockdown
 		if kd and kd._phase in [StateKnockdown.Phase.ACT4, StateKnockdown.Phase.ACT5]:
 			return true
+	if state_name == "StateHunt":
+		var hunt = sm.current_state
+		if hunt and hunt.has_method("is_in_vulnerable_getup") and hunt.is_in_vulnerable_getup():
+			return true
 	return false
 
 func _register_enemy_takedown_hit(enemy: Node, hit_node: Node = null) -> void:

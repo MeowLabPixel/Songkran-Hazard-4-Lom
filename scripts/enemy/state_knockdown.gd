@@ -22,6 +22,11 @@ enum Phase { NONE, ACT3, ACT4, ACT5, DONE }
 @export_range(5.0, 30.0, 1.0) var act3_mesh_shake_frequency: float = 24.0 ## Micro-shake vibration frequency (Hz)
 @export_range(0.02, 0.15, 0.01) var act3_mesh_shake_amplitude: float = 0.06 ## Micro-shake vibration displacement (meters)
 
+@export_group("Wall Anti-Clipping Settings")
+@export var enable_wall_clearance: bool = true                        ## Enable raycasting to prevent zombie from clipping through walls during takedown/knockdown
+@export_range(0.5, 1.5, 0.05) var min_wall_clearance: float = 1.05   ## Minimum required distance behind zombie to prevent mesh clipping into walls (meters)
+@export_range(0.1, 0.8, 0.05) var wall_slide_friction_factor: float = 0.40 ## Speed multiplier when sliding along a wall (friction reduction)
+
 
 var knockdown_mode: String = "NORMAL" # "NORMAL", "SPECIAL_LEG_SHOT", "SPECIAL_FOOT_HEAD", etc.
 var stun_type: String  = "head"
@@ -56,6 +61,37 @@ func _cache_default_act3_timescales() -> void:
 		if val != null and typeof(val) in [TYPE_FLOAT, TYPE_INT] and float(val) > 0.0:
 			if not _default_act3_timescales.has(n):
 				_default_act3_timescales[n] = float(val)
+
+func _check_wall_clearance(dir: Vector3, check_dist: float) -> Dictionary:
+	var result := {
+		"has_wall": false,
+		"distance": check_dist,
+		"normal": Vector3.ZERO,
+		"hit_point": Vector3.ZERO
+	}
+	if not enemy or not enemy.is_inside_tree():
+		return result
+		
+	var space_state = enemy.get_world_3d().direct_space_state
+	if not space_state:
+		return result
+		
+	var from_pos = enemy.global_position + Vector3(0, 0.6, 0)
+	var ray_dir = dir.normalized()
+	if ray_dir.length_squared() < 0.001:
+		return result
+		
+	var to_pos = from_pos + ray_dir * check_dist
+	var query = PhysicsRayQueryParameters3D.create(from_pos, to_pos, 1) # Mask 1: World geometry / walls
+	query.exclude = [enemy.get_rid()]
+	
+	var hit = space_state.intersect_ray(query)
+	if hit and not hit.is_empty():
+		result["has_wall"] = true
+		result["hit_point"] = hit.position
+		result["normal"] = hit.normal
+		result["distance"] = from_pos.distance_to(hit.position)
+	return result
 
 func enter() -> void:
 	_timer = 0.0
@@ -95,6 +131,23 @@ func enter() -> void:
 	else:
 		push_direction = Vector3.ZERO
 		
+	# Check wall clearance in the fall direction and adjust position to avoid clipping
+	if enable_wall_clearance and enemy:
+		var fall_dir = push_direction.normalized()
+		if fall_dir.length_squared() > 0.001:
+			var wall_check = _check_wall_clearance(fall_dir, min_wall_clearance)
+			if wall_check["has_wall"]:
+				var wall_dist: float = wall_check["distance"]
+				if wall_dist < min_wall_clearance:
+					var deficit: float = min_wall_clearance - wall_dist
+					var nudge_dir: Vector3 = wall_check["normal"]
+					nudge_dir.y = 0.0
+					if nudge_dir.length_squared() < 0.01:
+						nudge_dir = -fall_dir
+					else:
+						nudge_dir = nudge_dir.normalized()
+					enemy.move_and_collide(nudge_dir * deficit)
+
 	if enemy:
 		enemy.velocity = Vector3.ZERO
 		enemy.move_and_slide()
@@ -203,6 +256,24 @@ func _start_act4() -> void:
 	_force_anim(loop_anim, "hit/hit_takedown")
 	
 	if enemy:
+		enemy.velocity = Vector3.ZERO
+		enemy.move_and_slide()
+		
+		# Ensure safe wall clearance once resting on the ground in Act 4
+		if enable_wall_clearance:
+			var fall_dir = push_direction.normalized()
+			if fall_dir.length_squared() > 0.001:
+				var wall_check = _check_wall_clearance(fall_dir, min_wall_clearance)
+				if wall_check["has_wall"] and wall_check["distance"] < min_wall_clearance:
+					var deficit = min_wall_clearance - wall_check["distance"]
+					var nudge_dir: Vector3 = wall_check["normal"]
+					nudge_dir.y = 0.0
+					if nudge_dir.length_squared() < 0.01:
+						nudge_dir = -fall_dir
+					else:
+						nudge_dir = nudge_dir.normalized()
+					enemy.move_and_collide(nudge_dir * deficit)
+
 		# Play hit ground sound
 		SoundManager.play_3d("Region_Zombie_Hitground_Sound", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
 		# If leg hit, play loop struggle
@@ -308,6 +379,40 @@ func physics_update(delta: float) -> void:
 						var t_factor = (rel_pct - 0.25) / 0.75
 						var decel_target = min_speed * max(0.0, 1.0 - t_factor)
 						current_speed = lerp(current_speed, decel_target, t_factor)
+
+					# Act 3 Wall collision handling & sliding with physical friction
+					if enable_wall_clearance:
+						var wall_check = _check_wall_clearance(dir, min_wall_clearance)
+						if wall_check["has_wall"]:
+							var w_dist: float = wall_check["distance"]
+							if w_dist < min_wall_clearance:
+								var w_norm: Vector3 = wall_check["normal"]
+								w_norm.y = 0.0
+								if w_norm.length_squared() > 0.01:
+									w_norm = w_norm.normalized()
+									var slide_dir = dir.slide(w_norm)
+									slide_dir.y = 0.0
+									var slide_strength = slide_dir.length()
+									if slide_strength > 0.05:
+										dir = slide_dir.normalized()
+										current_speed = current_speed * slide_strength * wall_slide_friction_factor
+									else:
+										current_speed = 0.0
+								else:
+									current_speed = 0.0
+						elif enemy.is_on_wall():
+							var wall_norm = enemy.get_wall_normal()
+							wall_norm.y = 0.0
+							if wall_norm.length_squared() > 0.01:
+								wall_norm = wall_norm.normalized()
+								var slide_dir = dir.slide(wall_norm)
+								slide_dir.y = 0.0
+								var slide_strength = slide_dir.length()
+								if slide_strength > 0.05:
+									dir = slide_dir.normalized()
+									current_speed = current_speed * slide_strength * wall_slide_friction_factor
+								else:
+									current_speed = 0.0
 
 					enemy.velocity = dir * current_speed
 					enemy.move_and_slide()

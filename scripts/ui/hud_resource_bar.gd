@@ -69,6 +69,89 @@ extends Control
 		border_thickness = v
 		queue_redraw()
 
+@export_group("Corner Rounding")
+## Master corner rounding radius in pixels for all 4 corners (0 = sharp corners).
+@export_range(0.0, 50.0, 0.5) var corner_radius: float = 0.0:
+	set(v):
+		corner_radius = maxf(0.0, 0.0 if v == null else v)
+		queue_redraw()
+
+## Top-left corner radius in pixels (-1 = inherit master corner_radius).
+@export_range(-1.0, 50.0, 0.5) var corner_radius_top_left: float = -1.0:
+	set(v):
+		corner_radius_top_left = -1.0 if v == null else v
+		queue_redraw()
+
+## Top-right corner radius in pixels (-1 = inherit master corner_radius).
+@export_range(-1.0, 50.0, 0.5) var corner_radius_top_right: float = -1.0:
+	set(v):
+		corner_radius_top_right = -1.0 if v == null else v
+		queue_redraw()
+
+## Bottom-right corner radius in pixels (-1 = inherit master corner_radius).
+@export_range(-1.0, 50.0, 0.5) var corner_radius_bottom_right: float = -1.0:
+	set(v):
+		corner_radius_bottom_right = -1.0 if v == null else v
+		queue_redraw()
+
+## Bottom-left corner radius in pixels (-1 = inherit master corner_radius).
+@export_range(-1.0, 50.0, 0.5) var corner_radius_bottom_left: float = -1.0:
+	set(v):
+		corner_radius_bottom_left = -1.0 if v == null else v
+		queue_redraw()
+
+## Number of line segments per rounded corner arc (higher = smoother curve).
+@export_range(1, 16) var corner_detail: int = 6:
+	set(v):
+		corner_detail = clampi(1 if v == null else v, 1, 16)
+		queue_redraw()
+
+## Corner radius for individual segments when segmented_mode is active (-1 = inherit corner_radius).
+@export_range(-1.0, 30.0, 0.5) var segment_corner_radius: float = -1.0:
+	set(v):
+		segment_corner_radius = -1.0 if v == null else v
+		queue_redraw()
+
+## Rounding mode for segmented bars:
+## - "All Segments": Rounds all 4 corners of every segment into rounded pill tiles.
+## - "Outer Only": Rounds only the outer corners of the first and last segments, keeping inner dividers straight.
+## - "None": Keeps all segments with sharp corners.
+@export_enum("All Segments", "Outer Only", "None") var segment_rounding_mode: String = "All Segments":
+	set(v):
+		segment_rounding_mode = "All Segments" if v == null or v == "" else v
+		queue_redraw()
+
+@export_group("Bar Shadow")
+## If true, renders a drop shadow behind the resource bar / gauge.
+@export var bar_shadow_enabled: bool = false:
+	set(v):
+		bar_shadow_enabled = false if v == null else v
+		queue_redraw()
+
+## Color of the bar drop shadow (including opacity/alpha).
+@export var bar_shadow_color: Color = Color(0.0, 0.0, 0.0, 0.45):
+	set(v):
+		bar_shadow_color = Color(0.0, 0.0, 0.0, 0.45) if v == null else v
+		queue_redraw()
+
+## Positional offset in pixels for the bar shadow (X and Y).
+@export var bar_shadow_offset: Vector2 = Vector2(0.0, 4.0):
+	set(v):
+		bar_shadow_offset = Vector2.ZERO if v == null else v
+		queue_redraw()
+
+## Expansion / outset margin in pixels around the bar shadow (positive = larger shadow, negative = tighter shadow).
+@export_range(-10.0, 20.0, 0.5) var bar_shadow_spread: float = 0.0:
+	set(v):
+		bar_shadow_spread = 0.0 if v == null else v
+		queue_redraw()
+
+## Blur / softness factor for the bar shadow (0 = crisp 1-pass shadow, 1-4 = multi-sample soft shadow).
+@export_range(0, 4) var bar_shadow_blur: int = 0:
+	set(v):
+		bar_shadow_blur = clampi(0 if v == null else v, 0, 4)
+		queue_redraw()
+
 @export_group("Label")
 ## Text drawn inside the bar (e.g. "250", "100%").
 @export var label_text: String = "100":
@@ -128,6 +211,37 @@ extends Control
 @export var label_flip_v: bool = false:
 	set(v):
 		label_flip_v = false if v == null else v
+		queue_redraw()
+
+@export_subgroup("Shadow", "label_shadow_")
+## If true, renders a drop shadow behind the label text.
+@export var label_shadow_enabled: bool = false:
+	set(v):
+		label_shadow_enabled = false if v == null else v
+		queue_redraw()
+
+## Color of the label text shadow (including opacity/alpha).
+@export var label_shadow_color: Color = Color(0.0, 0.0, 0.0, 0.65):
+	set(v):
+		label_shadow_color = Color(0.0, 0.0, 0.0, 0.65) if v == null else v
+		queue_redraw()
+
+## Positional offset in pixels for the text shadow (X and Y).
+@export var label_shadow_offset: Vector2 = Vector2(2.0, 2.0):
+	set(v):
+		label_shadow_offset = Vector2.ZERO if v == null else v
+		queue_redraw()
+
+## Additional outline thickness in pixels for the text shadow (bolder/fuller backing shadow).
+@export_range(0, 16) var label_shadow_outline_size: int = 0:
+	set(v):
+		label_shadow_outline_size = maxi(0, 0 if v == null else v)
+		queue_redraw()
+
+## Blur / softness factor for the text shadow (0 = crisp 1-pass shadow, 1-4 = multi-sample soft shadow).
+@export_range(0, 4) var label_shadow_blur: int = 0:
+	set(v):
+		label_shadow_blur = clampi(0 if v == null else v, 0, 4)
 		queue_redraw()
 
 ## Scale multiplier applied to label text during reload QTE (e.g. 1.5 for 50% larger).
@@ -710,6 +824,183 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
+## Builds a rounded polygon from a 4-point convex quad (TL, TR, BR, BL in clockwise order).
+## Rounds corners using tangent circular arcs clamped so adjacent corners never overlap.
+func _build_rounded_quad(pts: PackedVector2Array, r_tl: float, r_tr: float, r_br: float, r_bl: float, detail: int) -> PackedVector2Array:
+	var radii := [r_tl, r_tr, r_br, r_bl]
+	var max_r := maxf(maxf(r_tl, r_tr), maxf(r_br, r_bl))
+	if max_r <= 0.001 or pts.size() != 4:
+		return pts
+
+	var result := PackedVector2Array()
+	var n := 4
+	for i in range(n):
+		var vi := pts[i]
+		var r: float = radii[i]
+		if r <= 0.001:
+			result.append(vi)
+			continue
+
+		var v_prev := pts[(i + n - 1) % n]
+		var v_next := pts[(i + 1) % n]
+
+		var e1 := v_prev - vi
+		var e2 := v_next - vi
+		var l1 := e1.length()
+		var l2 := e2.length()
+		if l1 < 0.001 or l2 < 0.001:
+			result.append(vi)
+			continue
+
+		var u1 := e1 / l1
+		var u2 := e2 / l2
+
+		var dot_val := clampf(u1.dot(u2), -1.0, 1.0)
+		var theta := acos(dot_val)
+		if theta < 0.01 or theta > 3.13:
+			result.append(vi)
+			continue
+
+		var half_theta := theta * 0.5
+		var tan_half := tan(half_theta)
+		var sin_half := sin(half_theta)
+		if tan_half < 0.0001 or sin_half < 0.0001:
+			result.append(vi)
+			continue
+
+		var d := r / tan_half
+		var d_max := minf(l1 * 0.48, l2 * 0.48)
+		if d > d_max:
+			d = d_max
+		var r_eff := d * tan_half
+
+		var t1 := vi + u1 * d
+		var t2 := vi + u2 * d
+
+		var b := u1 + u2
+		var lb := b.length()
+		if lb < 0.0001:
+			result.append(vi)
+			continue
+		var b_hat := b / lb
+		var center := vi + b_hat * (r_eff / sin_half)
+
+		var ang1 := atan2((t1 - center).y, (t1 - center).x)
+		var ang2 := atan2((t2 - center).y, (t2 - center).x)
+
+		var diff := ang2 - ang1
+		while diff < 0.0:
+			diff += TAU
+		while diff > TAU:
+			diff -= TAU
+
+		if diff > PI:
+			diff -= TAU
+
+		var num_steps := maxi(1, detail)
+		for s in range(num_steps + 1):
+			var t := float(s) / float(num_steps)
+			var a := ang1 + diff * t
+			var arc_pt := center + Vector2(cos(a), sin(a)) * r_eff
+			if result.size() == 0 or result[result.size() - 1].distance_squared_to(arc_pt) > 0.01:
+				result.append(arc_pt)
+
+	return result
+
+
+## Draws a slice polygon clipped against a rounded boundary polygon using Geometry2D.
+func _draw_clipped_polygon(clip_target: PackedVector2Array, slice_quad: PackedVector2Array, color: Color) -> void:
+	if slice_quad.size() < 3:
+		return
+	if clip_target.size() <= 4:
+		draw_colored_polygon(slice_quad, color)
+		return
+	var polys := Geometry2D.intersect_polygons(clip_target, slice_quad)
+	for poly in polys:
+		draw_colored_polygon(poly, color)
+
+
+## Draws the bar / gauge drop shadow before backgrounds, fills, and borders.
+func _draw_bar_shadow(bg_pts: PackedVector2Array, tl_x: float, bl_x: float, r_top_x: float, r_bot_x: float, h: float, eff_tl: float, eff_tr: float, eff_br: float, eff_bl: float) -> void:
+	var base_off := bar_shadow_offset if bar_shadow_offset != null else Vector2.ZERO
+	if segmented_mode:
+		var num_slots := maxi(1, int(round(100.0 / segment_pct)))
+		var half_gap := segment_gap * 0.5
+		var seg_r := segment_corner_radius if segment_corner_radius >= 0.0 else corner_radius
+
+		for i in range(num_slots):
+			var t_0 := float(i) / float(num_slots)
+			var t_1 := float(i + 1) / float(num_slots)
+
+			var slot_tl_x := lerpf(tl_x, r_top_x, t_0) + (half_gap if i > 0 else 0.0)
+			var slot_tr_x := lerpf(tl_x, r_top_x, t_1) - (half_gap if i < num_slots - 1 else 0.0)
+			var slot_bl_x := lerpf(bl_x, r_bot_x, t_0) + (half_gap if i > 0 else 0.0)
+			var slot_br_x := lerpf(bl_x, r_bot_x, t_1) - (half_gap if i < num_slots - 1 else 0.0)
+
+			var slot_base_pts := PackedVector2Array([
+				Vector2(slot_tl_x, 0.0), Vector2(slot_tr_x, 0.0),
+				Vector2(slot_br_x, h),   Vector2(slot_bl_x, h),
+			])
+
+			var s_tl := 0.0
+			var s_tr := 0.0
+			var s_br := 0.0
+			var s_bl := 0.0
+			match segment_rounding_mode:
+				"All Segments":
+					s_tl = seg_r
+					s_tr = seg_r
+					s_br = seg_r
+					s_bl = seg_r
+				"Outer Only":
+					if i == 0:
+						s_tl = eff_tl
+						s_bl = eff_bl
+					if i == num_slots - 1:
+						s_tr = eff_tr
+						s_br = eff_br
+				"None":
+					pass
+
+			var slot_pts := _build_rounded_quad(slot_base_pts, s_tl, s_tr, s_br, s_bl, corner_detail)
+			_draw_polygon_shadow(slot_pts, base_off)
+	else:
+		_draw_polygon_shadow(bg_pts, base_off)
+
+
+func _draw_polygon_shadow(poly_pts: PackedVector2Array, base_off: Vector2) -> void:
+	if poly_pts.size() < 3:
+		return
+
+	var target_poly := poly_pts
+	if absf(bar_shadow_spread) > 0.01:
+		var offset_polys := Geometry2D.offset_polygon(poly_pts, bar_shadow_spread, Geometry2D.JOIN_ROUND)
+		if offset_polys.size() > 0:
+			target_poly = offset_polys[0]
+
+	if bar_shadow_blur <= 0:
+		var shadow_poly := PackedVector2Array()
+		for pt in target_poly:
+			shadow_poly.append(pt + base_off)
+		draw_colored_polygon(shadow_poly, bar_shadow_color)
+	else:
+		var samples := [
+			Vector2(0, 0),
+			Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1),
+			Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1),
+		]
+		var step_dist := float(bar_shadow_blur) * 1.0
+		var sample_alpha := bar_shadow_color.a / float(samples.size() * 0.5 + 0.5)
+		var pass_col := Color(bar_shadow_color.r, bar_shadow_color.g, bar_shadow_color.b, clampf(sample_alpha, 0.0, 1.0))
+		for s_idx in range(samples.size()):
+			var smp: Vector2 = samples[s_idx]
+			var off := base_off + smp * step_dist
+			var shadow_poly := PackedVector2Array()
+			for pt in target_poly:
+				shadow_poly.append(pt + off)
+			draw_colored_polygon(shadow_poly, pass_col)
+
+
 func _draw() -> void:
 	var w := size.x
 	var h := size.y
@@ -771,16 +1062,28 @@ func _draw() -> void:
 		draw_set_transform_matrix(bar_xform)
 
 	# ── Background and Fill Rendering ──
-	var bg_pts := PackedVector2Array([
+	var base_bg_pts := PackedVector2Array([
 		Vector2(tl_x, 0.0),    Vector2(r_top_x, 0.0),
 		Vector2(r_bot_x, h),   Vector2(bl_x, h),
 	])
+
+	var eff_tl := corner_radius_top_left if corner_radius_top_left >= 0.0 else corner_radius
+	var eff_tr := corner_radius_top_right if corner_radius_top_right >= 0.0 else corner_radius
+	var eff_br := corner_radius_bottom_right if corner_radius_bottom_right >= 0.0 else corner_radius
+	var eff_bl := corner_radius_bottom_left if corner_radius_bottom_left >= 0.0 else corner_radius
+
+	var bg_pts := _build_rounded_quad(base_bg_pts, eff_tl, eff_tr, eff_br, eff_bl, corner_detail)
+
+	# ── Bar Drop Shadow Rendering ──
+	if bar_shadow_enabled and bar_shadow_color.a > 0.001:
+		_draw_bar_shadow(bg_pts, tl_x, bl_x, r_top_x, r_bot_x, h, eff_tl, eff_tr, eff_br, eff_bl)
 
 	if segmented_mode:
 		var num_slots := maxi(1, int(round(100.0 / segment_pct)))
 		var half_gap := segment_gap * 0.5
 		var flash_col := _juice_flash_color if _juice_flash_color != null else Color.WHITE
 		var flash_active := (_juice_flash_alpha > 0.001)
+		var seg_r := segment_corner_radius if segment_corner_radius >= 0.0 else corner_radius
 
 		for i in range(num_slots):
 			var t_0 := float(i) / float(num_slots)
@@ -791,10 +1094,32 @@ func _draw() -> void:
 			var slot_bl_x := lerpf(bl_x, r_bot_x, t_0) + (half_gap if i > 0 else 0.0)
 			var slot_br_x := lerpf(bl_x, r_bot_x, t_1) - (half_gap if i < num_slots - 1 else 0.0)
 
-			var slot_pts := PackedVector2Array([
+			var slot_base_pts := PackedVector2Array([
 				Vector2(slot_tl_x, 0.0), Vector2(slot_tr_x, 0.0),
 				Vector2(slot_br_x, h),   Vector2(slot_bl_x, h),
 			])
+
+			var s_tl := 0.0
+			var s_tr := 0.0
+			var s_br := 0.0
+			var s_bl := 0.0
+			match segment_rounding_mode:
+				"All Segments":
+					s_tl = seg_r
+					s_tr = seg_r
+					s_br = seg_r
+					s_bl = seg_r
+				"Outer Only":
+					if i == 0:
+						s_tl = eff_tl
+						s_bl = eff_bl
+					if i == num_slots - 1:
+						s_tr = eff_tr
+						s_br = eff_br
+				"None":
+					pass
+
+			var slot_pts := _build_rounded_quad(slot_base_pts, s_tl, s_tr, s_br, s_bl, corner_detail)
 
 			# 1. Empty slot background
 			if draw_empty_slots:
@@ -833,7 +1158,7 @@ func _draw() -> void:
 							Vector2(slot_tl_x, 0.0), Vector2(c_fill_tr, 0.0),
 							Vector2(c_fill_br, h),   Vector2(slot_bl_x, h),
 						])
-					draw_colored_polygon(chunk_part_pts, lost_chunk_color)
+					_draw_clipped_polygon(slot_pts, chunk_part_pts, lost_chunk_color)
 
 			# 4. Gain chunk layer per slot (Refill/pump)
 			if show_gain_chunk:
@@ -856,7 +1181,7 @@ func _draw() -> void:
 							Vector2(slot_tl_x, 0.0), Vector2(g_fill_tr, 0.0),
 							Vector2(g_fill_br, h),   Vector2(slot_bl_x, h),
 						])
-					draw_colored_polygon(gain_part_pts, gain_chunk_color)
+					_draw_clipped_polygon(slot_pts, gain_part_pts, gain_chunk_color)
 
 			# 5. Fill calculation per slot
 			var f := clampf((ratio - s_min) / maxf(s_max - s_min, 0.0001), 0.0, 1.0)
@@ -880,14 +1205,19 @@ func _draw() -> void:
 						Vector2(slot_tl_x, 0.0), Vector2(fill_tr, 0.0),
 						Vector2(fill_br, h),     Vector2(slot_bl_x, h),
 					])
-				draw_colored_polygon(part_pts, fill_color)
+				_draw_clipped_polygon(slot_pts, part_pts, fill_color)
 				if flash_active:
-					draw_colored_polygon(part_pts, Color(flash_col.r, flash_col.g, flash_col.b, flash_col.a * _juice_flash_alpha))
+					_draw_clipped_polygon(slot_pts, part_pts, Color(flash_col.r, flash_col.g, flash_col.b, flash_col.a * _juice_flash_alpha))
 
 			# 6. Optional slot individual border
 			if slot_border_thickness > 0.0:
-				for j in range(4):
-					draw_line(slot_pts[j], slot_pts[(j + 1) % 4], slot_border_color, slot_border_thickness, true)
+				if slot_pts.size() > 4:
+					var closed_slot := slot_pts.duplicate()
+					closed_slot.append(slot_pts[0])
+					draw_polyline(closed_slot, slot_border_color, slot_border_thickness, true)
+				else:
+					for j in range(4):
+						draw_line(slot_pts[j], slot_pts[(j + 1) % 4], slot_border_color, slot_border_thickness, true)
 	else:
 		# Continuous mode
 		draw_colored_polygon(bg_pts, bg_color)
@@ -910,7 +1240,7 @@ func _draw() -> void:
 					Vector2(lerpf(bl_x, r_bot_x, chunk_ratio), h),
 					Vector2(bl_x, h),
 				])
-			draw_colored_polygon(chunk_pts, lost_chunk_color)
+			_draw_clipped_polygon(bg_pts, chunk_pts, lost_chunk_color)
 
 		# Gain chunk layer (Refill / pump)
 		if show_gain_chunk and gain_ratio > 0.001:
@@ -930,34 +1260,39 @@ func _draw() -> void:
 					Vector2(lerpf(bl_x, r_bot_x, gain_ratio), h),
 					Vector2(bl_x, h),
 				])
-			draw_colored_polygon(gain_pts, gain_chunk_color)
+			_draw_clipped_polygon(bg_pts, gain_pts, gain_chunk_color)
 
 		# Active fill layer
 		var fill_pts := PackedVector2Array()
 		if ratio > 0.001:
-			if fill_from_right:
-				var t_start := 1.0 - ratio
-				fill_pts = PackedVector2Array([
-					Vector2(lerpf(tl_x, r_top_x, t_start), 0.0),
-					Vector2(r_top_x, 0.0),
-					Vector2(r_bot_x, h),
-					Vector2(lerpf(bl_x, r_bot_x, t_start), h),
-				])
-				draw_colored_polygon(fill_pts, fill_color)
+			if ratio >= 0.999:
+				draw_colored_polygon(bg_pts, fill_color)
 			else:
-				fill_pts = PackedVector2Array([
-					Vector2(tl_x, 0.0),
-					Vector2(lerpf(tl_x, r_top_x, ratio), 0.0),
-					Vector2(lerpf(bl_x, r_bot_x, ratio), h),
-					Vector2(bl_x, h),
-				])
-				draw_colored_polygon(fill_pts, fill_color)
+				if fill_from_right:
+					var t_start := 1.0 - ratio
+					fill_pts = PackedVector2Array([
+						Vector2(lerpf(tl_x, r_top_x, t_start), 0.0),
+						Vector2(r_top_x, 0.0),
+						Vector2(r_bot_x, h),
+						Vector2(lerpf(bl_x, r_bot_x, t_start), h),
+					])
+				else:
+					fill_pts = PackedVector2Array([
+						Vector2(tl_x, 0.0),
+						Vector2(lerpf(tl_x, r_top_x, ratio), 0.0),
+						Vector2(lerpf(bl_x, r_bot_x, ratio), h),
+						Vector2(bl_x, h),
+					])
+				_draw_clipped_polygon(bg_pts, fill_pts, fill_color)
 
 		# Flash highlight overlay
-		if _juice_flash_alpha > 0.001 and fill_pts.size() > 0:
+		if _juice_flash_alpha > 0.001 and ratio > 0.001:
 			var flash_col := _juice_flash_color if _juice_flash_color != null else Color.WHITE
 			flash_col.a *= _juice_flash_alpha
-			draw_colored_polygon(fill_pts, flash_col)
+			if ratio >= 0.999:
+				draw_colored_polygon(bg_pts, flash_col)
+			elif fill_pts.size() > 0:
+				_draw_clipped_polygon(bg_pts, fill_pts, flash_col)
 
 	# ── Border lines ──
 	if border_thickness > 0.0:
@@ -966,10 +1301,15 @@ func _draw() -> void:
 		if _juice_flash_alpha > 0.001:
 			var flash_col := _juice_flash_color if _juice_flash_color != null else Color.WHITE
 			border_col = border_col.lerp(flash_col, _juice_flash_alpha * 0.7)
-		for i in range(bg_pts.size()):
-			var from_pt := bg_pts[i]
-			var to_pt := bg_pts[(i + 1) % bg_pts.size()]
-			draw_line(from_pt, to_pt, border_col, border_thickness, aa)
+		if bg_pts.size() > 4:
+			var closed_pts := bg_pts.duplicate()
+			closed_pts.append(bg_pts[0])
+			draw_polyline(closed_pts, border_col, border_thickness, aa)
+		else:
+			for i in range(bg_pts.size()):
+				var from_pt := bg_pts[i]
+				var to_pt := bg_pts[(i + 1) % bg_pts.size()]
+				draw_line(from_pt, to_pt, border_col, border_thickness, aa)
 
 	# ── Label text ──
 	if label_text == "":
@@ -1010,6 +1350,37 @@ func _draw() -> void:
 
 		# Draw centered around the local origin (0, 0)
 		var local_text_pos := Vector2(-ts.x * 0.5, ts.y * 0.3)
+
+		# Drop shadow layer
+		if label_shadow_enabled and label_shadow_color.a > 0.001:
+			var base_shadow_off := (label_shadow_offset if label_shadow_offset != null else Vector2.ZERO) * effective_scale
+			var eff_shadow_outline := maxi(0, label_outline_size + label_shadow_outline_size)
+			if label_shadow_blur <= 0:
+				var shadow_pos := local_text_pos + base_shadow_off
+				if eff_shadow_outline > 0:
+					draw_string_outline(active_font, shadow_pos, label_text,
+						HORIZONTAL_ALIGNMENT_LEFT, -1, effective_font_size,
+						eff_shadow_outline, label_shadow_color)
+				draw_string(active_font, shadow_pos, label_text,
+					HORIZONTAL_ALIGNMENT_LEFT, -1, effective_font_size, label_shadow_color)
+			else:
+				var samples := [
+					Vector2(0, 0),
+					Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1),
+					Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1),
+				]
+				var step_dist := float(label_shadow_blur) * 0.85
+				var sample_alpha := label_shadow_color.a / float(samples.size() * 0.5 + 0.5)
+				var pass_col := Color(label_shadow_color.r, label_shadow_color.g, label_shadow_color.b, clampf(sample_alpha, 0.0, 1.0))
+				for s_idx in range(samples.size()):
+					var smp: Vector2 = samples[s_idx]
+					var shadow_pos := local_text_pos + base_shadow_off + smp * step_dist
+					if eff_shadow_outline > 0:
+						draw_string_outline(active_font, shadow_pos, label_text,
+							HORIZONTAL_ALIGNMENT_LEFT, -1, effective_font_size,
+							eff_shadow_outline, pass_col)
+					draw_string(active_font, shadow_pos, label_text,
+						HORIZONTAL_ALIGNMENT_LEFT, -1, effective_font_size, pass_col)
 
 		# Outline then foreground
 		if label_outline_size > 0:

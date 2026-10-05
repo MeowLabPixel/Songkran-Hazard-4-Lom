@@ -31,6 +31,7 @@
 [ext_resource type="Material" uid="uid://bk5dmvgi8bsy3" path="res://Character Model For Programer/Leon/Material/Cell_Shoes.tres" id="19_6wior"]
 [ext_resource type="Texture2D" uid="uid://br7uywia14umb" path="res://Character Model For Programer/Leon/textures/Leon Face Expression.png" id="20_rw8a5"]
 [ext_resource type="Texture2D" uid="uid://b8b5fxfwflw0w" path="res://Character Model For Programer/Leon/textures/Face Rim Light Texture.png" id="21_iwuka"]
+[ext_resource type="Texture2D" uid="uid://cr5wlck56i158" path="res://Character Model For Programer/Leon/textures/Base Male Body 2.png" id="22_kxw46"]
 [ext_resource type="Script" uid="uid://81js2e1h08il" path="res://player/Statemachine/base/state_machine.gd" id="30_a2xo5"]
 [ext_resource type="AnimationLibrary" uid="uid://dtbn7feykg4nk" path="res://scenes/player/Player_Anims/Player_Anims.res" id="32_bbmj2"]
 [ext_resource type="Script" uid="uid://capeimnw2ecqx" path="res://scripts/ui/procedural_crosshair.gd" id="41_procedural_crosshair"]
@@ -792,11 +793,11 @@ transparency = 1
 shading_mode = 0
 albedo_color = Color(0, 0, 0, 0.5882353)
 grow = true
-grow_amount = 0.003
+grow_amount = 0.005
 stencil_mode = 3
 stencil_flags = 1
 stencil_compare = 5
-stencil_reference = 4
+stencil_reference = 9
 metadata/_stencil_owned = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hyqqp"]
@@ -811,9 +812,9 @@ rim_texture = ExtResource("21_iwuka")
 texture_filter = 5
 stencil_mode = 1
 stencil_flags = 2
-stencil_reference = 4
+stencil_reference = 9
 stencil_color = Color(0, 0, 0, 0.5882353)
-stencil_outline_thickness = 0.003
+stencil_outline_thickness = 0.005
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ds1xl"]
 next_pass = SubResource("StandardMaterial3D_3dxkp")
@@ -827,9 +828,56 @@ rim_texture = ExtResource("21_iwuka")
 texture_filter = 5
 stencil_mode = 1
 stencil_flags = 2
-stencil_reference = 4
+stencil_reference = 9
 stencil_color = Color(0, 0, 0, 0.5882353)
-stencil_outline_thickness = 0.003
+stencil_outline_thickness = 0.005
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_3crru"]
+resource_name = "Leon Cloth weight fix1_body male_016_009"
+_surfaces = [{
+"aabb": AABB(-0.03385494, 1.3972468, -0.057616368, 0.06770988, 0.10019374, 0.05379203),
+"attribute_data": PackedByteArray("pl7RPUB/Rj0kktQ9gHy6PCET0T1Af0Y9jN3UPYB8ujxu2+I9QH9GPW7b4j2AfLo8IRPRPUB/Rj1u2+I9gHy6PG7b4j1Af0Y9JJLUPYB8ujyhXtE9QIBGPSqS1D1Afro8jN3UPUB+ujwhE9E9QIBGPWrb4j1AgEY9atviPUB+ujwhE9E9QIBGPWrb4j1Afro8KpLUPUB+ujxq2+I9QIBGPQ=="),
+"bone_aabbs": [AABB(0, 0, 0, -1, -1, -1), AABB(0, 0, 0, -1, -1, -1), AABB(0, 0, 0, -1, -1, -1), AABB(0, 0, 0, -1, -1, -1), AABB(-0.03385494, 1.3972468, -0.057616368, 0.06770988, 0.10019374, 0.05379203), AABB(0, 0, 0, -1, -1, -1), AABB(-0.03385494, 1.3972468, -0.057616368, 0.06770988, 0.10019374, 0.05379203)],
+"format": 34359745559,
+"index_count": 36,
+"index_data": PackedByteArray("AAABAAIAAAADAAEABAADAAAABAAFAAMABgAHAAgABgAJAAcACgALAAwACgANAAsADgAKAAwADgAMAA8AEAARABIAEAATABEA"),
+"material": ExtResource("10_7crtr"),
+"name": "body male",
+"primitive": 3,
+"skin_data": PackedByteArray("BgAEAAAAAADrgxN8AAAAAAYABAAAAAAAPfbBCQAAAAAGAAQAAAAAAJOEa3sAAAAABgAEAAAAAABW7KgTAAAAAAYABAAAAAAAfIKCfQAAAAAGAAQAAAAAAIXseRMAAAAABgAEAAAAAACThGt7AAAAAAYAAAAAAAAA//8AAAAAAAAGAAQAAAAAAFyDonwAAAAABgAEAAAAAAA99sEJAAAAAAYABAAAAAAA64MTfAAAAAAGAAQAAAAAAD32wQkAAAAABgAEAAAAAABW7KgTAAAAAAYABAAAAAAAk4RrewAAAAAGAAQAAAAAAHyCgn0AAAAABgAEAAAAAACF7HkTAAAAAAYABAAAAAAAk4RrewAAAAAGAAAAAAAAAP//AAAAAAAABgAEAAAAAAA99sEJAAAAAAYABAAAAAAAXIOifAAAAAA="),
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 20,
+"vertex_data": PackedByteArray("gV4IvfzYsj8k/2u9DtDevCKsvz9wEh+8eqsKvfzYsj/AoXq7KjjavCKsvz8cjle9AAAAAPzYsj8k/2u9AAAAACKsvz8cjle9eqsKvfzYsj/AoXq7AAAAACKsvz9wEh+8AAAAAPzYsj/AoXq7DtDevCKsvz9wEh+8gV4IPfzYsj8k/2u9DtDePCKsvz9wEh+8KjjaPCKsvz8cjle9eqsKPfzYsj/AoXq7AAAAAPzYsj8k/2u9AAAAACKsvz8cjle9eqsKPfzYsj/AoXq7AAAAACKsvz9wEh+8DtDePCKsvz9wEh+8AAAAAPzYsj/AoXq7BweBw/r//h+BQ4qHmwe6HVRDioeIB6kdCQdDxPX/nF/t+f//////P+35//////8/VEOKhzy8ysP/fxiH////v/9/GIf///+/gUOKh268xcPx+JXDAAD33228f4dp+Dfi8fgwxAIAWKC9vIiHfvhc4u35//8AAP+/7fn//wAA/7+9vIiH1UMzPP9/GIcAAP8/bbx/h3VDQDz/fxiHAAD/Pw==")
+}]
+blend_shape_mode = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8qxvo"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.5882353)
+grow = true
+grow_amount = 0.006
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 4
+stencil_reference = 9
+metadata/_stencil_owned = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5q8fn"]
+next_pass = SubResource("StandardMaterial3D_8qxvo")
+diffuse_mode = 3
+specular_mode = 2
+albedo_texture = ExtResource("22_kxw46")
+roughness = 0.0
+rim_enabled = true
+rim = 0.5
+texture_filter = 5
+stencil_mode = 1
+stencil_flags = 2
+stencil_reference = 9
+stencil_color = Color(0, 0, 0, 0.5882353)
+stencil_outline_thickness = 0.005
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_oncp1"]
 resource_name = "Leon Cloth weight fix1_Cloth_Body"
@@ -1303,25 +1351,6 @@ _surfaces = [{
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 20,
 "vertex_data": PackedByteArray("AwfGPZrNhD+up8S9OC2bPQ3acj/0nHA9/QbGPZvNhD/UyVs97uGMPWtfdD8CmeG9AAAAAAweZD/Szde9AAAAAAweZD8oXlg9AAAAAAweZD/Szde9yhgePho2Zz84Xlg9zxgePsA7Zz/Ozde9AAAAAAweZD8oXlg97uGMPWtfdD8CmeG9AAAAAAweZD/Szde9zxgePsA7Zz/Ozde9AwfGPZrNhD+up8S9yhgePho2Zz84Xlg9zxgePsA7Zz/Ozde9/QbGPZvNhD/UyVs9OC2bPQ3acj/0nHA97uGMPWtfdD8CmeG9AAAAAAweZD8oXlg9xd/GX////z+c0FBJoQHA+pznnGdmASmAGtDASLUBtfpwvXA9////P0G3QTfmBDmDXIlgCRMAboBaiUgJAwCO/22JXAkDAI7/TIlMCf///z/dGjXZuDeOtok0QM9EQ3upGeiPx8cWS+XjTFD6QAxKti+6GpYTR45AGeiPxw9s2ev1eb/JLgfMMA1ZsZhlA2gm3Ro12f1R33HLUiq3bQw2EQ==")
-}]
-blend_shape_mode = 0
-
-[sub_resource type="ArrayMesh" id="ArrayMesh_3crru"]
-resource_name = "Leon Cloth weight fix1_body male_016_009"
-_surfaces = [{
-"aabb": AABB(-0.03385494, 1.3972468, -0.057616368, 0.06770988, 0.10019374, 0.05379203),
-"attribute_data": PackedByteArray("pl7RPUB/Rj0kktQ9gHy6PCET0T1Af0Y9jN3UPYB8ujxu2+I9QH9GPW7b4j2AfLo8IRPRPUB/Rj1u2+I9gHy6PG7b4j1Af0Y9JJLUPYB8ujyhXtE9QIBGPSqS1D1Afro8jN3UPUB+ujwhE9E9QIBGPWrb4j1AgEY9atviPUB+ujwhE9E9QIBGPWrb4j1Afro8KpLUPUB+ujxq2+I9QIBGPQ=="),
-"bone_aabbs": [AABB(0, 0, 0, -1, -1, -1), AABB(0, 0, 0, -1, -1, -1), AABB(0, 0, 0, -1, -1, -1), AABB(0, 0, 0, -1, -1, -1), AABB(-0.03385494, 1.3972468, -0.057616368, 0.06770988, 0.10019374, 0.05379203), AABB(0, 0, 0, -1, -1, -1), AABB(-0.03385494, 1.3972468, -0.057616368, 0.06770988, 0.10019374, 0.05379203)],
-"format": 34359745559,
-"index_count": 36,
-"index_data": PackedByteArray("AAABAAIAAAADAAEABAADAAAABAAFAAMABgAHAAgABgAJAAcACgALAAwACgANAAsADgAKAAwADgAMAA8AEAARABIAEAATABEA"),
-"material": ExtResource("10_7crtr"),
-"name": "body male",
-"primitive": 3,
-"skin_data": PackedByteArray("BgAEAAAAAADrgxN8AAAAAAYABAAAAAAAPfbBCQAAAAAGAAQAAAAAAJOEa3sAAAAABgAEAAAAAABW7KgTAAAAAAYABAAAAAAAfIKCfQAAAAAGAAQAAAAAAIXseRMAAAAABgAEAAAAAACThGt7AAAAAAYAAAAAAAAA//8AAAAAAAAGAAQAAAAAAFyDonwAAAAABgAEAAAAAAA99sEJAAAAAAYABAAAAAAA64MTfAAAAAAGAAQAAAAAAD32wQkAAAAABgAEAAAAAABW7KgTAAAAAAYABAAAAAAAk4RrewAAAAAGAAQAAAAAAHyCgn0AAAAABgAEAAAAAACF7HkTAAAAAAYABAAAAAAAk4RrewAAAAAGAAAAAAAAAP//AAAAAAAABgAEAAAAAAA99sEJAAAAAAYABAAAAAAAXIOifAAAAAA="),
-"uv_scale": Vector4(0, 0, 0, 0),
-"vertex_count": 20,
-"vertex_data": PackedByteArray("gV4IvfzYsj8k/2u9DtDevCKsvz9wEh+8eqsKvfzYsj/AoXq7KjjavCKsvz8cjle9AAAAAPzYsj8k/2u9AAAAACKsvz8cjle9eqsKvfzYsj/AoXq7AAAAACKsvz9wEh+8AAAAAPzYsj/AoXq7DtDevCKsvz9wEh+8gV4IPfzYsj8k/2u9DtDePCKsvz9wEh+8KjjaPCKsvz8cjle9eqsKPfzYsj/AoXq7AAAAAPzYsj8k/2u9AAAAACKsvz8cjle9eqsKPfzYsj/AoXq7AAAAACKsvz9wEh+8DtDePCKsvz9wEh+8AAAAAPzYsj/AoXq7BweBw/r//h+BQ4qHmwe6HVRDioeIB6kdCQdDxPX/nF/t+f//////P+35//////8/VEOKhzy8ysP/fxiH////v/9/GIf///+/gUOKh268xcPx+JXDAAD33228f4dp+Dfi8fgwxAIAWKC9vIiHfvhc4u35//8AAP+/7fn//wAA/7+9vIiH1UMzPP9/GIcAAP8/bbx/h3VDQDz/fxiHAAD/Pw==")
 }]
 blend_shape_mode = 0
 
@@ -24231,6 +24260,15 @@ metadata/extras = {
 "yp_decal": {}
 }
 
+[node name="Neck" type="MeshInstance3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=2129192992]
+mesh = SubResource("ArrayMesh_3crru")
+skin = SubResource("Skin_a128k")
+skeleton = NodePath("..")
+surface_material_override/0 = SubResource("StandardMaterial3D_5q8fn")
+metadata/extras = {
+"rigify_owner_rig": {}
+}
+
 [node name="Cloth_Body" type="MeshInstance3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=775664311]
 mesh = SubResource("ArrayMesh_oncp1")
 skin = SubResource("Skin_a128k")
@@ -24441,15 +24479,6 @@ metadata/extras = {
 "rigify_owner_rig": {}
 }
 
-[node name="Neck" type="MeshInstance3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=2129192992]
-mesh = SubResource("ArrayMesh_3crru")
-skin = SubResource("Skin_a128k")
-skeleton = NodePath("..")
-surface_material_override/0 = ExtResource("17_3dxkp")
-metadata/extras = {
-"rigify_owner_rig": {}
-}
-
 [node name="Upper_Torso" type="MeshInstance3D" parent="Re4Lom Base Rig/rig/Skeleton3D" unique_id=871037369]
 visible = false
 mesh = SubResource("ArrayMesh_uk3x5")
@@ -24522,7 +24551,7 @@ bone_idx = 4
 [node name="TakedownHitbox" type="Area3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox" unique_id=958867971]
 
 [node name="TakedownAttackBox" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=1184713375]
-transform = Transform3D(0.031009432, 0.7687628, -0.63878113, -0.95253265, -0.17091238, -0.25193107, -0.30285087, 0.6162721, 0.72697276, 0.586274, -0.14511234, 0.42287216)
+transform = Transform3D(0.03100943, 0.76876277, -0.63878113, -0.95253265, -0.17091238, -0.25193107, -0.30285084, 0.6162721, 0.72697276, 0.586274, -0.14511234, 0.42287216)
 shape = SubResource("CapsuleShape3D_ntd1s")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Re4Lom Base Rig/rig/Skeleton3D/PlayerTakedownHitBox/TakedownHitbox" unique_id=315213988]
