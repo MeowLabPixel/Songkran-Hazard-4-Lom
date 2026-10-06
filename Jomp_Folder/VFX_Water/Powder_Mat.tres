@@ -16,8 +16,8 @@ grow = true
 grow_amount = 0.002
 stencil_mode = 3
 stencil_flags = 1
-stencil_compare = 4
-stencil_reference = 23
+stencil_compare = 5
+stencil_reference = 30
 metadata/_stencil_owned = true
 
 [resource]
@@ -32,6 +32,6 @@ disable_receive_shadows = true
 billboard_keep_scale = true
 stencil_mode = 1
 stencil_flags = 2
-stencil_reference = 23
+stencil_reference = 30
 stencil_color = Color(1, 1, 1, 1)
 stencil_outline_thickness = 0.002

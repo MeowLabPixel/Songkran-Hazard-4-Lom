@@ -45,6 +45,13 @@ var last_normal_attack: String = ""
 var current_target: Node3D = null
 var target_update_timer: float = 0.0
 
+var _prep_particle_left: GPUParticles3D = null
+var _prep_particle_right: GPUParticles3D = null
+var _left_hand_attach: Node3D = null
+var _right_hand_attach: Node3D = null
+var _prep_particle_left_base_scale: Vector3 = Vector3.ONE
+var _prep_particle_right_base_scale: Vector3 = Vector3.ONE
+
 # ─── Procedural Animation Properties ───────────────────────────────────────
 var last_y_rotation: float = 0.0
 var _smoothed_turn_speed: float = 0.0
@@ -58,6 +65,11 @@ var _smoothed_angular_velocity: float = 0.0
 @export var head_reaction_stiffness: float = 220.0
 @export var body_reaction_stiffness: float = 260.0
 @export var arms_reaction_stiffness: float = 220.0
+
+@export_group("Attack Prep VFX")
+@export var attack_prep_vfx_offset_left: Vector3 = Vector3(0.0, 0.0, 0.1)
+@export var attack_prep_vfx_offset_right: Vector3 = Vector3(0.0, 0.0, 0.1)
+@export var attack_prep_velocity_lead: float = 0.15
 @export var legs_reaction_stiffness: float = 260.0
 
 @export_group("Hit Reaction Damping")
@@ -105,8 +117,6 @@ var _left_hand_aura_material: ShaderMaterial = null
 var _right_hand_aura_material: ShaderMaterial = null
 var _takedown_last_mask_dir: int = 0
 var current_attack_type: String = ""
-var _prep_particle_left: GPUParticles3D = null
-var _prep_particle_right: GPUParticles3D = null
 var last_hit_entered_act1: bool = false
 var last_hit_was_lethal: bool = false
 var _dead_walk_markers: Array[float] = [0.5, 1.0]
@@ -665,57 +675,92 @@ func _setup_attack_prep_vfx() -> void:
 		if skel_node:
 			if not left_attach:
 				left_attach = skel_node.get_node_or_null("HitboxAttachLeftHand")
-				if not left_attach:
-					left_attach = skel_node.get_node_or_null("HitboxAttachLeftForeArm")
 			if not right_attach:
 				right_attach = skel_node.get_node_or_null("HitboxAttachRightHand")
-				if not right_attach:
-					right_attach = skel_node.get_node_or_null("HitboxAttachRightForeArm")
 			if left_attach and right_attach:
 				break
 				
 	if not left_attach:
 		left_attach = find_child("HitboxAttachLeftHand", true, false)
-		if not left_attach:
-			left_attach = find_child("HitboxAttachLeftForeArm", true, false)
 			
 	if not right_attach:
 		right_attach = find_child("HitboxAttachRightHand", true, false)
-		if not right_attach:
-			right_attach = find_child("HitboxAttachRightForeArm", true, false)
 			
+	_left_hand_attach = left_attach as Node3D
+	_right_hand_attach = right_attach as Node3D
+
 	if left_attach:
 		_prep_particle_left = prep_scene.instantiate() as GPUParticles3D
-		_prep_particle_left.emitting = false
+		_prep_particle_left_base_scale = _prep_particle_left.scale
+		_prep_particle_left.top_level = true
+		_set_particle_tree_emitting(_prep_particle_left, false)
 		if _prep_particle_left.process_material:
 			_prep_particle_left.process_material = _prep_particle_left.process_material.duplicate()
-			_prep_particle_left.process_material.gravity.x = 1.0 # Left arm: 1.0 x
+			if _prep_particle_left.process_material is ParticleProcessMaterial:
+				_prep_particle_left.process_material.gravity.x = 1.0 # Left hand: 1.0 x
+			elif _prep_particle_left.process_material is ShaderMaterial:
+				var grav = _prep_particle_left.process_material.get_shader_parameter("gravity")
+				if grav == null: grav = Vector3.ZERO
+				grav.x = 1.0
+				_prep_particle_left.process_material.set_shader_parameter("gravity", grav)
 		left_attach.add_child(_prep_particle_left)
 		
 	if right_attach:
 		_prep_particle_right = prep_scene.instantiate() as GPUParticles3D
-		_prep_particle_right.emitting = false
+		_prep_particle_right_base_scale = _prep_particle_right.scale
+		_prep_particle_right.top_level = true
+		_set_particle_tree_emitting(_prep_particle_right, false)
 		if _prep_particle_right.process_material:
 			_prep_particle_right.process_material = _prep_particle_right.process_material.duplicate()
-			_prep_particle_right.process_material.gravity.x = -1.0 # Right arm: -1.0 x
+			if _prep_particle_right.process_material is ParticleProcessMaterial:
+				_prep_particle_right.process_material.gravity.x = -1.0 # Right hand: -1.0 x
+			elif _prep_particle_right.process_material is ShaderMaterial:
+				var grav = _prep_particle_right.process_material.get_shader_parameter("gravity")
+				if grav == null: grav = Vector3.ZERO
+				grav.x = -1.0
+				_prep_particle_right.process_material.set_shader_parameter("gravity", grav)
 		right_attach.add_child(_prep_particle_right)
+
+func _set_particle_tree_node_emitting(node: GPUParticles3D, is_emitting: bool) -> void:
+	if "is_active" in node:
+		node.is_active = is_emitting
+	elif node.emitting != is_emitting:
+		node.emitting = is_emitting
+
+func _set_particle_tree_emitting(root_p: GPUParticles3D, is_emitting: bool) -> void:
+	if not root_p or not is_instance_valid(root_p):
+		return
+	_set_particle_tree_node_emitting(root_p, is_emitting)
+	for child in root_p.find_children("*", "GPUParticles3D", true, false):
+		if child is GPUParticles3D:
+			_set_particle_tree_node_emitting(child, is_emitting)
+
 
 func _update_attack_prep_vfx() -> void:
 	if is_defeated or is_takedown_defeat:
-		if _prep_particle_left and _prep_particle_left.emitting:
-			_prep_particle_left.emitting = false
-		if _prep_particle_right and _prep_particle_right.emitting:
-			_prep_particle_right.emitting = false
+		_set_particle_tree_emitting(_prep_particle_left, false)
+		_set_particle_tree_emitting(_prep_particle_right, false)
 		return
 		
 	var active_attack = get_active_attack_type()
 	var emit_left = (active_attack == "attack_2" or active_attack == "attack_grab")
 	var emit_right = (active_attack == "attack_1" or active_attack == "attack_grab")
 	
-	if _prep_particle_left and _prep_particle_left.emitting != emit_left:
-		_prep_particle_left.emitting = emit_left
-	if _prep_particle_right and _prep_particle_right.emitting != emit_right:
-		_prep_particle_right.emitting = emit_right
+	_set_particle_tree_emitting(_prep_particle_left, emit_left)
+	_set_particle_tree_emitting(_prep_particle_right, emit_right)
+
+	var char_basis = global_basis.orthonormalized()
+	var vel_lead = velocity * attack_prep_velocity_lead
+	
+	if _left_hand_attach and is_instance_valid(_left_hand_attach) and _prep_particle_left and is_instance_valid(_prep_particle_left):
+		var target_pos = _left_hand_attach.global_position + (char_basis * attack_prep_vfx_offset_left) + vel_lead
+		_prep_particle_left.global_position = target_pos
+		_prep_particle_left.global_basis = char_basis.scaled(_prep_particle_left_base_scale)
+
+	if _right_hand_attach and is_instance_valid(_right_hand_attach) and _prep_particle_right and is_instance_valid(_prep_particle_right):
+		var target_pos = _right_hand_attach.global_position + (char_basis * attack_prep_vfx_offset_right) + vel_lead
+		_prep_particle_right.global_position = target_pos
+		_prep_particle_right.global_basis = char_basis.scaled(_prep_particle_right_base_scale)
 
 # ─── Navigation ────────────────────────────────────────────────────────────
 func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
