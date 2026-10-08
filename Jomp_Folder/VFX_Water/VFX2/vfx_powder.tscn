@@ -445,8 +445,8 @@ void process() {
 "
 
 [sub_resource type="Gradient" id="Gradient_vmum0"]
-offsets = PackedFloat32Array(0.2455516, 0.5160142, 1)
-colors = PackedColorArray(1, 1, 1, 1, 0.8288257, 0.8288257, 0.8288257, 1, 1, 1, 1, 1)
+offsets = PackedFloat32Array(0.2455516, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1)
 
 [sub_resource type="GradientTexture1D" id="GradientTexture1D_02l8o"]
 gradient = SubResource("Gradient_vmum0")
@@ -485,7 +485,7 @@ shader_parameter/damping_max = 1.0
 shader_parameter/initial_angle_min = 1.0728835e-05
 shader_parameter/initial_angle_max = 360.00003
 shader_parameter/scale_min = 7.0
-shader_parameter/scale_max = 8.0
+shader_parameter/scale_max = 9.0
 shader_parameter/hue_variation_min = 0.0
 shader_parameter/hue_variation_max = 0.0
 shader_parameter/anim_speed_min = 0.0
@@ -500,7 +500,7 @@ shader_parameter/emission_sphere_radius = 1.0
 shader_parameter/sub_emitter_amount_at_end = 3
 shader_parameter/sub_emitter_keep_velocity = true
 shader_parameter/color_value = Color(1, 1, 1, 1)
-shader_parameter/gravity = Vector3(0, 1.7, 0)
+shader_parameter/gravity = Vector3(0, 1.6, 0)
 shader_parameter/color_ramp = SubResource("GradientTexture1D_02l8o")
 shader_parameter/scale_curve = SubResource("CurveTexture_ieaud")
 shader_parameter/collision_friction = 0.0
@@ -943,7 +943,7 @@ curve = SubResource("Curve_b4mlg")
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_d4pyt"]
 shader = SubResource("Shader_mxhre")
 shader_parameter/direction = Vector3(0, 0, 0)
-shader_parameter/spread = 180.0
+shader_parameter/spread = 360.0
 shader_parameter/flatness = 0.0
 shader_parameter/inherit_emitter_velocity_ratio = 0.0
 shader_parameter/initial_linear_velocity_min = 0.0
@@ -966,8 +966,8 @@ shader_parameter/damping_min = 0.0
 shader_parameter/damping_max = 1.0
 shader_parameter/initial_angle_min = 1.0728835e-05
 shader_parameter/initial_angle_max = 360.00003
-shader_parameter/scale_min = 2.0
-shader_parameter/scale_max = 3.0
+shader_parameter/scale_min = 1.0
+shader_parameter/scale_max = 2.0
 shader_parameter/hue_variation_min = 0.0
 shader_parameter/hue_variation_max = 0.0
 shader_parameter/anim_speed_min = 0.0
@@ -976,11 +976,11 @@ shader_parameter/anim_offset_min = 0.0
 shader_parameter/anim_offset_max = 0.0
 shader_parameter/lifetime_randomness = 0.25
 shader_parameter/emission_shape_offset = Vector3(0, 0, 0)
-shader_parameter/emission_shape_scale = Vector3(1, 0, 1)
+shader_parameter/emission_shape_scale = Vector3(1, 0.5, 1)
 shader_parameter/velocity_pivot = Vector3(0, 0, 0)
 shader_parameter/emission_sphere_radius = 1.0
-shader_parameter/color_value = Color(1.0950001, 1.0950001, 1.0950001, 1)
-shader_parameter/gravity = Vector3(0, 0.5, 0)
+shader_parameter/color_value = Color(1, 1, 1, 1)
+shader_parameter/gravity = Vector3(0, 0.3, 0)
 shader_parameter/color_ramp = SubResource("GradientTexture1D_wdgju")
 shader_parameter/scale_curve = SubResource("CurveTexture_anpqn")
 
@@ -1792,15 +1792,16 @@ alpha_curve = SubResource("CurveTexture_w12y1")
 size = Vector2(0.4, 0.8)
 center_offset = Vector3(0, 0.1, 0)
 
-[sub_resource type="Curve" id="Curve_l7k2x"]
-_data = [Vector2(0.10130719, 0.02614379), 0.0, 0.0, 0, 0, Vector2(0.2973856, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -3.0, 0.0, 0, 0]
+[sub_resource type="Curve" id="Curve_uwejv"]
+_data = [Vector2(0, 0.026785731), 0.0, 0.0, 0, 0, Vector2(0.09491525, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -3.0, 0.0, 0, 0]
 point_count = 3
 
 [sub_resource type="CurveTexture" id="CurveTexture_splash_scale"]
-curve = SubResource("Curve_l7k2x")
+curve = SubResource("Curve_uwejv")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_67mmn"]
 particle_flag_rotate_y = true
+emission_shape_scale = Vector3(1, 0, 1)
 emission_shape = 1
 emission_sphere_radius = 0.01
 gravity = Vector3(0, 0, 0)
@@ -1852,14 +1853,13 @@ height = 0.35
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_w12y1"]
 particle_flag_rotate_y = true
+emission_shape_scale = Vector3(1, 0, 1)
 emission_shape = 1
 emission_sphere_radius = 0.01
 gravity = Vector3(0, 0, 0)
 scale_min = 0.099999994
 scale_max = 0.19999999
 scale_curve = SubResource("CurveTexture_splash_scale")
-sub_emitter_mode = 4
-sub_emitter_amount_at_start = 1
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ieaud"]
 render_priority = 0
@@ -2170,6 +2170,7 @@ amount = 12
 sub_emitter = NodePath("Powder_particle_sub")
 lifetime = 0.8
 one_shot = true
+speed_scale = 1.25
 explosiveness = 1.0
 randomness = 1.0
 fixed_fps = 60
@@ -2264,7 +2265,7 @@ draw_pass_1 = SubResource("QuadMesh_oyv8i")
 transform = Transform3D(0.67, 0, 0, 0, 0.67, 0, 0, 0, 0.67, 0, 0, 0)
 cast_shadow = 0
 emitting = false
-amount = 10
+amount = 100
 sub_emitter = NodePath("../Powder_SubEmitter3")
 lifetime = 0.5
 one_shot = true
@@ -2277,7 +2278,7 @@ draw_pass_1 = SubResource("SphereMesh_d4pyt")
 transform = Transform3D(0.67, 0, 0, 0, 0.67, 0, 0, 0, 0.67, 0, 0, 0)
 cast_shadow = 0
 emitting = false
-amount = 32
+amount = 100
 one_shot = true
 explosiveness = 1.0
 fixed_fps = 60

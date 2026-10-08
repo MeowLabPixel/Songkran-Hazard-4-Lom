@@ -41,24 +41,27 @@ func _enter() -> void:
 
 	var gun = owner.gun_controller.current_gun
 	if gun and (gun.gun_name == "Water pistol" or owner.gun_controller.current_gun_index == 0):
-		# Start QTE reload hud for pistol
-		qte_hud = load("res://scripts/ui/reload_qte_hud.gd").new(gun.air, gun.max_air)
-		
-		# Assign custom inspector settings dynamically
-		qte_hud.duration = qte_duration
-		qte_hud.prompt_count_override = qte_prompt_count_override
-		qte_hud.prompt_size_override = qte_target_zone_size
-		qte_hud.show_progress_bar = qte_show_progress_bar
-		qte_hud.superpump_required_hold = superpump_hold_duration
-		qte_hud.fail_ends_reload = fail_ends_reload
-		
-		# Run parameters initialization
-		qte_hud.setup()
-		
-		qte_hud.qte_hit.connect(_on_qte_hit)
-		qte_hud.finished.connect(_on_reload_finished)
-		qte_hud.cancelled.connect(_on_reload_cancelled)
-		owner.add_child(qte_hud)
+		# Start QTE reload hud for pistol using pre-existing UI node
+		var hud_node = get_tree().get_first_node_in_group("reload_qte_hud") as ReloadQteHud
+		if hud_node:
+			qte_hud = hud_node
+			
+			# Assign custom inspector settings dynamically
+			qte_hud.duration = qte_duration
+			qte_hud.prompt_count_override = qte_prompt_count_override
+			qte_hud.prompt_size_override = qte_target_zone_size
+			qte_hud.show_progress_bar = qte_show_progress_bar
+			qte_hud.superpump_required_hold = superpump_hold_duration
+			qte_hud.fail_ends_reload = fail_ends_reload
+			
+			if not qte_hud.qte_hit.is_connected(_on_qte_hit):
+				qte_hud.qte_hit.connect(_on_qte_hit)
+			if not qte_hud.finished.is_connected(_on_reload_finished):
+				qte_hud.finished.connect(_on_reload_finished)
+			if not qte_hud.cancelled.is_connected(_on_reload_cancelled):
+				qte_hud.cancelled.connect(_on_reload_cancelled)
+				
+			qte_hud.start(gun.air, gun.max_air)
 		
 		# Travel to main Reload state first
 		owner.anim.get(owner.anim_playback).travel("Reload")
@@ -85,6 +88,7 @@ func _exit() -> void:
 	_exited = true
 	var was_superpump = false
 	if is_instance_valid(qte_hud):
+		_disconnect_qte_signals()
 		qte_hud.cancel()
 		qte_hud = null
 	if is_instance_valid(owner):
@@ -276,6 +280,7 @@ func _on_reload_finished(final_air: float, super_activated: bool) -> void:
 			SoundManager.play_2d("watergun_pistol_reload_Superpump")
 			
 	# Cleanup HUD reference
+	_disconnect_qte_signals()
 	qte_hud = null
 	
 	# Transition back using queued exit check
@@ -284,9 +289,19 @@ func _on_reload_finished(final_air: float, super_activated: bool) -> void:
 func _on_reload_cancelled() -> void:
 	if _exited:
 		return
+	_disconnect_qte_signals()
 	qte_hud = null
 	
 	_evaluate_queued_exit()
+
+func _disconnect_qte_signals() -> void:
+	if is_instance_valid(qte_hud):
+		if qte_hud.qte_hit.is_connected(_on_qte_hit):
+			qte_hud.qte_hit.disconnect(_on_qte_hit)
+		if qte_hud.finished.is_connected(_on_reload_finished):
+			qte_hud.finished.disconnect(_on_reload_finished)
+		if qte_hud.cancelled.is_connected(_on_reload_cancelled):
+			qte_hud.cancelled.disconnect(_on_reload_cancelled)
 
 func _evaluate_queued_exit() -> void:
 	var is_aim = Input.is_action_pressed("aim")

@@ -12665,12 +12665,16 @@ _data = {
 
 [sub_resource type="Animation" id="Animation_rw8a5"]
 resource_name = "re -loop"
-length = 0.5
+length = 0.66
 loop_mode = 1
 markers = [{
 "color": Color(1, 1, 1, 1),
 "name": &"Superpump_End_start",
 "time": 0.3195575
+}, {
+"color": Color(1, 1, 1, 1),
+"name": &"Superpump_End_complete",
+"time": 0.66
 }]
 tracks/0/type = "rotation_3d"
 tracks/0/imported = true
@@ -22169,17 +22173,16 @@ node_connections = [&"output", 0, &"TimeScale", &"TimeScale", 0, &"Animation"]
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_2t3bg"]
 animation = &"RR/re"
-play_mode = 1
 use_custom_timeline = true
-timeline_length = 0.18044251
+timeline_length = 0.3404425262260437
 stretch_time_scale = false
-start_offset = 0.0
+start_offset = 0.3195575
 loop_mode = 0
 
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_jrbya"]
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_ahqnk"]
-graph_offset = Vector2(-199.2, 70.4)
+graph_offset = Vector2(-266, 41)
 nodes/Animation/node = SubResource("AnimationNodeAnimation_2t3bg")
 nodes/Animation/position = Vector2(-112, 96)
 nodes/TimeScale/node = SubResource("AnimationNodeTimeScale_jrbya")
@@ -22228,7 +22231,7 @@ states/SuperPumpEnd/position = Vector2(662.8, 73.472)
 states/SuperPumpStart/node = SubResource("AnimationNodeBlendTree_upxxc")
 states/SuperPumpStart/position = Vector2(446.80002, 229.59999)
 transitions = ["Start", "SuperPumpStart", SubResource("AnimationNodeStateMachineTransition_ahqnk"), "SuperPumpStart", "SuperPumpEnd", SubResource("AnimationNodeStateMachineTransition_vb1ce"), "SuperPumpEnd", "End", SubResource("AnimationNodeStateMachineTransition_0ncpa"), "SuperPumpStart", "End", SubResource("AnimationNodeStateMachineTransition_ln3h3")]
-graph_offset = Vector2(301, -55)
+graph_offset = Vector2(71, 20)
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_w7j2h"]
 xfade_time = 0.15
@@ -22263,6 +22266,7 @@ xfade_time = 0.15
 
 [sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_vgvch"]
 allow_transition_to_self = true
+states/End/position = Vector2(930, 100)
 states/Reload/node = SubResource("AnimationNodeBlendTree_55jnj")
 states/Reload/position = Vector2(529.2, 117.399994)
 states/Reload_Quick/node = SubResource("AnimationNodeBlendTree_237xx")
@@ -22504,7 +22508,7 @@ states/Start/position = Vector2(67.2, 55.2)
 states/Takedown/node = SubResource("AnimationNodeStateMachine_a1u5o")
 states/Takedown/position = Vector2(675.2, 130.064)
 transitions = ["Start", "Idle", SubResource("AnimationNodeStateMachineTransition_35wys"), "Idle", "Run", SubResource("AnimationNodeStateMachineTransition_pjwc4"), "Run", "Idle", SubResource("AnimationNodeStateMachineTransition_or4qq"), "Idle", "Aim", SubResource("AnimationNodeStateMachineTransition_hggc2"), "Aim", "Idle", SubResource("AnimationNodeStateMachineTransition_b2j0d"), "QT", "Idle", SubResource("AnimationNodeStateMachineTransition_55jnj"), "Idle", "QT", SubResource("AnimationNodeStateMachineTransition_xcnuv"), "Aim", "Reload", SubResource("AnimationNodeStateMachineTransition_s3g0c"), "Run", "Reload", SubResource("AnimationNodeStateMachineTransition_7l6ig"), "Idle", "Reload", SubResource("AnimationNodeStateMachineTransition_utr5e"), "Reload", "Idle", SubResource("AnimationNodeStateMachineTransition_kewli"), "Idle", "Takedown", SubResource("AnimationNodeStateMachineTransition_kcq4v"), "Run", "Takedown", SubResource("AnimationNodeStateMachineTransition_qavcc"), "Takedown", "Idle", SubResource("AnimationNodeStateMachineTransition_bd26m"), "Run", "Aim", SubResource("AnimationNodeStateMachineTransition_237xx"), "Aim", "QT", SubResource("AnimationNodeStateMachineTransition_gswnw"), "Run", "QT", SubResource("AnimationNodeStateMachineTransition_j55il"), "QT", "Run", SubResource("AnimationNodeStateMachineTransition_wpyo2"), "QT", "Aim", SubResource("AnimationNodeStateMachineTransition_a1u5o"), "Reload", "Aim", SubResource("AnimationNodeStateMachineTransition_2s0vo"), "Start", "Aim", SubResource("AnimationNodeStateMachineTransition_hgm8h"), "Reload", "Run", SubResource("AnimationNodeStateMachineTransition_upxxc"), "Takedown", "Aim", SubResource("AnimationNodeStateMachineTransition_uygh0")]
-graph_offset = Vector2(-25.137573, -4.0364685)
+graph_offset = Vector2(34.862427, -96.03647)
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_j3r50"]
 priority = 0
@@ -22552,7 +22556,7 @@ states/Main/node = SubResource("AnimationNodeStateMachine_7l6ig")
 states/Main/position = Vector2(333.95972, 94.52592)
 states/Start/position = Vector2(202.4, 100)
 transitions = ["Start", "Main", SubResource("AnimationNodeStateMachineTransition_j3r50"), "Main", "Hit", SubResource("AnimationNodeStateMachineTransition_do7qw"), "Grab", "Main", SubResource("AnimationNodeStateMachineTransition_48p26"), "Main", "Grab", SubResource("AnimationNodeStateMachineTransition_anp34"), "Hit", "Main", SubResource("AnimationNodeStateMachineTransition_2h6tc"), "Main", "Die", SubResource("AnimationNodeStateMachineTransition_8rogd"), "Die", "Die_Loop", SubResource("AnimationNodeStateMachineTransition_t1aof"), "Die_Loop", "Die_Breath", SubResource("AnimationNodeStateMachineTransition_w8qe1")]
-graph_offset = Vector2(-1.9117432, -44.842514)
+graph_offset = Vector2(-25.911743, 1.157486)
 
 [node name="player" type="CharacterBody3D" unique_id=324464419 node_paths=PackedStringArray("aim_bone", "aim_bone2", "anim", "hitboxF", "hitboxB", "stun_detect", "pickup_detect", "gun_controller")]
 collision_layer = 42
@@ -24680,7 +24684,7 @@ margin = 0.001
 [node name="Camera3D" type="Camera3D" parent="Camera/edgeSpringArm3D/rearSpringArm3D" unique_id=1294684476]
 fov = 65.0
 
-[node name="Player Stat" type="CanvasLayer" parent="Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D" unique_id=1650775040 node_paths=PackedStringArray("hud_root", "bottom_right_cluster", "water_bar", "air_bar", "debuff_label", "player_portrait", "player_svc", "player_viewport", "player_camera", "follower_portrait", "follower_svc", "follower_viewport", "follower_camera", "kill_rect", "kill_label", "time_rect", "time_label")]
+[node name="Player Stat" type="CanvasLayer" parent="Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D" unique_id=1650775040 node_paths=PackedStringArray("hud_root", "bottom_right_cluster", "water_bar", "air_bar", "debuff_label", "player_portrait", "player_svc", "player_viewport", "player_camera", "follower_portrait", "follower_svc", "follower_viewport", "follower_camera", "kill_rect", "kill_label", "time_rect", "time_label", "grab_qte", "reload_qte", "takedown_prompt_label")]
 script = ExtResource("48_1u1sw")
 hud_root = NodePath("HUDRoot")
 bottom_right_cluster = NodePath("HUDRoot/BottomRightCluster")
@@ -24699,6 +24703,9 @@ kill_rect = NodePath("HUDRoot/KillCountHUD")
 kill_label = NodePath("HUDRoot/KillCountHUD/KillLabel")
 time_rect = NodePath("HUDRoot/TimeLimitHUD")
 time_label = NodePath("HUDRoot/TimeLimitHUD/TimeLabel")
+grab_qte = NodePath("HUDRoot/GrabQTE")
+reload_qte = NodePath("HUDRoot/ReloadQTE")
+takedown_prompt_label = NodePath("HUDRoot/TakedownPrompt")
 player_cam_pos = Vector3(0.005, 1.56, -0.65)
 follower_cam_pos = Vector3(-0.01, 1.385, -0.65)
 follower_cam_size = 0.425
@@ -24892,7 +24899,7 @@ parameters/Main/QT/Shot/Blend2/blend_amount = 1.0
 parameters/Main/QT/Shot/TimeScale/scale = 2.0
 parameters/Main/Reload/Reload/TimeScale/scale = 0.5
 parameters/Main/Reload/Reload_Quick/TimeScale/scale = 1.5
-parameters/Main/Reload/SuperPump/SuperPumpEnd/TimeScale/scale = 0.29999999999999716
+parameters/Main/Reload/SuperPump/SuperPumpEnd/TimeScale/scale = 0.3999999999999986
 parameters/Main/Reload/SuperPump/SuperPumpStart/TimeScale/scale = 0.14999999999999858
 parameters/Main/Run/conditions/pis = false
 parameters/Main/Run/conditions/shot = false

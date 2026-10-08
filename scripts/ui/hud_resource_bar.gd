@@ -256,6 +256,12 @@ extends Control
 		reload_qte_label_offset = Vector2.ZERO if v == null else v
 		queue_redraw()
 
+## If true, disables label position changes during QTE (keeps label anchored at its rest position while the bar extends).
+@export var reload_qte_disable_label_shift: bool = false:
+	set(v):
+		reload_qte_disable_label_shift = false if v == null else v
+		queue_redraw()
+
 ## Horizontal bar extension offset in pixels applied during reload QTE (negative values stretch outward).
 @export var reload_qte_bar_offset: float = -150.0:
 	set(v):
@@ -1332,9 +1338,19 @@ func _draw() -> void:
 		var effective_scale: float = lerpf(1.0, reload_qte_label_scale, _label_qte_blend)
 		var effective_font_size: int = maxi(1, int(round(float(label_font_size) * effective_scale)))
 		var ts := active_font.get_string_size(label_text, HORIZONTAL_ALIGNMENT_CENTER, -1, effective_font_size)
-		var label_qte_shift: float = (qte_ext * 0.5) if fill_from_right else (-qte_ext * 0.5)
-		var text_center_x := ((tl_x + bl_x) * 0.5 + (r_top_x + r_bot_x) * 0.5) * 0.5 + off.x + (edge_kick * 0.5) + label_qte_shift
-		var text_center_y := h * 0.5 + off.y
+		var text_center_x: float
+		var text_center_y: float
+		if reload_qte_disable_label_shift:
+			var rest_tl_x := 0.0 if flip_vertical else tp
+			var rest_bl_x := tp if flip_vertical else 0.0
+			var rest_r_top_x := w
+			var rest_r_bot_x := w
+			text_center_x = ((rest_tl_x + rest_bl_x) * 0.5 + (rest_r_top_x + rest_r_bot_x) * 0.5) * 0.5 + base_off.x + (edge_kick * 0.5)
+			text_center_y = h * 0.5 + base_off.y
+		else:
+			var label_qte_shift: float = (qte_ext * 0.5) if fill_from_right else (-qte_ext * 0.5)
+			text_center_x = ((tl_x + bl_x) * 0.5 + (r_top_x + r_bot_x) * 0.5) * 0.5 + off.x + (edge_kick * 0.5) + label_qte_shift
+			text_center_y = h * 0.5 + off.y
 		var pivot := Vector2(text_center_x, text_center_y)
 
 		var sx: float = -1.0 if flip_h else 1.0

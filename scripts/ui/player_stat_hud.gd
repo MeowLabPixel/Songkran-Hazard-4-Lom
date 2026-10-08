@@ -3,6 +3,7 @@
 ## Renders: player HP ring with 3D portrait, water/air bars,
 ## follower HP ring with 3D portrait, kill count, and timer.
 ## Designed to be fully tinker-ready with real nodes in the Godot Editor.
+class_name PlayerStatHUD
 extends CanvasLayer
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -34,6 +35,44 @@ extends CanvasLayer
 @export var kill_label: Label
 @export var time_rect: TextureRect
 @export var time_label: Label
+
+@export_group("QTE & Prompts")
+@export var grab_qte: GrabQteHud
+@export var reload_qte: ReloadQteHud
+@export var takedown_prompt_label: Label
+
+@export_group("Editor Previews")
+@export var preview_reload_qte: bool = false:
+	set(v):
+		preview_reload_qte = v
+		if not is_inside_tree() or not is_node_ready():
+			return
+		if not reload_qte:
+			_bind_or_build_nodes()
+		if reload_qte:
+			reload_qte.visible = v
+			if v and reload_qte.has_method("_setup_editor_preview"):
+				reload_qte._setup_editor_preview()
+@export var preview_grab_qte: bool = false:
+	set(v):
+		preview_grab_qte = v
+		if not is_inside_tree() or not is_node_ready():
+			return
+		if not grab_qte:
+			_bind_or_build_nodes()
+		if grab_qte:
+			grab_qte.visible = v
+			if v and grab_qte.has_method("_setup_editor_preview"):
+				grab_qte._setup_editor_preview()
+@export var preview_takedown_prompt: bool = false:
+	set(v):
+		preview_takedown_prompt = v
+		if not is_inside_tree() or not is_node_ready():
+			return
+		if not takedown_prompt_label:
+			_bind_or_build_nodes()
+		if takedown_prompt_label:
+			takedown_prompt_label.visible = v
 
 # ═══════════════════════════════════════════════════════════════════════════
 #                         CAMERA SETTINGS
@@ -288,6 +327,17 @@ func _ready() -> void:
 	_find_references()
 	_try_setup_portraits()
 
+	if reload_qte:
+		reload_qte.visible = preview_reload_qte if Engine.is_editor_hint() else false
+		if Engine.is_editor_hint() and preview_reload_qte and reload_qte.has_method("_setup_editor_preview"):
+			reload_qte._setup_editor_preview()
+	if grab_qte:
+		grab_qte.visible = preview_grab_qte if Engine.is_editor_hint() else false
+		if Engine.is_editor_hint() and preview_grab_qte and grab_qte.has_method("_setup_editor_preview"):
+			grab_qte._setup_editor_preview()
+	if takedown_prompt_label:
+		takedown_prompt_label.visible = preview_takedown_prompt if Engine.is_editor_hint() else false
+
 
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
@@ -330,7 +380,16 @@ func _process(delta: float) -> void:
 #                    NODE BINDING & FALLBACK CREATION
 # ═══════════════════════════════════════════════════════════════════════════
 
+var _is_binding_nodes: bool = false
+
 func _bind_or_build_nodes() -> void:
+	if _is_binding_nodes:
+		return
+	_is_binding_nodes = true
+	_do_bind_or_build_nodes()
+	_is_binding_nodes = false
+
+func _do_bind_or_build_nodes() -> void:
 	# 0. Hide any editor preview background (e.g. $bg)
 	for child in get_children():
 		if child is Control and child.name == "bg":
@@ -447,6 +506,12 @@ func _bind_or_build_nodes() -> void:
 			time_rect = hud_root.get_node_or_null("TimeLimitHUD") as TextureRect
 		if time_label == null and time_rect:
 			time_label = time_rect.get_node_or_null("TimeLabel") as Label
+		if grab_qte == null:
+			grab_qte = hud_root.get_node_or_null("GrabQTE") as GrabQteHud
+		if reload_qte == null:
+			reload_qte = hud_root.get_node_or_null("ReloadQTE") as ReloadQteHud
+		if takedown_prompt_label == null:
+			takedown_prompt_label = hud_root.get_node_or_null("TakedownPrompt") as Label
 
 		# Cache user's customized air bar color
 		if air_bar:
@@ -1055,6 +1120,8 @@ func _update_player_hp() -> void:
 
 func _update_bars() -> void:
 	if not _player:
+		if air_bar:
+			air_bar.set_reload_qte(false)
 		return
 
 	# ── Water ──
@@ -1078,8 +1145,8 @@ func _update_bars() -> void:
 		var sm = _player.get_node_or_null("Statemachine")
 		if sm and sm.current_state and sm.current_state.name == "Reload":
 			is_reloading_qte = true
-		elif get_tree() and get_tree().get_nodes_in_group("qte_hud").size() > 0:
-			is_reloading_qte = true
+	elif reload_qte and is_instance_valid(reload_qte) and reload_qte.visible and not reload_qte.resolved:
+		is_reloading_qte = true
 
 	if air_bar:
 		air_bar.set_reload_qte(is_reloading_qte)

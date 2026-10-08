@@ -288,11 +288,20 @@ func _start_grab_hold() -> void:
 	if enemy:
 		SoundManager.play_3d("zonbie_grab_success", enemy, 0.0, -1.0, enemy.custom_pitch_scale)
 		
-	var hud_script = load("res://scripts/ui/grab_qte_hud.gd")
-	_qte_hud = hud_script.new(qte_duration, qte_shakes_needed)
-	_qte_hud.escaped.connect(_on_qte_escaped)
-	_qte_hud.caught.connect(_on_qte_caught)
-	enemy.get_tree().root.add_child(_qte_hud)
+	var qte_node = enemy.get_tree().get_first_node_in_group("grab_qte_hud") as GrabQteHud
+	if qte_node:
+		_qte_hud = qte_node
+		if not _qte_hud.escaped.is_connected(_on_qte_escaped):
+			_qte_hud.escaped.connect(_on_qte_escaped)
+		if not _qte_hud.caught.is_connected(_on_qte_caught):
+			_qte_hud.caught.connect(_on_qte_caught)
+		_qte_hud.start_qte(qte_duration, qte_shakes_needed)
+	else:
+		var hud_script = load("res://scripts/ui/grab_qte_hud.gd")
+		_qte_hud = hud_script.new(qte_duration, qte_shakes_needed)
+		_qte_hud.escaped.connect(_on_qte_escaped)
+		_qte_hud.caught.connect(_on_qte_caught)
+		enemy.get_tree().root.add_child(_qte_hud)
 	
 	var player = _get_player()
 	if player:
@@ -395,6 +404,7 @@ func _on_qte_escaped() -> void:
 		var grab_state = sm.get_node_or_null("Grab")
 		if grab_state:
 			grab_state.resolve_grab(false)
+	_disconnect_qte_signals()
 	_qte_hud = null
 	
 	if enemy.anim_tree:
@@ -429,6 +439,7 @@ func _on_qte_caught() -> void:
 		var grab_state = sm.get_node_or_null("Grab")
 		if grab_state:
 			grab_state.resolve_grab(true)
+	_disconnect_qte_signals()
 	_qte_hud = null
 	if player:
 		_deal_damage(player, grab_damage, "grab")
@@ -760,7 +771,11 @@ func _get_player() -> Node3D:
 func _dismiss_qte() -> void:
 	var was_grabber = _qte_hud != null
 	if _qte_hud and is_instance_valid(_qte_hud):
-		_qte_hud.queue_free()
+		_disconnect_qte_signals()
+		if _qte_hud.has_method("cancel"):
+			_qte_hud.cancel()
+		elif _qte_hud is CanvasLayer:
+			_qte_hud.queue_free()
 	_qte_hud = null
 	
 	if not was_grabber:
@@ -774,3 +789,10 @@ func _dismiss_qte() -> void:
 			# If is_exiting is true, they are playing the Win or Fail animation, so let them finish it.
 			if not sm.current_state.get("is_exiting"):
 				sm._change_state("Aim" if player.is_aimming else "Idle")
+
+func _disconnect_qte_signals() -> void:
+	if _qte_hud and is_instance_valid(_qte_hud):
+		if _qte_hud.escaped.is_connected(_on_qte_escaped):
+			_qte_hud.escaped.disconnect(_on_qte_escaped)
+		if _qte_hud.caught.is_connected(_on_qte_caught):
+			_qte_hud.caught.disconnect(_on_qte_caught)

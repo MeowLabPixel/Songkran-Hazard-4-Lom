@@ -397,40 +397,21 @@ func _ready() -> void:
 		if node is CollisionObject3D:
 			_player_collision_rids.append(node.get_rid())
 
-	# Create programmatic takedown prompt UI
-	var prompt_layer = CanvasLayer.new()
-	add_child(prompt_layer)
-	
-	takedown_prompt_label = Label.new()
-	var lang = "en"
-	if get_tree().root.has_node("GameManager"):
-		lang = GameManager.selected_language
-		
-	if lang == "th":
-		takedown_prompt_label.text = "กด E เพื่อปะแป้ง"
-		takedown_prompt_label.add_theme_font_override("font", preload("res://scenes/font/iannnnn-DOG-Bold.ttf"))
+	# Reference physical takedown prompt UI in player_stat_hud
+	var hud = get_tree().get_first_node_in_group("player_ui") as PlayerStatHUD
+	if hud and hud.takedown_prompt_label:
+		takedown_prompt_label = hud.takedown_prompt_label
 	else:
-		takedown_prompt_label.text = "[E] Takedown"
-		
-	takedown_prompt_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	takedown_prompt_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	takedown_prompt_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	
-	takedown_prompt_label.offset_left = -200
-	takedown_prompt_label.offset_right = 200
-	takedown_prompt_label.offset_top = -150
-	takedown_prompt_label.offset_bottom = -50
-	
-	takedown_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	takedown_prompt_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	
-	takedown_prompt_label.add_theme_font_size_override("font_size", 36)
-	takedown_prompt_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	takedown_prompt_label.add_theme_constant_override("outline_size", 8)
-	takedown_prompt_label.add_theme_color_override("font_color", Color.YELLOW)
-	
-	prompt_layer.add_child(takedown_prompt_label)
-	takedown_prompt_label.visible = false
+		takedown_prompt_label = find_child("TakedownPrompt", true, false) as Label
+	if takedown_prompt_label:
+		var lang = "en"
+		if get_tree().root.has_node("GameManager"):
+			lang = GameManager.selected_language
+		if lang == "th":
+			takedown_prompt_label.text = "กด E เพื่อปะแป้ง"
+		else:
+			takedown_prompt_label.text = "[E] Takedown"
+		takedown_prompt_label.visible = false
 
 	# Connect player hitbox zone signals (Grabbed/Attacked) to handlers
 	_connect_player_hitboxes()
@@ -1544,6 +1525,13 @@ func check_if_near_stun():
 		if not (gm.show_takedown_prompt and gm.show_gameplay_ui):
 			should_show_prompt = false
 	
+	if not takedown_prompt_label:
+		var hud = get_tree().get_first_node_in_group("player_ui") as PlayerStatHUD
+		if hud and hud.takedown_prompt_label:
+			takedown_prompt_label = hud.takedown_prompt_label
+		else:
+			takedown_prompt_label = find_child("TakedownPrompt", true, false) as Label
+
 	if takedown_prompt_label:
 		takedown_prompt_label.visible = should_show_prompt
 

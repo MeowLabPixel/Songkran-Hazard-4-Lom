@@ -69,6 +69,7 @@ var _smoothed_angular_velocity: float = 0.0
 @export_group("Attack Prep VFX")
 @export var attack_prep_vfx_offset_left: Vector3 = Vector3(0.0, 0.0, 0.1)
 @export var attack_prep_vfx_offset_right: Vector3 = Vector3(0.0, 0.0, 0.1)
+@export var attack_prep_vfx_offset_grab: Vector3 = Vector3.ZERO
 @export var attack_prep_velocity_lead: float = 0.15
 @export var legs_reaction_stiffness: float = 260.0
 
@@ -730,10 +731,22 @@ func _set_particle_tree_node_emitting(node: GPUParticles3D, is_emitting: bool) -
 func _set_particle_tree_emitting(root_p: GPUParticles3D, is_emitting: bool) -> void:
 	if not root_p or not is_instance_valid(root_p):
 		return
+	
+	# Identify all nodes that act as sub-emitters so we do not manually force their emission
+	var sub_emitters: Dictionary = {}
+	if root_p.sub_emitter != null and not root_p.sub_emitter.is_empty():
+		var target = root_p.get_node_or_null(root_p.sub_emitter)
+		if target: sub_emitters[target] = true
+	for child in root_p.find_children("*", "GPUParticles3D", true, false):
+		if child is GPUParticles3D and child.sub_emitter != null and not child.sub_emitter.is_empty():
+			var target = child.get_node_or_null(child.sub_emitter)
+			if target: sub_emitters[target] = true
+
 	_set_particle_tree_node_emitting(root_p, is_emitting)
 	for child in root_p.find_children("*", "GPUParticles3D", true, false):
-		if child is GPUParticles3D:
+		if child is GPUParticles3D and not sub_emitters.has(child):
 			_set_particle_tree_node_emitting(child, is_emitting)
+
 
 
 func _update_attack_prep_vfx() -> void:
@@ -743,6 +756,15 @@ func _update_attack_prep_vfx() -> void:
 		return
 		
 	var active_attack = get_active_attack_type()
+	var is_grabbing: bool = false
+	if state_machine:
+		if state_machine.is_grabbing_player():
+			is_grabbing = true
+		elif state_machine.current_state and state_machine.current_state.name == "StateAttack":
+			var sa = state_machine.current_state as StateAttack
+			if sa and sa._phase in [StateAttack.Phase.GRAB_REACHING, StateAttack.Phase.GRAB_HOLDING, StateAttack.Phase.GRAB_RESOLVING]:
+				is_grabbing = true
+
 	var emit_left = (active_attack == "attack_2" or active_attack == "attack_grab")
 	var emit_right = (active_attack == "attack_1" or active_attack == "attack_grab")
 	
@@ -750,15 +772,17 @@ func _update_attack_prep_vfx() -> void:
 	_set_particle_tree_emitting(_prep_particle_right, emit_right)
 
 	var char_basis = global_basis.orthonormalized()
-	var vel_lead = velocity * attack_prep_velocity_lead
+	var vel_lead = (velocity * attack_prep_velocity_lead) if not is_grabbing else Vector3.ZERO
+	var offset_left = attack_prep_vfx_offset_grab if is_grabbing else attack_prep_vfx_offset_left
+	var offset_right = attack_prep_vfx_offset_grab if is_grabbing else attack_prep_vfx_offset_right
 	
 	if _left_hand_attach and is_instance_valid(_left_hand_attach) and _prep_particle_left and is_instance_valid(_prep_particle_left):
-		var target_pos = _left_hand_attach.global_position + (char_basis * attack_prep_vfx_offset_left) + vel_lead
+		var target_pos = _left_hand_attach.global_position + (char_basis * offset_left) + vel_lead
 		_prep_particle_left.global_position = target_pos
 		_prep_particle_left.global_basis = char_basis.scaled(_prep_particle_left_base_scale)
 
 	if _right_hand_attach and is_instance_valid(_right_hand_attach) and _prep_particle_right and is_instance_valid(_prep_particle_right):
-		var target_pos = _right_hand_attach.global_position + (char_basis * attack_prep_vfx_offset_right) + vel_lead
+		var target_pos = _right_hand_attach.global_position + (char_basis * offset_right) + vel_lead
 		_prep_particle_right.global_position = target_pos
 		_prep_particle_right.global_basis = char_basis.scaled(_prep_particle_right_base_scale)
 

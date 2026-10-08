@@ -11,6 +11,8 @@
 [ext_resource type="Shader" uid="uid://137jbgcu1x15" path="res://shaders/circle_mask.gdshader" id="6_mask"]
 [ext_resource type="Texture2D" uid="uid://cxlr1a18s0ipc" path="res://scenes/Kill_Count_Ui.png" id="7_kill_tex"]
 [ext_resource type="Texture2D" uid="uid://be54mwe7sgnf6" path="res://scenes/General_Wide_UI_Box.png" id="8_time_tex"]
+[ext_resource type="Script" uid="uid://pyq5j5b2y75g" path="res://scripts/ui/grab_qte_hud.gd" id="9_grab"]
+[ext_resource type="Script" uid="uid://dfm7lfemb0uu7" path="res://scripts/ui/reload_qte_hud.gd" id="10_reload"]
 
 [sub_resource type="Gradient" id="Gradient_24imh"]
 colors = PackedColorArray(0.9866621, 0.8308222, 0.12995844, 1, 0.99323857, 0.45742697, 0.74243355, 1)
@@ -103,7 +105,95 @@ shadow_spread = Vector2(10.745, 11.594)
 anti_aliasing = false
 metadata/_custom_type_script = "uid://bkl6g25jwb47h"
 
-[node name="PlayerStatHUD" type="CanvasLayer" unique_id=1492859394 node_paths=PackedStringArray("hud_root", "bottom_right_cluster", "water_bar", "air_bar", "debuff_label", "player_portrait", "player_svc", "player_viewport", "player_camera", "follower_portrait", "follower_svc", "follower_viewport", "follower_camera", "kill_rect", "kill_label", "time_rect", "time_label")]
+[sub_resource type="Curve" id="Curve_24imh"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.58987343, 1), 0.0, 0.0, 0, 0, Vector2(0.8, 0.8), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="Curve" id="Curve_vrd77"]
+_limits = [0.0, 1.3, 0.0, 1.0]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.5, 1.3), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Gradient" id="Gradient_vrd77"]
+colors = PackedColorArray(0.50657654, 0.50657654, 0.50657654, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_24imh"]
+gradient = SubResource("Gradient_vrd77")
+fill_from = Vector2(0.5, 0)
+fill_to = Vector2(0.5, 0.4)
+
+[sub_resource type="StyleBox" id="StyleBox_24imh"]
+resource_local_to_scene = false
+resource_name = ""
+content_margin_left = -1.0
+content_margin_top = -1.0
+content_margin_right = -1.0
+content_margin_bottom = -1.0
+script = ExtResource("3_ow3p3")
+color = Color(1, 1, 1, 0.39215687)
+skew = Vector2(0.7, 0)
+texture = SubResource("GradientTexture2D_24imh")
+corner_radius_top_left = 11
+corner_radius_top_right = 29
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 55
+corner_curvature_top_left = 2.0
+corner_curvature_top_right = 0.965
+corner_curvature_bottom_right = 1.0850000000000009
+corner_curvature_bottom_left = 3.4350000000000005
+shadow_enabled = true
+shadow_color = Color(0, 0.08721436, 0.3158576, 1)
+shadow_blur = 0
+shadow_offset = Vector2(0.75, 2.68)
+shadow_spread = Vector2(12, 9.874)
+anti_aliasing = false
+metadata/_custom_type_script = "uid://bkl6g25jwb47h"
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_1wn24"]
+gradient = SubResource("Gradient_24imh")
+fill_from = Vector2(0, 0.53418803)
+fill_to = Vector2(1, 1)
+
+[sub_resource type="StyleBox" id="StyleBox_1wn24"]
+resource_local_to_scene = false
+resource_name = ""
+content_margin_left = -1.0
+content_margin_top = -1.0
+content_margin_right = -1.0
+content_margin_bottom = -1.0
+script = ExtResource("3_ow3p3")
+skew = Vector2(0.685, 0)
+texture = SubResource("GradientTexture2D_1wn24")
+corner_detail = 20
+corner_radius_top_left = 5
+corner_radius_top_right = 12
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 23
+corner_curvature_top_left = 2.0
+corner_curvature_top_right = 0.7249999999999996
+corner_curvature_bottom_left = 3.4350000000000005
+shadow_color = Color(0, 0.08721436, 0.3158576, 1)
+shadow_offset = Vector2(1.99, 2.68)
+shadow_spread = Vector2(9.365, 9.874)
+anti_aliasing = false
+anti_aliasing_size = 0.625
+metadata/_custom_type_script = "uid://bkl6g25jwb47h"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_24imh"]
+bg_color = Color(0.42567217, 0.42384028, 0.5460356, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.29612803, 1, 0.66876614, 1)
+corner_radius_top_left = 19
+corner_radius_top_right = 19
+corner_radius_bottom_right = 19
+corner_radius_bottom_left = 19
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 4
+
+[node name="PlayerStatHUD" type="CanvasLayer" unique_id=1492859394 node_paths=PackedStringArray("hud_root", "bottom_right_cluster", "water_bar", "air_bar", "debuff_label", "player_portrait", "player_svc", "player_viewport", "player_camera", "follower_portrait", "follower_svc", "follower_viewport", "follower_camera", "kill_rect", "kill_label", "time_rect", "time_label", "grab_qte", "reload_qte", "takedown_prompt_label")]
 script = ExtResource("1_hud")
 hud_root = NodePath("HUDRoot")
 bottom_right_cluster = NodePath("HUDRoot/BottomRightCluster")
@@ -122,6 +212,11 @@ kill_rect = NodePath("HUDRoot/KillCountHUD")
 kill_label = NodePath("HUDRoot/KillCountHUD/KillLabel")
 time_rect = NodePath("HUDRoot/TimeLimitHUD")
 time_label = NodePath("HUDRoot/TimeLimitHUD/TimeLabel")
+grab_qte = NodePath("HUDRoot/GrabQTE")
+reload_qte = NodePath("HUDRoot/ReloadQTE")
+takedown_prompt_label = NodePath("HUDRoot/TakedownPrompt")
+preview_reload_qte = true
+preview_grab_qte = true
 player_cam_pos = Vector3(0.005, 1.56, -0.65)
 follower_cam_pos = Vector3(-0.01, 1.385, -0.65)
 follower_cam_size = 0.425
@@ -137,6 +232,7 @@ follower_walk_face_offset = Vector3(0, -0.025, 0)
 player_portrait_side_tilt_multiplier = 0.4
 player_portrait_reverse_side_tilt = true
 player_portrait_tilt_speed = 8.0
+metadata/_edit_pinned_properties_ = [&"preview_reload_qte", &"preview_grab_qte"]
 
 [node name="bg" type="TextureRect" parent="." unique_id=189499123]
 offset_right = 1280.0
@@ -317,7 +413,7 @@ healthy_color = Color(0.49411765, 0.99215686, 0.79607844, 1)
 damaged_color = Color(1, 0.7699452, 0.37504625, 1)
 border_color = Color(0.050980393, 0.85490197, 0.89411765, 1)
 portrait_bg_color = Color(0.09803922, 0.08627451, 0.45490196, 0.59607846)
-lost_chunk_color = Color(0, 0.8422947, 1, 1)
+lost_chunk_color = Color(0, 0.6342592, 1, 1)
 
 [node name="PlayerBG" type="Panel" parent="HUDRoot/BottomRightCluster/PlayerPortrait" unique_id=93043242]
 show_behind_parent = true
@@ -392,14 +488,14 @@ scale = Vector2(1.3667796, 1.3667796)
 mouse_filter = 2
 script = ExtResource("3_ring")
 max_value = 100.0
-current_value = 90.0
+current_value = 40.0
 ring_width = 5.365
 border_width = -0.23
 healthy_color = Color(0.49411765, 0.99215686, 0.79607844, 1)
 damaged_color = Color(1, 0.7699452, 0.37504625, 1)
 border_color = Color(0.050980393, 0.85490197, 0.89411765, 1)
 portrait_bg_color = Color(0.09803922, 0.08627451, 0.45490196, 0.59607846)
-lost_chunk_color = Color(0, 0.8422947, 1, 1)
+lost_chunk_color = Color(0, 0.6342592, 1, 1)
 
 [node name="FollowerBG" type="Panel" parent="HUDRoot/BottomRightCluster/FollowerPortrait" unique_id=463983475]
 show_behind_parent = true
@@ -443,7 +539,7 @@ size = Vector2i(180, 179)
 render_target_update_mode = 4
 
 [node name="FollowerPortraitCamera" type="Camera3D" parent="HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC/FollowerPortraitViewport" unique_id=1107662328]
-transform = Transform3D(-0.9998818, -0.0015304652, -0.015306465, 0, 0.9950373, -0.09949217, 0.01538279, -0.09948028, -0.99492073, -0.01, 1.385, -0.65)
+transform = Transform3D(-0.9998818, -0.0015304636, -0.015306465, 0, 0.9950363, -0.09949217, 0.01538279, -0.09948018, -0.99492073, -0.01, 1.385, -0.65)
 projection = 1
 current = true
 size = 0.425
@@ -556,3 +652,265 @@ theme_override_font_sizes/font_size = 18
 text = "TIME: 03:00"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="TakedownPrompt" type="Label" parent="HUDRoot" unique_id=1131044289]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("4_font_dog")
+theme_override_font_sizes/font_size = 36
+text = "[E] Takedown"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="GrabQTE" type="Control" parent="HUDRoot" unique_id=160267496 node_paths=PackedStringArray("overlay", "root_panel", "grab_bg", "grab_fill", "grab_dividers", "label_prompt")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("9_grab")
+shakes_needed = 30
+shake_threshold = 250.0
+segment_divider_color = Color(0.09803922, 0.08627451, 0.45490196, 0)
+pop_in_curve = SubResource("Curve_24imh")
+pop_out_curve = SubResource("Curve_vrd77")
+overlay = NodePath("DimOverlay")
+root_panel = NodePath("GrabPanel")
+grab_bg = NodePath("GrabPanel/GrabBG")
+grab_fill = NodePath("GrabPanel/GrabFill")
+grab_dividers = NodePath("GrabPanel/GrabDividers")
+label_prompt = NodePath("GrabPanel/PromptLabel")
+
+[node name="DimOverlay" type="ColorRect" parent="HUDRoot/GrabQTE" unique_id=995932276]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="GrabPanel" type="Control" parent="HUDRoot/GrabQTE" unique_id=1193214035]
+custom_minimum_size = Vector2(320, 180)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = 29.0
+offset_right = 160.0
+offset_bottom = 209.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PromptLabel" type="Label" parent="HUDRoot/GrabQTE/GrabPanel" unique_id=804096011]
+layout_mode = 0
+offset_left = -3.0
+offset_top = 139.0
+offset_right = 317.0
+offset_bottom = 169.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+theme_override_colors/font_outline_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 5
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("4_font_dog")
+theme_override_font_sizes/font_size = 20
+text = "SHAKE MOUSE TO BREAK FREE"
+horizontal_alignment = 1
+
+[node name="GrabBG" type="Panel" parent="HUDRoot/GrabQTE/GrabPanel" unique_id=940619077]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -141.0
+offset_top = 26.0
+offset_right = 139.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(140, 7)
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBox_24imh")
+metadata/_edit_use_anchors_ = true
+
+[node name="GrabFill" type="Panel" parent="HUDRoot/GrabQTE/GrabPanel" unique_id=419047136]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -141.0
+offset_top = 26.0
+offset_right = 27.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(140, 7)
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBox_1wn24")
+
+[node name="ReloadQTE" type="Control" parent="HUDRoot" unique_id=181006916 node_paths=PackedStringArray("background_dim", "container", "gauge", "center_circle", "center_label", "prompt_label", "instruction_label")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("10_reload")
+fail_ends_reload = false
+prompt_size = 0.08
+gauge_radius = 81.76
+gauge_thickness = 8.045
+needle_width = 7.0
+needle_tip_size = 7.0
+needle_extension = 13.0
+inner_fill_color = Color(0.76862746, 0.9764706, 1, 0.5882353)
+inner_fill_skipped_color = Color(0.32156864, 0.8862745, 0.7372549, 0.5882353)
+inner_fill_perfect_color = Color(0.32156864, 0.8862745, 0.7372549, 0.5882353)
+inner_fill_failed_color = Color(0.76862746, 0.9764706, 1, 0.5882353)
+gauge_bg_color = Color(0.05228653, 0.04913004, 0.27639848, 0.6431373)
+prompt_active_color = Color(0.9998151, 0.355251, 0.52369195, 1)
+prompt_hit_color = Color(0.30731234, 0.93404996, 0.7686609, 1)
+prompt_miss_color = Color(1, 0.827451, 0.35686275, 1)
+superpump_color_start = Color(1, 0.827451, 0.35686275, 1)
+superpump_color_end = Color(0.9998151, 0.355251, 0.52369195, 1)
+center_bg_color = Color(0.42567217, 0.42384028, 0.5460356, 1)
+center_border_color = Color(0.29612803, 1, 0.66876614, 1)
+center_border_width = 3
+center_corner_radius = 19
+center_success_border = Color(0.32136634, 0.8880144, 0.73606396, 1)
+center_fail_border = Color(0.9866621, 0.42195424, 0.73920584, 1)
+dim_color = Color(0, 0, 0, 0)
+background_dim = NodePath("DimOverlay")
+container = NodePath("Container")
+gauge = NodePath("Container/Gauge")
+center_circle = NodePath("Container/CenterCircle")
+center_label = NodePath("Container/CenterCircle/CenterLabel")
+prompt_label = NodePath("Container/PromptLabel")
+instruction_label = NodePath("Container/InstructionLabel")
+
+[node name="DimOverlay" type="ColorRect" parent="HUDRoot/ReloadQTE" unique_id=733426022]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Container" type="Control" parent="HUDRoot/ReloadQTE" unique_id=1706254242]
+custom_minimum_size = Vector2(250, 270)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -125.0
+offset_top = -135.0
+offset_right = 125.0
+offset_bottom = 135.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(125, 135)
+
+[node name="Gauge" type="Control" parent="HUDRoot/ReloadQTE/Container" unique_id=690916153]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterCircle" type="Panel" parent="HUDRoot/ReloadQTE/Container" unique_id=1207659038]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 0
+offset_left = 101.0
+offset_top = 101.0
+offset_right = 149.0
+offset_bottom = 149.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_24imh")
+
+[node name="CenterLabel" type="Label" parent="HUDRoot/ReloadQTE/Container/CenterCircle" unique_id=886983831]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1.353256, 1.353256, 1.353256, 1)
+theme_override_colors/font_shadow_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+theme_override_colors/font_outline_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 5
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("4_font_dog")
+theme_override_font_sizes/font_size = 37
+text = "R"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PromptLabel" type="Label" parent="HUDRoot/ReloadQTE/Container" unique_id=341888446]
+layout_mode = 0
+offset_top = 240.0
+offset_right = 250.0
+offset_bottom = 278.0
+theme_override_colors/font_color = Color(0.3, 1, 0.5, 1)
+theme_override_colors/font_shadow_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+theme_override_colors/font_outline_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 5
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("4_font_dog")
+theme_override_font_sizes/font_size = 29
+text = "PERFECT QTE!"
+horizontal_alignment = 1
+
+[node name="InstructionLabel" type="Label" parent="HUDRoot/ReloadQTE/Container" unique_id=2030300093]
+layout_mode = 0
+offset_top = 220.0
+offset_right = 250.0
+offset_bottom = 242.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+theme_override_colors/font_outline_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/outline_size = 3
+theme_override_constants/shadow_outline_size = 2
+theme_override_fonts/font = ExtResource("5_font_vcd")
+theme_override_font_sizes/font_size = 25
+text = "PRESS [R] | [SPACE] ON TARGET"
+horizontal_alignment = 1
