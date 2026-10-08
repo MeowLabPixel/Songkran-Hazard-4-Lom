@@ -135,6 +135,8 @@ func _state_input(_event: InputEvent) -> void:
 	if Input.is_action_just_pressed("Reload") :
 		if shot_exit_lock_timer <= 0.0 and not is_shot_queued and not is_waiting_quick_shot_delay:
 			var gun = owner.gun_controller.current_gun
+			if gun and gun.is_super_active and gun.air >= gun.max_air:
+				return
 			var is_pistol = gun and (gun.gun_name == "Water pistol" or owner.gun_controller.current_gun_index == 0)
 			var is_superpump_attempt = is_pistol and gun.air >= gun.max_air
 			if not (is_superpump_attempt and owner.superpump_cooldown > 0.0):

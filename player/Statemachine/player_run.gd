@@ -47,6 +47,14 @@ func _update(_delta:float) -> void:
 		finished.emit("Aim")
 		return
 		
+	# Allow continuous R hold into SuperPump
+	if Input.is_action_pressed("Reload"):
+		var gun = owner.gun_controller.current_gun if owner.gun_controller else null
+		var is_pistol = gun and (gun.gun_name == "Water pistol" or owner.gun_controller.current_gun_index == 0)
+		if is_pistol and gun.air >= gun.max_air and not gun.is_super_active and owner.superpump_cooldown <= 0.0:
+			finished.emit("Reload")
+			return
+
 	set_direction()
 	
 	if direction != Vector3.ZERO:
@@ -139,13 +147,16 @@ func _state_input(_event: InputEvent) -> void:
 		finished.emit("Quick_turn")
 	if Input.is_action_pressed("sprint") and input_dir.y < -0.1:
 		finished.emit("Sprint")
-	if Input.is_action_just_pressed("Reload") :
+	if Input.is_action_just_pressed("Reload") or Input.is_action_pressed("Reload"):
 		var gun = owner.gun_controller.current_gun
+		if gun and gun.is_super_active and gun.air >= gun.max_air:
+			return
 		var is_pistol = gun and (gun.gun_name == "Water pistol" or owner.gun_controller.current_gun_index == 0)
 		var is_superpump_attempt = is_pistol and gun.air >= gun.max_air
-		if not (is_superpump_attempt and owner.superpump_cooldown > 0.0):
-			get_viewport().set_input_as_handled()
-			finished.emit("Reload")
+		if Input.is_action_just_pressed("Reload") or (is_superpump_attempt and not gun.is_super_active):
+			if not (is_superpump_attempt and owner.superpump_cooldown > 0.0):
+				get_viewport().set_input_as_handled()
+				finished.emit("Reload")
 	if Input.is_action_pressed("Gun1"):
 		switch_gun(0)
 	if Input.is_action_pressed("Gun2"):

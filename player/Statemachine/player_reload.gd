@@ -34,12 +34,23 @@ func _enter() -> void:
 	
 	_pump_cooldown_timer = 0.2
 
-	# If already fully charged on entry, just leave immediately
-	if not owner.gun_controller or owner.gun_controller.current_gun.is_super_active:
+	# If no gun controller or gun, leave immediately
+	if not owner.gun_controller or not owner.gun_controller.current_gun:
 		finished.emit("Idle")
 		return
 
 	var gun = owner.gun_controller.current_gun
+	if gun.is_super_active:
+		if gun.air >= gun.max_air:
+			finished.emit("Idle")
+			return
+		gun.is_super_active = false
+		gun.super_timer = 0.0
+		gun.on_super_end()
+		if typeof(SoundManager) != TYPE_NIL:
+			SoundManager.play_2d("Superpump_Duration_End")
+		if gun.air > gun.max_air:
+			gun.air = gun.max_air
 	if gun and (gun.gun_name == "Water pistol" or owner.gun_controller.current_gun_index == 0):
 		# Start QTE reload hud for pistol using pre-existing UI node
 		var hud_node = get_tree().get_first_node_in_group("reload_qte_hud") as ReloadQteHud
@@ -60,11 +71,17 @@ func _enter() -> void:
 				qte_hud.finished.connect(_on_reload_finished)
 			if not qte_hud.cancelled.is_connected(_on_reload_cancelled):
 				qte_hud.cancelled.connect(_on_reload_cancelled)
+			if qte_hud.has_signal("superpump_started") and not qte_hud.superpump_started.is_connected(_on_superpump_started):
+				qte_hud.superpump_started.connect(_on_superpump_started)
+			if qte_hud.has_signal("superpump_completed") and not qte_hud.superpump_completed.is_connected(_on_superpump_completed):
+				qte_hud.superpump_completed.connect(_on_superpump_completed)
 				
 			qte_hud.start(gun.air, gun.max_air)
 		
-		# Travel to main Reload state first
-		owner.anim.get(owner.anim_playback).travel("Reload")
+		# Travel to main Reload state with smooth crossfade
+		var main_pb = owner.anim.get(owner.anim_playback)
+		if main_pb:
+			main_pb.travel("Reload")
 		
 		# Set Reload timescale to half speed
 		owner.anim.set("parameters/Main/Reload/Reload/TimeScale/scale", 0.5)
@@ -74,13 +91,19 @@ func _enter() -> void:
 		if sub_pb:
 			if gun.air >= gun.max_air:
 				_is_superpump_active = true
+				if sub_pb.get_current_node() == "End" or sub_pb.get_current_node() == "":
+					sub_pb.start("SuperPump")
+				else:
+					sub_pb.travel("SuperPump")
 				var superpump_pb = owner.anim.get("parameters/Main/Reload/SuperPump/playback")
 				if superpump_pb:
 					superpump_pb.start("SuperPumpStart")
-				sub_pb.start("SuperPump")
 			else:
 				_is_superpump_active = false
-				sub_pb.start("Reload")
+				if sub_pb.get_current_node() == "End" or sub_pb.get_current_node() == "":
+					sub_pb.start("Reload")
+				else:
+					sub_pb.travel("Reload")
 	else:
 		reloading()
 
@@ -91,23 +114,18 @@ func _exit() -> void:
 		_disconnect_qte_signals()
 		qte_hud.cancel()
 		qte_hud = null
+	else:
+		var hud = get_tree().get_first_node_in_group("reload_qte_hud") if get_tree() else null
+		if is_instance_valid(hud) and hud.visible:
+			hud.cancel()
 	if is_instance_valid(owner):
-		if _is_superpump_active:
-			owner.superpump_cooldown = 0.3
+		owner.superpump_cooldown = 0.0
 		if owner.anim and is_instance_valid(owner.anim):
 			if owner.anim.animation_finished.is_connected(anim_done):
 				owner.anim.animation_finished.disconnect(anim_done)
 			owner.anim.set("parameters/Main/Reload/Reload/TimeScale/scale", 1.0)
 			owner.anim.set("parameters/Main/Reload/Reload 2/TimeScale/scale", 1.0)
 			owner.anim.set("parameters/Main/Reload/Reload_Quick/TimeScale/scale", 1.5)
-			
-			# Cleanly reset the reload sub-state machine to avoid T-posing
-			var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
-			if sub_pb:
-				sub_pb.travel("End")
-			var superpump_pb = owner.anim.get("parameters/Main/Reload/SuperPump/playback")
-			if superpump_pb:
-				superpump_pb.start("SuperPumpStart")
 			
 		# Transition camera out of aim mode if we are not aiming
 		if not owner.is_aimming:
@@ -266,6 +284,40 @@ func _on_qte_hit() -> void:
 	if sub_pb:
 		sub_pb.travel("Reload_Quick")
 
+func _on_superpump_started() -> void:
+	if _exited:
+		return
+	_is_superpump_active = true
+	var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
+	if sub_pb:
+		if sub_pb.get_current_node() == "End" or sub_pb.get_current_node() == "":
+			sub_pb.start("SuperPump")
+		else:
+			sub_pb.travel("SuperPump")
+	var superpump_pb = owner.anim.get("parameters/Main/Reload/SuperPump/playback")
+	if superpump_pb:
+		superpump_pb.start("SuperPumpStart")
+
+func _on_superpump_completed() -> void:
+	if _exited:
+		return
+	var gun = owner.gun_controller.current_gun if owner.gun_controller else null
+	if gun:
+		gun.air = 120.0
+		gun.is_super_ready = false
+		gun.is_super_active = true
+		gun.super_timer = 5.0
+	if is_instance_valid(owner) and is_instance_valid(owner.anim):
+		var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
+		if sub_pb and sub_pb.get_current_node() != "SuperPump":
+			sub_pb.travel("SuperPump")
+		var superpump_pb = owner.anim.get("parameters/Main/Reload/SuperPump/playback")
+		if superpump_pb:
+			if superpump_pb.get_current_node() == "SuperPumpStart":
+				superpump_pb.travel("SuperPumpEnd")
+			else:
+				superpump_pb.start("SuperPumpEnd")
+
 func _on_reload_finished(final_air: float, super_activated: bool) -> void:
 	if _exited:
 		return
@@ -276,8 +328,8 @@ func _on_reload_finished(final_air: float, super_activated: bool) -> void:
 		if super_activated:
 			gun.is_super_ready = false
 			gun.is_super_active = true
-			gun.super_timer = 5.0 # Super pump lasts for 5.0 sec
-			SoundManager.play_2d("watergun_pistol_reload_Superpump")
+			if gun.super_timer <= 0.0:
+				gun.super_timer = 5.0
 			
 	# Cleanup HUD reference
 	_disconnect_qte_signals()
@@ -302,6 +354,10 @@ func _disconnect_qte_signals() -> void:
 			qte_hud.finished.disconnect(_on_reload_finished)
 		if qte_hud.cancelled.is_connected(_on_reload_cancelled):
 			qte_hud.cancelled.disconnect(_on_reload_cancelled)
+		if qte_hud.has_signal("superpump_started") and qte_hud.superpump_started.is_connected(_on_superpump_started):
+			qte_hud.superpump_started.disconnect(_on_superpump_started)
+		if qte_hud.has_signal("superpump_completed") and qte_hud.superpump_completed.is_connected(_on_superpump_completed):
+			qte_hud.superpump_completed.disconnect(_on_superpump_completed)
 
 func _evaluate_queued_exit() -> void:
 	var is_aim = Input.is_action_pressed("aim")

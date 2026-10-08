@@ -218,9 +218,25 @@ extends CanvasLayer
 #                           COLOUR PALETTE
 # ═══════════════════════════════════════════════════════════════════════════
 
+@export_group("Air Gauge Colors")
+## Rest/normal color of the air gauge fill.
+@export var air_normal_color: Color = Color("b2ebf2"):
+	set(v):
+		air_normal_color = Color("b2ebf2") if v == null else v
+		_default_air_color = air_normal_color
+## Color when SuperPump is ready to charge.
+@export var air_super_ready_color: Color = Color(1.0, 0.9, 0.1):
+	set(v):
+		air_super_ready_color = Color(1.0, 0.9, 0.1) if v == null else v
+## Color when SuperPump is fully charged or actively running.
+@export var air_super_active_color: Color = Color(1.0, 0.2, 0.2):
+	set(v):
+		air_super_active_color = Color(1.0, 0.2, 0.2) if v == null else v
+
 const C_AIR_NORMAL := Color("b2ebf2")
 const C_AIR_SUPER_READY := Color(1.0, 0.9, 0.1)
 const C_AIR_SUPER_ACTIVE := Color(1.0, 0.2, 0.2)
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 #                        INTERNAL STATE
@@ -1168,12 +1184,22 @@ func _update_bars() -> void:
 				air_bar.trigger_reload_pulse()
 		_last_air_val = air_val
 
+		# ── Air Bar SuperPump Color Interpolation ──
+		var qte_node: ReloadQteHud = reload_qte if (reload_qte and is_instance_valid(reload_qte)) else (get_tree().get_first_node_in_group("reload_qte_hud") as ReloadQteHud if get_tree() else null)
+		var is_superpump_holding: bool = qte_node != null and qte_node.visible and not qte_node.failed and qte_node.mode == "superpump"
+
 		if gun.is_super_active:
-			air_bar.fill_color = C_AIR_SUPER_ACTIVE
+			var max_dur: float = gun.super_shot_time if ("super_shot_time" in gun and gun.super_shot_time > 0.0) else 5.0
+			var duration_ratio: float = clampf(gun.super_timer / max_dur, 0.0, 1.0)
+			air_bar.fill_color = _default_air_color.lerp(air_super_active_color, duration_ratio)
+		elif is_superpump_holding:
+			var hold_ratio: float = qte_node.get_superpump_progress() if qte_node.has_method("get_superpump_progress") else clampf(qte_node.superpump_hold_time / maxf(0.0001, qte_node.superpump_required_hold), 0.0, 1.0)
+			air_bar.fill_color = _default_air_color.lerp(air_super_active_color, hold_ratio)
 		elif gun.is_super_ready:
-			air_bar.fill_color = C_AIR_SUPER_READY
+			air_bar.fill_color = air_super_ready_color
 		else:
 			air_bar.fill_color = _default_air_color
+
 
 
 func on_qte_prompt_hit() -> void:

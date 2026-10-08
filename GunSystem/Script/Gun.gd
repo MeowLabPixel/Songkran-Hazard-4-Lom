@@ -118,8 +118,9 @@ func _process(delta):
 
 	if is_super_active:
 		super_timer -= delta
-		if super_timer <= 0.0:
+		if super_timer <= 0.0 or air <= 0.0:
 			is_super_active = false
+			super_timer = 0.0
 			on_super_end()
 			
 			# Play Superpump duration end sound
@@ -199,6 +200,11 @@ func shoot():
 	
 	air -= get_air_consumption()
 	air = max(air, 0.0)
+	if is_super_active and air <= 0.0:
+		is_super_active = false
+		super_timer = 0.0
+		on_super_end()
+		SoundManager.play_2d("Superpump_Duration_End")
 
 	# Apply procedural arm recoil kick (independent from camera recoil)
 	var gm = get_tree().root.get_node_or_null("GameManager") if get_tree() and get_tree().root.has_node("GameManager") else null

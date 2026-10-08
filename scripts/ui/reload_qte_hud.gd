@@ -12,6 +12,8 @@ class_name ReloadQteHud
 extends Control
 
 signal qte_hit() # Emitted when a QTE prompt is successfully hit
+signal superpump_started() # Emitted when dynamically transitioning to SuperPump
+signal superpump_completed() # Emitted as soon as superpump gauge reaches full
 signal finished(final_air: float, super_activated: bool) # Emitted when reload finishes
 signal cancelled() # Emitted if interrupted (e.g. by aiming)
 
@@ -21,6 +23,13 @@ signal cancelled() # Emitted if interrupted (e.g. by aiming)
 var mode: String = "qte" # "qte" or "superpump"
 @export var show_progress_bar: bool = false
 @export var fail_ends_reload: bool = true
+@export var superpump_confirm_hold: float = 0.15
+var _is_resolving_qte: bool = false
+var _superpump_hold_confirm_timer: float = 0.0
+var _has_released_since_qte: bool = false
+var _superpump_gauge_completed: bool = false
+var _last_qte_hit_time: float = -1.0
+var _finish_tween: Tween = null
 
 # QTE variables
 @export var num_prompts: int = 4
@@ -41,6 +50,12 @@ var elapsed_time: float = 0.0
 # Superpump hold variables
 var superpump_hold_time: float = 0.0
 @export var superpump_required_hold: float = 0.6
+
+func get_superpump_progress() -> float:
+	if mode == "superpump" and superpump_required_hold > 0.0:
+		return clampf(superpump_hold_time / superpump_required_hold, 0.0, 1.0)
+	return 0.0
+
 
 # ---- Visual Customization: Gauge Geometry ----
 @export_group("Gauge Geometry")
@@ -319,8 +334,8 @@ func _setup_editor_preview(request_redraw: bool = true) -> void:
 		if prompt_label.text.is_empty() or prompt_label.text == "PERFECT QTE!":
 			prompt_label.text = "PERFECT QTE!"
 			prompt_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5))
-	if instruction_label and (instruction_label.text.is_empty() or instruction_label.text == "PRESS [R] ON TARGET"):
-		instruction_label.text = "PRESS [R] ON TARGET"
+	if instruction_label and (instruction_label.text.is_empty() or instruction_label.text == "PRESS [R] | [SPACE] ON TARGET"):
+		instruction_label.text = "PRESS [R] | [SPACE] ON TARGET"
 		instruction_label.add_theme_color_override("font_color", Color(0.6, 0.8, 1, 0.8))
 	if request_redraw and gauge:
 		gauge.queue_redraw()
@@ -332,6 +347,12 @@ func setup() -> void:
 # ---------- Activation & Lifecycle ----------
 
 func start(p_current_air: float = 0.0, p_max_air: float = 100.0) -> void:
+	if _finish_tween and _finish_tween.is_valid():
+		_finish_tween.kill()
+		_finish_tween = null
+	_is_resolving_qte = false
+	_superpump_hold_confirm_timer = 0.0
+	_has_released_since_qte = false
 	start_air = p_current_air
 	max_air = p_max_air
 	elapsed_time = 0.0
@@ -341,6 +362,8 @@ func start(p_current_air: float = 0.0, p_max_air: float = 100.0) -> void:
 	prompts.clear()
 	progress_segments.clear()
 	superpump_hold_time = 0.0
+	_superpump_gauge_completed = false
+	_last_qte_hit_time = -1.0
 	resolved = false
 	failed = false
 
@@ -374,14 +397,14 @@ func start(p_current_air: float = 0.0, p_max_air: float = 100.0) -> void:
 			prompt_label.text = ""
 			prompt_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
 		else:
-			prompt_label.text = "กด [R] ค้างเพื่อปั๊มน้ำเพิ่มแรงดัน" if lang == "th" else "HOLD [R] TO SUPERPUMP"
+			prompt_label.text = "" if lang == "th" else ""
 			prompt_label.add_theme_color_override("font_color", Color(1.0, 0.5, 0.1))
 
 	if instruction_label:
 		if mode == "qte":
-			instruction_label.text = ""
+			instruction_label.text = "กด [R] | [SPACE] ให้ตรงเป้า" if lang == "th" else "PRESS [R] | [SPACE] ON TARGET"
 		else:
-			instruction_label.text = "แรงดันคงที่" if lang == "th" else "PRESSURE STABLE"
+			instruction_label.text = "กด [R] ค้างเพื่อปั๊มน้ำเพิ่มแรงดัน" if lang == "th" else "HOLD [R] TO SUPERPUMP"
 
 	if gauge:
 		gauge.queue_redraw()
@@ -436,17 +459,77 @@ func _setup_qte_parameters() -> void:
 		})
 
 func cancel() -> void:
-	if resolved:
-		return
-	resolved = true
+	if _finish_tween and _finish_tween.is_valid():
+		_finish_tween.kill()
+		_finish_tween = null
+	_is_resolving_qte = false
+	_superpump_hold_confirm_timer = 0.0
+	_has_released_since_qte = false
 	set_process(false)
 	set_process_input(false)
 	visible = false
-	cancelled.emit()
+	if container:
+		container.modulate.a = 1.0
+		container.scale = Vector2.ONE
+	if background_dim:
+		background_dim.color = dim_color
+
+	if not resolved:
+		resolved = true
+		if not _superpump_gauge_completed:
+			cancelled.emit()
+
+func transition_to_superpump() -> void:
+	if _finish_tween and _finish_tween.is_valid():
+		_finish_tween.kill()
+		_finish_tween = null
+	_is_resolving_qte = false
+	_superpump_hold_confirm_timer = 0.0
+	_has_released_since_qte = false
+	_superpump_gauge_completed = false
+	if reload_progress > 0.0:
+		start_air = clampf(start_air + (max_air - start_air) * reload_progress, 0.0, max_air)
+	
+	mode = "superpump"
+	resolved = false
+	failed = false
+	elapsed_time = 0.0
+	superpump_hold_time = 0.0
+	set_process(true)
+	set_process_input(true)
+	visible = true
+	
+	if container:
+		container.scale = Vector2.ONE
+		container.modulate.a = 1.0
+	if background_dim:
+		background_dim.color = dim_color
+	if center_circle:
+		center_circle.position = Vector2(101, 101)
+		_apply_center_circle_style()
+		
+	var lang = "en"
+	if get_tree() and get_tree().root.has_node("GameManager"):
+		lang = GameManager.selected_language
+		
+	if prompt_label:
+		prompt_label.scale = Vector2.ONE
+		prompt_label.text = "" if lang == "th" else ""
+		prompt_label.add_theme_color_override("font_color", Color(1.0, 0.5, 0.1))
+	if instruction_label:
+		instruction_label.text = "กด [R] ค้างเพื่อปั๊มน้ำเพิ่มแรงดัน" if lang == "th" else "HOLD [R] TO SUPERPUMP"
+	if gauge:
+		gauge.queue_redraw()
+	
+	superpump_started.emit()
 
 # ---------- Per-frame logic ----------
 
 func _process(delta: float) -> void:
+	if _is_resolving_qte:
+		_process_qte_resolution_hold(delta)
+		return
+
 	if resolved:
 		return
 		
@@ -456,6 +539,18 @@ func _process(delta: float) -> void:
 		_process_qte(delta)
 	else:
 		_process_superpump(delta)
+
+func _process_qte_resolution_hold(delta: float) -> void:
+	if not _has_released_since_qte:
+		if not Input.is_action_pressed("Reload"):
+			_has_released_since_qte = true
+	else:
+		if Input.is_action_pressed("Reload"):
+			_superpump_hold_confirm_timer += delta
+			if _superpump_hold_confirm_timer >= superpump_confirm_hold:
+				transition_to_superpump()
+		else:
+			_superpump_hold_confirm_timer = 0.0
 
 func _process_qte(delta: float) -> void:
 	actual_time += delta
@@ -509,21 +604,35 @@ func _process_superpump(delta: float) -> void:
 			center_circle.position = Vector2(101, 101) + Vector2(randf_range(-1, 1), randf_range(-1, 1)) * ratio * 3.0
 		
 		if superpump_hold_time >= superpump_required_hold:
+			if not _superpump_gauge_completed:
+				_superpump_gauge_completed = true
+				superpump_completed.emit()
 			_resolve(true)
 	else:
 		# Immediately cancel super pump if player stops holding R key (after 0.3s guard)
-		if elapsed_time >= 0.3:
+		if not _superpump_gauge_completed and elapsed_time >= 0.3:
 			cancel()
 		
 	if gauge:
 		gauge.queue_redraw()
 
 func _input(event: InputEvent) -> void:
-	if resolved:
+	if resolved or _is_resolving_qte:
 		return
 		
-	if mode == "qte" and event.is_action_pressed("Reload"):
+	if mode == "qte" and _is_qte_trigger_event(event):
+		get_viewport().set_input_as_handled()
 		_check_qte_input()
+
+func _is_qte_trigger_event(event: InputEvent) -> bool:
+	if event.is_action_pressed("Reload"):
+		return true
+	if event.is_action_pressed("ui_select"):
+		return true
+	if event is InputEventKey and event.is_pressed() and not event.is_echo():
+		if event.physical_keycode == KEY_SPACE or event.keycode == KEY_SPACE:
+			return true
+	return false
 
 func _check_qte_input() -> void:
 	var hit_any = false
@@ -569,6 +678,7 @@ func _check_qte_input() -> void:
 			is_early = true
 			
 	if hit_any:
+		_last_qte_hit_time = actual_time
 		var all_hit = true
 		for p in prompts:
 			if not p.hit:
@@ -578,6 +688,10 @@ func _check_qte_input() -> void:
 		if all_hit:
 			_resolve(true)
 	else:
+		# If an input arrives within 0.12s of a successful hit, treat it as a simultaneous press and ignore
+		if _last_qte_hit_time >= 0.0 and (actual_time - _last_qte_hit_time) < 0.12:
+			return
+			
 		_flash_center_failure()
 		get_tree().call_group("player_ui", "on_qte_prompt_miss")
 		
@@ -614,6 +728,8 @@ func _draw_gauge() -> void:
 				color = prompt_hit_color
 			elif p.missed:
 				color = prompt_miss_color
+			if color == null:
+				color = Color(0.2, 0.7, 0.9, 0.8)
 				
 			gauge.draw_arc(center, radius, start_ang, end_ang, 24, color, thickness, true)
 			
@@ -623,8 +739,8 @@ func _draw_gauge() -> void:
 		var needle_start = center + dir * (radius - needle_extension)
 		var needle_end = center + dir * (radius + needle_extension)
 		
-		gauge.draw_line(needle_start, needle_end, needle_color, needle_width, true)
-		gauge.draw_circle(needle_end, needle_tip_size, needle_color)
+		gauge.draw_line(needle_start, needle_end, needle_color if needle_color != null else Color.WHITE, needle_width, true)
+		gauge.draw_circle(needle_end, needle_tip_size, needle_color if needle_color != null else Color.WHITE)
 		
 		# Draw reload progress filling the inner circle
 		if not show_progress_bar:
@@ -632,11 +748,11 @@ func _draw_gauge() -> void:
 			
 			if resolved:
 				if failed:
-					gauge.draw_circle(center, max_radius, inner_fill_failed_color)
+					gauge.draw_circle(center, max_radius, inner_fill_failed_color if inner_fill_failed_color != null else Color.RED)
 				elif successful_qtes == num_prompts and successful_qtes > 0:
-					gauge.draw_circle(center, max_radius * reload_progress, inner_fill_perfect_color)
+					gauge.draw_circle(center, max_radius * reload_progress, inner_fill_perfect_color if inner_fill_perfect_color != null else Color.GREEN)
 				else:
-					gauge.draw_circle(center, max_radius * reload_progress, inner_fill_color)
+					gauge.draw_circle(center, max_radius * reload_progress, inner_fill_color if inner_fill_color != null else Color.CYAN)
 			else:
 				for segment in progress_segments:
 					var r_start = segment.start * max_radius
@@ -644,6 +760,8 @@ func _draw_gauge() -> void:
 					var seg_thickness = r_end - r_start
 					var mid_radius = (r_start + r_end) / 2.0
 					var color = inner_fill_skipped_color if segment.is_skipped else inner_fill_color
+					if color == null:
+						color = Color(1.0, 1.0, 1.0, 0.25)
 					
 					if seg_thickness > 0.05:
 						gauge.draw_arc(center, mid_radius, 0, 2*PI, 64, color, seg_thickness, false)
@@ -719,8 +837,6 @@ func _resolve(success: bool) -> void:
 	if resolved:
 		return
 	resolved = true
-	set_process(false)
-	set_process_input(false)
 	
 	if mode == "qte":
 		var current_air_at_resolve = clampf(start_air + (max_air - start_air) * reload_progress, 0.0, max_air)
@@ -769,29 +885,54 @@ func _resolve(success: bool) -> void:
 				
 		get_tree().call_group("player_ui", "on_qte_reload_ended", is_perfect, final_air)
 		
+		# Allow hold confirmation into superpump (on success or fail)
+		_is_resolving_qte = true
+		_superpump_hold_confirm_timer = 0.0
+		_has_released_since_qte = not Input.is_action_pressed("Reload")
+		set_process(true)
+		set_process_input(false)
+		
 		if prompt_label:
 			prompt_label.scale = Vector2.ZERO
 			create_tween().tween_property(prompt_label, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK)
 		
 		await get_tree().create_timer(0.3).timeout
+		if not _is_resolving_qte or not visible:
+			visible = false
+			return
 		
 		if container and background_dim:
-			var fade_tween = create_tween().set_parallel(true)
-			fade_tween.tween_property(container, "scale", Vector2(1.15, 1.15), 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-			fade_tween.tween_property(container, "modulate:a", 0.0, 0.25)
-			fade_tween.tween_property(background_dim, "color:a", 0.0, 0.25)
-			await fade_tween.finished
+			_finish_tween = create_tween().set_parallel(true)
+			_finish_tween.tween_property(container, "scale", Vector2(1.15, 1.15), 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			_finish_tween.tween_property(container, "modulate:a", 0.0, 0.25)
+			_finish_tween.tween_property(background_dim, "color:a", 0.0, 0.25)
+			await _finish_tween.finished
+			if not _is_resolving_qte or not visible:
+				visible = false
+				return
 		
+		# If player is currently holding Reload to confirm superpump, wait for confirmation
+		while _is_resolving_qte and Input.is_action_pressed("Reload") and _superpump_hold_confirm_timer < superpump_confirm_hold:
+			await get_tree().process_frame
+			if not _is_resolving_qte or not visible:
+				visible = false
+				return
+		
+		_is_resolving_qte = false
+		set_process(false)
+		set_process_input(false)
 		visible = false
 		finished.emit(final_air, false)
 		
 	elif mode == "superpump":
+		set_process(false)
+		set_process_input(false)
 		if success:
 			var lang = "en"
 			if get_tree() and get_tree().root.has_node("GameManager"):
 				lang = GameManager.selected_language
 			if prompt_label:
-				prompt_label.text = "เปิดใช้งานซูเปอร์ปั๊มสำเร็จ!" if lang == "th" else "SUPERPUMP ACTIVATED!"
+				prompt_label.text = "ซูเปอร์ปั๊ม!" if lang == "th" else "SUPERPUMP!"
 				prompt_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2))
 			SoundManager.play_2d("watergun_pistol_reload_Superpump")
 			
@@ -800,23 +941,29 @@ func _resolve(success: bool) -> void:
 				create_tween().tween_property(prompt_label, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK)
 			
 			await get_tree().create_timer(0.3).timeout
+			if not visible or not is_inside_tree():
+				return
 			
 			if container and background_dim:
-				var fade_tween = create_tween().set_parallel(true)
-				fade_tween.tween_property(container, "scale", Vector2(1.15, 1.15), 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-				fade_tween.tween_property(container, "modulate:a", 0.0, 0.25)
-				fade_tween.tween_property(background_dim, "color:a", 0.0, 0.25)
-				await fade_tween.finished
+				_finish_tween = create_tween().set_parallel(true)
+				_finish_tween.tween_property(container, "scale", Vector2(1.15, 1.15), 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+				_finish_tween.tween_property(container, "modulate:a", 0.0, 0.25)
+				_finish_tween.tween_property(background_dim, "color:a", 0.0, 0.25)
+				await _finish_tween.finished
+				if not visible or not is_inside_tree():
+					return
 			
 			visible = false
 			finished.emit(120.0, true) # 120.0 is the super_threshold
 		else:
 			if container and background_dim:
-				var fade_tween = create_tween().set_parallel(true)
-				fade_tween.tween_property(container, "scale", Vector2(1.15, 1.15), 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-				fade_tween.tween_property(container, "modulate:a", 0.0, 0.2)
-				fade_tween.tween_property(background_dim, "color:a", 0.0, 0.2)
-				await fade_tween.finished
+				_finish_tween = create_tween().set_parallel(true)
+				_finish_tween.tween_property(container, "scale", Vector2(1.15, 1.15), 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+				_finish_tween.tween_property(container, "modulate:a", 0.0, 0.2)
+				_finish_tween.tween_property(background_dim, "color:a", 0.0, 0.2)
+				await _finish_tween.finished
+				if not visible or not is_inside_tree():
+					return
 			
 			visible = false
 			finished.emit(start_air, false)

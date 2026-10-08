@@ -232,6 +232,9 @@ follower_walk_face_offset = Vector3(0, -0.025, 0)
 player_portrait_side_tilt_multiplier = 0.4
 player_portrait_reverse_side_tilt = true
 player_portrait_tilt_speed = 8.0
+air_normal_color = null
+air_super_ready_color = null
+air_super_active_color = null
 metadata/_edit_pinned_properties_ = [&"preview_reload_qte", &"preview_grab_qte"]
 
 [node name="bg" type="TextureRect" parent="." unique_id=189499123]
@@ -787,12 +790,14 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("10_reload")
 fail_ends_reload = false
+superpump_confirm_hold = null
 prompt_size = 0.08
 gauge_radius = 81.76
 gauge_thickness = 8.045
 needle_width = 7.0
 needle_tip_size = 7.0
 needle_extension = 13.0
+inner_fill_max_radius = 77.5
 inner_fill_color = Color(0.76862746, 0.9764706, 1, 0.5882353)
 inner_fill_skipped_color = Color(0.32156864, 0.8862745, 0.7372549, 0.5882353)
 inner_fill_perfect_color = Color(0.32156864, 0.8862745, 0.7372549, 0.5882353)
@@ -881,23 +886,6 @@ text = "R"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PromptLabel" type="Label" parent="HUDRoot/ReloadQTE/Container" unique_id=341888446]
-layout_mode = 0
-offset_top = 240.0
-offset_right = 250.0
-offset_bottom = 278.0
-theme_override_colors/font_color = Color(0.3, 1, 0.5, 1)
-theme_override_colors/font_shadow_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
-theme_override_colors/font_outline_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
-theme_override_constants/shadow_offset_x = 2
-theme_override_constants/shadow_offset_y = 2
-theme_override_constants/outline_size = 5
-theme_override_constants/shadow_outline_size = 3
-theme_override_fonts/font = ExtResource("4_font_dog")
-theme_override_font_sizes/font_size = 29
-text = "PERFECT QTE!"
-horizontal_alignment = 1
-
 [node name="InstructionLabel" type="Label" parent="HUDRoot/ReloadQTE/Container" unique_id=2030300093]
 layout_mode = 0
 offset_top = 220.0
@@ -913,4 +901,21 @@ theme_override_constants/shadow_outline_size = 2
 theme_override_fonts/font = ExtResource("5_font_vcd")
 theme_override_font_sizes/font_size = 25
 text = "PRESS [R] | [SPACE] ON TARGET"
+horizontal_alignment = 1
+
+[node name="PromptLabel" type="Label" parent="HUDRoot/ReloadQTE/Container" unique_id=341888446]
+layout_mode = 0
+offset_top = 240.0
+offset_right = 250.0
+offset_bottom = 278.0
+theme_override_colors/font_color = Color(0.3, 1, 0.5, 1)
+theme_override_colors/font_shadow_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+theme_override_colors/font_outline_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 5
+theme_override_constants/shadow_outline_size = 3
+theme_override_fonts/font = ExtResource("4_font_dog")
+theme_override_font_sizes/font_size = 29
+text = "PERFECT QTE!"
 horizontal_alignment = 1
