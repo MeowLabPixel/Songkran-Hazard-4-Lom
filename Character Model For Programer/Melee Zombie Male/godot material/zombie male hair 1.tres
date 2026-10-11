@@ -19,7 +19,6 @@ metadata/_stencil_owned = true
 [resource]
 resource_name = "zombie male hair 1"
 next_pass = SubResource("StandardMaterial3D_lsd8d")
-transparency = 4
 cull_mode = 2
 diffuse_mode = 3
 specular_mode = 2

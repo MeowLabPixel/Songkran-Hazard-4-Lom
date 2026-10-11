@@ -34,6 +34,7 @@
 [ext_resource type="Texture2D" uid="uid://cr5wlck56i158" path="res://Character Model For Programer/Leon/textures/Base Male Body 2.png" id="22_kxw46"]
 [ext_resource type="Script" uid="uid://81js2e1h08il" path="res://player/Statemachine/base/state_machine.gd" id="30_a2xo5"]
 [ext_resource type="AnimationLibrary" uid="uid://dtbn7feykg4nk" path="res://scenes/player/Player_Anims/Player_Anims.res" id="32_bbmj2"]
+[ext_resource type="Shader" uid="uid://wpcufs2lugx7" path="res://scenes/player/Outline_Camera.gdshader" id="35_8qxvo"]
 [ext_resource type="Script" uid="uid://capeimnw2ecqx" path="res://scripts/ui/procedural_crosshair.gd" id="41_procedural_crosshair"]
 [ext_resource type="Script" uid="uid://byamuh70f1nqy" path="res://scripts/ui/player_stat_hud.gd" id="48_1u1sw"]
 
@@ -21643,6 +21644,25 @@ _data = {
 &"walk_side": SubResource("Animation_vb1ce")
 }
 
+[sub_resource type="QuadMesh" id="QuadMesh_pf48t"]
+flip_faces = true
+size = Vector2(2, 2)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ligby"]
+render_priority = 0
+shader = ExtResource("35_8qxvo")
+shader_parameter/outlineColor = Color(0, 0, 0, 0.43137255)
+shader_parameter/depth_threshold = 0.15
+shader_parameter/normal_threshold = 1.5
+shader_parameter/normal_smoothing = 1.0
+shader_parameter/max_thickness = 1.3
+shader_parameter/min_thickness = 0.5
+shader_parameter/max_distance = 75.0
+shader_parameter/min_distance = 2.0
+shader_parameter/grazing_fresnel_power = 5.0
+shader_parameter/grazing_angle_mask_power = 1.0
+shader_parameter/grazing_angle_modulation_factor = 50.0
+
 [sub_resource type="SphereShape3D" id="SphereShape3D_wodsf"]
 margin = 0.01
 radius = 0.3
@@ -22630,7 +22650,7 @@ script = ExtResource("9_kb6p2")
 
 [node name="Reload" type="Node" parent="Statemachine" unique_id=906216806]
 script = ExtResource("8_kb6p2")
-superpump_hold_duration = 1.0
+superpump_hold_duration = 0.5
 fail_ends_reload = false
 
 [node name="Aim" type="Node" parent="Statemachine" unique_id=1671472409]
@@ -24662,6 +24682,12 @@ tank_look_down_lift = 0.6
 aim_deadzone_right = 0.2
 aim_deadzone_down = 0.25
 
+[node name="Shader" type="MeshInstance3D" parent="Camera" unique_id=1026949302]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.8946991)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_pf48t")
+surface_material_override/0 = SubResource("ShaderMaterial_ligby")
+
 [node name="edgeSpringArm3D" type="SpringArm3D" parent="Camera" unique_id=1838177617]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
 collision_mask = 0
@@ -24713,9 +24739,6 @@ follower_walk_face_offset = Vector3(0, -0.025, 0)
 player_portrait_side_tilt_multiplier = 0.4
 player_portrait_reverse_side_tilt = true
 player_portrait_tilt_speed = 8.0
-air_normal_color = null
-air_super_ready_color = null
-air_super_active_color = null
 
 [node name="HP" type="Label" parent="Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D/Player Stat" unique_id=1854887124]
 anchors_preset = 3

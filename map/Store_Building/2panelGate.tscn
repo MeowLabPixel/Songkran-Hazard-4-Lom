@@ -212,6 +212,12 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_in2bp")
 
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_o5ppq"]
+points = PackedVector3Array(0.0478133, 0.004314401, 0.057495724, 0.0478133, -0.004314406, 0.057495724, 0.0478133, 0.004314401, -0.057495724, -0.0478133, 0.004314401, 0.057495724, -0.0478133, -0.004314406, 0.057495724, 0.0478133, -0.004314406, -0.057495724, -0.0478133, 0.004314401, -0.057495724, -0.0478133, -0.004314406, -0.057495724)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_6ongt"]
+points = PackedVector3Array(-0.017329996, -0.026130686, -0.001769644, 0.017329996, -0.026130686, -0.001769644, -0.017329996, -0.026130686, 0.001769644, -0.017329996, 0.026125574, -0.001769644, 0.017329996, -0.026130686, 0.001769644, 0.017329996, 0.026125574, -0.001769644, -0.017329996, 0.026125574, 0.001769644, 0.017329996, 0.026125574, 0.001769644)
+
 [node name="Door" type="MeshInstance3D" unique_id=661327355]
 transform = Transform3D(-1.759999, 0, -2.9595154e-07, 0, 0.91999966, 0, 2.6575262e-07, 0, -1.96, 0, 0, 0)
 mesh = SubResource("ArrayMesh_ehhyn")
@@ -220,6 +226,16 @@ mesh = SubResource("ArrayMesh_ehhyn")
 transform = Transform3D(0.40511358, 0, 1.7763568e-15, 0, 0.97826064, 0, 0, 0, 0.049999993, 0, 0.027764855, 0.00011816248)
 mesh = SubResource("ArrayMesh_x6sy2")
 
+[node name="StaticBody3D" type="StaticBody3D" parent="Door Edge" unique_id=1017525960]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Door Edge/StaticBody3D" unique_id=1265653654]
+shape = SubResource("ConvexPolygonShape3D_o5ppq")
+
 [node name="IronGate v2 - front" parent="." unique_id=1616262602 instance=ExtResource("3_pjvpy")]
 transform = Transform3D(-5.0838167e-08, 0, -0.009659093, 0, 0.021739133, 0, 0.42551017, 0, -9.305282e-10, -0.00030976534, -0.0017774887, -0.0009879824)
 visible = false
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1946712273]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=1336012194]
+shape = SubResource("ConvexPolygonShape3D_6ongt")

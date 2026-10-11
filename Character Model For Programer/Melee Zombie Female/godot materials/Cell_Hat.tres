@@ -17,6 +17,8 @@ metadata/_stencil_owned = true
 
 [resource]
 next_pass = SubResource("StandardMaterial3D_vb7mh")
+transparency = 1
+blend_mode = 1
 diffuse_mode = 3
 specular_mode = 2
 albedo_texture = ExtResource("1_g8nj3")

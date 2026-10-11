@@ -11,8 +11,16 @@ roughness = 0.5
 uv1_scale = Vector3(1.109, 0.4, 1)
 uv1_offset = Vector3(0.181, -0.229, 0)
 
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_hdawq"]
+points = PackedVector3Array(-0.0065, -1.2278748, -1.915, 0.0065, -1.2278748, -1.915, -0.0065, -1.2278748, 1.915, -0.0065, 1.2278748, -1.915, 0.0065, 1.2278748, -1.915, 0.0065, -1.2278748, 1.915, -0.0065, 1.2278748, 1.915, 0.0065, 1.2278748, 1.915)
+
 [node name="IronGate v2" type="MeshInstance3D" unique_id=1616262602]
 transform = Transform3D(-4.371139e-08, 0, -1.05, 0, 1, 0, 1, 0, -4.5896957e-08, 0, 0, 0)
 layers = 1025
 mesh = SubResource("BoxMesh_f513t")
 surface_material_override/0 = SubResource("StandardMaterial3D_0q6ha")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=665828710]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=67123603]
+shape = SubResource("ConvexPolygonShape3D_hdawq")

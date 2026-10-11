@@ -283,6 +283,8 @@ func _ready() -> void:
 		gauge.draw.connect(_draw_gauge)
 	if Engine.is_editor_hint():
 		_setup_editor_preview()
+		set_process(false)
+		set_process_input(false)
 		return
 	visible = false
 	set_process(false)
@@ -312,7 +314,7 @@ func _setup_editor_preview(request_redraw: bool = true) -> void:
 	prompt_size = 0.08
 	current_progress = 0.65
 	reload_progress = 0.85
-	resolved = false
+	resolved = true
 	failed = false
 	progress_segments = [
 		{"start": 0.0, "end": 0.55, "is_skipped": false},
@@ -525,7 +527,17 @@ func transition_to_superpump() -> void:
 
 # ---------- Per-frame logic ----------
 
+func _is_reload_pressed() -> bool:
+	if Engine.is_editor_hint():
+		return false
+	if not InputMap.has_action("Reload"):
+		return false
+	return Input.is_action_pressed("Reload")
+
 func _process(delta: float) -> void:
+	if Engine.is_editor_hint():
+		return
+
 	if _is_resolving_qte:
 		_process_qte_resolution_hold(delta)
 		return
@@ -542,10 +554,10 @@ func _process(delta: float) -> void:
 
 func _process_qte_resolution_hold(delta: float) -> void:
 	if not _has_released_since_qte:
-		if not Input.is_action_pressed("Reload"):
+		if not _is_reload_pressed():
 			_has_released_since_qte = true
 	else:
-		if Input.is_action_pressed("Reload"):
+		if _is_reload_pressed():
 			_superpump_hold_confirm_timer += delta
 			if _superpump_hold_confirm_timer >= superpump_confirm_hold:
 				transition_to_superpump()
@@ -596,7 +608,7 @@ func _process_qte(delta: float) -> void:
 		_resolve(true)
 
 func _process_superpump(delta: float) -> void:
-	if Input.is_action_pressed("Reload"):
+	if _is_reload_pressed():
 		superpump_hold_time += delta
 		
 		var ratio = clampf(superpump_hold_time / superpump_required_hold, 0.0, 1.0)
@@ -617,6 +629,9 @@ func _process_superpump(delta: float) -> void:
 		gauge.queue_redraw()
 
 func _input(event: InputEvent) -> void:
+	if Engine.is_editor_hint():
+		return
+
 	if resolved or _is_resolving_qte:
 		return
 		
@@ -625,7 +640,9 @@ func _input(event: InputEvent) -> void:
 		_check_qte_input()
 
 func _is_qte_trigger_event(event: InputEvent) -> bool:
-	if event.is_action_pressed("Reload"):
+	if Engine.is_editor_hint():
+		return false
+	if InputMap.has_action("Reload") and event.is_action_pressed("Reload"):
 		return true
 	if event.is_action_pressed("ui_select"):
 		return true
@@ -834,7 +851,7 @@ func _flash_center_failure() -> void:
 # ---------- Resolution & Cleanup ----------
 
 func _resolve(success: bool) -> void:
-	if resolved:
+	if Engine.is_editor_hint() or resolved:
 		return
 	resolved = true
 	
@@ -888,7 +905,7 @@ func _resolve(success: bool) -> void:
 		# Allow hold confirmation into superpump (on success or fail)
 		_is_resolving_qte = true
 		_superpump_hold_confirm_timer = 0.0
-		_has_released_since_qte = not Input.is_action_pressed("Reload")
+		_has_released_since_qte = not _is_reload_pressed()
 		set_process(true)
 		set_process_input(false)
 		
@@ -912,7 +929,7 @@ func _resolve(success: bool) -> void:
 				return
 		
 		# If player is currently holding Reload to confirm superpump, wait for confirmation
-		while _is_resolving_qte and Input.is_action_pressed("Reload") and _superpump_hold_confirm_timer < superpump_confirm_hold:
+		while _is_resolving_qte and _is_reload_pressed() and _superpump_hold_confirm_timer < superpump_confirm_hold:
 			await get_tree().process_frame
 			if not _is_resolving_qte or not visible:
 				visible = false

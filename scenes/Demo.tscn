@@ -117,6 +117,7 @@ transparency = 4
 vertex_color_use_as_albedo = true
 albedo_texture = ExtResource("3_y8a1q")
 uv1_scale = Vector3(1, 8.535, 1)
+texture_filter = 5
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_tvdfg"]
 _surfaces = [{

@@ -232,9 +232,6 @@ follower_walk_face_offset = Vector3(0, -0.025, 0)
 player_portrait_side_tilt_multiplier = 0.4
 player_portrait_reverse_side_tilt = true
 player_portrait_tilt_speed = 8.0
-air_normal_color = null
-air_super_ready_color = null
-air_super_active_color = null
 metadata/_edit_pinned_properties_ = [&"preview_reload_qte", &"preview_grab_qte"]
 
 [node name="bg" type="TextureRect" parent="." unique_id=189499123]
@@ -542,7 +539,7 @@ size = Vector2i(180, 179)
 render_target_update_mode = 4
 
 [node name="FollowerPortraitCamera" type="Camera3D" parent="HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC/FollowerPortraitViewport" unique_id=1107662328]
-transform = Transform3D(-0.9998818, -0.0015304636, -0.015306465, 0, 0.9950363, -0.09949217, 0.01538279, -0.09948018, -0.99492073, -0.01, 1.385, -0.65)
+transform = Transform3D(-0.9998818, -0.0015304636, -0.015306465, 0, 0.99503624, -0.09949217, 0.01538279, -0.099480174, -0.99492073, -0.01, 1.385, -0.65)
 projection = 1
 current = true
 size = 0.425
@@ -680,6 +677,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="GrabQTE" type="Control" parent="HUDRoot" unique_id=160267496 node_paths=PackedStringArray("overlay", "root_panel", "grab_bg", "grab_fill", "grab_dividers", "label_prompt")]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -726,6 +724,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="PromptLabel" type="Label" parent="HUDRoot/GrabQTE/GrabPanel" unique_id=804096011]
+visible = false
 layout_mode = 0
 offset_left = -3.0
 offset_top = 139.0
@@ -773,7 +772,6 @@ offset_left = -141.0
 offset_top = 26.0
 offset_right = 27.0
 offset_bottom = 40.0
-grow_horizontal = 2
 grow_vertical = 2
 pivot_offset = Vector2(140, 7)
 size_flags_horizontal = 4
@@ -781,6 +779,7 @@ size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBox_1wn24")
 
 [node name="ReloadQTE" type="Control" parent="HUDRoot" unique_id=181006916 node_paths=PackedStringArray("background_dim", "container", "gauge", "center_circle", "center_label", "prompt_label", "instruction_label")]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -790,7 +789,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("10_reload")
 fail_ends_reload = false
-superpump_confirm_hold = null
+num_prompts = 3
 prompt_size = 0.08
 gauge_radius = 81.76
 gauge_thickness = 8.045
@@ -834,6 +833,7 @@ mouse_filter = 2
 color = Color(0, 0, 0, 0)
 
 [node name="Container" type="Control" parent="HUDRoot/ReloadQTE" unique_id=1706254242]
+modulate = Color(1, 1, 1, 0)
 custom_minimum_size = Vector2(250, 270)
 layout_mode = 1
 anchors_preset = 8
@@ -847,6 +847,7 @@ offset_right = 125.0
 offset_bottom = 135.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(1.15, 1.15)
 pivot_offset = Vector2(125, 135)
 
 [node name="Gauge" type="Control" parent="HUDRoot/ReloadQTE/Container" unique_id=690916153]
@@ -891,7 +892,7 @@ layout_mode = 0
 offset_top = 220.0
 offset_right = 250.0
 offset_bottom = 242.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.6, 0.8, 1, 0.8)
 theme_override_colors/font_shadow_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
 theme_override_colors/font_outline_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
 theme_override_constants/shadow_offset_x = 2
@@ -908,7 +909,7 @@ layout_mode = 0
 offset_top = 240.0
 offset_right = 250.0
 offset_bottom = 278.0
-theme_override_colors/font_color = Color(0.3, 1, 0.5, 1)
+theme_override_colors/font_color = Color(0.8, 0.2, 0.2, 1)
 theme_override_colors/font_shadow_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
 theme_override_colors/font_outline_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
 theme_override_constants/shadow_offset_x = 2
@@ -917,5 +918,4 @@ theme_override_constants/outline_size = 5
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("4_font_dog")
 theme_override_font_sizes/font_size = 29
-text = "PERFECT QTE!"
 horizontal_alignment = 1
