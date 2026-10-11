@@ -90,6 +90,12 @@ var _collision_bounds_cache: Dictionary = {}
 ## Automatically re-generates when curve points change
 @export var auto_update_on_curve_change: bool = false
 
+## Click to make this path's Curve3D unique (prevents sharing curves when duplicating nodes)
+@export var make_curve_unique: bool = false:
+	set(val):
+		if val:
+			_make_curve_unique()
+
 # ==================== ORIENTATION & FLIP ====================
 @export_group("Orientation & Flip")
 ## Toggle to rotate each mesh by Y 180° (flip front to back).
@@ -283,14 +289,52 @@ var _collision_bounds_cache: Dictionary = {}
 			bake()
 
 
+var _connected_curve: Curve3D = null
+var _needs_regenerate: bool = false
+
 func _ready() -> void:
 	_init_default_scenes_if_needed()
+	_ensure_curve_connected()
+
+func _enter_tree() -> void:
+	_ensure_curve_connected()
+
+func _exit_tree() -> void:
+	_disconnect_curve()
+
+func _process(_delta: float) -> void:
+	_ensure_curve_connected()
+	if _needs_regenerate:
+		_needs_regenerate = false
+		if auto_update_on_curve_change and is_inside_tree():
+			generate()
+
+func _make_curve_unique() -> void:
 	if curve:
-		curve.changed.connect(_on_curve_changed)
+		_disconnect_curve()
+		curve = curve.duplicate()
+		_ensure_curve_connected()
+		print("BuildingPathPCG: Made curve unique for ", name)
+		if auto_update_on_curve_change and is_inside_tree():
+			generate()
+
+func _ensure_curve_connected() -> void:
+	if curve != _connected_curve:
+		_disconnect_curve()
+		_connected_curve = curve
+		if _connected_curve:
+			if not _connected_curve.changed.is_connected(_on_curve_changed):
+				_connected_curve.changed.connect(_on_curve_changed)
+
+func _disconnect_curve() -> void:
+	if _connected_curve:
+		if _connected_curve.changed.is_connected(_on_curve_changed):
+			_connected_curve.changed.disconnect(_on_curve_changed)
+		_connected_curve = null
 
 func _on_curve_changed() -> void:
-	if auto_update_on_curve_change and is_inside_tree():
-		generate()
+	if auto_update_on_curve_change:
+		_needs_regenerate = true
 
 func _init_default_scenes_if_needed() -> void:
 	if corner_end_scene == null and ResourceLoader.exists(DEFAULT_CORNER_LEFT_PATH):

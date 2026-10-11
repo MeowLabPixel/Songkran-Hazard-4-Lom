@@ -343,7 +343,28 @@ _data = {
 &"Take 001": SubResource("Animation_hly2i")
 }
 
+[sub_resource type="Curve3D" id="Curve3D_n7bc7"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, -37, 0, 0, 0, 0, 0, 0, 0, 0, 49.84, 0, -0.5916176),
+"tilts": PackedFloat32Array(0, 0)
+}
+point_count = 2
+
+[sub_resource type="Curve3D" id="Curve3D_qk4ol"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, -37, 0, 0, 0, 0, 0, 0, 0, 0, 49.84, 0, 0),
+"tilts": PackedFloat32Array(0, 0)
+}
+point_count = 2
+
 [sub_resource type="Curve3D" id="Curve3D_y1xpw"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, -37, 0, 0, 0, 0, 0, 0, 0, 0, 49.84, 0, 0),
+"tilts": PackedFloat32Array(0, 0)
+}
+point_count = 2
+
+[sub_resource type="Curve3D" id="Curve3D_kspxi"]
 _data = {
 "points": PackedVector3Array(0, 0, 0, 0, 0, 0, -37, 0, 0, 0, 0, 0, 0, 0, 0, 49.84, 0, 0),
 "tilts": PackedFloat32Array(0, 0)
@@ -481,7 +502,7 @@ transform = Transform3D(-4.371139e-08, 0, -1.05, 0, 1, 0, 1, 0, -4.5896957e-08, 
 
 [node name="BuildingPathPCG" type="Path3D" parent="." unique_id=1625816308]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 40)
-curve = SubResource("Curve3D_y1xpw")
+curve = SubResource("Curve3D_n7bc7")
 script = ExtResource("28_n7bc7")
 auto_update_on_curve_change = true
 use_corner_at_start = true
@@ -495,71 +516,71 @@ metadata/_custom_type_script = "uid://bbp0hlmv8bh6m"
 
 [node name="GeneratedBuildings" type="Node3D" parent="BuildingPathPCG" unique_id=1763022504]
 
-[node name="StartCorner_00_4_storey_wide_conner_building_right" parent="BuildingPathPCG/GeneratedBuildings" unique_id=45363591 instance=ExtResource("10_qkoys")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -29.818737, 0, 0)
+[node name="StartCorner_00_4_storey_wide_conner_building_right" type="Node3D" parent="BuildingPathPCG/GeneratedBuildings" unique_id=45363591 instance=ExtResource("10_qkoys")]
+transform = Transform3D(0.9999768, 0, 0.006812552, 0, 1, 0, -0.006812552, 0, 0.9999768, -29.818903, 0, -0.048922904)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="Building_01_4_storey_v_5_non_balcony" parent="BuildingPathPCG/GeneratedBuildings" unique_id=956795670 instance=ExtResource("8_ig8yg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25.036488, 0, 0)
+[node name="Building_01_4_storey_v_5_non_balcony" type="Node3D" parent="BuildingPathPCG/GeneratedBuildings" unique_id=1181708075 instance=ExtResource("8_ig8yg")]
+transform = Transform3D(0.9999768, 0, 0.006812566, 0, 1, 0, -0.006812566, 0, 0.9999768, -25.03676, 0, -0.08150235)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_02_4_storey_v_9_small_balcony" parent="BuildingPathPCG/GeneratedBuildings" unique_id=635437398 instance=ExtResource("20_gm25v")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.23603, 0, 0)
-script = ExtResource("29_qk4ol")
-front_iron_gate_closed = false
-
-[node name="Building_03_4_storey_wide" parent="BuildingPathPCG/GeneratedBuildings" unique_id=697449789 instance=ExtResource("9_0d1s4")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.781361, 0, 0)
-script = ExtResource("29_qk4ol")
-
-[node name="Building_04_3_storey_v_3" parent="BuildingPathPCG/GeneratedBuildings" unique_id=1686952011 instance=ExtResource("25_8a21p")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.9312196, 0, 0)
+[node name="Building_02_4_storey_v_9_small_balcony" type="Node3D" parent="BuildingPathPCG/GeneratedBuildings" unique_id=22497840 instance=ExtResource("20_gm25v")]
+transform = Transform3D(0.9999768, 0, 0.0068126265, 0, 1, 0, -0.0068126265, 0, 0.9999768, -20.236414, 0, -0.11420581)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="Building_05_4_storey_v_11_mixed" parent="BuildingPathPCG/GeneratedBuildings" unique_id=279201300 instance=ExtResource("16_dhyrc")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1307602, 0, 0)
+[node name="Building_03_4_storey_wide" type="Node3D" parent="BuildingPathPCG/GeneratedBuildings" unique_id=1961223136 instance=ExtResource("9_0d1s4")]
+transform = Transform3D(0.9999768, 0, 0.0068125497, 0, 1, 0, -0.0068125497, 0, 0.9999768, -10.781924, 0, -0.17861672)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_06_4_storey_v_1_Big_balcony" parent="BuildingPathPCG/GeneratedBuildings" unique_id=787542549 instance=ExtResource("3_6qgyl")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6696904, 0, 0)
-script = ExtResource("29_qk4ol")
-front_iron_gate_closed = false
-
-[node name="Building_07_4_storey_v_10_mixed" parent="BuildingPathPCG/GeneratedBuildings" unique_id=983972022 instance=ExtResource("17_gd4vu")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.47015, 0, 0)
+[node name="Building_04_3_storey_v_3" type="Node3D" parent="BuildingPathPCG/GeneratedBuildings" unique_id=460509195 instance=ExtResource("25_8a21p")]
+transform = Transform3D(0.9999768, 0, 0.00681259, 0, 1, 0, -0.00681259, 0, 0.9999768, -5.9318857, 0, -0.2116587)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="Building_08_3_storey_1" parent="BuildingPathPCG/GeneratedBuildings" unique_id=1198833322 instance=ExtResource("21_5wmgw")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.270597, 0, 0)
+[node name="Building_05_4_storey_v_11_mixed" type="Node3D" parent="BuildingPathPCG/GeneratedBuildings" unique_id=1213312380 instance=ExtResource("16_dhyrc")]
+transform = Transform3D(0.9999768, 0, 0.006812557, 0, 1, 0, -0.006812557, 0, 0.9999768, -1.1315475, 0, -0.24436213)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_09_3_storey_v_6" parent="BuildingPathPCG/GeneratedBuildings" unique_id=1216832283 instance=ExtResource("23_3r082")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.071053, 0, 0)
+[node name="Building_06_4_storey_v_1_Big_balcony" type="Node3D" parent="BuildingPathPCG/GeneratedBuildings" unique_id=1531554842 instance=ExtResource("3_6qgyl")]
+transform = Transform3D(0.9999768, 0, 0.006812444, 0, 1, 0, -0.006812444, 0, 0.9999768, 3.6687775, 0, -0.2770655)
+script = ExtResource("29_qk4ol")
+front_iron_gate_closed = false
+
+[node name="Building_07_4_storey_v_10_mixed" type="Node3D" parent="BuildingPathPCG/GeneratedBuildings" unique_id=1310388457 instance=ExtResource("17_gd4vu")]
+transform = Transform3D(0.9999768, 0, 0.006812566, 0, 1, 0, -0.006812566, 0, 0.9999768, 8.46912, 0, -0.3097689)
+script = ExtResource("29_qk4ol")
+front_iron_gate_closed = false
+
+[node name="Building_08_3_storey_1" type="Node3D" parent="BuildingPathPCG/GeneratedBuildings" unique_id=691591632 instance=ExtResource("21_5wmgw")]
+transform = Transform3D(0.9999768, 0, 0.0068125078, 0, 1, 0, -0.0068125078, 0, 0.9999768, 13.2694645, 0, -0.34247234)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_10_4_storey_wide_3" parent="BuildingPathPCG/GeneratedBuildings" unique_id=1803814089 instance=ExtResource("13_wsg6d")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25.22119, 0, 0)
+[node name="Building_09_3_storey_v_6" type="Node3D" parent="BuildingPathPCG/GeneratedBuildings" unique_id=308237164 instance=ExtResource("23_3r082")]
+transform = Transform3D(0.9999768, 0, 0.006812631, 0, 1, 0, -0.006812631, 0, 0.9999768, 18.069792, 0, -0.37517568)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_11_3_storey_v_4" parent="BuildingPathPCG/GeneratedBuildings" unique_id=746552917 instance=ExtResource("26_x4ux7")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.375843, 0, 0)
+[node name="Building_10_4_storey_wide_3" type="Node3D" parent="BuildingPathPCG/GeneratedBuildings" unique_id=336626424 instance=ExtResource("13_wsg6d")]
+transform = Transform3D(0.9999768, 0, 0.006812566, 0, 1, 0, -0.006812566, 0, 0.9999768, 25.219748, 0, -0.42388642)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_12_4_storey_v_4_Small_Balcony" parent="BuildingPathPCG/GeneratedBuildings" unique_id=1931961155 instance=ExtResource("19_6en5y")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.176308, 0, 0)
+[node name="Building_11_3_storey_v_4" type="Node3D" parent="BuildingPathPCG/GeneratedBuildings" unique_id=1814909880 instance=ExtResource("26_x4ux7")]
+transform = Transform3D(0.9999768, 0, 0.0068125795, 0, 1, 0, -0.0068125795, 0, 0.9999768, 32.37424, 0, -0.47262806)
 script = ExtResource("29_qk4ol")
 
-[node name="EndCorner_13_4_storey_wide_conner_building_Left" parent="BuildingPathPCG/GeneratedBuildings" unique_id=2030691236 instance=ExtResource("11_ikgjp")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.01258, 0, 0)
+[node name="Building_12_4_storey_v_4_Small_Balcony" type="Node3D" parent="BuildingPathPCG/GeneratedBuildings" unique_id=1936999122 instance=ExtResource("19_6en5y")]
+transform = Transform3D(0.9999768, 0, 0.006812673, 0, 1, 0, -0.006812673, 0, 0.9999768, 37.174576, 0, -0.50533146)
+script = ExtResource("29_qk4ol")
+
+[node name="EndCorner_13_4_storey_wide_conner_building_Left" type="Node3D" parent="BuildingPathPCG/GeneratedBuildings" unique_id=382198033 instance=ExtResource("11_ikgjp")]
+transform = Transform3D(0.9999768, 0, 0.006812627, 0, 1, 0, -0.006812627, 0, 0.9999768, 42.010727, 0, -0.5382788)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
 [node name="BuildingPathPCG3" type="Path3D" parent="." unique_id=832645246]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -95, 0, 40)
-curve = SubResource("Curve3D_y1xpw")
+curve = SubResource("Curve3D_qk4ol")
 script = ExtResource("28_n7bc7")
 auto_update_on_curve_change = true
 use_corner_at_start = true
@@ -572,6 +593,68 @@ building_pool = Array[PackedScene]([ExtResource("3_6qgyl"), ExtResource("7_kspxi
 metadata/_custom_type_script = "uid://bbp0hlmv8bh6m"
 
 [node name="GeneratedBuildings" type="Node3D" parent="BuildingPathPCG3" unique_id=1058400367]
+
+[node name="StartCorner_00_4_storey_wide_conner_building_right" parent="BuildingPathPCG3/GeneratedBuildings" unique_id=623035932 instance=ExtResource("10_qkoys")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -29.818737, 0, 0)
+script = ExtResource("29_qk4ol")
+front_iron_gate_closed = false
+
+[node name="Building_01_4_storey_v_5_non_balcony" parent="BuildingPathPCG3/GeneratedBuildings" unique_id=1371138525 instance=ExtResource("8_ig8yg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25.036488, 0, 0)
+script = ExtResource("29_qk4ol")
+
+[node name="Building_02_4_storey_v_9_small_balcony" parent="BuildingPathPCG3/GeneratedBuildings" unique_id=758667317 instance=ExtResource("20_gm25v")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.23603, 0, 0)
+script = ExtResource("29_qk4ol")
+front_iron_gate_closed = false
+
+[node name="Building_03_4_storey_wide" parent="BuildingPathPCG3/GeneratedBuildings" unique_id=2014343729 instance=ExtResource("9_0d1s4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.781361, 0, 0)
+script = ExtResource("29_qk4ol")
+
+[node name="Building_04_3_storey_v_3" parent="BuildingPathPCG3/GeneratedBuildings" unique_id=167826320 instance=ExtResource("25_8a21p")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.9312196, 0, 0)
+script = ExtResource("29_qk4ol")
+front_iron_gate_closed = false
+
+[node name="Building_05_4_storey_v_11_mixed" parent="BuildingPathPCG3/GeneratedBuildings" unique_id=787876740 instance=ExtResource("16_dhyrc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1307602, 0, 0)
+script = ExtResource("29_qk4ol")
+
+[node name="Building_06_4_storey_v_1_Big_balcony" parent="BuildingPathPCG3/GeneratedBuildings" unique_id=109747633 instance=ExtResource("3_6qgyl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6696904, 0, 0)
+script = ExtResource("29_qk4ol")
+front_iron_gate_closed = false
+
+[node name="Building_07_4_storey_v_10_mixed" parent="BuildingPathPCG3/GeneratedBuildings" unique_id=282261070 instance=ExtResource("17_gd4vu")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.47015, 0, 0)
+script = ExtResource("29_qk4ol")
+front_iron_gate_closed = false
+
+[node name="Building_08_3_storey_1" parent="BuildingPathPCG3/GeneratedBuildings" unique_id=590517976 instance=ExtResource("21_5wmgw")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.270597, 0, 0)
+script = ExtResource("29_qk4ol")
+
+[node name="Building_09_3_storey_v_6" parent="BuildingPathPCG3/GeneratedBuildings" unique_id=1851319339 instance=ExtResource("23_3r082")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.071053, 0, 0)
+script = ExtResource("29_qk4ol")
+
+[node name="Building_10_4_storey_wide_3" parent="BuildingPathPCG3/GeneratedBuildings" unique_id=965814671 instance=ExtResource("13_wsg6d")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25.22119, 0, 0)
+script = ExtResource("29_qk4ol")
+
+[node name="Building_11_3_storey_v_4" parent="BuildingPathPCG3/GeneratedBuildings" unique_id=855505885 instance=ExtResource("26_x4ux7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.375843, 0, 0)
+script = ExtResource("29_qk4ol")
+
+[node name="Building_12_4_storey_v_4_Small_Balcony" parent="BuildingPathPCG3/GeneratedBuildings" unique_id=206487601 instance=ExtResource("19_6en5y")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.176308, 0, 0)
+script = ExtResource("29_qk4ol")
+
+[node name="EndCorner_13_4_storey_wide_conner_building_Left" parent="BuildingPathPCG3/GeneratedBuildings" unique_id=417179426 instance=ExtResource("11_ikgjp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.01258, 0, 0)
+script = ExtResource("29_qk4ol")
+front_iron_gate_closed = false
 
 [node name="BuildingPathPCG4" type="Path3D" parent="." unique_id=957306082]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -95, 0, 63)
@@ -590,71 +673,71 @@ metadata/_custom_type_script = "uid://bbp0hlmv8bh6m"
 
 [node name="GeneratedBuildings" type="Node3D" parent="BuildingPathPCG4" unique_id=778310911]
 
-[node name="StartCorner_00_4_storey_wide_conner_building_Left" type="Node3D" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=457777585 instance=ExtResource("11_ikgjp")]
+[node name="StartCorner_00_4_storey_wide_conner_building_Left" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=963983589 instance=ExtResource("11_ikgjp")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -29.877045, 0, 0)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="Building_01_4_storey_v_5_non_balcony" type="Node3D" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=500957258 instance=ExtResource("8_ig8yg")]
+[node name="Building_01_4_storey_v_5_non_balcony" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=481346596 instance=ExtResource("8_ig8yg")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -25.040764, 0, 0)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_02_4_storey_v_9_small_balcony" type="Node3D" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=1540856524 instance=ExtResource("20_gm25v")]
+[node name="Building_02_4_storey_v_9_small_balcony" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=1361671349 instance=ExtResource("20_gm25v")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -20.240309, 0, 0)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="Building_03_4_storey_wide" type="Node3D" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=704414363 instance=ExtResource("9_0d1s4")]
+[node name="Building_03_4_storey_wide" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=1774102437 instance=ExtResource("9_0d1s4")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -15.390174, 0, 0)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_04_3_storey_v_3" type="Node3D" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=299281635 instance=ExtResource("25_8a21p")]
+[node name="Building_04_3_storey_v_3" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=1148429042 instance=ExtResource("25_8a21p")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -5.935496, 0, 0)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="Building_05_4_storey_v_11_mixed" type="Node3D" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=928201931 instance=ExtResource("16_dhyrc")]
+[node name="Building_05_4_storey_v_11_mixed" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=1834748133 instance=ExtResource("16_dhyrc")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -1.1350403, 0, 0)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_06_4_storey_v_1_Big_balcony" type="Node3D" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=1768794797 instance=ExtResource("3_6qgyl")]
+[node name="Building_06_4_storey_v_1_Big_balcony" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=2073488211 instance=ExtResource("3_6qgyl")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 3.665414, 0, 0)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="Building_07_4_storey_v_10_mixed" type="Node3D" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=231080656 instance=ExtResource("17_gd4vu")]
+[node name="Building_07_4_storey_v_10_mixed" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=1079788037 instance=ExtResource("17_gd4vu")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 8.465874, 0, 0)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="Building_08_3_storey_1" type="Node3D" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=1178998169 instance=ExtResource("21_5wmgw")]
+[node name="Building_08_3_storey_1" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=663835235 instance=ExtResource("21_5wmgw")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 13.266321, 0, 0)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_09_3_storey_v_6" type="Node3D" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=443098429 instance=ExtResource("23_3r082")]
+[node name="Building_09_3_storey_v_6" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=98288200 instance=ExtResource("23_3r082")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 18.066776, 0, 0)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_10_4_storey_wide_3" type="Node3D" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=605191095 instance=ExtResource("13_wsg6d")]
+[node name="Building_10_4_storey_wide_3" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=1354603433 instance=ExtResource("13_wsg6d")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 25.221453, 0, 0)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_11_3_storey_v_4" type="Node3D" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=520374808 instance=ExtResource("26_x4ux7")]
+[node name="Building_11_3_storey_v_4" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=930208442 instance=ExtResource("26_x4ux7")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 32.371563, 0, 0)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_12_4_storey_v_4_Small_Balcony" type="Node3D" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=1798003867 instance=ExtResource("19_6en5y")]
+[node name="Building_12_4_storey_v_4_Small_Balcony" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=438333412 instance=ExtResource("19_6en5y")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 37.172035, 0, 0)
 script = ExtResource("29_qk4ol")
 
-[node name="EndCorner_13_4_storey_wide_conner_building_right" type="Node3D" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=1717168545 instance=ExtResource("10_qkoys")]
+[node name="EndCorner_13_4_storey_wide_conner_building_right" parent="BuildingPathPCG4/GeneratedBuildings" unique_id=635330311 instance=ExtResource("10_qkoys")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 41.954277, 0, 0)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
 [node name="BuildingPathPCG2" type="Path3D" parent="." unique_id=250603711]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 63)
-curve = SubResource("Curve3D_y1xpw")
+curve = SubResource("Curve3D_kspxi")
 script = ExtResource("28_n7bc7")
 auto_update_on_curve_change = true
 flip_front_to_back = true
@@ -669,61 +752,61 @@ metadata/_custom_type_script = "uid://bbp0hlmv8bh6m"
 
 [node name="GeneratedBuildings" type="Node3D" parent="BuildingPathPCG2" unique_id=1650506571]
 
-[node name="StartCorner_00_4_storey_wide_conner_building_Left" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=199559665 instance=ExtResource("11_ikgjp")]
+[node name="StartCorner_00_4_storey_wide_conner_building_Left" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=588436255 instance=ExtResource("11_ikgjp")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -29.877045, 0, 0)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="Building_01_4_storey_v_1_Big_balcony" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=1006682489 instance=ExtResource("3_6qgyl")]
+[node name="Building_01_4_storey_v_1_Big_balcony" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=249978123 instance=ExtResource("3_6qgyl")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -25.040764, 0, 0)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_02_3_storey_v_3" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=1730898487 instance=ExtResource("25_8a21p")]
+[node name="Building_02_3_storey_v_3" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=1853531436 instance=ExtResource("25_8a21p")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -20.240309, 0, 0)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="Building_03_4_storey_wide" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=1989770513 instance=ExtResource("9_0d1s4")]
+[node name="Building_03_4_storey_wide" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=1403025036 instance=ExtResource("9_0d1s4")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -15.390174, 0, 0)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="Building_04_3_storey_v_6" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=106926775 instance=ExtResource("23_3r082")]
+[node name="Building_04_3_storey_v_6" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=1652460440 instance=ExtResource("23_3r082")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -5.935496, 0, 0)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_05_4_storey_v_10_mixed" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=42437992 instance=ExtResource("17_gd4vu")]
+[node name="Building_05_4_storey_v_10_mixed" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=1957503317 instance=ExtResource("17_gd4vu")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -1.1350403, 0, 0)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_06_4_storey_wide_3" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=2046699567 instance=ExtResource("13_wsg6d")]
+[node name="Building_06_4_storey_wide_3" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=466086680 instance=ExtResource("13_wsg6d")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 6.019643, 0, 0)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="Building_07_4_storey_v_6_Big_balcony" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=1683107001 instance=ExtResource("6_y1xpw")]
+[node name="Building_07_4_storey_v_6_Big_balcony" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=836623844 instance=ExtResource("6_y1xpw")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 13.169767, 0, 0)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_08_3_storey_v_6" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=1424345744 instance=ExtResource("23_3r082")]
+[node name="Building_08_3_storey_v_6" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=1737875269 instance=ExtResource("23_3r082")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 17.970226, 0, 0)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="Building_09_4_storey_v_1_Big_balcony" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=338965873 instance=ExtResource("3_6qgyl")]
+[node name="Building_09_4_storey_v_1_Big_balcony" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=766659779 instance=ExtResource("3_6qgyl")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 22.77068, 0, 0)
 script = ExtResource("29_qk4ol")
 
-[node name="Building_10_4_storey_wide_3" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=430798476 instance=ExtResource("13_wsg6d")]
+[node name="Building_10_4_storey_wide_3" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=221465304 instance=ExtResource("13_wsg6d")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 29.925343, 0, 0)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="Building_11_4_storey_v_2_Small_Balcony" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=588385803 instance=ExtResource("7_kspxi")]
+[node name="Building_11_4_storey_v_2_Small_Balcony" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=2093726949 instance=ExtResource("7_kspxi")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 37.07548, 0, 0)
 script = ExtResource("29_qk4ol")
 front_iron_gate_closed = false
 
-[node name="EndCorner_12_4_storey_wide_conner_building_right" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=1985017269 instance=ExtResource("10_qkoys")]
+[node name="EndCorner_12_4_storey_wide_conner_building_right" type="Node3D" parent="BuildingPathPCG2/GeneratedBuildings" unique_id=321431697 instance=ExtResource("10_qkoys")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 41.857727, 0, 0)
 script = ExtResource("29_qk4ol")
