@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://b8cu5ujrd1uf5"]
+
+[ext_resource type="Shader" uid="uid://djvkhodqi63s7" path="res://shaders/screenspace_godray.gdshader" id="1_shader"]
+[ext_resource type="Script" uid="uid://d558jl4vswgj" path="res://scripts/vfx/godray_controller.gd" id="2_script"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_godray"]
+flip_faces = true
+size = Vector2(2, 2)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_godray"]
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/num_samples = 32
+shader_parameter/density = 0.75
+shader_parameter/weight = 0.02
+shader_parameter/decay = 0.95
+shader_parameter/exposure = 0.5
+shader_parameter/light_fade_start = 0.8
+shader_parameter/light_fade_end = 1.0
+shader_parameter/ambient_col = Color(1.167, 1.182, 0.725, 1)
+
+[node name="ScreenspaceGodray" type="MeshInstance3D" unique_id=375905902 node_paths=PackedStringArray("light_source")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
+cast_shadow = 0
+extra_cull_margin = 16384.0
+instance_shader_parameters/sun_facing = 0.0
+mesh = SubResource("QuadMesh_godray")
+surface_material_override/0 = SubResource("ShaderMaterial_godray")
+script = ExtResource("2_script")
+light_source = NodePath("")
