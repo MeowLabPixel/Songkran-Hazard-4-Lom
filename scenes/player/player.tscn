@@ -21653,10 +21653,10 @@ size = Vector2(2, 2)
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_godray"]
 render_priority = 0
 shader = ExtResource("35_wva7c")
-shader_parameter/num_samples = 32
+shader_parameter/num_samples = 16
 shader_parameter/max_ray_length = 0.75
 shader_parameter/density = 0.75
-shader_parameter/weight = 0.030000001425
+shader_parameter/weight = 0.0350000016625
 shader_parameter/decay = 0.94
 shader_parameter/exposure = 0.5
 shader_parameter/light_fade_start = 0.8
@@ -21676,10 +21676,10 @@ shader_parameter/blur_near_distance = 1.0
 shader_parameter/blur_far_distance = 1.0
 shader_parameter/max_blur_radius = 0.015
 shader_parameter/enable_animation = true
-shader_parameter/animation_speed = 2.500000037253
-shader_parameter/animation_scale = 5.0
-shader_parameter/animation_intensity = 0.3999999910594
-shader_parameter/animation_blur_radius = 0.15
+shader_parameter/animation_speed = 2.0000000298024
+shader_parameter/animation_scale = 8.0
+shader_parameter/animation_intensity = 0.5999999865891
+shader_parameter/animation_blur_radius = 0.22999999485904
 
 [sub_resource type="QuadMesh" id="QuadMesh_pf48t"]
 flip_faces = true

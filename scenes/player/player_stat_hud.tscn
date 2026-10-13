@@ -539,7 +539,7 @@ size = Vector2i(180, 179)
 render_target_update_mode = 4
 
 [node name="FollowerPortraitCamera" type="Camera3D" parent="HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC/FollowerPortraitViewport" unique_id=1107662328]
-transform = Transform3D(-0.9998818, -0.0015304636, -0.015306465, 0, 0.99503624, -0.09949217, 0.01538279, -0.099480174, -0.99492073, -0.01, 1.385, -0.65)
+transform = Transform3D(-0.9998818, -0.0015304635, -0.015306465, 0, 0.9950362, -0.09949217, 0.01538279, -0.09948017, -0.99492073, -0.01, 1.385, -0.65)
 projection = 1
 current = true
 size = 0.425
@@ -833,7 +833,6 @@ mouse_filter = 2
 color = Color(0, 0, 0, 0)
 
 [node name="Container" type="Control" parent="HUDRoot/ReloadQTE" unique_id=1706254242]
-modulate = Color(1, 1, 1, 0)
 custom_minimum_size = Vector2(250, 270)
 layout_mode = 1
 anchors_preset = 8
@@ -847,7 +846,6 @@ offset_right = 125.0
 offset_bottom = 135.0
 grow_horizontal = 2
 grow_vertical = 2
-scale = Vector2(1.15, 1.15)
 pivot_offset = Vector2(125, 135)
 
 [node name="Gauge" type="Control" parent="HUDRoot/ReloadQTE/Container" unique_id=690916153]
@@ -909,7 +907,7 @@ layout_mode = 0
 offset_top = 240.0
 offset_right = 250.0
 offset_bottom = 278.0
-theme_override_colors/font_color = Color(0.8, 0.2, 0.2, 1)
+theme_override_colors/font_color = Color(0.3, 1, 0.5, 1)
 theme_override_colors/font_shadow_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
 theme_override_colors/font_outline_color = Color(0.09803922, 0.08627451, 0.45490196, 1)
 theme_override_constants/shadow_offset_x = 2
@@ -918,4 +916,5 @@ theme_override_constants/outline_size = 5
 theme_override_constants/shadow_outline_size = 3
 theme_override_fonts/font = ExtResource("4_font_dog")
 theme_override_font_sizes/font_size = 29
+text = "PERFECT QTE!"
 horizontal_alignment = 1
