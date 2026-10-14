@@ -54,7 +54,7 @@ movie_writer/movie_file="C:/Users/n2EIm/OneDrive/Desktop/Trailer_OutputTest/Scre
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/StyleboxFancy/plugin.cfg", "res://addons/anthonyec.camera_preview/plugin.cfg", "res://addons/godot_ai/plugin.cfg")
+enabled=PackedStringArray("res://addons/StyleboxFancy/plugin.cfg", "res://addons/anthonyec.camera_preview/plugin.cfg", "res://addons/godot_ai/plugin.cfg", "res://addons/road-generator/plugin.cfg")
 
 [global_group]
 

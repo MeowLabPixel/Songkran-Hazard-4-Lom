@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://bktcwj8wndrk5"
+path="res://.godot/imported/godray.glsl-10e128ed53d818184a6b52f3ad5ae527.res"
+
+[deps]
+
+source_file="res://shaders/compositor/godray.glsl"
+dest_files=["res://.godot/imported/godray.glsl-10e128ed53d818184a6b52f3ad5ae527.res"]
+
+[params]
+

@@ -37,6 +37,8 @@
 [ext_resource type="Shader" uid="uid://wpcufs2lugx7" path="res://scenes/player/Outline_Camera.gdshader" id="35_8qxvo"]
 [ext_resource type="Shader" uid="uid://djvkhodqi63s7" path="res://shaders/screenspace_godray.gdshader" id="35_wva7c"]
 [ext_resource type="Script" uid="uid://d558jl4vswgj" path="res://scripts/vfx/godray_controller.gd" id="36_7obkq"]
+[ext_resource type="Script" uid="uid://xpxov4cns2w8" path="res://shaders/compositor/outline_compositor_effect.gd" id="38_7obkq"]
+[ext_resource type="Script" uid="uid://ctrwvyl7kdndm" path="res://shaders/compositor/godray_compositor_effect.gd" id="39_vo27k"]
 [ext_resource type="Script" uid="uid://capeimnw2ecqx" path="res://scripts/ui/procedural_crosshair.gd" id="41_procedural_crosshair"]
 [ext_resource type="Script" uid="uid://byamuh70f1nqy" path="res://scripts/ui/player_stat_hud.gd" id="48_1u1sw"]
 
@@ -21708,6 +21710,50 @@ radius = 0.3
 margin = 0.001
 radius = 0.01
 
+[sub_resource type="CompositorEffect" id="CompositorEffect_0nb38"]
+resource_local_to_scene = false
+resource_name = ""
+enabled = true
+effect_callback_type = 4
+needs_motion_vectors = true
+needs_normal_roughness = true
+script = ExtResource("38_7obkq")
+outline_color = Color(0, 0, 0, 0.15686275)
+depth_threshold = 2.0
+normal_threshold = 2.0
+max_thickness = 1.0
+max_distance = 130.0
+min_distance = 20.0
+metadata/_custom_type_script = "uid://xpxov4cns2w8"
+
+[sub_resource type="CompositorEffect" id="CompositorEffect_5t1r3"]
+resource_local_to_scene = false
+resource_name = ""
+enabled = true
+effect_callback_type = 4
+needs_motion_vectors = false
+needs_normal_roughness = false
+script = ExtResource("39_vo27k")
+num_samples = 16
+weight = 0.035
+ambient_color = Color(1.1736785, 1.1817834, 0.9348588, 1)
+near_fade_start = 6.0
+near_fade_end = 50.0
+near_gradient_bottom_alpha = 0.04
+near_gradient_bottom_y = 0.3
+near_gradient_top_y = 0.9
+near_gradient_curve = 4.0
+blur_near_distance = 2.0
+blur_far_distance = 1.0
+animation_speed = 2.0
+animation_scale = 8.0
+animation_intensity = 0.6
+animation_blur_radius = 0.23
+metadata/_custom_type_script = "uid://ctrwvyl7kdndm"
+
+[sub_resource type="Compositor" id="Compositor_28jo4"]
+compositor_effects = Array[CompositorEffect]([SubResource("CompositorEffect_0nb38"), SubResource("CompositorEffect_5t1r3")])
+
 [sub_resource type="Animation" id="Animation_kb6p2"]
 length = 0.001
 tracks/0/type = "value"
@@ -24723,6 +24769,7 @@ aim_deadzone_down = 0.25
 
 [node name="ScreenspaceGodray" type="MeshInstance3D" parent="Camera/Post Process Effects" unique_id=1529221800]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
+visible = false
 cast_shadow = 0
 extra_cull_margin = 16384.0
 instance_shader_parameters/sun_facing = 0.0
@@ -24732,6 +24779,7 @@ script = ExtResource("36_7obkq")
 
 [node name="Outline Shader" type="MeshInstance3D" parent="Camera/Post Process Effects" unique_id=1026949302]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.8946991)
+visible = false
 cast_shadow = 0
 mesh = SubResource("QuadMesh_pf48t")
 surface_material_override/0 = SubResource("ShaderMaterial_ligby")
@@ -24748,6 +24796,7 @@ spring_length = 1.5
 margin = 0.001
 
 [node name="Camera3D" type="Camera3D" parent="Camera/edgeSpringArm3D/rearSpringArm3D" unique_id=1294684476]
+compositor = SubResource("Compositor_28jo4")
 fov = 65.0
 
 [node name="Player Stat" type="CanvasLayer" parent="Camera/edgeSpringArm3D/rearSpringArm3D/Camera3D" unique_id=1650775040 node_paths=PackedStringArray("hud_root", "bottom_right_cluster", "water_bar", "air_bar", "debuff_label", "player_portrait", "player_svc", "player_viewport", "player_camera", "follower_portrait", "follower_svc", "follower_viewport", "follower_camera", "kill_rect", "kill_label", "time_rect", "time_label", "grab_qte", "reload_qte", "takedown_prompt_label")]
