@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://tx4nyywigtqp"]
+
+[ext_resource type="PackedScene" uid="uid://dgxfqdbwbtmvi" path="res://map/Landmark/CJmore/Landmark_CJMore.glb" id="1_kesvu"]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_1bb07"]
+points = PackedVector3Array(4.496475, 29.8, -3.5017614, 15.498043, 28.399843, -0.6013117, 4.496475, 29.8, -8.501586, -4.503524, 29.8, -3.5017614, 15.498043, 28.399843, -12, -15.501566, 28.399843, -0.6013117, 15.498043, 27.59767, 0.5994911, 18, 8.599295, 1.9985323, -4.503524, 29.8, -8.501586, 18, 8.599295, -12, -15.501566, 28.399843, -12, -15.501566, 27.59767, 0.5994911, -18, 8.599295, 1.9985323, 0.59906006, 8.398023, 4.6000004, 18, 5.399354, 3.998786, 18, 0, -12, -18, 8.599295, -12, -18, 5.399354, 3.998786, -2.600626, 8.398023, 4.6000004, 0.59906006, 5.1980815, 4.6000004, 18, 4.7984533, 3.998786, 18, 0, 1.9985323, -18, 0, -12, -18, 4.7984533, 3.998786, -2.600626, 5.1980815, 4.6000004, -18, 0, 1.9985323)
+
+[node name="Landmark_CJMore2" unique_id=1066075978 instance=ExtResource("1_kesvu")]
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Landmark_CJMore" parent_id_path=PackedInt32Array(152352142) index="0" unique_id=1953445496]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Landmark_CJMore/StaticBody3D" index="0" unique_id=1873407520]
+shape = SubResource("ConvexPolygonShape3D_1bb07")

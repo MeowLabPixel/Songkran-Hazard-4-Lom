@@ -1,0 +1,32 @@
+# Cortex 3.8 Multi-Material Definition for CJ MORE Silom
+
+newmtl Mat_CJMore_Storefront
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.000 0.000 0.000
+d 1.0
+illum 2
+map_Kd CJMore_Storefront_BaseColor.png
+map_Pr CJMore_Storefront_RoughnessMetallic.png
+norm CJMore_Storefront_Normal.png
+
+newmtl Mat_CJMore_CanopySign
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.000 0.000 0.000
+d 1.0
+illum 2
+map_Kd CJMore_CanopySign_BaseColor.png
+map_Pr CJMore_CanopySign_RoughnessMetallic.png
+norm CJMore_CanopySign_Normal.png
+
+newmtl Mat_CJMore_Tower
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.000 0.000 0.000
+d 1.0
+illum 2
+map_Kd CJMore_Tower_BaseColor.png
+map_Pr CJMore_Tower_RoughnessMetallic.png
+norm CJMore_Tower_Normal.png
+

@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://w2vlqtkmmy5l"
+path="res://.godot/imported/Landmark_CJMore.obj-0386d8262813c224de6418131891aa0b.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Landmark_CJMore.obj-0386d8262813c224de6418131891aa0b.mesh"]
+
+source_file="res://map/Landmark/CJmore/Landmark_CJMore.obj"
+dest_files=["res://.godot/imported/Landmark_CJMore.obj-0386d8262813c224de6418131891aa0b.mesh", "res://.godot/imported/Landmark_CJMore.obj-0386d8262813c224de6418131891aa0b.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

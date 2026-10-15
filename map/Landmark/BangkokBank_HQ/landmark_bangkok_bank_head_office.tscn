@@ -1,0 +1,66 @@
+[gd_scene format=3 uid="uid://djh2m281j0m30"]
+
+[ext_resource type="PackedScene" uid="uid://w416q8ypt763" path="res://map/Landmark/BangkokBank_HQ/Landmark_BangkokBank_HeadOffice.glb" id="1_yuj84"]
+[ext_resource type="Texture2D" uid="uid://cmyunl8e600b7" path="res://map/Landmark/BangkokBank_HQ/Landmark_BangkokBank_HeadOffice_0.png" id="2_hg6c5"]
+[ext_resource type="Texture2D" uid="uid://dgjpq80cmw8u6" path="res://map/Landmark/BangkokBank_HQ/Landmark_BangkokBank_HeadOffice_1.png" id="3_o7uhh"]
+[ext_resource type="Texture2D" uid="uid://bjkk1n6hvsuft" path="res://map/Landmark/BangkokBank_HQ/Landmark_BangkokBank_HeadOffice_2.png" id="4_fihma"]
+[ext_resource type="Texture2D" uid="uid://jj1txeqel4n6" path="res://map/Landmark/BangkokBank_HQ/Landmark_BangkokBank_HeadOffice_3.png" id="5_o3bki"]
+[ext_resource type="Texture2D" uid="uid://jcpa872pliva" path="res://map/Landmark/BangkokBank_HQ/Landmark_BangkokBank_HeadOffice_4.png" id="6_0ajkf"]
+[ext_resource type="Texture2D" uid="uid://c84xwnhex7461" path="res://map/Landmark/BangkokBank_HQ/Landmark_BangkokBank_HeadOffice_5.png" id="7_4gj84"]
+[ext_resource type="Texture2D" uid="uid://bmhf40x4un14k" path="res://map/Landmark/BangkokBank_HQ/Landmark_BangkokBank_HeadOffice_6.png" id="8_jr3g8"]
+[ext_resource type="Texture2D" uid="uid://ikvv2cinfald" path="res://map/Landmark/BangkokBank_HQ/Landmark_BangkokBank_HeadOffice_7.png" id="9_la7ja"]
+[ext_resource type="Texture2D" uid="uid://dhet2c3uhr4jn" path="res://map/Landmark/BangkokBank_HQ/Landmark_BangkokBank_HeadOffice_8.png" id="10_7507l"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_f0kby"]
+resource_name = "Mat_BBL_Tower"
+cull_mode = 2
+albedo_texture = ExtResource("2_hg6c5")
+metallic_texture = ExtResource("3_o7uhh")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("3_o7uhh")
+roughness_texture_channel = 1
+emission_enabled = true
+normal_enabled = true
+normal_texture = ExtResource("4_fihma")
+metadata/_gltf_primary_texture_coord = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0xqsa"]
+resource_name = "Mat_BBL_Podium"
+cull_mode = 2
+albedo_texture = ExtResource("5_o3bki")
+metallic_texture = ExtResource("6_0ajkf")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("6_0ajkf")
+roughness_texture_channel = 1
+emission_enabled = true
+normal_enabled = true
+normal_texture = ExtResource("7_4gj84")
+metadata/_gltf_primary_texture_coord = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_k1bcu"]
+resource_name = "Mat_BBL_Arcade"
+cull_mode = 2
+albedo_texture = ExtResource("8_jr3g8")
+metallic_texture = ExtResource("9_la7ja")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("9_la7ja")
+roughness_texture_channel = 1
+emission_enabled = true
+normal_enabled = true
+normal_texture = ExtResource("10_7507l")
+metadata/_gltf_primary_texture_coord = 0
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_pul03"]
+points = PackedVector3Array(-18, 0, -16, -18, 0, 13.5, -18, 0.5943618, -16, 18, 0, -16, 18, 0, 13.5, -18, 0.5943618, 13.5, -14.000391, 57.9955, 4.5974464, -17.00274, 14.79444, -16, 18, 0.5943618, -16, 18, 0.5943618, 13.5, -17.00274, 14.79444, 11.498875, -14.000391, 57.9955, 4.998827, -0.20086098, 66, -6.20228, -14.000391, 57.1944, -8.001272, -3.5027409, 60.495693, -7.501713, 11.498434, 14.994715, -16, 16.999218, 14.79444, -16, 13.996868, 57.9955, 4.5974464, 13.996868, 57.9955, 4.998827, 16.999218, 14.79444, 11.498875, -0.20086098, 66, -5.8009005, 0.1973381, 66, -6.20228, 3.499216, 60.495693, -7.501713, 13.996868, 57.1944, -8.001272, 0.1973381, 66, -5.8009005)
+
+[node name="Landmark_BangkokBank_HeadOffice2" unique_id=1869985324 instance=ExtResource("1_yuj84")]
+
+[node name="Landmark_BangkokBank_HeadOffice" parent="." index="0" unique_id=93662866]
+surface_material_override/0 = SubResource("StandardMaterial3D_f0kby")
+surface_material_override/1 = SubResource("StandardMaterial3D_0xqsa")
+surface_material_override/2 = SubResource("StandardMaterial3D_k1bcu")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Landmark_BangkokBank_HeadOffice" index="0" unique_id=765362403]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Landmark_BangkokBank_HeadOffice/StaticBody3D" index="0" unique_id=2126296089]
+shape = SubResource("ConvexPolygonShape3D_pul03")

@@ -1,0 +1,38 @@
+# MTL file for Overhauled Silom Construction Site
+
+newmtl Mat_Construction_Site
+Ka 1.0 1.0 1.0
+Kd 1.0 1.0 1.0
+Ks 0.2 0.2 0.2
+Ns 60.0
+d 1.0
+illum 2
+map_Kd Construction_Site_BaseColor.png
+map_Pr Construction_Site_RoughnessMetallic.png
+map_Pm Construction_Site_RoughnessMetallic.png
+norm Construction_Site_Normal.png
+
+newmtl Mat_Construction_Equipment
+Ka 1.0 1.0 1.0
+Kd 1.0 1.0 1.0
+Ks 0.2 0.2 0.2
+Ns 60.0
+d 1.0
+illum 2
+map_Kd Construction_Equipment_BaseColor.png
+map_Pr Construction_Equipment_RoughnessMetallic.png
+map_Pm Construction_Equipment_RoughnessMetallic.png
+norm Construction_Equipment_Normal.png
+
+newmtl Mat_Construction_Crane
+Ka 1.0 1.0 1.0
+Kd 1.0 1.0 1.0
+Ks 0.2 0.2 0.2
+Ns 60.0
+d 1.0
+illum 2
+map_Kd Construction_Crane_BaseColor.png
+map_Pr Construction_Crane_RoughnessMetallic.png
+map_Pm Construction_Crane_RoughnessMetallic.png
+norm Construction_Crane_Normal.png
+

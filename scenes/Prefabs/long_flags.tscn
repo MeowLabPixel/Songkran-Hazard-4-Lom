@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://yc0fwujjc71m"]
+
+[ext_resource type="PackedScene" uid="uid://ck5w2ct2aua3l" path="res://Jomp_Folder/asset/BuntingFlagLong/BuntingFlagLong.fbx" id="1_7mbxu"]
+
+[node name="LongFlags" type="Node3D" unique_id=729250242]
+
+[node name="BuntingFlagLong" parent="." unique_id=324744925 instance=ExtResource("1_7mbxu")]
+transform = Transform3D(-1.13649605e-08, 0, 0.25, 0, 0.25, 0, -0.26, 0, -1.0927847e-08, 0, 7.4, -13)
+
+[node name="BuntingFlagLong2" parent="." unique_id=1103384895 instance=ExtResource("1_7mbxu")]
+transform = Transform3D(-1.13649605e-08, 0, 0.25, 0, 0.25, 0, -0.26, 0, -1.0927847e-08, 0, 7.4, -6.5)
+
+[node name="BuntingFlagLong3" parent="." unique_id=1565455355 instance=ExtResource("1_7mbxu")]
+transform = Transform3D(-1.13649605e-08, 0, 0.25, 0, 0.25, 0, -0.26, 0, -1.0927847e-08, 0, 7.4, -0.19999695)
+
+[node name="BuntingFlagLong4" parent="." unique_id=385024790 instance=ExtResource("1_7mbxu")]
+transform = Transform3D(-1.13649605e-08, 0, 0.25, 0, 0.25, 0, -0.26, 0, -1.0927847e-08, 0, 7.4, 6.2855225)
+
+[node name="BuntingFlagLong5" parent="." unique_id=612579492 instance=ExtResource("1_7mbxu")]
+transform = Transform3D(-1.13649605e-08, 0, 0.25, 0, 0.25, 0, -0.26, 0, -1.0927847e-08, 0, 7.4, 13.0855255)

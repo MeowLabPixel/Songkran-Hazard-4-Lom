@@ -1,0 +1,31 @@
+# Bangkok Bank Head Office (Silom) Materials
+
+newmtl Mat_BBL_Tower
+Ka 1.0 1.0 1.0
+Kd 1.0 1.0 1.0
+Ks 0.2 0.2 0.2
+d 1.0
+illum 2
+map_Kd BBL_Tower_BaseColor.png
+map_refl BBL_Tower_RoughnessMetallic.png
+bump BBL_Tower_Normal.png
+
+newmtl Mat_BBL_Podium
+Ka 1.0 1.0 1.0
+Kd 1.0 1.0 1.0
+Ks 0.2 0.2 0.2
+d 1.0
+illum 2
+map_Kd BBL_Podium_BaseColor.png
+map_refl BBL_Podium_RoughnessMetallic.png
+bump BBL_Podium_Normal.png
+
+newmtl Mat_BBL_Arcade
+Ka 1.0 1.0 1.0
+Kd 1.0 1.0 1.0
+Ks 0.2 0.2 0.2
+d 1.0
+illum 2
+map_Kd BBL_Arcade_BaseColor.png
+map_refl BBL_Arcade_RoughnessMetallic.png
+bump BBL_Arcade_Normal.png

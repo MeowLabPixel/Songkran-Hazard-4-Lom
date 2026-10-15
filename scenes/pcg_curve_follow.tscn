@@ -17,14 +17,14 @@ roughness = 0.93037975
 uv1_triplanar = true
 metadata/_gltf_primary_texture_coord = 0
 
-[node name="PCG_Curve_Follow" type="Node3D" unique_id=2096547853]
+[node name="PCG_Curve_Follow" type="Node3D" unique_id=693555927]
 
-[node name="Yellowline_L" type="CSGPolygon3D" parent="." unique_id=564565125]
+[node name="Yellowline_L" type="CSGPolygon3D" parent="." unique_id=1104095344]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.1, 0, 0)
 cast_shadow = 0
 polygon = PackedVector2Array(0, 0, 0, 0.002, 0.19, 0.002, 0.19, 0)
 mode = 2
-path_node = NodePath("../../edge_C")
+path_node = NodePath("../../Path3D")
 path_interval_type = 0
 path_interval = 1.0
 path_simplify_angle = 0.0
@@ -36,12 +36,12 @@ path_u_distance = 1.0
 path_joined = false
 material = SubResource("StandardMaterial3D_ntd1s")
 
-[node name="Yellowline_R" type="CSGPolygon3D" parent="." unique_id=265634090]
+[node name="Yellowline_R" type="CSGPolygon3D" parent="." unique_id=1171109753]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.1, 0, 0)
 cast_shadow = 0
 polygon = PackedVector2Array(0, 0, 0, 0.002, -0.19, 0.002, -0.19, 0)
 mode = 2
-path_node = NodePath("../../edge_C")
+path_node = NodePath("../../Path3D")
 path_interval_type = 0
 path_interval = 1.0
 path_simplify_angle = 0.0
@@ -53,12 +53,12 @@ path_u_distance = 1.0
 path_joined = false
 material = SubResource("StandardMaterial3D_ntd1s")
 
-[node name="RoadSeemFix" type="CSGPolygon3D" parent="." unique_id=1798904082]
+[node name="RoadSeemFix" type="CSGPolygon3D" parent="." unique_id=1414692273]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.001, 0)
 cast_shadow = 0
 polygon = PackedVector2Array(3, 0, 3, 0, 0, 0.008, -3, 0, -3, 0)
 mode = 2
-path_node = NodePath("../../edge_C")
+path_node = NodePath("../../Path3D")
 path_interval_type = 0
 path_interval = 1.0
 path_simplify_angle = 0.0
@@ -70,10 +70,10 @@ path_u_distance = 1.0
 path_joined = false
 material = SubResource("StandardMaterial3D_vw5an")
 
-[node name="Stonepath" type="CSGPolygon3D" parent="." unique_id=1489324536]
+[node name="Stonepath" type="CSGPolygon3D" parent="." unique_id=1435903213]
 polygon = PackedVector2Array(-1.7, 0, -1.7, 0.2, 1.7, 0.2, 1.7, 0)
 mode = 2
-path_node = NodePath("../../edge_C")
+path_node = NodePath("../../Path3D")
 path_interval_type = 0
 path_interval = 1.0
 path_simplify_angle = 0.0
