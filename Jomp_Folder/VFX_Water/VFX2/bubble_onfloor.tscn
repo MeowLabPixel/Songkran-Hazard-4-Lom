@@ -1,34 +1,44 @@
 [gd_scene format=3 uid="uid://briff0kny5my5"]
 
+[ext_resource type="Material" uid="uid://bo5lk3skgvm8x" path="res://Jomp_Folder/VFX_Water/Bubble_Mat.tres" id="1_5i4bc"]
+
 [sub_resource type="Curve" id="Curve_i3egv"]
-_limits = [0.1, 1.0, 0.0, 1.0]
-_data = [Vector2(0, 0.1), 0.0, 0.0, 0, 0, Vector2(1, 0.21367675), 0.0, 0.0, 0, 0]
-point_count = 2
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.020761248, 0.19008261), -6.717456, -6.717456, 0, 0, Vector2(0.053968254, 0.056391), 0.0, 0.0, 0, 0, Vector2(0.26989618, 0.11570245), -0.28518948, -0.28518948, 0, 0, Vector2(0.715873, 0.18796992), -0.080399565, -0.080399565, 0, 0, Vector2(1, 0.22727269), 0.40263194, 0.0, 0, 0]
+point_count = 6
 
 [sub_resource type="CurveTexture" id="CurveTexture_5ailf"]
 curve = SubResource("Curve_i3egv")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_fyah4"]
+emission_shape_offset = Vector3(0, 0, -20)
+emission_shape_scale = Vector3(1, 1, 30)
 emission_shape = 3
-emission_box_extents = Vector3(1, 1, 1)
-gravity = Vector3(0, 3, 0)
+emission_box_extents = Vector3(30, 1, 1)
+angle_min = 1.0728835e-05
+angle_max = 365.00003
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 0.099999994
+initial_velocity_max = 0.5
+gravity = Vector3(0, 5, 0)
+scale_min = 6.0
+scale_max = 8.0
 scale_curve = SubResource("CurveTexture_5ailf")
+turbulence_enabled = true
+turbulence_noise_strength = 0.1
+turbulence_noise_scale = 10.0
+turbulence_noise_speed_random = 0.0
+turbulence_influence_min = 0.0
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gm5cq"]
-transparency = 1
-albedo_color = Color(1.0538507, 1.0780332, 1.0481755, 0.012)
-emission_enabled = true
-emission = Color(0.631, 2.61, 2.96, 1)
-emission_energy_multiplier = 2.42
-
-[sub_resource type="SphereMesh" id="SphereMesh_gt38c"]
-material = SubResource("StandardMaterial3D_gm5cq")
+[sub_resource type="SphereMesh" id="SphereMesh_jctjm"]
+material = ExtResource("1_5i4bc")
+radius = 0.05
+height = 0.08
 
 [node name="BubbleOnfloor" type="GPUParticles3D" unique_id=639488518]
-transform = Transform3D(33.760094, 0, 0, 0, 0.20617425, 0, 0, 0, 8.653299, 0, 0, 0)
-amount = 50
-lifetime = 3.0
-speed_scale = 0.25
+amount = 100
+lifetime = 5.0
 randomness = 1.0
+fixed_fps = 60
 process_material = SubResource("ParticleProcessMaterial_fyah4")
-draw_pass_1 = SubResource("SphereMesh_gt38c")
+draw_pass_1 = SubResource("SphereMesh_jctjm")
