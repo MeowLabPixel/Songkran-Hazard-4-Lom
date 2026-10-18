@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://cktfx4qjj5ohu"]
+
+[ext_resource type="PackedScene" uid="uid://bwpcm8ud21qw1" path="res://Jomp_Folder/asset/BustStop(Hospital)/BusStop(Hospital).glb" id="1_d84mq"]
+
+[node name="BusStop(hospital)" type="Node3D" unique_id=1174424104]
+
+[node name="BusStop(Hospital)" parent="." unique_id=215847480 instance=ExtResource("1_d84mq")]
