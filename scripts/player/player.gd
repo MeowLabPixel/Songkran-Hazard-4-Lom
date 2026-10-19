@@ -699,7 +699,7 @@ func _update_aim_target(delta: float) -> void:
 				var hz = col.get_node_or_null("HitboxZone") as HitboxZone
 				if hz:
 					target_zone = hz.zone_name
-					target_enemy = hz._enemy if hz._enemy else hz.get("_anchalee")
+					target_enemy = hz.get_target() if hz.has_method("get_target") else (hz._enemy if hz._enemy else hz.get("_anchalee"))
 		
 		true_aim_position = raw_target_pos
 		aim_target_zone = target_zone

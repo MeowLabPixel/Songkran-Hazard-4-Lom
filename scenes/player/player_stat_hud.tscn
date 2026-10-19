@@ -235,6 +235,7 @@ player_portrait_tilt_speed = 8.0
 metadata/_edit_pinned_properties_ = [&"preview_reload_qte", &"preview_grab_qte"]
 
 [node name="bg" type="TextureRect" parent="." unique_id=189499123]
+visible = false
 offset_right = 1280.0
 offset_bottom = 720.0
 texture = ExtResource("2_ow3p3")
@@ -539,7 +540,7 @@ size = Vector2i(180, 179)
 render_target_update_mode = 4
 
 [node name="FollowerPortraitCamera" type="Camera3D" parent="HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC/FollowerPortraitViewport" unique_id=1107662328]
-transform = Transform3D(-0.9998818, -0.0015304635, -0.015306465, 0, 0.9950362, -0.09949217, 0.01538279, -0.09948017, -0.99492073, -0.01, 1.385, -0.65)
+transform = Transform3D(-0.9998818, -0.0015304633, -0.015306465, 0, 0.9950361, -0.09949217, 0.01538279, -0.09948017, -0.99492073, -0.01, 1.385, -0.65)
 projection = 1
 current = true
 size = 0.425
@@ -560,6 +561,7 @@ light_energy = 0.8
 environment = SubResource("Environment_portrait")
 
 [node name="KillCountHUD" type="TextureRect" parent="HUDRoot" unique_id=599398462]
+visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -607,6 +609,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="TimeLimitHUD" type="TextureRect" parent="HUDRoot" unique_id=1753309994]
+visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -717,7 +720,7 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -160.0
-offset_top = 29.0
+offset_top = 28.99997
 offset_right = 160.0
 offset_bottom = 209.0
 grow_horizontal = 2

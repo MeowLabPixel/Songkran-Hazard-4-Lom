@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://dltrwxbklj2yk"]
+
+[ext_resource type="Texture2D" uid="uid://cjq27yqriopp7" path="res://map/GroundTexture/Concrete/Concrete_04/Concrete_04_basecolor.png" id="1_bklxk"]
+[ext_resource type="Texture2D" uid="uid://bj52ws5fc4bl0" path="res://map/GroundTexture/Concrete/Concrete_04/Concrete_04_ambientocclusion.png" id="2_8a5ou"]
+[ext_resource type="Texture2D" uid="uid://dkybp5773a82t" path="res://map/GroundTexture/Concrete/Concrete_04/Concrete_04_normal.png" id="3_hoohr"]
+[ext_resource type="Texture2D" uid="uid://p72yfxbctjp8" path="res://map/GroundTexture/Concrete/Concrete_04/Concrete_04_roughness.png" id="4_pb8u7"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lcxhd"]
+albedo_texture = ExtResource("1_bklxk")
+metallic_specular = 0.1
+roughness_texture = ExtResource("4_pb8u7")
+normal_texture = ExtResource("3_hoohr")
+ao_light_affect = 1.0
+ao_texture = ExtResource("2_8a5ou")
+heightmap_scale = -16.0
+uv1_scale = Vector3(0.1, 0.1, 0.1)
+uv1_triplanar = true
+uv1_world_triplanar = true
+texture_filter = 5
+
+[sub_resource type="PrismMesh" id="PrismMesh_j6tcx"]
+material = SubResource("StandardMaterial3D_lcxhd")
+size = Vector3(10.94, 0.14, 4.14)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_bklxk"]
+points = PackedVector3Array(-5.47, -0.07, -2.07, -5.47, -0.07, 2.07, 0, 0.07, -2.07, 5.47, -0.07, -2.07, 5.47, -0.07, 2.07, 0, 0.07, 2.07)
+
+[node name="Soiground_CUT" type="MeshInstance3D" unique_id=1031023397]
+layers = 1025
+mesh = SubResource("PrismMesh_j6tcx")
+surface_material_override/0 = SubResource("StandardMaterial3D_lcxhd")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=791485930]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=1657785161]
+shape = SubResource("ConvexPolygonShape3D_bklxk")

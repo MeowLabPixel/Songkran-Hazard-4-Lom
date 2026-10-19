@@ -70,7 +70,7 @@ var _right_original_skin: Skin = null
 var _right_original_skeleton: NodePath = NodePath("")
 var _right_original_transform: Transform3D = Transform3D.IDENTITY
 
-var enemy: CharacterBody3D
+var enemy: Node3D = null
 
 class ActiveReaction:
 	var bone_name: String
@@ -95,16 +95,28 @@ class ActiveJuiceReaction:
 
 var _active_juice_reactions: Dictionary = {}
 
+const FABRIC_NEIGHBORS: Dictionary = {
+	"Bone": ["Bone.002"],
+	"Bone.002": ["Bone", "Bone.001"],
+	"Bone.001": ["Bone.002", "Bone.003"],
+	"Bone.003": ["Bone.001"],
+	
+	"Bone.004": ["Bone.006"],
+	"Bone.006": ["Bone.004", "Bone.005"],
+	"Bone.005": ["Bone.006", "Bone.007"],
+	"Bone.007": ["Bone.005"],
+}
+
 func _ready() -> void:
 	if not enemy:
 		var node: Node = get_parent()
 		while node != null:
-			if node is EnemyBase:
-				enemy = node
+			if node is EnemyBase or node is Merchant or node.has_signal("enemy_hit"):
+				enemy = node as Node3D
 				break
 			node = node.get_parent()
 			
-	if enemy:
+	if enemy and enemy.has_signal("enemy_hit"):
 		if not enemy.enemy_hit.is_connected(_on_enemy_hit):
 			enemy.enemy_hit.connect(_on_enemy_hit)
 			
@@ -140,6 +152,13 @@ func _on_enemy_hit(hit_data: Dictionary) -> void:
 			
 	var local_hit_dir = enemy.global_transform.basis.inverse() * hit_dir
 	local_hit_dir = local_hit_dir.normalized()
+
+	# If enemy model faces +Z (like Merchant) or requests inversion, flip local_hit_dir
+	# so that pitch/yaw rotation axes match the model's actual anatomical forward direction
+	if ("invert_hit_reaction_pitch" in enemy and enemy.invert_hit_reaction_pitch) \
+	   or ("model_facing_direction" in enemy and enemy.model_facing_direction.z > 0.0) \
+	   or enemy is Merchant:
+		local_hit_dir = -local_hit_dir
 	
 	# Determine axis of rotation in skeleton local space.
 	var axis = local_hit_dir.cross(Vector3.UP).normalized()
@@ -173,46 +192,72 @@ func _on_enemy_hit(hit_data: Dictionary) -> void:
 		if sm.current_state and sm.current_state.name == "StateKnockdown":
 			is_knocked_down = true
 
-	match zone:
-		"head":
-			stiffness_val = head_stiffness
-			damping_val = head_damping  
-			force_val = head_force
-			target_bones = ["DEF-spine.006"]
-			
-			# Shooting head also add body reaction force in positive value (only head feature)
-			var body_force_positive = abs(body_force) * force_mult
-			for b in ["DEF-spine.002", "DEF-spine.003"]:
-				_trigger_reaction(skeleton, b, perturbed_axis, body_stiffness, body_damping, body_force_positive)
-		"left_arm", "left_hand":
-			stiffness_val = arms_stiffness
-			damping_val = arms_damping  
-			force_val = arms_force   
-			target_bones = ["DEF-upper_arm.L", "DEF-forearm.L"]
-		"right_arm", "right_hand":
-			stiffness_val = arms_stiffness
-			damping_val = arms_damping  
-			force_val = arms_force   
-			target_bones = ["DEF-upper_arm.R", "DEF-forearm.R"]
-		"left_leg", "left_foot":
-			stiffness_val = legs_stiffness
-			damping_val = legs_damping  
-			force_val = legs_force
-			if is_knocked_down:
-				force_val = abs(legs_force) * legs_knockdown_dampening
-			target_bones = ["DEF-thigh.L", "DEF-shin.L"]
-		"right_leg", "right_foot":
-			stiffness_val = legs_stiffness
-			damping_val = legs_damping  
-			force_val = legs_force
-			if is_knocked_down:
-				force_val = abs(legs_force) * legs_knockdown_dampening
-			target_bones = ["DEF-thigh.R", "DEF-shin.R"]
-		_: # body, chest, etc.
-			stiffness_val = body_stiffness 
-			damping_val = body_damping    
-			force_val = body_force      
-			target_bones = ["DEF-spine.002", "DEF-spine.003"]
+	if zone.begins_with("fabric:") or zone.begins_with("Bone"):
+		var hit_bone = zone.replace("fabric:", "")
+		stiffness_val = arms_stiffness
+		damping_val = arms_damping
+		force_val = arms_force
+		target_bones = [hit_bone]
+		
+		# Neighbor ripple: apply 40% force to immediate adjacent fabric bones
+		if FABRIC_NEIGHBORS.has(hit_bone):
+			for neighbor in FABRIC_NEIGHBORS[hit_bone]:
+				_trigger_reaction(skeleton, neighbor, perturbed_axis, stiffness_val, damping_val, force_val * force_mult * 0.4)
+	else:
+		match zone:
+			"head":
+				stiffness_val = head_stiffness
+				damping_val = head_damping  
+				force_val = head_force
+				target_bones = ["DEF-spine.006"]
+				
+				# Shooting head also add body reaction force in positive value (only head feature)
+				var body_force_positive = abs(body_force) * force_mult
+				for b in ["DEF-spine.002", "DEF-spine.003"]:
+					_trigger_reaction(skeleton, b, perturbed_axis, body_stiffness, body_damping, body_force_positive)
+			"left_arm", "left_hand":
+				stiffness_val = arms_stiffness
+				damping_val = arms_damping  
+				force_val = arms_force   
+				target_bones = ["DEF-upper_arm.L", "DEF-forearm.L"]
+			"right_arm", "right_hand":
+				stiffness_val = arms_stiffness
+				damping_val = arms_damping  
+				force_val = arms_force   
+				target_bones = ["DEF-upper_arm.R", "DEF-forearm.R"]
+			"left_leg", "left_foot":
+				stiffness_val = legs_stiffness
+				damping_val = legs_damping  
+				force_val = legs_force
+				if is_knocked_down:
+					force_val = abs(legs_force) * legs_knockdown_dampening
+				target_bones = ["DEF-thigh.L", "DEF-shin.L"]
+				
+				# Merchant-only feature: leg/foot hits cause spine to tilt down like body hit
+				if enemy is Merchant:
+					var leg_spine_mult = enemy.leg_hit_spine_reaction_multiplier if "leg_hit_spine_reaction_multiplier" in enemy else 1.0
+					var spine_force = body_force * force_mult * leg_spine_mult
+					for b in ["DEF-spine.002", "DEF-spine.003"]:
+						_trigger_reaction(skeleton, b, perturbed_axis, body_stiffness, body_damping, spine_force)
+			"right_leg", "right_foot":
+				stiffness_val = legs_stiffness
+				damping_val = legs_damping  
+				force_val = legs_force
+				if is_knocked_down:
+					force_val = abs(legs_force) * legs_knockdown_dampening
+				target_bones = ["DEF-thigh.R", "DEF-shin.R"]
+				
+				# Merchant-only feature: leg/foot hits cause spine to tilt down like body hit
+				if enemy is Merchant:
+					var leg_spine_mult = enemy.leg_hit_spine_reaction_multiplier if "leg_hit_spine_reaction_multiplier" in enemy else 1.0
+					var spine_force = body_force * force_mult * leg_spine_mult
+					for b in ["DEF-spine.002", "DEF-spine.003"]:
+						_trigger_reaction(skeleton, b, perturbed_axis, body_stiffness, body_damping, spine_force)
+			_: # body, chest, etc.
+				stiffness_val = body_stiffness 
+				damping_val = body_damping    
+				force_val = body_force      
+				target_bones = ["DEF-spine.002", "DEF-spine.003"]
 			
 	print("[EnemyHitReactionModifier] Hit registered on '%s' of '%s'. Hit dir: %s, Local hit: %s, perturbed_axis: %s, force_mult: %f" % [
 		zone, enemy.name, hit_dir, local_hit_dir, perturbed_axis, force_mult
@@ -343,6 +388,10 @@ func _process_modification() -> void:
 	var skeleton = get_skeleton()
 	if not skeleton: return
 	if not _attachments_setup: return
+	
+	# Performance: Idle early-exit when no active reactions or flip-flop slides are ongoing
+	if _active_reactions.is_empty() and _active_juice_reactions.is_empty() and _slid_flipflop == "":
+		return
 	
 	var delta = get_process_delta_time()
 	if delta <= 0.0: delta = 0.016
@@ -491,13 +540,16 @@ func _process_modification() -> void:
 			_right_mesh.transform = target_pose * local_to_foot
 
 	# --- Spring Simulation Processing ---
+	# Cap delta to prevent Euler integration explosion during lag spikes while keeping 60 FPS (delta <= 0.0167) 100% identical
+	var sim_delta = clampf(delta, 0.001, 0.0333)
 	var to_remove = []
 	for bone_name in _active_reactions.keys():
 		var react = _active_reactions[bone_name]
 		
 		var force = -react.stiffness * react.angle - react.damping * react.velocity
-		react.velocity += force * delta
-		react.angle += react.velocity * delta
+		react.velocity += force * sim_delta
+		react.angle += react.velocity * sim_delta
+		react.angle = clampf(react.angle, -0.95, 0.95)
 		
 		if abs(react.angle) < 0.001 and abs(react.velocity) < 0.01:
 			to_remove.append(bone_name)

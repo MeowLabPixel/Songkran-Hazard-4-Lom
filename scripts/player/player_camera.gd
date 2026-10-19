@@ -554,7 +554,13 @@ func check_auto_shoulder_swap() -> void:
 			auto_swapped_to_left = false
 			swap_camera_align()
 
+func _exp_decay(speed: float, delta: float) -> float:
+	return 1.0 - exp(-speed * delta)
+
 func _process(delta: float) -> void:
+	# Cap delta to 50ms (20 FPS minimum) to prevent extreme OS hitch / window stall anomalies
+	delta = minf(delta, 0.05)
+
 	if is_death_camera_active:
 		_process_death_camera(delta)
 		return
@@ -606,28 +612,28 @@ func _process(delta: float) -> void:
 				var active_snap_speed = tank_snap_back_speed
 				if is_moving:
 					active_snap_speed *= 1.5
-				target_tank_look_around = target_tank_look_around.lerp(Vector2.ZERO, delta * active_snap_speed)
+				target_tank_look_around = target_tank_look_around.lerp(Vector2.ZERO, _exp_decay(active_snap_speed, delta))
 				
 			# Smoothly interpolate active look-around
-			tank_look_around = tank_look_around.lerp(target_tank_look_around, delta * 8.0)
+			tank_look_around = tank_look_around.lerp(target_tank_look_around, _exp_decay(8.0, delta))
 			
 	was_aiming = is_aiming_now
 	was_grab = is_grab_now
 
 	if character and not character.is_aimming:
-		aim_offset = aim_offset.lerp(Vector2.ZERO, delta * 15.0)
+		aim_offset = aim_offset.lerp(Vector2.ZERO, _exp_decay(15.0, delta))
 		
 	check_auto_shoulder_swap()
 		
 	# Smoothly apply the deadzone excess rotation for a heavier, cinematic feel
 	if pending_camera_rotation.length_squared() > 0.000001:
-		var applied = pending_camera_rotation * min(delta * 15.0, 1.0)
+		var applied = pending_camera_rotation * _exp_decay(15.0, delta)
 		target_camera_rotation += applied
 		target_camera_rotation.y = clamp(target_camera_rotation.y, -max_look_up, max_look_down)
 		pending_camera_rotation -= applied
 		
 	# Add inertia/smoothing to general camera movement
-	camera_rotation = camera_rotation.lerp(target_camera_rotation, delta * active_camera_smoothing_speed)
+	camera_rotation = camera_rotation.lerp(target_camera_rotation, _exp_decay(active_camera_smoothing_speed, delta))
 
 
 	# Smoothly decay modern camera shake trauma
@@ -642,9 +648,9 @@ func _process(delta: float) -> void:
 			sin(t * camera_sway_speed) * camera_sway_yaw,
 			sin(t * camera_sway_speed * 1.3) * camera_sway_pitch
 		)
-		camera_sway_offset = camera_sway_offset.lerp(target_cam_sway, delta * 3.0)
+		camera_sway_offset = camera_sway_offset.lerp(target_cam_sway, _exp_decay(3.0, delta))
 	else:
-		camera_sway_offset = camera_sway_offset.lerp(Vector2.ZERO, delta * 3.0)
+		camera_sway_offset = camera_sway_offset.lerp(Vector2.ZERO, _exp_decay(3.0, delta))
 
 	_apply_camera_rotation(delta)
 	
@@ -683,8 +689,9 @@ func _process(delta: float) -> void:
 		if collision_target_length > collision_current_length + 0.01:
 			lerp_speed = camera_collision_zoom_out_speed
 			
-		collision_smoothed_target = lerp(collision_smoothed_target, collision_target_length, delta * lerp_speed)
-		collision_current_length = lerp(collision_current_length, collision_smoothed_target, delta * lerp_speed)
+		var col_damp = _exp_decay(lerp_speed, delta)
+		collision_smoothed_target = lerp(collision_smoothed_target, collision_target_length, col_damp)
+		collision_current_length = lerp(collision_current_length, collision_smoothed_target, col_damp)
 		
 		rear_spring_arm.spring_length = collision_current_length
 
@@ -694,7 +701,7 @@ func _process(delta: float) -> void:
 		var target_local_transform = global_transform.affine_inverse() * ideal_camera_marker.global_transform
 		
 		# The local offset is now simply interpolated fast to follow the fully-smoothed spring arm!
-		current_local_transform = current_local_transform.interpolate_with(target_local_transform, delta * 25.0)
+		current_local_transform = current_local_transform.interpolate_with(target_local_transform, _exp_decay(25.0, delta)).orthonormalized()
 		
 		# Apply the smoothed local offset to the pivot's current global transform
 		camera.global_transform = global_transform * current_local_transform
@@ -721,8 +728,9 @@ func _process(delta: float) -> void:
 			camera.rotate_object_local(Vector3(0, 1, 0), noise_yaw * max_shake_yaw * amount)
 			camera.rotate_object_local(Vector3(0, 0, 1), noise_roll * max_shake_roll * amount)
 		else:
-			camera.h_offset = lerpf(camera.h_offset, 0.0, delta * 20.0)
-			camera.v_offset = lerpf(camera.v_offset, 0.0, delta * 20.0)
+			var offset_damp = _exp_decay(20.0, delta)
+			camera.h_offset = lerpf(camera.h_offset, 0.0, offset_damp)
+			camera.v_offset = lerpf(camera.v_offset, 0.0, offset_damp)
 			
 		# Apply procedural takedown Dutch roll tilt & FOV punch
 		if absf(takedown_roll_offset) > 0.0001:

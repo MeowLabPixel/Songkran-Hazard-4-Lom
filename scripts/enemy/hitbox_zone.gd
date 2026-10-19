@@ -18,7 +18,14 @@ extends Node
 
 var _enemy: EnemyBase = null
 var _anchalee: AnchaleeBase = null
+var _merchant: Merchant = null
 var _attachment: BoneAttachment3D = null
+
+func get_target() -> Node:
+	if _enemy: return _enemy
+	if _anchalee: return _anchalee
+	if _merchant: return _merchant
+	return null
 
 func _ready() -> void:
 	var parent_name = get_parent().name
@@ -31,7 +38,7 @@ func _ready() -> void:
 	elif parent_name == "HitboxRightShin":
 		zone_name = "right_foot"
 
-	# Walk up the full tree, crossing sub-scene boundaries, to find EnemyBase or AnchaleeBase.
+	# Walk up the full tree, crossing sub-scene boundaries, to find EnemyBase, AnchaleeBase, or Merchant.
 	var node: Node = get_parent()
 	while node != null:
 		if node is EnemyBase:
@@ -40,10 +47,13 @@ func _ready() -> void:
 		elif node is AnchaleeBase:
 			_anchalee = node
 			break
+		elif node is Merchant:
+			_merchant = node
+			break
 		node = node.get_parent()
 
-	if not _enemy and not _anchalee:
-		push_error("[HitboxZone] No EnemyBase or AnchaleeBase found above zone '%s'" % zone_name)
+	if not _enemy and not _anchalee and not _merchant:
+		push_error("[HitboxZone] No EnemyBase, AnchaleeBase, or Merchant found above zone '%s'" % zone_name)
 		return
 
 	var area := get_parent() as Area3D
@@ -52,7 +62,7 @@ func _ready() -> void:
 		
 		# Find the Skeleton3D and the corresponding BoneAttachment3D node
 		var skeleton: Skeleton3D = null
-		var root_node = _enemy if _enemy else _anchalee
+		var root_node = get_target()
 		if root_node:
 			var s_nodes = [root_node]
 			while s_nodes.size() > 0:
@@ -85,6 +95,8 @@ func _ready() -> void:
 			area.add_to_group("enemy")
 		elif _anchalee:
 			area.add_to_group("anchalee_hitbox")
+		elif _merchant:
+			area.add_to_group("merchant_hitbox")
 			
 		# Reparent to BoneAttachment3D at runtime to eliminate one-frame lag
 		if not Engine.is_editor_hint() and _attachment and area.get_parent() != _attachment:
@@ -124,18 +136,18 @@ func _on_body_entered(body: Node3D) -> void:
 		return
 	
 	var hit_dir: Vector3 = Vector3.ZERO
-	var target = _enemy if _enemy else _anchalee
+	var target = get_target()
 	if "velocity" in body:
 		hit_dir = body.velocity.normalized()
 	elif "linear_velocity" in body:
 		hit_dir = body.linear_velocity.normalized()
 	else:
-		if target:
+		if target and target is Node3D:
 			hit_dir = (target.global_position - body.global_position).normalized()
 	hit_dir.y = 0.0
 	hit_dir = hit_dir.normalized()
 
-	if target:
+	if target and target.has_method("take_hit"):
 		target.take_hit({
 			"damage": base_damage,
 			"hit_zone": zone_name,

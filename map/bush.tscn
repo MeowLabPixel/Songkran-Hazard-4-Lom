@@ -1,6 +1,8 @@
 [gd_scene format=4 uid="uid://dvihcw1cabv2m"]
 
-[ext_resource type="Texture2D" uid="uid://cca1g2ci4lakh" path="res://Jomp_Folder/asset/Bush/Bush_sidewalk_Base_color.png" id="1_lp6a4"]
+[ext_resource type="Texture2D" uid="uid://b670ssrhrdwvq" path="res://map/GroundTexture/ConcreteSlabs/ConcreteSlabs_06/ConcreteSlabs_06_basecolor.png" id="1_3j2um"]
+[ext_resource type="Texture2D" uid="uid://44shqqy71mf7" path="res://map/GroundTexture/ConcreteSlabs/ConcreteSlabs_06/ConcreteSlabs_06_normal.png" id="2_jk5pm"]
+[ext_resource type="Texture2D" uid="uid://bhj1b315kpax3" path="res://map/GroundTexture/CleanPavement/ConcretePavement_02/CleanPavement_02_ambientocclusion.png" id="2_rgu11"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_332hr"]
 resource_name = "DarkerGreen"
@@ -85,13 +87,22 @@ shadow_mesh = SubResource("ArrayMesh_p327j")
 [sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_lp6a4"]
 points = PackedVector3Array(-22.695877, -0.9571619, -1.0086566, -22.88813, -0.9571619, -0.92780304, -22.695877, 0.70992684, -1.0086566, 24.659542, -0.9571619, -1.0086566, -22.967846, -0.9571619, -0.7322275, -22.88813, 0.70992684, -0.92780304, -22.695877, 0.9055177, -0.92780304, 24.659542, 0.70992684, -1.0086566, -22.855307, 0.869558, -0.89178115, 24.851799, -0.9571619, -0.92780304, -22.967846, 0.70992684, -0.7322275, -22.967846, -0.9571619, 0.71471846, -22.695877, 0.98657, -0.7322275, 24.659542, 0.9055177, -0.92780304, 24.818974, 0.869558, -0.89178115, 24.851799, 0.70992684, -0.92780304, -22.88813, 0.9055177, -0.7322275, 24.936203, -0.9571619, -0.7322275, -22.967846, 0.70992684, 0.71471846, -22.88813, -0.9571619, 0.91029406, -22.695877, 0.98657, 0.71471846, 24.659542, 0.98657, -0.7322275, 24.851799, 0.9055177, -0.7322275, 24.936203, 0.70992684, -0.7322275, -22.88813, 0.9055177, 0.71471846, 24.936203, -0.9571619, 0.71471846, -22.88813, 0.70992684, 0.91029406, -22.855307, 0.869558, 0.8742721, -22.695877, -0.9571619, 0.9913434, -22.695877, 0.9055177, 0.91029406, 24.659542, 0.98657, 0.71471846, 24.851799, 0.9055177, 0.71471846, 24.936203, 0.70992684, 0.71471846, 24.851799, -0.9571619, 0.91029406, -22.695877, 0.70992684, 0.9913434, 24.659542, -0.9571619, 0.9913434, 24.659542, 0.9055177, 0.91029406, 24.818974, 0.869558, 0.8742721, 24.851799, 0.70992684, 0.91029406, 24.659542, 0.70992684, 0.9913434)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gvx1q"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0uemh"]
 resource_name = "Material.003"
 cull_mode = 2
-albedo_texture = ExtResource("1_lp6a4")
-roughness = 0.93037975
-uv1_scale = Vector3(30, 30, 1)
-uv1_offset = Vector3(0, -29, 0)
+albedo_color = Color(0.8551318, 0.83810234, 0.83810234, 1)
+albedo_texture = ExtResource("1_3j2um")
+metallic_specular = 0.0
+normal_enabled = true
+normal_scale = 6.0
+normal_texture = ExtResource("2_jk5pm")
+ao_enabled = true
+ao_light_affect = 1.0
+ao_texture = ExtResource("2_rgu11")
+uv1_scale = Vector3(0.085, 0.39, 0.39)
+uv1_triplanar = true
+uv1_triplanar_sharpness = 150.0
+texture_filter = 5
 metadata/_gltf_primary_texture_coord = 0
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_orlyt"]
@@ -116,7 +127,7 @@ _surfaces = [{
 "format": 34896613399,
 "index_count": 30,
 "index_data": PackedByteArray("AAABAAIAAAADAAEABAAFAAYABAAHAAUACAAJAAoACAALAAkADAANAA4ADAAPAA0AEAARABIAEAATABEA"),
-"material": SubResource("StandardMaterial3D_gvx1q"),
+"material": SubResource("StandardMaterial3D_0uemh"),
 "name": "Material.003",
 "primitive": 3,
 "uv_scale": Vector4(1.9782488, 0.94933975, 0, 0),

@@ -157,10 +157,13 @@ func _is_result_enemy(result: Dictionary) -> bool:
 		return false
 	if collider is Area3D:
 		var hz: HitboxZone = collider.get_node_or_null("HitboxZone")
-		if hz and (hz._enemy != null or hz.get("_anchalee") != null):
+		if hz and (hz.has_method("get_target") and hz.get_target() != null or hz._enemy != null or hz.get("_anchalee") != null or hz.get("_merchant") != null):
 			return true
 	var node: Node = collider
 	while node:
+		# If the entity uses a dedicated hitbox system (like Merchant), non-hitbox children should not be treated as enemy
+		if node is Merchant or ("Merchant" in node.name) or node.is_in_group("requires_hitbox"):
+			return false
 		if node.is_in_group("enemy") or node.has_method("take_hit") or ("Enemy" in node.name) or ("Zombie" in node.name):
 			if not node.is_in_group("player"):
 				return true
@@ -518,9 +521,8 @@ func _apply_damage_to_result(result: Dictionary) -> Dictionary:
 			hitbox_zone = collider.find_child("HitboxZone", true, false) as HitboxZone
 		
 		if hitbox_zone:
+			var target = hitbox_zone.get_target() if hitbox_zone.has_method("get_target") else (hitbox_zone._enemy if hitbox_zone._enemy else (hitbox_zone.get("_anchalee") if hitbox_zone.get("_anchalee") else hitbox_zone.get("_merchant")))
 			var enemy = hitbox_zone._enemy
-			var anchalee = hitbox_zone.get("_anchalee")
-			var target = enemy if enemy else anchalee
 			
 			if target:
 				if enemy and get_tree().root.has_node("GameManager"):
@@ -571,6 +573,11 @@ func _apply_damage_to_result(result: Dictionary) -> Dictionary:
 		node = node.get_parent()
 
 	if node:
+		# If this entity uses a dedicated Hitbox system (such as Merchant),
+		# non-hitbox colliders (like buckets, accessories, or props) must NOT trigger a body hit.
+		if node is Merchant or ("Merchant" in node.name) or node.is_in_group("requires_hitbox"):
+			return result_data
+
 		if get_tree().root.has_node("GameManager"):
 			if not node.is_in_group("player") and not node.is_in_group("anchalee") and not ("Anchalee" in node.name):
 				get_tree().root.get_node("GameManager").register_shot_hit()
