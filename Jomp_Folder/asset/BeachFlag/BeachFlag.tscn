@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://duhcfsug8vu6s"]
+
+[ext_resource type="PackedScene" uid="uid://cgqeap5b4vo76" path="res://Jomp_Folder/asset/BeachFlag/Beach.Flag.fbx" id="1_l4fbm"]
+
+[node name="BeachFlag" type="Node3D" unique_id=738856385]
+
+[node name="Beach_Flag" parent="." unique_id=786261535 instance=ExtResource("1_l4fbm")]

@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://gliacwa64vyx"]
+
+[ext_resource type="PackedScene" uid="uid://ciikw8iqr6pcm" path="res://Jomp_Folder/asset/BraillieBlockGo/BraillieBlockGo.glb" id="1_452ew"]
+
+[node name="BrailliBlockGo" type="Node3D" unique_id=908428013]
+
+[node name="BraillieBlockGo" parent="." unique_id=953820606 instance=ExtResource("1_452ew")]
+transform = Transform3D(0.4, 0, 0, 0, 0.226, 0, 0, 0, 0.4, 0, -0.0642938, 0)

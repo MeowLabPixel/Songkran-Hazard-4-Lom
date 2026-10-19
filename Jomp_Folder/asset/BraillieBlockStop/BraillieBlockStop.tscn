@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://cy1t8extgv0c3"]
+
+[ext_resource type="PackedScene" uid="uid://cw3ui8oetgnac" path="res://Jomp_Folder/asset/BraillieBlockStop/BraillieBlockStop.glb" id="1_mdi8n"]
+
+[node name="BraillieBlockStop" type="Node3D" unique_id=635332152]
+
+[node name="BraillieBlockStop" parent="." unique_id=2143005046 instance=ExtResource("1_mdi8n")]
+transform = Transform3D(0.4, 0, 0, 0, 0.226, 0, 0, 0, 0.4, 0, 0, 0)

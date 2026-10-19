@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://dqptwau8hbd1n"]
+
+[ext_resource type="PackedScene" uid="uid://cw3ui8oetgnac" path="res://Jomp_Folder/asset/BraillieBlockStop/BraillieBlockStop.glb" id="1_shde1"]
+
+[node name="3BraillieBlockStop" type="Node3D" unique_id=1709625352]
+
+[node name="BraillieBlockStop" parent="." unique_id=2143005046 instance=ExtResource("1_shde1")]
+transform = Transform3D(0.4, 0, 0, 0, 0.226, 0, 0, 0, 0.4, 0, -0.045, 0)
+
+[node name="BraillieBlockStop2" parent="." unique_id=1193710865 instance=ExtResource("1_shde1")]
+transform = Transform3D(0.4, 0, 0, 0, 0.226, 0, 0, 0, 0.4, 0.83, -0.045, 0)
+
+[node name="BraillieBlockStop3" parent="." unique_id=156099615 instance=ExtResource("1_shde1")]
+transform = Transform3D(0.4, 0, 0, 0, 0.226, 0, 0, 0, 0.4, -0.83, -0.045, 0)
