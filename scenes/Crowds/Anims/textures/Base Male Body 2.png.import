@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://vfsih27wa1v7"
-path="res://.godot/imported/bg zombie2.png-c18ad242e1d3281c52910838332e1041.ctex"
+uid="uid://b5se8xtfv2mle"
+path="res://.godot/imported/Base Male Body 2.png-854a20cbac2a25620dc4bd1546cdc90a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Character Model For Programer/Zombie bg2/bg zombie2.png"
-dest_files=["res://.godot/imported/bg zombie2.png-c18ad242e1d3281c52910838332e1041.ctex"]
+source_file="res://scenes/Crowds/Anims/textures/Base Male Body 2.png"
+dest_files=["res://.godot/imported/Base Male Body 2.png-854a20cbac2a25620dc4bd1546cdc90a.ctex"]
 
 [params]
 

@@ -252,7 +252,7 @@ curve = SubResource("Curve3D_yus0k")
 [node name="Pavement" type="CSGPolygon3D" parent="RoadManager/RoadContainer/RP_002/PavementCorner" unique_id=93384327]
 layers = 1025
 use_collision = true
-polygon = PackedVector2Array(5, 0.15, 0.155, 0.15, 5, -8.32, 5, -0.57)
+polygon = PackedVector2Array(5, 0.15, 0.155, 0.15, 5, -0.57, 5, -0.57)
 mode = 2
 path_node = NodePath("..")
 path_interval_type = 0
@@ -280,7 +280,7 @@ material = ExtResource("23_yus0k")
 
 [node name="Corner" type="CSGPolygon3D" parent="RoadManager/RoadContainer/RP_002/PavementCorner" unique_id=1287496906]
 layers = 1025
-polygon = PackedVector2Array(-0.3, -0.3, 0.2, -0.3, 0.2, 0.3, -0.3, 0.3)
+polygon = PackedVector2Array(-0.3, -0.3, 0.2, -0.3, 0.2, 0.2, -0.3, 0.2)
 mode = 2
 path_node = NodePath("..")
 path_interval_type = 0
@@ -703,22 +703,22 @@ prior_pt_init = NodePath("../RP_002")
 transform = Transform3D(-2.7260448e-08, 0, 0.6236464, 0, 0.6236464, 0, -0.6236464, 0, -2.7260448e-08, -1.8279209, 1.1758673, 103.02624)
 
 [node name="BushScene" parent="Bush" unique_id=2069309021 instance=ExtResource("8_x0bdr")]
-transform = Transform3D(0.86, 0, 1.6027281e-14, 0, 1, 0, -1.3783462e-14, 0, 1, -166.8156, -0.2310108, -7.867813e-06)
+transform = Transform3D(0.75, 0, 1.6027281e-14, 0, 1, 0, -1.2020461e-14, 0, 1, -166.8156, -0.2310108, -7.867813e-06)
 
 [node name="BushScene2" parent="Bush" unique_id=1217262076 instance=ExtResource("8_x0bdr")]
-transform = Transform3D(0.9999999, 0, 7.1054274e-15, 0, 0.9999999, 0, -7.1054274e-15, 0, 0.9999999, -113.900986, -0.2310108, -5.722046e-06)
+transform = Transform3D(0.95, 0, 7.105428e-15, 0, 1, 0, -6.7501568e-15, 0, 1, -113.900986, -0.2310108, -5.722046e-06)
 
 [node name="BushScene3" parent="Bush" unique_id=729278371 instance=ExtResource("8_x0bdr")]
-transform = Transform3D(0.9999999, 0, 7.1054274e-15, 0, 0.9999999, 0, -7.1054274e-15, 0, 0.9999999, -57.77948, -0.2310108, -3.0994415e-06)
+transform = Transform3D(0.97999996, 0, 1.0658141e-14, 0, 0.99999994, 0, -1.0658141e-14, 0, 0.99999994, -57.458786, -0.2310108, -3.33786e-06)
 
 [node name="BushScene4" parent="Bush" unique_id=1410053375 instance=ExtResource("8_x0bdr")]
-transform = Transform3D(0.9999999, 0, 7.1054274e-15, 0, 0.9999999, 0, -7.1054274e-15, 0, 0.9999999, -0.054489136, -0.2310108, -9.536743e-07)
+transform = Transform3D(0.98, 0, 7.105428e-15, 0, 1, 0, -6.96332e-15, 0, 1, -0.054489136, -0.2310108, -9.536743e-07)
 
 [node name="BushScene5" parent="Bush" unique_id=377179110 instance=ExtResource("8_x0bdr")]
-transform = Transform3D(0.9999999, 0, 7.1054274e-15, 0, 0.9999999, 0, -7.1054274e-15, 0, 0.9999999, 57.02912, -0.2310108, 1.1920929e-06)
+transform = Transform3D(0.98, 0, 7.105428e-15, 0, 1, 0, -6.96332e-15, 0, 1, 57.02912, -0.2310108, 1.1920929e-06)
 
 [node name="BushScene6" parent="Bush" unique_id=1241737888 instance=ExtResource("8_x0bdr")]
-transform = Transform3D(0.9999999, 0, 7.1054274e-15, 0, 0.9999999, 0, -7.1054274e-15, 0, 0.9999999, 113.15065, -0.2310108, 3.33786e-06)
+transform = Transform3D(0.97999996, 0, 1.0658141e-14, 0, 0.99999994, 0, -1.0658141e-14, 0, 0.99999994, 113.79203, -0.2310108, 3.33786e-06)
 
 [node name="BushScene7" parent="Bush" unique_id=865632475 instance=ExtResource("8_x0bdr")]
 transform = Transform3D(0.9999999, 0, 7.1054274e-15, 0, 0.9999999, 0, -7.1054274e-15, 0, 0.9999999, 170.87566, -0.2310108, 5.722046e-06)

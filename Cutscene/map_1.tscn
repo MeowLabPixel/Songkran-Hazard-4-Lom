@@ -14,7 +14,7 @@
 [ext_resource type="Texture2D" uid="uid://cvctj7idiknih" path="res://map/Buildings_Modular_Iron_Gate.png" id="12_bugny"]
 [ext_resource type="Texture2D" uid="uid://dxluspytina6c" path="res://map/Concrete_01_basecolor.png" id="13_8j51q"]
 [ext_resource type="Texture2D" uid="uid://w71ux0oa0bi1" path="res://map/Landmark/openPBR_shader1_Base_color.png" id="14_2q6hh"]
-[ext_resource type="PackedScene" uid="uid://35ftswddgoqt" path="res://scenes/crowd.tscn" id="15_qn0k8"]
+[ext_resource type="PackedScene" uid="uid://35ftswddgoqt" path="res://scenes/Crowds/crowd.tscn" id="15_qn0k8"]
 [ext_resource type="ArrayMesh" uid="uid://cy4d2cqd2cwwr" path="res://Character Model For Programer/Zombie bg1/Zombie bg1 Face Shadow Fix.blend" id="16_su4i5"]
 [ext_resource type="Texture2D" uid="uid://d4eodayo2ot2" path="res://Character Model For Programer/Zombie bg1/Zombie bg1_bg zombie1.png" id="17_q6aab"]
 [ext_resource type="ArrayMesh" uid="uid://dl8m250vhovee" path="res://Character Model For Programer/Zombie bg2/Zombie bg2 Face Shadow Fix.blend" id="18_1vio7"]

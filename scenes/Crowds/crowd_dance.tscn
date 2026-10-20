@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://01bm3yxhtv1x"]
+
+[ext_resource type="PackedScene" uid="uid://bn6ynuq1buv1f" path="res://scenes/Crowds/crowd_male_model.tscn" id="1_68rym"]
+
+[node name="Crowd_Dance" type="Node3D" unique_id=2077858760]
+
+[node name="CrowdMaleModel" parent="." unique_id=1050493875 instance=ExtResource("1_68rym")]

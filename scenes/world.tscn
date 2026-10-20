@@ -34,7 +34,7 @@
 [ext_resource type="Texture2D" uid="uid://b3ygrl13ief02" path="res://Character Model For Programer/Zombie bg2/Zombie bg2 Face Shadow Fix_bg zombie2.png" id="30_5hl1e"]
 [ext_resource type="ArrayMesh" uid="uid://ckskdpkhjtfcn" path="res://Character Model For Programer/Zombie bg3/Zombie bg3 Face Shadow Fix.blend" id="31_66tox"]
 [ext_resource type="Texture2D" uid="uid://qrlypjimrwjn" path="res://Character Model For Programer/Zombie bg3/Zombie bg3_bg zombie3.png" id="32_pq8jk"]
-[ext_resource type="PackedScene" uid="uid://35ftswddgoqt" path="res://scenes/crowd.tscn" id="33_q57r8"]
+[ext_resource type="PackedScene" uid="uid://35ftswddgoqt" path="res://scenes/Crowds/crowd.tscn" id="33_q57r8"]
 
 [sub_resource type="Sky" id="Sky_oei0o"]
 sky_material = ExtResource("1_rup4s")

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://decramw7fji2d"
-path="res://.godot/imported/bg zombie3.png-9053bd743abbfb0bfbc0c3e4c0fba82a.ctex"
+uid="uid://d28suhopfmljj"
+path="res://.godot/imported/female zombie hair.png-255bfdcc8a3b3672a857d54c95ea55eb.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Character Model For Programer/Zombie bg3/bg zombie3.png"
-dest_files=["res://.godot/imported/bg zombie3.png-9053bd743abbfb0bfbc0c3e4c0fba82a.ctex"]
+source_file="res://scenes/Crowds/Anims/textures/female zombie hair.png"
+dest_files=["res://.godot/imported/female zombie hair.png-255bfdcc8a3b3672a857d54c95ea55eb.ctex"]
 
 [params]
 
