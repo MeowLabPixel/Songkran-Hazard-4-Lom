@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://bd2oflwhwii4e" path="res://map/Store_Building/4_storey_wide_conner_building_right.tscn" id="4_nf8aq"]
 [ext_resource type="Texture2D" uid="uid://c2t5qk3k7ert3" path="res://map/Final_Layout_2.png" id="5_4m305"]
 [ext_resource type="PackedScene" uid="uid://dqqndhcvw68wn" path="res://map/Store_Building/4_storey_v_1_Big_balcony.tscn" id="5_jmbjd"]
+[ext_resource type="PackedScene" uid="uid://snqaouhdx3wh" path="res://map/tree_folder.tscn" id="6_cmsr0"]
 [ext_resource type="PackedScene" uid="uid://bl6jn6ov7cs8c" path="res://map/Store_Building/4_storey_v_2_Small_Balcony.tscn" id="6_nq1w1"]
 [ext_resource type="PackedScene" uid="uid://chvkp8ixr7h6n" path="res://map/Store_Building/4_storey_v_3_Small_Balcony.tscn" id="7_o8con"]
 [ext_resource type="PackedScene" uid="uid://bytbhnlxu7qyb" path="res://map/Store_Building/4_storey_v_4_Small_Balcony.tscn" id="8_4mwvu"]
@@ -50,19 +51,15 @@
 [ext_resource type="PackedScene" uid="uid://c4iamqrnerevy" path="res://Jomp_Folder/asset/umbrellar/umbrellar.tscn" id="34_75iqu"]
 [ext_resource type="Texture2D" uid="uid://p72yfxbctjp8" path="res://map/GroundTexture/Concrete/Concrete_04/Concrete_04_roughness.png" id="34_88rmw"]
 [ext_resource type="PackedScene" uid="uid://bs3ep1uokmq5i" path="res://Jomp_Folder/asset/UmbrellarColor/UmbrellarColor.tscn" id="35_4m305"]
-[ext_resource type="PackedScene" uid="uid://cnu2ng64f3jda" path="res://Jomp_Folder/asset/Tree/Tree/Tree.tscn" id="36_v6p3u"]
-[ext_resource type="PackedScene" uid="uid://da73w52b5sqkq" path="res://Jomp_Folder/asset/Tree/Tree1/Tree1.tscn" id="37_nr3xw"]
-[ext_resource type="PackedScene" uid="uid://didd3tgsedeu4" path="res://Jomp_Folder/asset/Tree/Tree2/Tree2.tscn" id="38_pcfor"]
 [ext_resource type="PackedScene" uid="uid://tx4nyywigtqp" path="res://map/Landmark/CJmore/landmark_cj_more.tscn" id="39_buupg"]
-[ext_resource type="PackedScene" uid="uid://ttvdab6g5fkt" path="res://Jomp_Folder/asset/Tree/Tree3/Tree3.tscn" id="39_fhi8a"]
 [ext_resource type="PackedScene" uid="uid://bct31ytgtiwqy" path="res://Jomp_Folder/asset/BuntingFlagLong/BuntingFlagLong.tscn" id="40_pcfor"]
 [ext_resource type="PackedScene" uid="uid://6s3stn65hdix" path="res://Jomp_Folder/asset/MailBox/MailBox.tscn" id="41_fhi8a"]
 [ext_resource type="PackedScene" uid="uid://iuclhg4stxgd" path="res://Jomp_Folder/asset/WaterBucket/Water Bucket.tscn" id="42_fhi8a"]
 [ext_resource type="PackedScene" uid="uid://da1cieea5ir4j" path="res://Jomp_Folder/asset/WaterBucket/Water Bucket 1 .tscn" id="43_xl4uv"]
 [ext_resource type="PackedScene" uid="uid://dltrwxbklj2yk" path="res://map/soiground_cut.tscn" id="50_lcxhd"]
 [ext_resource type="PackedScene" uid="uid://c8b4ywnbga16" path="res://scenes/Merchant/Water Merchant.tscn" id="61_cmsr0"]
+[ext_resource type="PackedScene" uid="uid://dqx5rd8tbyjoj" path="res://scenes/stree_lamp_set.tscn" id="61_j6tcx"]
 [ext_resource type="PackedScene" uid="uid://cigpiokhh8gih" path="res://map/sponser_table.tscn" id="61_xokfq"]
-[ext_resource type="PackedScene" uid="uid://bjmhe81l4chcg" path="res://map/street_lamp.tscn" id="65_jgdcg"]
 [ext_resource type="PackedScene" uid="uid://dc3d3qx4enn2y" path="res://map/BTS_Train/bts_train.tscn" id="68_88rmw"]
 
 [sub_resource type="Sky" id="Sky_oei0o"]
@@ -759,7 +756,7 @@ size = Vector3(51.53, 5, 5)
 [sub_resource type="BoxShape3D" id="BoxShape3D_momc2"]
 size = Vector3(14.358871, 9.1796875, 44.78357)
 
-[node name="world" type="Node3D" unique_id=198855876]
+[node name="world2" type="Node3D" unique_id=198855876]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=718634876]
 environment = SubResource("Environment_yycy5")
@@ -903,77 +900,8 @@ transform = Transform3D(0.15757129, 0, -0.9875075, 0, 0.99999976, 0, 0.9875075, 
 [node name="UmbrellarColor4" parent="NavigationRegion3D/Props/UnmbrellarColor_Folder" unique_id=1761864080 instance=ExtResource("35_4m305")]
 transform = Transform3D(0.34722257, 0, 0.93778265, 0, 0.99999976, 0, -0.93778265, 0, 0.34722257, -35.522907, -0.46643412, 42.66864)
 
-[node name="Tree_folder" type="Node3D" parent="NavigationRegion3D/Props" unique_id=2092165449]
+[node name="Tree_folder" parent="NavigationRegion3D/Props" unique_id=2113828932 instance=ExtResource("6_cmsr0")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27.004795, 0.4514369, -5.3745623)
-
-[node name="Tree" parent="NavigationRegion3D/Props/Tree_folder" unique_id=443521385 instance=ExtResource("36_v6p3u")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 33.9)
-
-[node name="Tree22" parent="NavigationRegion3D/Props/Tree_folder" unique_id=345719392 instance=ExtResource("36_v6p3u")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 27.400002)
-
-[node name="Tree2" parent="NavigationRegion3D/Props/Tree_folder" unique_id=852103012 instance=ExtResource("36_v6p3u")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.84375, 0.00013923645, 91.27401)
-
-[node name="Tree21" parent="NavigationRegion3D/Props/Tree_folder" unique_id=181186202 instance=ExtResource("36_v6p3u")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.4437504, 0.00013923645, 92.97401)
-
-[node name="Tree1" parent="NavigationRegion3D/Props/Tree_folder" unique_id=1397695813 instance=ExtResource("37_nr3xw")]
-transform = Transform3D(1.085, 0, 0, 0, 1.085, 0, 0, 0, 1.085, 0.7141247, 0.28017655, 63.1584)
-
-[node name="Tree3" parent="NavigationRegion3D/Props/Tree_folder" unique_id=1615913116 instance=ExtResource("38_pcfor")]
-transform = Transform3D(-0.42292535, 0, -0.9061645, 0, 1, 0, 0.9061645, 0, -0.42292535, -12.708733, -0.06818953, 38.262417)
-
-[node name="Tree4" parent="NavigationRegion3D/Props/Tree_folder" unique_id=2126427202 instance=ExtResource("38_pcfor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.203175, -0.06813231, 30.862274)
-
-[node name="Tree5" parent="NavigationRegion3D/Props/Tree_folder" unique_id=1899071879 instance=ExtResource("36_v6p3u")]
-transform = Transform3D(0.7552351, 0, 0.50330496, 0, 0.907577, 0, -0.50330496, 0, 0.7552351, 13.7, -0.19992442, -2.1932883)
-
-[node name="Tree6" parent="NavigationRegion3D/Props/Tree_folder" unique_id=1876289205 instance=ExtResource("37_nr3xw")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.599999, 0.08011553, 27.927849)
-
-[node name="Tree7" parent="NavigationRegion3D/Props/Tree_folder" unique_id=234438705 instance=ExtResource("38_pcfor")]
-transform = Transform3D(-0.003749285, 0, -0.90404356, 0, 0.9040513, 0, 0.90404356, 0, -0.003749285, 13.699999, -0.26813042, 51.923363)
-
-[node name="Tree8" parent="NavigationRegion3D/Props/Tree_folder" unique_id=1442687827 instance=ExtResource("39_fhi8a")]
-transform = Transform3D(0.65870476, 0, 0.24037844, 0, 0.7011945, 0, -0.24037844, 0, 0.65870476, 13.7, -0.18040958, 71.32646)
-
-[node name="Tree9" parent="NavigationRegion3D/Props/Tree_folder" unique_id=1273899735 instance=ExtResource("36_v6p3u")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.599999, -0.18040958, 109.396805)
-
-[node name="Tree10" parent="NavigationRegion3D/Props/Tree_folder" unique_id=1530246168 instance=ExtResource("37_nr3xw")]
-transform = Transform3D(0.26400042, 0, -0.7077709, 0, 0.7554044, 0, 0.7077709, 0, 0.26400042, 40, -0.18040958, 127.195045)
-
-[node name="Tree11" parent="NavigationRegion3D/Props/Tree_folder" unique_id=139626241 instance=ExtResource("37_nr3xw")]
-transform = Transform3D(0.26400042, 0, -0.7077709, 0, 0.7554044, 0, 0.7077709, 0, 0.26400042, 13.599999, -0.18040958, -29.768356)
-
-[node name="Tree12" parent="NavigationRegion3D/Props/Tree_folder" unique_id=821843927 instance=ExtResource("38_pcfor")]
-transform = Transform3D(0.8246888, 0, 0, 0, 0.8246888, 0, 0, 0, 0.8246888, 40, -0.18040958, 95.95433)
-
-[node name="Tree13" parent="NavigationRegion3D/Props/Tree_folder" unique_id=13034362 instance=ExtResource("38_pcfor")]
-transform = Transform3D(-0.2679022, 0, -0.77996147, 0, 0.82468873, 0, 0.77996147, 0, -0.2679022, 13.599999, -0.30895177, -60.903362)
-
-[node name="Tree14" parent="NavigationRegion3D/Props/Tree_folder" unique_id=2011409580 instance=ExtResource("36_v6p3u")]
-transform = Transform3D(0.7758947, 0, -0.6308625, 0, 1, 0, 0.6308625, 0, 0.7758947, 40, -0.18040958, 60.129368)
-
-[node name="Tree15" parent="NavigationRegion3D/Props/Tree_folder" unique_id=1224593608 instance=ExtResource("36_v6p3u")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.7, -0.18040958, -93.00035)
-
-[node name="Tree16" parent="NavigationRegion3D/Props/Tree_folder" unique_id=770742831 instance=ExtResource("38_pcfor")]
-transform = Transform3D(0.9624353, 0, -0.27151114, 0, 1, 0, 0.27151114, 0, 0.9624353, 39.7, -0.18040958, -46.158367)
-
-[node name="Tree17" parent="NavigationRegion3D/Props/Tree_folder" unique_id=1425966340 instance=ExtResource("38_pcfor")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.7, -0.3222362, -4.049962)
-
-[node name="Tree18" parent="NavigationRegion3D/Props/Tree_folder" unique_id=684775963 instance=ExtResource("37_nr3xw")]
-transform = Transform3D(0.6208696, 0, -0.2819724, 0, 0.6818999, 0, 0.2819724, 0, 0.6208696, 39.7, 0.05248496, 22.380577)
-
-[node name="Tree19" parent="NavigationRegion3D/Props/Tree_folder" unique_id=1857468050 instance=ExtResource("36_v6p3u")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39.7, -0.20951954, -21.816357)
-
-[node name="Tree20" parent="NavigationRegion3D/Props/Tree_folder" unique_id=996108010 instance=ExtResource("36_v6p3u")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.599999, -0.30770603, -86.02824)
 
 [node name="BuntingFlagLong" parent="NavigationRegion3D/Props" unique_id=1451120966 instance=ExtResource("40_pcfor")]
 transform = Transform3D(-8.943186e-09, 0, 0.20459624, 0, 0.20459624, 0, -0.20459624, 0, -8.943186e-09, -10.854131, -0.15758534, 42.009674)
@@ -2310,12 +2238,6 @@ transform = Transform3D(0.3364648, 0, -1.2557036, 0, 1.3, 0, 1.2557036, 0, 0.336
 [node name="Street Lamp Folder" type="Node3D" parent="." unique_id=79497499]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 41.7)
 
-[node name="Stree Lamp Set" type="Node3D" parent="Street Lamp Folder" unique_id=1606945]
-
-[node name="Street Lamp" parent="Street Lamp Folder/Stree Lamp Set" unique_id=259487446 instance=ExtResource("65_jgdcg")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -13.2, 0.3, 0)
-
-[node name="Street Lamp2" parent="Street Lamp Folder/Stree Lamp Set" unique_id=1000246112 instance=ExtResource("65_jgdcg")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 12.5, 0.3, 0)
+[node name="Stree Lamp Set" parent="Street Lamp Folder" unique_id=850688646 instance=ExtResource("61_j6tcx")]
 
 [editable path="NavigationRegion3D/Props/UnmbrellarColor_Folder/UmbrellarColor18"]
