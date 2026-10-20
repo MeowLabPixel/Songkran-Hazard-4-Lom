@@ -148,6 +148,18 @@ nodes/TimeScale_Output/node = SubResource("AnimationNodeTimeScale_di8y2")
 nodes/TimeScale_Output/position = Vector2(832, 224)
 node_connections = [&"output", 0, &"TimeScale_Output", &"Blend2", 0, &"TimeScale", &"Blend2", 1, &"TimeScale 2", &"TimeScale", 0, &"Animation", &"TimeScale 2", 0, &"Animation 2", &"Transition", 0, &"TimeScale 5", &"Transition", 1, &"Blend2", &"Transition", 2, &"Blend2 2", &"Transition", 3, &"Blend2 3", &"TimeScale 3", 0, &"Animation 3", &"TimeScale 4", 0, &"TimeScale 3", &"Blend2 2", 0, &"TimeScale 6", &"Blend2 2", 1, &"TimeScale 4", &"TimeScale 5", 0, &"Animation 4", &"TimeScale 6", 0, &"Animation 5", &"TimeScale 7", 0, &"Animation 6", &"TimeScale 8", 0, &"Animation 7", &"Blend2 3", 0, &"TimeScale 7", &"Blend2 3", 1, &"TimeScale 8", &"TimeScale_Output", 0, &"Transition"]
 
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_ufupo"]
+animation = &"Dance Animation Male/Dance 1"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_nr1lu"]
+animation = &"Dance Animation Male/Dance 2"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_lqb6l"]
+animation = &"Dance Animation Male/Dance Blue"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_ivbyx"]
+animation = &"Dance Animation Male/Dance orange"
+
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_1bsmv"]
 animation = &"Zombie Idle"
 use_custom_timeline = true
@@ -158,14 +170,48 @@ loop_mode = 1
 
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_j1hbu"]
 
+[sub_resource type="AnimationNodeTransition" id="AnimationNodeTransition_rir43"]
+xfade_time = 0.25
+allow_transition_to_self = true
+input_0/name = "Idle_combat"
+input_0/auto_advance = false
+input_0/break_loop_at_end = false
+input_0/reset = true
+input_1/name = "Idle_dance1"
+input_1/auto_advance = false
+input_1/break_loop_at_end = false
+input_1/reset = true
+input_2/name = "Idle_dance2"
+input_2/auto_advance = false
+input_2/break_loop_at_end = false
+input_2/reset = true
+input_3/name = "Idle_dance3"
+input_3/auto_advance = false
+input_3/break_loop_at_end = false
+input_3/reset = true
+input_4/name = "Idle_dance4"
+input_4/auto_advance = false
+input_4/break_loop_at_end = false
+input_4/reset = true
+
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_r2dw4"]
-graph_offset = Vector2(-8.8, 51.2)
+graph_offset = Vector2(-480.60492, 112.62001)
 nodes/output/position = Vector2(688, 160)
 nodes/TimeScale/node = SubResource("AnimationNodeTimeScale_j1hbu")
-nodes/TimeScale/position = Vector2(480, 112)
+nodes/TimeScale/position = Vector2(-160, 20)
 nodes/Animation/node = SubResource("AnimationNodeAnimation_1bsmv")
-nodes/Animation/position = Vector2(272, 128)
-node_connections = [&"output", 0, &"TimeScale", &"TimeScale", 0, &"Animation"]
+nodes/Animation/position = Vector2(-600, 20)
+nodes/Transition/node = SubResource("AnimationNodeTransition_rir43")
+nodes/Transition/position = Vector2(100, 60)
+"nodes/Animation 2/node" = SubResource("AnimationNodeAnimation_ufupo")
+"nodes/Animation 2/position" = Vector2(-620, 200)
+"nodes/Animation 3/node" = SubResource("AnimationNodeAnimation_nr1lu")
+"nodes/Animation 3/position" = Vector2(-720, 420)
+"nodes/Animation 4/node" = SubResource("AnimationNodeAnimation_lqb6l")
+"nodes/Animation 4/position" = Vector2(-760, 620)
+"nodes/Animation 5/node" = SubResource("AnimationNodeAnimation_ivbyx")
+"nodes/Animation 5/position" = Vector2(-560, 820)
+node_connections = [&"output", 0, &"Transition", &"TimeScale", 0, &"Animation", &"Transition", 0, &"TimeScale", &"Transition", 1, &"Animation 2", &"Transition", 2, &"Animation 3", &"Transition", 3, &"Animation 4", &"Transition", 4, &"Animation 5"]
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_2m32b"]
 animation = &"Zombie Idle"
@@ -1641,4 +1687,4 @@ states/defeated/position = Vector2(400, -99.200005)
 states/hit/node = SubResource("AnimationNodeStateMachine_f7n70")
 states/hit/position = Vector2(680.00006, 156.80003)
 transitions = ["attack", "defeated", SubResource("AnimationNodeStateMachineTransition_ppr3h"), "hit", "defeated", SubResource("AnimationNodeStateMachineTransition_85o7v"), "attack", "hit", SubResource("AnimationNodeStateMachineTransition_0dr6x"), "Start", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_qdr1e"), "hit", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_54tec"), "attack", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_psfbe"), "Zombie Idle", "attack", SubResource("AnimationNodeStateMachineTransition_7rkpk"), "Zombie Idle", "defeated", SubResource("AnimationNodeStateMachineTransition_xlsxt"), "Zombie Idle", "hit", SubResource("AnimationNodeStateMachineTransition_1ylu7"), "Run zombie  ", "hit", SubResource("AnimationNodeStateMachineTransition_3twba"), "Run zombie  ", "attack", SubResource("AnimationNodeStateMachineTransition_qoxow"), "Run zombie  ", "defeated", SubResource("AnimationNodeStateMachineTransition_p1uri"), "Run zombie  ", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_jcmwy"), "hit", "Run zombie  ", SubResource("AnimationNodeStateMachineTransition_i2j6k"), "hit", "attack", SubResource("AnimationNodeStateMachineTransition_378r0"), "Walk Zombie", "Run zombie  ", SubResource("AnimationNodeStateMachineTransition_xix8b"), "Run zombie  ", "Walk Zombie", SubResource("AnimationNodeStateMachineTransition_a51ae"), "hit", "Walk Zombie", SubResource("AnimationNodeStateMachineTransition_ljb3q"), "Walk Zombie", "hit", SubResource("AnimationNodeStateMachineTransition_jr721"), "Walk Zombie", "attack", SubResource("AnimationNodeStateMachineTransition_kyw6q"), "Zombie Idle", "Walk Zombie", SubResource("AnimationNodeStateMachineTransition_1bsmv"), "Walk Zombie", "defeated", SubResource("AnimationNodeStateMachineTransition_ncjt2"), "Walk Zombie", "Zombie Idle", SubResource("AnimationNodeStateMachineTransition_r1yio"), "attack", "Walk Zombie", SubResource("AnimationNodeStateMachineTransition_oa44a")]
-graph_offset = Vector2(91.72388, -19)
+graph_offset = Vector2(-187.27612, -66)
