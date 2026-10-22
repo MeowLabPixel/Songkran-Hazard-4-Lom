@@ -195,7 +195,7 @@ input_4/break_loop_at_end = false
 input_4/reset = true
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_r2dw4"]
-graph_offset = Vector2(-480.60492, 112.62001)
+graph_offset = Vector2(-403.98645, 183.00848)
 nodes/output/position = Vector2(688, 160)
 nodes/TimeScale/node = SubResource("AnimationNodeTimeScale_j1hbu")
 nodes/TimeScale/position = Vector2(-160, 20)

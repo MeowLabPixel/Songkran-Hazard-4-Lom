@@ -339,7 +339,7 @@ alpha_curve = SubResource("CurveTexture_067u3")
 size = Vector2(0.4, 0.8)
 center_offset = Vector3(0, 0.1, 0)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8srmi"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_b4c6n"]
 render_priority = 1
 transparency = 1
 shading_mode = 0
@@ -353,7 +353,7 @@ stencil_reference = 21
 metadata/_stencil_owned = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h1ln1"]
-next_pass = SubResource("StandardMaterial3D_8srmi")
+next_pass = SubResource("StandardMaterial3D_b4c6n")
 transparency = 1
 diffuse_mode = 3
 specular_mode = 1
@@ -417,7 +417,7 @@ height = 0.044
 _data = [Vector2(0.10130719, 0.02614379), 0.0, 0.0, 0, 0, Vector2(0.2973856, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -3.0, 0.0, 0, 0]
 point_count = 3
 
-[sub_resource type="CurveTexture" id="CurveTexture_splash_scale"]
+[sub_resource type="CurveTexture" id="CurveTexture_3q5o7"]
 curve = SubResource("Curve_l7k2x")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_splash"]
@@ -428,13 +428,13 @@ emission_sphere_radius = 0.01
 gravity = Vector3(0, 0, 0)
 scale_min = 0.14999999
 scale_max = 0.19999999
-scale_curve = SubResource("CurveTexture_splash_scale")
+scale_curve = SubResource("CurveTexture_3q5o7")
 sub_emitter_mode = 4
 sub_emitter_amount_at_start = 2
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_splash1"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_h1ln1"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_up7bl"]
 render_priority = 0
 shader = ExtResource("6_flare_particle")
 shader_parameter/noise_texture = SubResource("NoiseTexture2D_splash1")
@@ -467,7 +467,7 @@ shader_parameter/speed_scale = 1.0
 shader_parameter/edge_softness = 0.5
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_splash1"]
-material = SubResource("ShaderMaterial_h1ln1")
+material = SubResource("ShaderMaterial_up7bl")
 flip_faces = true
 top_radius = 0.13
 bottom_radius = 1.005
@@ -476,7 +476,7 @@ cap_bottom = false
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_splash2"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_067u3"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hwb4w"]
 render_priority = 0
 shader = ExtResource("6_flare_particle")
 shader_parameter/noise_texture = SubResource("NoiseTexture2D_splash2")
@@ -509,14 +509,14 @@ shader_parameter/speed_scale = 1.0
 shader_parameter/edge_softness = 0.5
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_splash2"]
-material = SubResource("ShaderMaterial_067u3")
+material = SubResource("ShaderMaterial_hwb4w")
 flip_faces = true
 top_radius = 0.15
 bottom_radius = 0.0
 height = 1.1
 cap_bottom = false
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_3q5o7"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_lvs6b"]
 render_priority = 0
 shader = ExtResource("6_flare_particle")
 shader_parameter/noise_texture = SubResource("NoiseTexture2D_splash1")
@@ -549,7 +549,7 @@ shader_parameter/speed_scale = 1.0
 shader_parameter/edge_softness = 0.5
 
 [sub_resource type="SphereMesh" id="SphereMesh_splash3"]
-material = SubResource("ShaderMaterial_3q5o7")
+material = SubResource("ShaderMaterial_lvs6b")
 flip_faces = true
 radius = 0.87
 height = 0.35
@@ -578,7 +578,7 @@ height = 0.035
 _data = [Vector2(0, 0.001), 0.0, 12.0, 0, 0, Vector2(0.08, 1), 0.0, 0.0, 0, 0, Vector2(0.67, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -3.0, 0.0, 0, 0]
 point_count = 4
 
-[sub_resource type="CurveTexture" id="CurveTexture_up7bl"]
+[sub_resource type="CurveTexture" id="CurveTexture_o6r15"]
 curve = SubResource("Curve_splash_scale")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_067u3"]
@@ -588,7 +588,7 @@ emission_sphere_radius = 0.01
 gravity = Vector3(0, 0, 0)
 scale_min = 0.049999997
 scale_max = 0.099999994
-scale_curve = SubResource("CurveTexture_up7bl")
+scale_curve = SubResource("CurveTexture_o6r15")
 
 [sub_resource type="Shader" id="Shader_g5e5h"]
 code = "shader_type spatial;

@@ -20,11 +20,13 @@ var _enemy: EnemyBase = null
 var _anchalee: AnchaleeBase = null
 var _merchant: Merchant = null
 var _attachment: BoneAttachment3D = null
+var _target_entity: Node = null
 
 func get_target() -> Node:
 	if _enemy: return _enemy
 	if _anchalee: return _anchalee
 	if _merchant: return _merchant
+	if _target_entity: return _target_entity
 	return null
 
 func _ready() -> void:
@@ -38,7 +40,7 @@ func _ready() -> void:
 	elif parent_name == "HitboxRightShin":
 		zone_name = "right_foot"
 
-	# Walk up the full tree, crossing sub-scene boundaries, to find EnemyBase, AnchaleeBase, or Merchant.
+	# Walk up the full tree, crossing sub-scene boundaries, to find EnemyBase, AnchaleeBase, Merchant, or any entity with take_hit.
 	var node: Node = get_parent()
 	while node != null:
 		if node is EnemyBase:
@@ -50,59 +52,106 @@ func _ready() -> void:
 		elif node is Merchant:
 			_merchant = node
 			break
+		elif node.has_method("take_hit"):
+			_target_entity = node
+			break
+		elif node is CharacterBody3D and (node.name.begins_with("Crowd") or node.name.begins_with("Male") or node.name.begins_with("Female")):
+			_target_entity = node
+			break
 		node = node.get_parent()
 
-	if not _enemy and not _anchalee and not _merchant:
-		push_error("[HitboxZone] No EnemyBase, AnchaleeBase, or Merchant found above zone '%s'" % zone_name)
+	var area := get_parent() as Area3D
+	if not area:
+		push_error("[HitboxZone] Parent must be Area3D (zone '%s')" % zone_name)
 		return
 
-	var area := get_parent() as Area3D
-	if area:
-		_sanitize_scale(area)
+	_sanitize_scale(area)
+	
+	# Find the Skeleton3D and the corresponding BoneAttachment3D node
+	var skeleton: Skeleton3D = null
+	var root_node = get_target()
+	if not root_node:
+		root_node = owner if owner else (area.get_parent().get_parent() if area.get_parent() else null)
+
+	if root_node:
+		var s_nodes = [root_node]
+		while s_nodes.size() > 0:
+			var curr = s_nodes.pop_back()
+			if curr is Skeleton3D:
+				skeleton = curr
+				break
+			s_nodes.append_array(curr.get_children())
 		
-		# Find the Skeleton3D and the corresponding BoneAttachment3D node
-		var skeleton: Skeleton3D = null
-		var root_node = get_target()
-		if root_node:
-			var s_nodes = [root_node]
-			while s_nodes.size() > 0:
-				var curr = s_nodes.pop_back()
-				if curr is Skeleton3D:
-					skeleton = curr
-					break
-				s_nodes.append_array(curr.get_children())
-			
-		if skeleton:
-			var suffix = parent_name.replace("Hitbox", "")
-			if parent_name == "HitboxRightArm":
-				suffix = "RightForeArm"
-			elif parent_name == "HitboxLeftArm":
-				suffix = "LeftForeArm"
-			elif parent_name == "HitboxUpperRightArm":
-				suffix = "RightUpperArm"
-			elif parent_name == "HitboxUpperLeftArm":
-				suffix = "LeftUpperArm"
-			
-			var attach_name = "HitboxAttach" + suffix
-			_attachment = skeleton.get_node_or_null(attach_name)
-			# Also search recursively for Anchalee-style rigs where the attachment
-			# lives under RetargetModifier3D/OriginalSkeleton
-			if not _attachment:
-				_attachment = skeleton.find_child(attach_name, true, false)
+	if skeleton:
+		var suffix = parent_name.replace("Hitbox", "")
+		if parent_name == "HitboxRightArm":
+			suffix = "RightForeArm"
+		elif parent_name == "HitboxLeftArm":
+			suffix = "LeftForeArm"
+		elif parent_name == "HitboxUpperRightArm":
+			suffix = "RightUpperArm"
+		elif parent_name == "HitboxUpperLeftArm":
+			suffix = "LeftUpperArm"
 		
+		var attach_name = "HitboxAttach" + suffix
+		_attachment = skeleton.get_node_or_null(attach_name)
+		# Also search recursively for Anchalee-style rigs where the attachment
+		# lives under RetargetModifier3D/OriginalSkeleton
+		if not _attachment:
+			_attachment = skeleton.find_child(attach_name, true, false)
+	
+	if not area.body_entered.is_connected(_on_body_entered):
 		area.body_entered.connect(_on_body_entered)
-		if _enemy:
-			area.add_to_group("enemy")
-		elif _anchalee:
-			area.add_to_group("anchalee_hitbox")
-		elif _merchant:
-			area.add_to_group("merchant_hitbox")
-			
-		# Reparent to BoneAttachment3D at runtime to eliminate one-frame lag
-		if not Engine.is_editor_hint() and _attachment and area.get_parent() != _attachment:
-			_reparent_to_attachment.call_deferred(area, _attachment)
-	else:
-		push_error("[HitboxZone] Parent must be Area3D (zone '%s')" % zone_name)
+	if _enemy:
+		area.add_to_group("enemy")
+	elif _anchalee:
+		area.add_to_group("anchalee_hitbox")
+	elif _merchant:
+		area.add_to_group("merchant_hitbox")
+	elif _target_entity:
+		area.add_to_group("crowd_hitbox")
+		
+	# Reparent to BoneAttachment3D at runtime to eliminate one-frame lag
+	if not Engine.is_editor_hint() and _attachment and area.get_parent() != _attachment:
+		_reparent_to_attachment.call_deferred(area, _attachment)
+
+	if not Engine.is_editor_hint() and not get_target():
+		push_warning("[HitboxZone] No EnemyBase, AnchaleeBase, Merchant, or target with take_hit found above zone '%s'" % zone_name)
+
+func _resolve_attachment_if_needed() -> void:
+	if is_instance_valid(_attachment):
+		return
+	var area := get_parent() as Area3D
+	if not area:
+		return
+	var root_node = get_target()
+	if not root_node:
+		root_node = owner if owner else (area.get_parent().get_parent() if area.get_parent() else null)
+	if not root_node:
+		return
+	var skeleton: Skeleton3D = null
+	var s_nodes = [root_node]
+	while s_nodes.size() > 0:
+		var curr = s_nodes.pop_back()
+		if curr is Skeleton3D:
+			skeleton = curr
+			break
+		s_nodes.append_array(curr.get_children())
+	if skeleton:
+		var parent_name = area.name
+		var suffix = parent_name.replace("Hitbox", "")
+		if parent_name == "HitboxRightArm":
+			suffix = "RightForeArm"
+		elif parent_name == "HitboxLeftArm":
+			suffix = "LeftForeArm"
+		elif parent_name == "HitboxUpperRightArm":
+			suffix = "RightUpperArm"
+		elif parent_name == "HitboxUpperLeftArm":
+			suffix = "LeftUpperArm"
+		var attach_name = "HitboxAttach" + suffix
+		_attachment = skeleton.get_node_or_null(attach_name)
+		if not _attachment:
+			_attachment = skeleton.find_child(attach_name, true, false)
 
 func _notification(what: int) -> void:
 	if what == Node3D.NOTIFICATION_LOCAL_TRANSFORM_CHANGED or what == Node3D.NOTIFICATION_TRANSFORM_CHANGED:
@@ -120,6 +169,8 @@ func _physics_process(_delta: float) -> void:
 func _sanitize_scale(area: Area3D) -> void:
 	if not area or not area.is_inside_tree():
 		return
+	if not is_instance_valid(_attachment):
+		_resolve_attachment_if_needed()
 	area.top_level = true
 	var source: Node3D = _attachment if is_instance_valid(_attachment) else (area.get_parent() as Node3D)
 	if source:

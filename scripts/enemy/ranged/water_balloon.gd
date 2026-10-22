@@ -9,6 +9,8 @@ var _arc_height: float
 var _travel_time: float
 var _elapsed: float = 0.0
 var _active: bool = false
+var is_pooled: bool = false
+var on_splash_callback: Callable = Callable()
 
 @export var trail_particles: GPUParticles3D
 @export var splash_particles: GPUParticles3D  # assign a GPUParticles3D child in inspector
@@ -23,6 +25,19 @@ func launch(target: Vector3, damage: float, radius: float,
 	_travel_time = travel_time
 	_elapsed     = 0.0
 	_active      = true
+
+func launch_pooled(target: Vector3, damage: float, radius: float,
+		arc_height: float = 3.0, travel_time: float = 1.2, callback: Callable = Callable()) -> void:
+	is_pooled = true
+	on_splash_callback = callback
+	visible = true
+	var mesh = get_node_or_null("MeshInstance3D")
+	if mesh:
+		mesh.visible = true
+	if trail_particles:
+		trail_particles.restart()
+		trail_particles.emitting = true
+	launch(target, damage, radius, arc_height, travel_time)
 
 func _process(delta: float) -> void:
 	if not _active:
@@ -55,6 +70,29 @@ func _splash() -> void:
 		if splash_particles:
 			splash_particles.queue_free()
 		queue_free()
+		return
+
+	if is_pooled:
+		var mesh = get_node_or_null("MeshInstance3D")
+		if mesh:
+			mesh.visible = false
+		if trail_particles:
+			trail_particles.emitting = false
+		if splash_particles:
+			splash_particles.restart()
+			splash_particles.emitting = true
+		if on_splash_callback.is_valid():
+			on_splash_callback.call(global_position)
+		if _damage > 0.0:
+			for player in tree.get_nodes_in_group("player"):
+				if player.global_position.distance_to(global_position) <= _radius:
+					player.take_damage(int(_damage), false, self)
+					print("[WaterBalloon] Splash hit player for %d" % int(_damage))
+		var lifetime = splash_particles.lifetime if splash_particles else 1.0
+		tree.create_timer(lifetime).timeout.connect(func():
+			if is_instance_valid(self) and is_pooled:
+				visible = false
+		)
 		return
 
 	# Detach and trigger splash particles in world space before freeing

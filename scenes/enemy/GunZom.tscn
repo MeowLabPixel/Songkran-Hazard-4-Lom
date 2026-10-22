@@ -16,9 +16,9 @@
 [ext_resource type="Script" uid="uid://b0utk1jcvmdxr" path="res://scenes/enemy/zombie_model.gd" id="13_y5w75"]
 [ext_resource type="Script" uid="uid://rk4yb4oq18ft" path="res://scripts/enemy/hitbox_zone.gd" id="14_h8lmd"]
 [ext_resource type="Script" uid="uid://dhc80rjjahn72" path="res://scenes/enemy/attack_hitbox.gd" id="15_ue1kp"]
-[ext_resource type="PackedScene" uid="uid://coisehptg6i6y" path="res://GunSystem/Scene/WaterGun/gun_optimized.tscn" id="16_y5w75"]
 [ext_resource type="Animation" uid="uid://dkowb8okl07v5" path="res://AnimationsExport/Zombies/Attack 1.res" id="17_v5clt"]
 [ext_resource type="Animation" uid="uid://cku6j61047imv" path="res://AnimationsExport/Zombies/Attack 2.res" id="18_lv243"]
+[ext_resource type="PackedScene" uid="uid://cwxv2hxlbm40d" path="res://GunSystem/NPC_Gun.tscn" id="18_pqfor"]
 [ext_resource type="Animation" uid="uid://68gl0sdcvffh" path="res://AnimationsExport/Zombies/Base.res" id="19_i74ry"]
 [ext_resource type="Animation" uid="uid://dklt1q6unn74d" path="res://AnimationsExport/Zombies/HIT  Right Arm.res" id="20_w63or"]
 [ext_resource type="Animation" uid="uid://ckgtkcrjd3nke" path="res://AnimationsExport/Zombies/HIT Body.res" id="21_ahuru"]
@@ -60498,14 +60498,12 @@ script = ExtResource("3_5ku3k")
 script = ExtResource("4_bsdnm")
 attack_range = 8.0
 attack_state = "StateRangedAttack"
-flee_range = 4.0
 
-[node name="StateRangedAttack" type="Node" parent="EnemyStateMachine" unique_id=1786598278 node_paths=PackedStringArray("gun_spawn_point", "gun_model")]
+[node name="StateRangedAttack" type="Node" parent="EnemyStateMachine" unique_id=1786598278 node_paths=PackedStringArray("gun_spawn_point")]
 script = ExtResource("5_boljm")
 attack_range = 10.0
 water_stream_scene = ExtResource("6_5ku3k")
-gun_spawn_point = NodePath("../../All zombie fix/rig_001/Skeleton3D/HitboxAttachRightHand/Gun_Optimized/GunSpawnPoint")
-gun_model = NodePath("../../All zombie fix/rig_001/Skeleton3D/HitboxAttachRightHand/Gun_Optimized")
+gun_spawn_point = NodePath("../../All zombie fix/rig_001/Skeleton3D/HitboxAttachRightHand/NPCGun/GunSpawnPoint")
 
 [node name="StateTurnBack" type="Node" parent="EnemyStateMachine" unique_id=1920415703]
 script = ExtResource("6_1pfur")
@@ -61071,6 +61069,8 @@ bone_name = "DEF-spine.006"
 bone_idx = 6
 
 [node name="HitboxHead" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachHead" unique_id=1799077663]
+transform = Transform3D(-1, -4.1152635e-08, -3.836977e-07, 6.497902e-08, 0.96214384, -0.27254206, 3.8038826e-07, -0.27254206, -0.96214384, -7.4682465e-09, 1.5638924, -0.0005531418)
+top_level = true
 collision_layer = 8198
 collision_mask = 4
 
@@ -61089,6 +61089,8 @@ bone_name = "DEF-foot.L"
 bone_idx = 13
 
 [node name="HitboxLeftFoot" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachLeftFoot" unique_id=800396227]
+transform = Transform3D(-1, 0, -1.509958e-07, 0, 1, 0, 1.509958e-07, 0, -1, 4.7521094e-09, 1.1062763, 0.030019509)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -61107,6 +61109,8 @@ bone_name = "DEF-foot.R"
 bone_idx = 19
 
 [node name="HitboxRightFoot" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachRightFoot" unique_id=154506703]
+transform = Transform3D(-1, -3.299075e-08, -3.857662e-07, 5.2091522e-08, 0.97583973, -0.21848774, 3.8365408e-07, -0.21848777, -0.9758396, 2.8146743e-09, 1.163584, 0.017188458)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -61125,6 +61129,8 @@ bone_name = "DEF-forearm.R.001"
 bone_idx = 31
 
 [node name="HitboxRightArm" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachRightForeArm" unique_id=1375651829]
+transform = Transform3D(-0.99998015, 0.006279594, -0.00045255298, -0.00011771703, -0.090516984, -0.9958949, -0.006294779, -0.9958751, 0.09051593, -0.21142897, 0.117255, 0.061448954)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -61143,6 +61149,8 @@ bone_name = "DEF-hand.R"
 bone_idx = 32
 
 [node name="HitboxRightHand" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachRightHand" unique_id=525467876]
+transform = Transform3D(-0.99998015, 0.006279783, -0.00044843982, -0.0001218301, -0.09051692, -0.9958949, -0.006294595, -0.9958751, 0.0905159, -0.21142897, 0.117255, 0.06144898)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -61170,11 +61178,11 @@ debug_color = Color(0.9254902, 0.101960786, 0.0627451, 0.41960785)
 [node name="BalloonSpawnPoint" type="Node3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachRightHand" unique_id=1086704045]
 transform = Transform3D(1, 3.7718564e-08, -2.9802322e-08, 1.1175871e-08, 1.0000002, -3.1664968e-08, 2.9802322e-08, 5.448237e-08, 1.0000002, 0.022980928, 0.09111619, -0.016999185)
 
-[node name="Gun_Optimized" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachRightHand" unique_id=1914154594 instance=ExtResource("16_y5w75")]
-transform = Transform3D(-0.75213045, 0.59892285, 0.274941, 0.3421217, -0.0017186748, 0.93965507, 0.56325316, 0.8008052, -0.20361175, 0.025505185, 0.16281885, -0.019470632)
+[node name="NPCGun" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachRightHand" unique_id=570137082 instance=ExtResource("18_pqfor")]
+transform = Transform3D(-0.52649105, 0.31084087, 0.15121743, 0.23948497, -0.00089197606, 0.5168098, 0.39427686, 0.41561803, -0.11198641, 0.057711244, 0.10400703, 0.050934732)
 
-[node name="GunSpawnPoint" type="Node3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachRightHand/Gun_Optimized" unique_id=1192858789]
-transform = Transform3D(-0.7521292, 0.34212106, 0.5632524, 0.5989225, -0.0017188014, 0.800805, 0.27494046, 0.9396534, -0.2036115, 0.0013098717, 0.17384785, 0.36362228)
+[node name="GunSpawnPoint" type="Node3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachRightHand/NPCGun" unique_id=1192858789]
+transform = Transform3D(-1.0744715, 0.4887449, 0.8046468, 1.1539936, -0.0033115745, 1.5429779, 0.49989197, 1.7084624, -0.37020308, 9.4652176e-05, 0.24699622, 0.9487334)
 
 [node name="HitboxAttachRightUpperArm" type="BoneAttachment3D" parent="All zombie fix/rig_001/Skeleton3D" unique_id=124618306]
 transform = Transform3D(0.19814032, -0.92179, -0.3332312, -0.13329284, -0.36215338, 0.9225385, -0.9710677, -0.1383747, -0.19462521, -0.16870818, 1.3192621, -0.017729595)
@@ -61182,6 +61190,8 @@ bone_name = "DEF-shoulder.R"
 bone_idx = 27
 
 [node name="HitboxRightArm" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachRightUpperArm" unique_id=2080401500]
+transform = Transform3D(-0.99998015, 0.006279594, -0.00045255298, -0.00011771703, -0.090516984, -0.9958949, -0.006294779, -0.9958751, 0.09051593, -0.21142897, 0.117255, 0.061448954)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -61200,6 +61210,8 @@ bone_name = "DEF-forearm.L.001"
 bone_idx = 25
 
 [node name="HitboxLeftArm" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachLeftForeArm" unique_id=116977318]
+transform = Transform3D(0.40724006, 0.702516, -0.58363235, 0.2626009, 0.52197355, 0.811532, 0.87475497, -0.4837508, 0.028087202, 0.002556879, 1.0319536, 0.035569474)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -61218,6 +61230,8 @@ bone_name = "DEF-hand.L"
 bone_idx = 26
 
 [node name="HitboxLeftHand" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachLeftHand" unique_id=180617104]
+transform = Transform3D(-0.9597223, -0.18210845, 0.21393824, 0.15014566, -0.9760702, -0.15729998, 0.23746438, -0.118842416, 0.9640991, -0.07814594, 0.9652826, 0.063920975)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -61248,6 +61262,8 @@ bone_name = "DEF-shoulder.L"
 bone_idx = 21
 
 [node name="HitboxLeftArm" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachLeftUpperArm" unique_id=690016286]
+transform = Transform3D(0.40724006, 0.702516, -0.58363235, 0.2626009, 0.52197355, 0.811532, 0.87475497, -0.4837508, 0.028087202, 0.002556879, 1.0319536, 0.035569474)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -61266,6 +61282,8 @@ bone_name = "DEF-thigh.L.001"
 bone_idx = 10
 
 [node name="HitboxLeftThigh" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachLeftThigh" unique_id=1712311608]
+transform = Transform3D(-0.80384725, -0.23415174, 0.5468112, -0.5698723, 0.039633274, -0.82077694, 0.17051443, -0.97139186, -0.16529568, -0.15419248, 0.55768585, 0.014293969)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -61284,6 +61302,8 @@ bone_name = "DEF-shin.L.001"
 bone_idx = 12
 
 [node name="HitboxLeftShin" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachLeftShin" unique_id=1413230357]
+transform = Transform3D(-1, 0, -1.509958e-07, 0, 1, 0, 1.509958e-07, 0, -1, 4.752111e-09, 1.1062763, 0.030019522)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -61293,7 +61313,7 @@ shape = SubResource("CapsuleShape3D_qof7f")
 
 [node name="HitboxZone" type="Node" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachLeftShin/HitboxLeftShin" unique_id=381063157]
 script = ExtResource("14_h8lmd")
-zone_name = "left_leg"
+zone_name = "left_foot"
 base_damage = 1
 
 [node name="HitboxAttachRightShin" type="BoneAttachment3D" parent="All zombie fix/rig_001/Skeleton3D" unique_id=1777576202]
@@ -61302,6 +61322,8 @@ bone_name = "DEF-shin.R.001"
 bone_idx = 18
 
 [node name="HitboxRightShin" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachRightShin" unique_id=336856980]
+transform = Transform3D(-1, 1.5099579e-07, 6.951386e-14, 1.7763568e-14, -3.4272674e-07, 1, 1.5099579e-07, 1, 3.4272674e-07, 2.8146743e-09, 1.163584, 0.017188458)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -61311,7 +61333,7 @@ shape = SubResource("CapsuleShape3D_87tvm")
 
 [node name="HitboxZone" type="Node" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachRightShin/HitboxRightShin" unique_id=1442578211]
 script = ExtResource("14_h8lmd")
-zone_name = "right_leg"
+zone_name = "right_foot"
 base_damage = 1
 
 [node name="HitboxAttachRightThigh" type="BoneAttachment3D" parent="All zombie fix/rig_001/Skeleton3D" unique_id=747430121]
@@ -61320,6 +61342,8 @@ bone_name = "DEF-thigh.R.001"
 bone_idx = 16
 
 [node name="HitboxRightThigh" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachRightThigh" unique_id=864676159]
+transform = Transform3D(-1, 1.509958e-07, 0, 0, 0, 1, 1.509958e-07, 1, 0, 2.7850047e-10, 1.2536907, 0.00039213552)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -61338,6 +61362,8 @@ bone_name = "DEF-spine.001"
 bone_idx = 1
 
 [node name="HitboxWaist" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachWaist" unique_id=1323472362]
+transform = Transform3D(-1, -3.2990858e-08, -3.8576619e-07, 5.209168e-08, 0.9758395, -0.21848844, 3.8365405e-07, -0.21848844, -0.9758395, 6.689548e-09, 1.0489687, 0.042850576)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -61355,6 +61381,8 @@ bone_name = "DEF-spine.003"
 bone_idx = 3
 
 [node name="HitboxChest" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachChest" unique_id=919464083]
+transform = Transform3D(-1, -4.6320512e-08, -1.564651e-07, -5.1274608e-08, 0.99949384, 0.031812467, 1.5491234e-07, 0.031812467, -0.99949384, 2.784921e-10, 1.2536905, 0.00039210453)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -61372,6 +61400,8 @@ bone_name = "DEF-spine"
 bone_idx = 0
 
 [node name="HitboxPelvis" type="Area3D" parent="All zombie fix/rig_001/Skeleton3D/HitboxAttachPelvis" unique_id=181850101]
+transform = Transform3D(-1, -3.2990858e-08, -3.8576619e-07, 5.209168e-08, 0.9758395, -0.21848844, 3.8365405e-07, -0.21848844, -0.9758395, 6.689548e-09, 1.0489687, 0.042850576)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63232,6 +63262,8 @@ bone_name = "DEF-spine.005"
 bone_idx = 6
 
 [node name="HitboxHead" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachHead" unique_id=1090192609]
+transform = Transform3D(-1, -4.1152635e-08, -3.836977e-07, 6.497902e-08, 0.96214384, -0.27254206, 3.8038826e-07, -0.27254206, -0.96214384, -7.4682465e-09, 1.5638924, -0.0005531418)
+top_level = true
 collision_layer = 8198
 collision_mask = 4
 
@@ -63251,6 +63283,8 @@ bone_name = "torso"
 bone_idx = 13
 
 [node name="HitboxLeftFoot" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachLeftFoot" unique_id=1430375435]
+transform = Transform3D(-1, 0, -1.509958e-07, 0, 1, 0, 1.509958e-07, 0, -1, 4.7521094e-09, 1.1062763, 0.030019509)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63270,6 +63304,8 @@ bone_name = "spine_fk"
 bone_idx = 19
 
 [node name="HitboxRightFoot" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachRightFoot" unique_id=787701008]
+transform = Transform3D(-1, -3.299075e-08, -3.857662e-07, 5.2091522e-08, 0.97583973, -0.21848774, 3.8365408e-07, -0.21848777, -0.9758396, 2.8146743e-09, 1.163584, 0.017188458)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63289,6 +63325,8 @@ bone_name = "MCH-foot_tweak.L"
 bone_idx = 31
 
 [node name="HitboxRightArm" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachRightForeArm" unique_id=1059814337]
+transform = Transform3D(-0.99998015, 0.006279594, -0.00045255298, -0.00011771703, -0.090516984, -0.9958949, -0.006294779, -0.9958751, 0.09051593, -0.21142897, 0.117255, 0.061448954)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63308,6 +63346,8 @@ bone_name = "foot_tweak.L"
 bone_idx = 32
 
 [node name="HitboxRightHand" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachRightHand" unique_id=1963740555]
+transform = Transform3D(-0.99998015, 0.006279783, -0.00044843982, -0.0001218301, -0.09051692, -0.9958949, -0.006294595, -0.9958751, 0.0905159, -0.21142897, 0.117255, 0.06144898)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63344,6 +63384,8 @@ bone_name = "ORG-shin.L"
 bone_idx = 27
 
 [node name="HitboxRightArm" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachRightUpperArm" unique_id=1550788644]
+transform = Transform3D(-0.99998015, 0.006279594, -0.00045255298, -0.00011771703, -0.090516984, -0.9958949, -0.006294779, -0.9958751, 0.09051593, -0.21142897, 0.117255, 0.061448954)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63363,6 +63405,8 @@ bone_name = "DEF-pelvis.R"
 bone_idx = 25
 
 [node name="HitboxLeftArm" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachLeftForeArm" unique_id=1624492537]
+transform = Transform3D(0.40724006, 0.702516, -0.58363235, 0.2626009, 0.52197355, 0.811532, 0.87475497, -0.4837508, 0.028087202, 0.002556879, 1.0319536, 0.035569474)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63382,6 +63426,8 @@ bone_name = "ORG-thigh.L"
 bone_idx = 26
 
 [node name="HitboxLeftHand" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachLeftHand" unique_id=163939785]
+transform = Transform3D(-0.9597223, -0.18210845, 0.21393824, 0.15014566, -0.9760702, -0.15729998, 0.23746438, -0.118842416, 0.9640991, -0.07814594, 0.9652826, 0.063920975)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63413,6 +63459,8 @@ bone_name = "ORG-spine"
 bone_idx = 21
 
 [node name="HitboxLeftArm" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachLeftUpperArm" unique_id=295365844]
+transform = Transform3D(0.40724006, 0.702516, -0.58363235, 0.2626009, 0.52197355, 0.811532, 0.87475497, -0.4837508, 0.028087202, 0.002556879, 1.0319536, 0.035569474)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63432,6 +63480,8 @@ bone_name = "VIS_thigh_ik_pole.L"
 bone_idx = 10
 
 [node name="HitboxLeftThigh" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachLeftThigh" unique_id=516485833]
+transform = Transform3D(-0.80384725, -0.23415174, 0.5468112, -0.5698723, 0.039633274, -0.82077694, 0.17051443, -0.97139186, -0.16529568, -0.15419248, 0.55768585, 0.014293969)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63451,6 +63501,8 @@ bone_name = "Root"
 bone_idx = 12
 
 [node name="HitboxLeftShin" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachLeftShin" unique_id=478479427]
+transform = Transform3D(-1, 0, -1.509958e-07, 0, 1, 0, 1.509958e-07, 0, -1, 4.752111e-09, 1.1062763, 0.030019522)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63460,7 +63512,7 @@ shape = SubResource("CapsuleShape3D_8hay3")
 
 [node name="HitboxZone" type="Node" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachLeftShin/HitboxLeftShin" unique_id=1634789252]
 script = ExtResource("14_h8lmd")
-zone_name = "left_leg"
+zone_name = "left_foot"
 base_damage = 1
 
 [node name="HitboxAttachRightShin" type="BoneAttachment3D" parent="ZombieModel/rig/GeneralSkeleton" unique_id=663769037]
@@ -63470,6 +63522,8 @@ bone_name = "MCH-spine"
 bone_idx = 18
 
 [node name="HitboxRightShin" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachRightShin" unique_id=210722807]
+transform = Transform3D(-1, 1.5099579e-07, 6.951386e-14, 1.7763568e-14, -3.4272674e-07, 1, 1.5099579e-07, 1, 3.4272674e-07, 2.8146743e-09, 1.163584, 0.017188458)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63479,7 +63533,7 @@ shape = SubResource("CapsuleShape3D_04wfk")
 
 [node name="HitboxZone" type="Node" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachRightShin/HitboxRightShin" unique_id=1121169614]
 script = ExtResource("14_h8lmd")
-zone_name = "right_leg"
+zone_name = "right_foot"
 base_damage = 1
 
 [node name="HitboxAttachRightThigh" type="BoneAttachment3D" parent="ZombieModel/rig/GeneralSkeleton" unique_id=377377968]
@@ -63489,6 +63543,8 @@ bone_name = "MCH-spine.001"
 bone_idx = 16
 
 [node name="HitboxRightThigh" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachRightThigh" unique_id=1992210532]
+transform = Transform3D(-1, 1.509958e-07, 0, 0, 0, 1, 1.509958e-07, 1, 0, 2.7850047e-10, 1.2536907, 0.00039213552)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63508,6 +63564,8 @@ bone_name = "DEF-spine"
 bone_idx = 1
 
 [node name="HitboxWaist" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachWaist" unique_id=73134856]
+transform = Transform3D(-1, -3.2990858e-08, -3.8576619e-07, 5.209168e-08, 0.9758395, -0.21848844, 3.8365405e-07, -0.21848844, -0.9758395, 6.689548e-09, 1.0489687, 0.042850576)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63526,6 +63584,8 @@ bone_name = "DEF-spine.002"
 bone_idx = 3
 
 [node name="HitboxChest" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachChest" unique_id=1851798260]
+transform = Transform3D(-1, -4.6320512e-08, -1.564651e-07, -5.1274608e-08, 0.99949384, 0.031812467, 1.5491234e-07, 0.031812467, -0.99949384, 2.784921e-10, 1.2536905, 0.00039210453)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 
@@ -63544,6 +63604,8 @@ bone_name = "DEF-spine"
 bone_idx = 1
 
 [node name="HitboxPelvis" type="Area3D" parent="ZombieModel/rig/GeneralSkeleton/HitboxAttachPelvis" unique_id=62550530]
+transform = Transform3D(-1, -3.2990858e-08, -3.8576619e-07, 5.209168e-08, 0.9758395, -0.21848844, 3.8365405e-07, -0.21848844, -0.9758395, 6.689548e-09, 1.0489687, 0.042850576)
+top_level = true
 collision_layer = 8196
 collision_mask = 4
 

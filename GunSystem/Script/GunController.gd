@@ -16,6 +16,13 @@ var current_gun_index: int = 0
 var current_gun: Gun
 
 func _ready() -> void:
+	if not pistol_gun:
+		pistol_gun = get_node_or_null("Pistol") as Gun
+	if not shotgun_gun:
+		shotgun_gun = get_node_or_null("Shotgun") as Gun
+	if not sniper_gun:
+		sniper_gun = get_node_or_null("Sniper") as Gun
+
 	guns = [pistol_gun, shotgun_gun, sniper_gun]
 	for gun in guns:
 		if gun:

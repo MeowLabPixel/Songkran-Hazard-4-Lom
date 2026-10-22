@@ -457,7 +457,7 @@ cast_shadow = 0
 mesh = SubResource("SphereMesh_iqpej")
 
 [node name="BeamFlare4" type="MeshInstance3D" parent="Node3D" unique_id=564240813]
-transform = Transform3D(-5.1142294e-08, -6.097739e-08, -2.86, -1.17, -6.0977385e-08, 1.2501451e-07, -5.1142326e-08, 1.395, -1.2501457e-07, 3.3398062e-16, -0.016737113, -3.4065835)
+transform = Transform3D(-5.114229e-08, -6.097739e-08, -2.86, -1.17, -6.0977385e-08, 1.250145e-07, -5.1142326e-08, 1.395, -1.2501457e-07, 3.3398062e-16, -0.016737113, -3.4065835)
 layers = 9
 sorting_offset = 1.0
 material_override = SubResource("ShaderMaterial_ahxst")
