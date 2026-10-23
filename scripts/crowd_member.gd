@@ -63,6 +63,10 @@ var crowd_manager: Node = null
 var crowd_row: int = 0
 var is_row_active: bool = true
 var editor_performance_mode: bool = false
+var member_index: int = 0
+var _anim_accumulated_delta: float = 0.0
+var cached_meshes: Array[MeshInstance3D] = []
+var cached_rids: Array[RID] = []
 
 # Hitbox Dynamic LOD State
 enum HitboxMode { OFF, CHEST, FULL }
@@ -88,17 +92,49 @@ func set_row_active(active: bool) -> void:
 		return
 	is_row_active = active
 	if not active:
-		if anim_player and anim_player.is_playing():
+		if anim_player:
 			anim_player.pause()
+			anim_player.active = false
 		set_hitbox_mode(HitboxMode.OFF)
 	else:
 		if anim_player:
+			anim_player.active = true
 			if anim_player.current_animation != "" and anim_player.has_animation(anim_player.current_animation):
 				if not anim_player.is_playing():
 					anim_player.play(anim_player.current_animation)
 			else:
 				resume_base_loop()
 		set_hitbox_mode(HitboxMode.CHEST)
+
+func _process(delta: float) -> void:
+	if Engine.is_editor_hint():
+		return
+	if not is_row_active or not anim_player or not anim_player.active:
+		return
+
+	# If performing an action (shooting, throwing balloon, hit reaction) or front row: step every frame
+	if is_performing_action or _current_hitbox_mode == HitboxMode.FULL or crowd_row == 0:
+		if _anim_accumulated_delta > 0.0:
+			anim_player.advance(_anim_accumulated_delta + delta)
+			_anim_accumulated_delta = 0.0
+		else:
+			anim_player.advance(delta)
+		return
+
+	_anim_accumulated_delta += delta
+	var frame_idx: int = Engine.get_process_frames()
+	var should_step: bool = false
+
+	if crowd_row == 1: # MIDDLE ROW: step every 2nd frame, staggered across members
+		should_step = ((frame_idx + member_index) % 2 == 0)
+	elif crowd_row == 2: # BACK ROW: step every 3rd frame, staggered across members
+		should_step = ((frame_idx + member_index) % 3 == 0)
+	else:
+		should_step = true
+
+	if should_step:
+		anim_player.advance(_anim_accumulated_delta)
+		_anim_accumulated_delta = 0.0
 
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
@@ -157,49 +193,108 @@ func _ready() -> void:
 		if has_meta("is_crowd_preview") or (get_parent() and "preview_in_editor" in get_parent()):
 			if hitboxes and is_instance_valid(hitboxes):
 				hitboxes.queue_free()
+				hitboxes = null
 			var col = find_child("CollisionShape3D", false, false) as CollisionShape3D
 			if col:
 				col.disabled = true
+			if skeleton:
+				for child in skeleton.get_children():
+					if child is BoneAttachment3D and child.name != "HitboxAttachRightHand":
+						child.queue_free()
+			if attached_balloon and is_instance_valid(attached_balloon):
+				attached_balloon.queue_free()
+				attached_balloon = null
 		return
+	_optimize_skeleton_bones()
 	_setup_hit_reactions()
 	_setup_hitboxes()
 
 func _resolve_nodes() -> void:
-	if not skeleton:
+	if not is_instance_valid(skeleton):
 		skeleton = find_child("GeneralSkeleton", true, false) as Skeleton3D
 		if not skeleton:
 			for child in find_children("*", "Skeleton3D", true, false):
 				skeleton = child as Skeleton3D
 				break
 
-	if not anim_player:
+	if not is_instance_valid(anim_player):
 		anim_player = find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if anim_player:
 		anim_player.speed_scale = range_animation_speed if is_armed else dance_animation_speed
 
-	if not anim_tree:
+	if not is_instance_valid(anim_tree):
 		anim_tree = find_child("AnimationTree", true, false) as AnimationTree
 	if anim_tree:
 		# Disable AnimationTree so we control AnimationPlayer directly via script
 		anim_tree.active = false
 
-	if not npc_gun:
+	if not is_instance_valid(npc_gun):
 		npc_gun = find_child("NPCGun", true, false) as Node3D
 		if not npc_gun:
 			npc_gun = find_child("NPC_Gun", true, false) as Node3D
-	if npc_gun and not gun_spawn_point:
+	if is_instance_valid(npc_gun) and not is_instance_valid(gun_spawn_point):
 		if npc_gun.has_method("get_spawn_point"):
 			gun_spawn_point = npc_gun.get_spawn_point()
 		else:
 			gun_spawn_point = npc_gun.find_child("GunSpawnPoint", true, false) as Node3D
 
-	if not hitboxes:
+	if not is_instance_valid(hitboxes):
 		hitboxes = find_child("Hitboxes", true, false) as Node3D
 
-	if not attached_balloon:
+	if not is_instance_valid(attached_balloon):
 		attached_balloon = find_child("WaterBalloon", true, false) as Node3D
-	if attached_balloon:
+	if is_instance_valid(attached_balloon):
+		# Hand-held balloon is strictly a visual prop before launch; remove its GPUParticles3D
+		# children to eliminate hundreds of idle particle systems from GPU memory.
+		for child in attached_balloon.find_children("*", "GPUParticles3D", true, false):
+			child.queue_free()
 		_set_attached_balloon_visible(false)
+
+	# Cache meshes and collision RIDs once to avoid thousands of find_children() calls during gameplay
+	cached_meshes.clear()
+	for node in find_children("*", "MeshInstance3D", true, false):
+		if not is_instance_valid(node):
+			continue
+		if is_instance_valid(npc_gun) and (node == npc_gun or npc_gun.is_ancestor_of(node)):
+			continue
+		if is_instance_valid(attached_balloon) and (node == attached_balloon or attached_balloon.is_ancestor_of(node)):
+			continue
+		if node is MeshInstance3D:
+			cached_meshes.append(node)
+
+	cached_rids.clear()
+	if self is CollisionObject3D:
+		cached_rids.append(get_rid())
+	for node in find_children("*", "CollisionObject3D", true, false):
+		if is_instance_valid(node) and (node is CollisionObject3D):
+			cached_rids.append(node.get_rid())
+
+func _optimize_skeleton_bones() -> void:
+	if not skeleton or Engine.is_editor_hint():
+		return
+	var bone_count = skeleton.get_bone_count()
+	if bone_count <= 40:
+		return
+
+	var keep_bones: Dictionary = {}
+	for b in range(bone_count):
+		var b_name = skeleton.get_bone_name(b)
+		if b_name.begins_with("DEF-") or b_name in ["root", "Root", "torso", "chest", "Hips"]:
+			var curr = b
+			while curr != -1 and not keep_bones.has(curr):
+				keep_bones[curr] = true
+				curr = skeleton.get_bone_parent(curr)
+
+	for child in skeleton.get_children():
+		if child is BoneAttachment3D and child.bone_idx >= 0:
+			var curr = child.bone_idx
+			while curr != -1 and not keep_bones.has(curr):
+				keep_bones[curr] = true
+				curr = skeleton.get_bone_parent(curr)
+
+	for b in range(bone_count):
+		if not keep_bones.has(b):
+			skeleton.set_bone_enabled(b, false)
 
 func _set_attached_balloon_visible(is_vis: bool) -> void:
 	if not attached_balloon or not is_instance_valid(attached_balloon):
@@ -242,6 +337,9 @@ func _setup_hit_reactions() -> void:
 		hit_reaction_modifier.enemy = self
 		hit_reaction_modifier.reaction_multiplier = hit_reaction_multiplier
 
+	# Crowd members are purely decorative until hit, so keep modifier dormant by default
+	hit_reaction_modifier.active = false
+
 func _setup_hitboxes() -> void:
 	if Engine.is_editor_hint():
 		return
@@ -274,8 +372,17 @@ func setup_member(armed: bool, material: Material, config: Dictionary = {}) -> v
 			set(k, config[k])
 
 	is_armed = armed and enable_water_gun
-	if npc_gun:
-		npc_gun.visible = is_armed
+	if is_armed:
+		if is_instance_valid(npc_gun):
+			npc_gun.visible = true
+		if attached_balloon and is_instance_valid(attached_balloon):
+			attached_balloon.queue_free()
+			attached_balloon = null
+	else:
+		if npc_gun and is_instance_valid(npc_gun):
+			npc_gun.queue_free()
+			npc_gun = null
+			gun_spawn_point = null
 
 	if material:
 		set_crowd_material(material)
@@ -319,9 +426,8 @@ func play_sound(event_name: String = "") -> void:
 func set_crowd_material(mat: Material) -> void:
 	if not mat:
 		return
-	for node in find_children("*", "MeshInstance3D", true, false):
-		var mesh_inst = node as MeshInstance3D
-		if npc_gun and (mesh_inst == npc_gun or npc_gun.is_ancestor_of(mesh_inst)):
+	for mesh_inst in cached_meshes:
+		if not is_instance_valid(mesh_inst):
 			continue
 		mesh_inst.material_override = null
 		var count = mesh_inst.get_surface_override_material_count()
@@ -395,6 +501,8 @@ func start_idle_loop() -> void:
 	if target_anim != "" and anim_player.has_animation(target_anim):
 		current_dance_anim = target_anim
 		anim_player.speed_scale = speed
+		if not Engine.is_editor_hint():
+			anim_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 		anim_player.play(target_anim, cross_fade_time)
 		var anim_res = anim_player.get_animation(target_anim)
 		if anim_res and anim_res.length > 0.0:
@@ -423,12 +531,15 @@ func apply_editor_performance_mode(enabled: bool) -> void:
 		anim_player.active = false
 	else:
 		anim_player.active = true
+		anim_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_IDLE
 		anim_player.speed_scale = range_animation_speed if is_armed else dance_animation_speed
 		resume_base_loop()
 
 func resume_base_loop() -> void:
 	if not anim_player:
 		return
+	if not Engine.is_editor_hint():
+		anim_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	if is_armed:
 		var target_anim = _get_armed_anim()
 		if target_anim != "" and anim_player.has_animation(target_anim):
@@ -609,6 +720,9 @@ func take_hit(hit_data: Dictionary) -> void:
 	hit_data["hit_direction"] = hit_dir
 
 	request_full_hitboxes()
+
+	if hit_reaction_modifier:
+		hit_reaction_modifier.active = true
 
 	# 1. Emit enemy_hit for procedural spring wiggles
 	enemy_hit.emit(hit_data)

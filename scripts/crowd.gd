@@ -303,7 +303,6 @@ var next_shot_time: float = 2.0
 var balloon_timer: float = 0.0
 var next_balloon_time: float = 4.0
 
-var is_visible: bool = true
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 var _visibility_notifier: VisibleOnScreenNotifier3D = null
@@ -593,7 +592,10 @@ func _apply_culling_settings_to_member(member: Node3D) -> void:
 		row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
 
 	var in_editor_perf = Engine.is_editor_hint() and editor_performance_mode
-	for child in member.find_children("*", "MeshInstance3D", true, false):
+	var meshes = member.cached_meshes if ("cached_meshes" in member and not member.cached_meshes.is_empty()) else member.find_children("*", "MeshInstance3D", true, false)
+	for child in meshes:
+		if not is_instance_valid(child):
+			continue
 		var mesh_inst = child as MeshInstance3D
 		if mesh_inst:
 			mesh_inst.visibility_range_end = row_dist
@@ -642,7 +644,15 @@ func _update_shadow_state(cam_dist: float = -1.0) -> void:
 			row_shadow_allowed = (cam_dist <= row_dist)
 
 		var in_editor_perf = Engine.is_editor_hint() and editor_performance_mode
-		for child in member.find_children("*", "MeshInstance3D", true, false):
+		var prev_state = member.get_meta("_last_shadow_allowed", null)
+		if prev_state != null and prev_state == row_shadow_allowed and not in_editor_perf:
+			continue
+		member.set_meta("_last_shadow_allowed", row_shadow_allowed)
+
+		var meshes = member.cached_meshes if ("cached_meshes" in member and not member.cached_meshes.is_empty()) else member.find_children("*", "MeshInstance3D", true, false)
+		for child in meshes:
+			if not is_instance_valid(child):
+				continue
 			var mesh_inst = child as MeshInstance3D
 			if mesh_inst:
 				if in_editor_perf:
@@ -702,7 +712,6 @@ func _set_crowd_rendered(rendered: bool) -> void:
 	if _is_rendered == rendered:
 		return
 	_is_rendered = rendered
-	is_visible = rendered
 
 	for member in active_members:
 		if not is_instance_valid(member):
@@ -1249,6 +1258,8 @@ func _setup_crowd() -> void:
 			member.crowd_row = row
 		if "crowd_manager" in member:
 			member.crowd_manager = self
+		if "member_index" in member:
+			member.member_index = i
 
 		if member.has_method("setup_member"):
 			member.setup_member(has_gun, mat, config)
@@ -1348,6 +1359,8 @@ func _spawn_from_saved_layout() -> void:
 			member.crowd_row = row
 		if "crowd_manager" in member:
 			member.crowd_manager = self
+		if "member_index" in member:
+			member.member_index = i
 
 		if member.has_method("setup_member"):
 			member.setup_member(has_gun, mat, config)
@@ -1389,7 +1402,6 @@ func _trigger_random_shot() -> void:
 	shooter.shoot_at(target_aim, _on_water_gun_fired)
 
 func _on_water_gun_fired(shooter: Node3D, muzzle_pos: Vector3, target_pos: Vector3) -> void:
-	var cur_shot_vfx_scene = shot_vfx_scene if shot_vfx_scene else water_line_scene
 	var cur_muzzle_vfx_scene = muzzle_vfx_scene
 	var cur_hit_vfx_scene = hit_vfx_scene
 	var cur_muzzle_scale = muzzle_scale
@@ -1401,8 +1413,6 @@ func _on_water_gun_fired(shooter: Node3D, muzzle_pos: Vector3, target_pos: Vecto
 
 	if shooter is CrowdMember and shooter.npc_gun:
 		var gun = shooter.npc_gun
-		if "shot_vfx_scene" in gun and gun.shot_vfx_scene != null:
-			cur_shot_vfx_scene = gun.shot_vfx_scene
 		if "muzzle_vfx_scene" in gun and gun.muzzle_vfx_scene != null:
 			cur_muzzle_vfx_scene = gun.muzzle_vfx_scene
 		if "hit_vfx_scene" in gun and gun.hit_vfx_scene != null:
@@ -1463,12 +1473,13 @@ func _on_water_gun_fired(shooter: Node3D, muzzle_pos: Vector3, target_pos: Vecto
 	var dir = (target_pos - muzzle_pos).normalized()
 	var ray_end = muzzle_pos + dir * 50.0
 
-	var exclude: Array[RID] = []
-	if shooter is CollisionObject3D:
-		exclude.append(shooter.get_rid())
-	for c in shooter.find_children("*", "CollisionObject3D", true, false):
-		if c is CollisionObject3D:
-			exclude.append(c.get_rid())
+	var exclude: Array[RID] = shooter.cached_rids if ("cached_rids" in shooter and not shooter.cached_rids.is_empty()) else []
+	if exclude.is_empty():
+		if shooter is CollisionObject3D:
+			exclude.append(shooter.get_rid())
+		for c in shooter.find_children("*", "CollisionObject3D", true, false):
+			if c is CollisionObject3D:
+				exclude.append(c.get_rid())
 
 	var query = PhysicsRayQueryParameters3D.create(muzzle_pos, ray_end)
 	query.exclude = exclude
