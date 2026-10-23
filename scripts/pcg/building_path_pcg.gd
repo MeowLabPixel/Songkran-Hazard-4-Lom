@@ -18,6 +18,11 @@ enum GateMode {
 	ORIGINAL_DEFAULT ## Keeps the original scene gate state
 }
 
+enum RenderMode {
+	SCENE_INSTANCES, ## Regular individual scene instances (standard node workflow)
+	MULTIMESH,       ## Batched rendering using MultiMeshInstance3D for visual meshes (massive draw-call reduction, collisions & iron gates preserved)
+}
+
 const DEFAULT_POOL_PATHS: Array[String] = [
 	"res://map/Store_Building/4_storey_v_1_Big_balcony.tscn",
 	"res://map/Store_Building/4_storey_v_2_Small_Balcony.tscn",
@@ -280,6 +285,84 @@ var _collision_bounds_cache: Dictionary = {}
 ## If left empty, all 20 modular shop houses will be loaded automatically.
 @export var building_pool: Array[PackedScene] = []
 
+# ==================== PERFORMANCE / RENDERING ====================
+@export_group("Performance & Rendering")
+## Rendering mode:
+## SCENE_INSTANCES: Standard individual Node3D scenes (higher draw calls, standard inspector editing).
+## MULTIMESH: Batches all shared visual building meshes into MultiMeshInstance3D nodes for maximum performance.
+## Collisions and iron gates remain fully functional in both modes!
+@export var render_mode: RenderMode = RenderMode.SCENE_INSTANCES:
+	set(val):
+		render_mode = val
+		if _has_generated_buildings():
+			generate()
+
+# ==================== OCCLUSION CULLING ====================
+@export_group("Occlusion Culling")
+## Automatically generates lightweight 2-triangle QuadOccluder3D party walls and back walls for each building.
+## Culls occluded geometry behind and beside buildings with zero door clipping and maximum performance!
+@export var generate_occluders: bool = true:
+	set(val):
+		generate_occluders = val
+		if _has_generated_buildings():
+			generate()
+
+## Generates rear back wall occluder (culls background city, buildings, and props behind Silom Road)
+@export var occlude_back_wall: bool = true:
+	set(val):
+		occlude_back_wall = val
+		if _has_generated_buildings():
+			generate()
+
+## Generates side party wall occluders between adjacent buildings (culls down-the-street geometry)
+@export var occlude_party_walls: bool = true:
+	set(val):
+		occlude_party_walls = val
+		if _has_generated_buildings():
+			generate()
+
+## Inset from side and back walls in meters (prevents seam clipping and z-fighting between adjacent buildings)
+@export var occluder_wall_inset: float = 0.05:
+	set(val):
+		occluder_wall_inset = maxf(val, 0.0)
+		if _has_generated_buildings():
+			generate()
+
+## Inset from front facade in meters (ensures side occluders do not clip front doors, balconies, or sidewalks)
+@export var occluder_front_inset: float = 0.5:
+	set(val):
+		occluder_front_inset = maxf(val, 0.0)
+		if _has_generated_buildings():
+			generate()
+
+# ==================== DISTANCE DITHER FADE ====================
+@export_group("Distance Dither Fade")
+## Enables triple-AAA GPU screen-space dither fading at distance (VISIBILITY_RANGE_FADE_SELF).
+## Distant buildings smoothly dissolve into view along the street curve without popping!
+@export var enable_distance_fade: bool = true:
+	set(val):
+		enable_distance_fade = val
+		_apply_fade_settings_to_existing()
+
+## Maximum render distance in meters. Beyond this distance, the building is completely dissolved and culled from rendering.
+@export var fade_max_distance: float = 120.0:
+	set(val):
+		fade_max_distance = maxf(val, 5.0)
+		_apply_fade_settings_to_existing()
+
+## Distance margin in meters over which the GPU dither fade occurs.
+## For example, if max is 120m and margin is 25m, the building begins dissolving at 95m and is fully culled at 120m.
+@export var fade_transition_margin: float = 25.0:
+	set(val):
+		fade_transition_margin = maxf(val, 0.0)
+		_apply_fade_settings_to_existing()
+
+## Screen-space fade mode (VISIBILITY_RANGE_FADE_SELF enables AAA sub-pixel dithering in Forward+).
+@export var fade_mode: GeometryInstance3D.VisibilityRangeFadeMode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF:
+	set(val):
+		fade_mode = val
+		_apply_fade_settings_to_existing()
+
 # ==================== BAKE ACTION ====================
 @export_group("Bake to Scene")
 ## Converts generated buildings to regular scene nodes, detaching them from PCG
@@ -364,10 +447,14 @@ func _get_active_start_corner_scene() -> PackedScene:
 	_init_default_scenes_if_needed()
 	return corner_start_scene_flipped if flip_front_to_back else corner_start_scene
 
-## Calculates exact local collision bounds for a building scene
+## Calculates exact local collision and spatial bounds for a building scene
 func _get_collision_bounds(scene: PackedScene) -> Dictionary:
 	if scene == null:
-		return {"min_x": -2.4, "max_x": 2.4, "width": 4.8, "is_wide": false}
+		return {
+			"min_x": -2.4, "max_x": 2.4, "width": 4.8, "is_wide": false,
+			"min_y": 0.0, "max_y": 12.4, "height": 12.4,
+			"min_z": -3.5, "max_z": 2.97, "depth": 6.47
+		}
 	
 	var scene_path: String = scene.resource_path
 	if _collision_bounds_cache.has(scene_path):
@@ -379,10 +466,18 @@ func _get_collision_bounds(scene: PackedScene) -> Dictionary:
 	var inst: Node3D = scene.instantiate() as Node3D
 	if not inst:
 		var w: float = 9.6 if name_says_wide else 4.8
-		return {"min_x": -w * 0.5, "max_x": w * 0.5, "width": w, "is_wide": name_says_wide}
+		return {
+			"min_x": -w * 0.5, "max_x": w * 0.5, "width": w, "is_wide": name_says_wide,
+			"min_y": 0.0, "max_y": 12.4, "height": 12.4,
+			"min_z": -9.9 if name_says_wide else -3.5, "max_z": 2.97, "depth": 12.87 if name_says_wide else 6.47
+		}
 
 	var min_x: float = INF
 	var max_x: float = -INF
+	var min_y: float = INF
+	var max_y: float = -INF
+	var min_z: float = INF
+	var max_z: float = -INF
 
 	var col_shapes: Array[Node] = inst.find_children("*", "CollisionShape3D", true, false)
 	for col in col_shapes:
@@ -403,20 +498,64 @@ func _get_collision_bounds(scene: PackedScene) -> Dictionary:
 
 		if shape is BoxShape3D:
 			var s: Vector3 = (shape as BoxShape3D).size
-			for c in [Vector3(-s.x, -s.y, -s.z), Vector3(s.x, s.y, s.z)]:
+			for c in [
+				Vector3(-s.x, -s.y, -s.z), Vector3(s.x, -s.y, -s.z),
+				Vector3(-s.x, s.y, -s.z), Vector3(s.x, s.y, -s.z),
+				Vector3(-s.x, -s.y, s.z), Vector3(s.x, -s.y, s.z),
+				Vector3(-s.x, s.y, s.z), Vector3(s.x, s.y, s.z)
+			]:
 				var pt: Vector3 = xform * (c * 0.5)
 				min_x = minf(min_x, pt.x)
 				max_x = maxf(max_x, pt.x)
+				min_y = minf(min_y, pt.y)
+				max_y = maxf(max_y, pt.y)
+				min_z = minf(min_z, pt.z)
+				max_z = maxf(max_z, pt.z)
 		elif shape is ConvexPolygonShape3D:
 			for pt in (shape as ConvexPolygonShape3D).points:
 				var gpt: Vector3 = xform * pt
 				min_x = minf(min_x, gpt.x)
 				max_x = maxf(max_x, gpt.x)
+				min_y = minf(min_y, gpt.y)
+				max_y = maxf(max_y, gpt.y)
+				min_z = minf(min_z, gpt.z)
+				max_z = maxf(max_z, gpt.z)
 		elif shape is ConcavePolygonShape3D:
 			for pt in (shape as ConcavePolygonShape3D).get_faces():
 				var gpt: Vector3 = xform * pt
 				min_x = minf(min_x, gpt.x)
 				max_x = maxf(max_x, gpt.x)
+				min_y = minf(min_y, gpt.y)
+				max_y = maxf(max_y, gpt.y)
+				min_z = minf(min_z, gpt.z)
+				max_z = maxf(max_z, gpt.z)
+
+	# If collision shapes don't provide valid Y or Z bounds, check MeshInstance3Ds as fallback
+	if is_inf(min_y) or is_inf(max_y) or is_inf(min_z) or is_inf(max_z):
+		var meshes: Array[Node] = inst.find_children("*", "MeshInstance3D", true, false)
+		for mi in meshes:
+			if not (mi is MeshInstance3D) or mi.mesh == null:
+				continue
+			var aabb: AABB = mi.mesh.get_aabb()
+			var xform: Transform3D = mi.transform
+			var p: Node = mi.get_parent()
+			while p and p != inst:
+				if p is Node3D:
+					xform = (p as Node3D).transform * xform
+				p = p.get_parent()
+			for i in range(8):
+				var corner: Vector3 = aabb.position + Vector3(
+					aabb.size.x if (i & 1) else 0.0,
+					aabb.size.y if (i & 2) else 0.0,
+					aabb.size.z if (i & 4) else 0.0
+				)
+				var pt: Vector3 = xform * corner
+				min_x = minf(min_x, pt.x)
+				max_x = maxf(max_x, pt.x)
+				min_y = minf(min_y, pt.y)
+				max_y = maxf(max_y, pt.y)
+				min_z = minf(min_z, pt.z)
+				max_z = maxf(max_z, pt.z)
 
 	inst.free()
 
@@ -425,13 +564,28 @@ func _get_collision_bounds(scene: PackedScene) -> Dictionary:
 		min_x = -fallback_w * 0.5
 		max_x = fallback_w * 0.5
 
+	var is_3_storey: bool = file_name.contains("3_storey")
+	if is_inf(min_y) or is_inf(max_y) or min_y >= max_y:
+		min_y = 0.0
+		max_y = 9.3 if is_3_storey else 12.4
+
+	if is_inf(min_z) or is_inf(max_z) or min_z >= max_z:
+		min_z = -9.9 if name_says_wide else -3.5
+		max_z = 2.97
+
 	var width: float = max_x - min_x
 	var is_wide: bool = name_says_wide or width > 6.0
 	var res: Dictionary = {
 		"min_x": min_x,
 		"max_x": max_x,
 		"width": width,
-		"is_wide": is_wide
+		"is_wide": is_wide,
+		"min_y": min_y,
+		"max_y": max_y,
+		"height": max_y - min_y,
+		"min_z": min_z,
+		"max_z": max_z,
+		"depth": max_z - min_z
 	}
 	_collision_bounds_cache[scene_path] = res
 	return res
@@ -461,7 +615,10 @@ func clear() -> void:
 	if container:
 		for child in container.get_children():
 			container.remove_child(child)
-			child.queue_free()
+			if child.is_inside_tree():
+				child.queue_free()
+			else:
+				child.free()
 
 ## Main PCG generation algorithm
 func generate() -> void:
@@ -559,6 +716,10 @@ func generate() -> void:
 			var place_d: float = _calculate_placement_distance(cursor, end_bounds)
 			_spawn_building(container, end_corner_scene_active, place_d, rng, "EndCorner")
 
+	# 4. MultiMesh batching optimization (draw-call reduction)
+	if render_mode == RenderMode.MULTIMESH:
+		_apply_multimesh_batching(container)
+
 ## Calculates origin position so building's collision boundary starts precisely at cursor
 func _calculate_placement_distance(cursor_pos: float, bounds: Dictionary) -> float:
 	var col_min_x: float = bounds.get("min_x", -2.4)
@@ -630,7 +791,85 @@ func _spawn_building(container: Node3D, scene: PackedScene, d: float, rng: Rando
 		if not toggle_front_gates_only:
 			building_ctrl.back_iron_gate_closed = is_closed
 
+	# Procedural Occlusion Culling (lightweight QuadOccluder3D walls)
+	if generate_occluders:
+		_generate_building_occluders(instance, scene, prefix)
+
+	# Triple-AAA GPU screen-space distance dither fade
+	_apply_distance_fade_to_building(instance)
+
 	return instance
+
+## Generates lightweight 2-triangle QuadOccluder3D walls for a building instance
+func _generate_building_occluders(instance: Node3D, scene: PackedScene, prefix: String) -> void:
+	var b_info: Dictionary = _get_collision_bounds(scene)
+	var min_x: float = b_info.get("min_x", -2.4)
+	var max_x: float = b_info.get("max_x", 2.4)
+	var width: float = b_info.get("width", 4.8)
+	var min_y: float = b_info.get("min_y", 0.0)
+	var max_y: float = b_info.get("max_y", 12.4)
+	var height: float = b_info.get("height", 12.4)
+	var min_z: float = b_info.get("min_z", -3.5)
+	var max_z: float = b_info.get("max_z", 2.97)
+
+	var occ_group: Node3D = Node3D.new()
+	occ_group.name = "Occluders"
+	instance.add_child(occ_group)
+	if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+		occ_group.owner = get_tree().edited_scene_root
+
+	var scene_name: String = scene.resource_path.get_file().get_basename().to_lower()
+	var is_left_corner: bool = scene_name.contains("conner_building_left") or scene_name.contains("corner_building_left")
+	var is_right_corner: bool = scene_name.contains("conner_building_right") or scene_name.contains("corner_building_right")
+
+	# 1. Back Wall Occluder (culls background city / buildings behind the street)
+	if occlude_back_wall:
+		var back_w: float = maxf(width - (occluder_wall_inset * 2.0), 0.1)
+		var back_h: float = maxf(height - (occluder_wall_inset * 2.0), 0.1)
+		var back_pos: Vector3 = Vector3(
+			(min_x + max_x) * 0.5,
+			(min_y + max_y) * 0.5,
+			min_z + occluder_wall_inset
+		)
+		_create_quad_occluder(occ_group, "BackWallOccluder", Vector2(back_w, back_h), back_pos, 0.0)
+
+	# 2. Side Party Wall Occluders (culls down-the-street geometry)
+	if occlude_party_walls:
+		var z_start: float = min_z + occluder_wall_inset
+		var z_end: float = max_z - occluder_front_inset
+		var eff_depth: float = maxf(z_end - z_start, 0.5)
+		var party_h: float = maxf(height - (occluder_wall_inset * 2.0), 0.1)
+		var party_z: float = (z_start + z_end) * 0.5
+		var party_y: float = (min_y + max_y) * 0.5
+
+		# Left Wall: skip if left corner building (outer side faces open side street)
+		if not is_left_corner:
+			var left_pos: Vector3 = Vector3(min_x + occluder_wall_inset, party_y, party_z)
+			_create_quad_occluder(occ_group, "LeftPartyWallOccluder", Vector2(eff_depth, party_h), left_pos, 90.0)
+
+		# Right Wall: skip if right corner building (outer side faces open side street)
+		if not is_right_corner:
+			var right_pos: Vector3 = Vector3(max_x - occluder_wall_inset, party_y, party_z)
+			_create_quad_occluder(occ_group, "RightPartyWallOccluder", Vector2(eff_depth, party_h), right_pos, 90.0)
+
+## Helper to create and attach a QuadOccluder3D
+func _create_quad_occluder(parent: Node3D, node_name: String, quad_size: Vector2, local_pos: Vector3, local_rot_y_deg: float) -> OccluderInstance3D:
+	var occ_inst: OccluderInstance3D = OccluderInstance3D.new()
+	occ_inst.name = node_name
+
+	var quad: QuadOccluder3D = QuadOccluder3D.new()
+	quad.size = quad_size
+	occ_inst.occluder = quad
+
+	occ_inst.position = local_pos
+	if not is_zero_approx(local_rot_y_deg):
+		occ_inst.rotation_degrees = Vector3(0.0, local_rot_y_deg, 0.0)
+
+	parent.add_child(occ_inst)
+	if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+		occ_inst.owner = get_tree().edited_scene_root
+
+	return occ_inst
 
 ## Calculates the position and right-handed orientation Basis at curve distance d
 func _compute_transform_at_distance(d: float) -> Transform3D:
@@ -682,6 +921,8 @@ func _apply_gate_settings_to_existing() -> void:
 	rng.seed = seed_number + 999
 	
 	for child in container.get_children():
+		if child.name == "MultiMeshes":
+			continue
 		var ctrl: Node = null
 		if child.get_script() == PCG_BUILDING_INSTANCE_SCRIPT:
 			ctrl = child
@@ -704,6 +945,43 @@ func _apply_gate_settings_to_existing() -> void:
 			if not toggle_front_gates_only:
 				ctrl.back_iron_gate_closed = is_closed
 
+## Applies distance dither fade settings to all MeshInstance3Ds within a building
+func _apply_distance_fade_to_building(node: Node3D) -> void:
+	var dist: float = fade_max_distance if enable_distance_fade else 0.0
+	var margin: float = fade_transition_margin if enable_distance_fade else 0.0
+	var mode: GeometryInstance3D.VisibilityRangeFadeMode = fade_mode if enable_distance_fade else GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+
+	var meshes: Array[Node] = node.find_children("*", "MeshInstance3D", true, false)
+	for m in meshes:
+		var mi: MeshInstance3D = m as MeshInstance3D
+		if mi:
+			mi.visibility_range_end = dist
+			mi.visibility_range_end_margin = margin
+			mi.visibility_range_fade_mode = mode
+
+## Re-applies distance dither fade settings to all currently spawned buildings and MultiMeshes
+func _apply_fade_settings_to_existing() -> void:
+	var container: Node3D = get_node_or_null("GeneratedBuildings") as Node3D
+	if not container:
+		return
+
+	var dist: float = fade_max_distance if enable_distance_fade else 0.0
+	var margin: float = fade_transition_margin if enable_distance_fade else 0.0
+	var mode: GeometryInstance3D.VisibilityRangeFadeMode = fade_mode if enable_distance_fade else GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+
+	for child in container.get_children():
+		if child.name == "MultiMeshes":
+			for mm in child.get_children():
+				if mm is MultiMeshInstance3D:
+					var mmi: MultiMeshInstance3D = mm as MultiMeshInstance3D
+					mmi.visibility_range_end = dist
+					mmi.visibility_range_end_margin = margin
+					mmi.visibility_range_fade_mode = mode
+			continue
+
+		if child is Node3D:
+			_apply_distance_fade_to_building(child as Node3D)
+
 ## Bakes the generated buildings into independent scene nodes and removes the PCG connection
 func bake() -> void:
 	var container: Node3D = get_node_or_null("GeneratedBuildings") as Node3D
@@ -713,3 +991,124 @@ func bake() -> void:
 	
 	container.name = "Baked_Buildings_" + str(randi() % 1000)
 	print("BuildingPathPCG: Successfully baked buildings to node: ", container.name)
+
+## Batches non-gate MeshInstance3Ds across all generated buildings into MultiMeshInstance3Ds.
+## Physics collisions and interactive IronGate doors remain fully intact and operational!
+func _apply_multimesh_batching(container: Node3D) -> void:
+	var mm_container: Node3D = Node3D.new()
+	mm_container.name = "MultiMeshes"
+	container.add_child(mm_container)
+	if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+		mm_container.owner = get_tree().edited_scene_root
+
+	# Dictionary of batches:
+	# key_id -> { "mesh": Mesh, "material": Material, "transforms": Array[Transform3D] }
+	var batches: Dictionary = {}
+	var total_batched: int = 0
+
+	for child in container.get_children():
+		if child == mm_container or not (child is Node3D):
+			continue
+		var building_node: Node3D = child as Node3D
+		
+		var mesh_instances: Array[Node] = building_node.find_children("*", "MeshInstance3D", true, false)
+		for node in mesh_instances:
+			var mi: MeshInstance3D = node as MeshInstance3D
+			if not mi or mi.mesh == null:
+				continue
+			
+			# Skip hidden meshes or meshes under hidden parent branches (preserves deliberate scene editor hiding)
+			if not _is_visible_in_hierarchy(mi, building_node):
+				continue
+
+			# Preserve iron gate door meshes as standalone MeshInstance3D nodes for visibility/open/close controls
+			if _is_part_of_gate(mi, building_node):
+				continue
+			
+			var mesh_res: Mesh = mi.mesh
+			var mat: Material = mi.material_override
+			if mat == null and mi.get_surface_override_material_count() > 0:
+				mat = mi.get_surface_override_material(0)
+			
+			var key: String = "%d_%d" % [mesh_res.get_instance_id(), (mat.get_instance_id() if mat != null else 0)]
+			if not batches.has(key):
+				batches[key] = {
+					"mesh": mesh_res,
+					"material": mat,
+					"transforms": []
+				}
+			
+			# Calculate exact transform relative to container
+			var rel_xform: Transform3D = mi.transform
+			var p: Node = mi.get_parent()
+			while p and p != building_node:
+				if p is Node3D:
+					rel_xform = (p as Node3D).transform * rel_xform
+				p = p.get_parent()
+			
+			var final_xform: Transform3D = building_node.transform * rel_xform
+			batches[key]["transforms"].append(final_xform)
+			total_batched += 1
+
+			# Remove visual mesh from the individual MeshInstance3D to prevent duplicate draw calls.
+			# Its physics children (StaticBody3D / CollisionShape3D) remain completely intact!
+			mi.mesh = null
+
+	# Create a MultiMeshInstance3D for each unique (mesh, material) batch
+	for key in batches:
+		var entry: Dictionary = batches[key]
+		var mesh_res: Mesh = entry["mesh"]
+		var mat: Material = entry["material"]
+		var xforms: Array = entry["transforms"]
+		if xforms.is_empty():
+			continue
+
+		var mmi: MultiMeshInstance3D = MultiMeshInstance3D.new()
+		var m_name: String = mesh_res.resource_name if mesh_res.resource_name != "" else str(mesh_res.get_instance_id())
+		mmi.name = "MMI_%s" % m_name
+
+		var mm: MultiMesh = MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_colors = false
+		mm.use_custom_data = false
+		mm.mesh = mesh_res
+		mm.instance_count = xforms.size()
+
+		for i in range(xforms.size()):
+			mm.set_instance_transform(i, xforms[i])
+
+		mmi.multimesh = mm
+		if mat != null:
+			mmi.material_override = mat
+
+		if enable_distance_fade:
+			mmi.visibility_range_end = fade_max_distance
+			mmi.visibility_range_end_margin = fade_transition_margin
+			mmi.visibility_range_fade_mode = fade_mode
+
+		mm_container.add_child(mmi)
+		if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+			mmi.owner = get_tree().edited_scene_root
+
+	print("BuildingPathPCG [MultiMesh]: Batched %d mesh instances into %d MultiMeshInstance3D draw calls." % [total_batched, batches.size()])
+
+## Checks whether a node or any of its ancestors within a building is an IronGate node
+func _is_part_of_gate(node: Node, building_root: Node) -> bool:
+	var curr: Node = node
+	while curr and curr != building_root:
+		var n: String = curr.name.to_lower()
+		if n.contains("irongate") or n.contains("iron_gate") or n.contains("panelgate") or n.contains("gate"):
+			return true
+		curr = curr.get_parent()
+	return false
+
+## Checks whether a node and all of its ancestors up to building_root are visible
+func _is_visible_in_hierarchy(node: Node, building_root: Node) -> bool:
+	var curr: Node = node
+	while curr and curr != building_root:
+		if curr is Node3D and not (curr as Node3D).visible:
+			return false
+		curr = curr.get_parent()
+	if building_root is Node3D and not (building_root as Node3D).visible:
+		return false
+	return true

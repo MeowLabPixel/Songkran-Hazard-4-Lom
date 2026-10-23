@@ -2,14 +2,27 @@
 
 [ext_resource type="Script" uid="uid://dhx1lobkx6f0b" path="res://scripts/crowd.gd" id="1_00mlh"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_ntd1s"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_h3ixh"]
+size = Vector3(10, 2, 3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_00mlh"]
 size = Vector3(10, 2, 3)
 
 [node name="Crowd_Dance" type="Node3D" unique_id=2077858760]
 script = ExtResource("1_00mlh")
-crowd_density = 0.6
+max_crowd_members = 20
+enable_female_crowd = false
+max_render_distance = 45.0
+culling_check_interval = 0.2
+middle_row_max_distance = 75.0
+back_row_max_distance = 65.0
+activity_distance_ratio = 0.7999999999999999
+enable_distance_density_scaling = false
 min_same_color_distance = 5.0
-min_gun_spacing = 6.0
+material_uv1_scale = Vector3(0.5, 0.5, 0.05)
+enable_triplanar = null
+dance_animation_speed = 1.0
+range_animation_speed = 1.0
 use_custom_seed = true
 custom_seed = 948540
 enable_audio = false
@@ -19,11 +32,12 @@ collision_layer = 0
 
 [node name="CrowdSpawnArea" type="CollisionShape3D" parent="CrowdSpawnArea" unique_id=1221461596]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9033387, 0)
-shape = SubResource("BoxShape3D_ntd1s")
+shape = SubResource("BoxShape3D_h3ixh")
 
 [node name="InvisibleWall" type="StaticBody3D" parent="." unique_id=487896331]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9049926, 0)
 collision_layer = 8
 collision_mask = 0
 
 [node name="InvisibleWall" type="CollisionShape3D" parent="InvisibleWall" unique_id=1372860949]
-shape = SubResource("BoxShape3D_ntd1s")
+shape = SubResource("BoxShape3D_00mlh")

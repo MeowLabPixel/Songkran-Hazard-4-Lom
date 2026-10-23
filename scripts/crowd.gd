@@ -1,17 +1,32 @@
 @tool
 extends Node3D
 
+enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
+
 # ─── Exported Properties & Toggles ──────────────────────────────────────────
 
 @export_group("Editor Preview")
 @export var preview_in_editor: bool = true: ## Toggle to show or hide the live crowd preview in the Godot 3D editor
 	set(val):
+		if preview_in_editor == val:
+			return
 		preview_in_editor = val
-		_on_setting_changed()
+		if Engine.is_editor_hint() and is_inside_tree():
+			if preview_in_editor:
+				_setup_crowd()
+				_apply_editor_performance_mode()
+			else:
+				_clear_preview_crowd()
+@export var editor_performance_mode: bool = true: ## In-editor only performance mode: freezes preview animations at 50% and turns off cast shadows to eliminate editor lag. Does not affect running game!
+	set(val):
+		editor_performance_mode = val
+		_apply_editor_performance_mode()
 
 @export_group("Crowd Spawning")
 @export var spawn_area_size: Vector3 = Vector3(10, 2, 3): ## Size of the spawn area box (X: Width, Y: Height, Z: Depth). Automatically updates the shape in the editor!
 	set(val):
+		if spawn_area_size == val:
+			return
 		spawn_area_size = val
 		_update_spawn_shapes()
 		_on_setting_changed()
@@ -28,9 +43,13 @@ extends Node3D
 	set(val):
 		use_density_mode = val
 		_on_setting_changed()
-@export_range(0.01, 1.0, 0.01) var crowd_density: float = 0.12: ## Crowd density (members per m² of the Area3D box footprint)
+@export_range(0.01, 1.0, 0.01) var crowd_density: float = 0.4: ## Crowd density (members per m² of the Area3D box footprint)
 	set(val):
 		crowd_density = val
+		_on_setting_changed()
+@export_range(1, 40, 1) var max_crowd_members: int = 25: ## Hard safety cap on total crowd members spawned
+	set(val):
+		max_crowd_members = val
 		_on_setting_changed()
 @export_range(1, 150, 1) var crowd_count: int = 12: ## Fallback fixed count when use_density_mode is false
 	set(val):
@@ -70,6 +89,65 @@ extends Node3D
 		ground_snap_min_normal_y = val
 		_on_setting_changed()
 
+@export_group("Performance & Culling")
+@export var max_render_distance: float = 100.0: ## Distance beyond which crowd members are hidden / not rendered
+	set(val):
+		max_render_distance = val
+		_update_render_distances()
+@export var enable_occlusion_culling: bool = true ## Raycast line-of-sight occlusion test against walls/buildings
+@export var enable_shadow_optimization: bool = true: ## Disable shadows on micro-meshes (fingers, flipflops, nose, etc.)
+	set(val):
+		enable_shadow_optimization = val
+		_update_render_distances()
+@export var culling_check_interval: float = 0.1 ## Interval in seconds for CPU occlusion & camera distance culling checks
+
+@export_group("Row & Distance Architecture")
+@export var enable_row_architecture: bool = true: ## Spawns crowd in 3 depth rows (front, middle, back) with row-staggered culling
+	set(val):
+		enable_row_architecture = val
+		_on_setting_changed()
+@export var front_row_max_distance: float = 100.0: ## Max render distance for front row (up to 100m)
+	set(val):
+		front_row_max_distance = val
+		_update_render_distances()
+@export var middle_row_max_distance: float = 60.0: ## Max render distance for middle row (up to 50m)
+	set(val):
+		middle_row_max_distance = val
+		_update_render_distances()
+@export var back_row_max_distance: float = 30.0: ## Max render distance for back row (up to 25m)
+	set(val):
+		back_row_max_distance = val
+		_update_render_distances()
+@export var max_front_row_members: int = 10: ## Front row cap (user limit: max 8 crowd)
+	set(val):
+		max_front_row_members = val
+		_on_setting_changed()
+@export var front_row_is_negative_z: bool = true: ## If true, front row is along -Z (Godot forward); if false, along +Z
+	set(val):
+		front_row_is_negative_z = val
+		_on_setting_changed()
+@export var enable_shader_dithering: bool = true: ## Use GPU dither fade per row (VISIBILITY_RANGE_FADE_SELF)
+	set(val):
+		enable_shader_dithering = val
+		_update_render_distances()
+@export_range(0.1, 1.0, 0.05) var activity_distance_ratio: float = 0.75 ## Fraction of row distance beyond which animation/combat pauses (75%)
+@export var enable_distance_density_scaling: bool = true: ## Dynamically scale crowd density from min_distance_density to max_distance_density based on distance (100m to 25m)
+	set(val):
+		enable_distance_density_scaling = val
+		_on_setting_changed()
+@export var min_distance_density: float = 0.2: ## Density at 100m distance
+	set(val):
+		min_distance_density = val
+		_on_setting_changed()
+@export var max_distance_density: float = 0.5: ## Density at 25m distance
+	set(val):
+		max_distance_density = val
+		_on_setting_changed()
+@export var enable_row_shadows: bool = true: ## Each row enables its own shadow independently based on its render distance
+	set(val):
+		enable_row_shadows = val
+		_update_shadow_state()
+
 @export_group("Appearance & Animation")
 @export var enable_random_textures: bool = true:
 	set(val):
@@ -79,7 +157,7 @@ extends Node3D
 	set(val):
 		min_same_color_distance = val
 		_on_setting_changed()
-@export var material_uv1_scale: Vector3 = Vector3(0.5, 0.5, 0.05):
+@export var material_uv1_scale: Vector3 = Vector3(1, 1, 1):
 	set(val):
 		material_uv1_scale = val
 		_setup_materials()
@@ -87,11 +165,15 @@ extends Node3D
 	set(val):
 		material_uv1_offset = val
 		_setup_materials()
-@export_range(0.1, 3.0, 0.05) var dance_animation_speed: float = 1.0: ## Speed slider for dance animations
+@export var enable_triplanar: bool = false:
+	set(val):
+		enable_triplanar = val
+		_setup_materials()
+@export_range(0.1, 3.0, 0.05) var dance_animation_speed: float = 1.25: ## Speed slider for dance animations
 	set(val):
 		dance_animation_speed = val
 		_on_setting_changed()
-@export_range(0.1, 3.0, 0.05) var range_animation_speed: float = 1.0: ## Speed slider for ranged water gun reload and shot animations
+@export_range(0.1, 3.0, 0.05) var range_animation_speed: float = 1.75: ## Speed slider for ranged water gun reload and shot animations
 	set(val):
 		range_animation_speed = val
 		_on_setting_changed()
@@ -107,7 +189,7 @@ extends Node3D
 	set(val):
 		gun_spawn_chance = val
 		_on_setting_changed()
-@export var min_gun_spacing: float = 3.0: ## Minimum distance between crowd members equipped with water guns
+@export var min_gun_spacing: float = 6.0: ## Minimum distance between crowd members equipped with water guns
 	set(val):
 		min_gun_spacing = val
 		_on_setting_changed()
@@ -125,6 +207,20 @@ extends Node3D
 	set(value):
 		if value:
 			reroll()
+
+@export_group("Layout Persistence")
+@export var lock_editor_positions: bool = true: ## When true, exact positions and rotations from the editor preview are saved and restored identically in game
+	set(val):
+		lock_editor_positions = val
+		if not val:
+			saved_crowd_data.clear()
+		elif saved_crowd_data.is_empty() and Engine.is_editor_hint() and is_inside_tree():
+			regenerate_crowd()
+@export var rebake_positions: bool = false: ## Toggle in Inspector to re-generate and bake a fresh layout from current settings
+	set(val):
+		if val:
+			rebake()
+@export_storage var saved_crowd_data: Array[Dictionary] = []
 
 @export_group("Combat & Interaction")
 @export var enable_water_gun_shooting: bool = true
@@ -210,6 +306,42 @@ var next_balloon_time: float = 4.0
 var is_visible: bool = true
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
+var _visibility_notifier: VisibleOnScreenNotifier3D = null
+var _culling_timer: float = 0.0
+var _is_on_screen: bool = true
+var _is_rendered: bool = true
+var _crowd_rids: Array[RID] = []
+var _all_rows_present: bool = false
+var _mid_row_revealed: bool = false
+var _back_row_revealed: bool = false
+
+func are_all_rows_present() -> bool:
+	return _all_rows_present
+
+func get_row_local_z_range(row: CrowdRow) -> Vector2:
+	var depth = spawn_area_size.z
+	var half_d = depth * 0.5
+	if front_row_is_negative_z:
+		match row:
+			CrowdRow.FRONT:
+				return Vector2(-half_d, -half_d + depth * 0.35)
+			CrowdRow.MIDDLE:
+				return Vector2(-half_d + depth * 0.35, -half_d + depth * 0.70)
+			CrowdRow.BACK:
+				return Vector2(-half_d + depth * 0.70, half_d)
+			_:
+				return Vector2(-half_d, half_d)
+	else:
+		match row:
+			CrowdRow.FRONT:
+				return Vector2(half_d - depth * 0.35, half_d)
+			CrowdRow.MIDDLE:
+				return Vector2(half_d - depth * 0.70, half_d - depth * 0.35)
+			CrowdRow.BACK:
+				return Vector2(-half_d, half_d - depth * 0.70)
+			_:
+				return Vector2(-half_d, half_d)
+
 func _update_spawn_shapes() -> void:
 	var area = get_node_or_null("CrowdSpawnArea")
 	if area:
@@ -234,38 +366,57 @@ func _update_spawn_shapes() -> void:
 				var box = col_wall.shape as BoxShape3D
 				box.size = spawn_area_size
 
-func _sync_initial_spawn_size() -> void:
+func _sync_spawn_size_from_shape() -> void:
 	var area = get_node_or_null("CrowdSpawnArea")
 	if area:
 		var col_shape = area.get_node_or_null("CrowdSpawnArea") as CollisionShape3D
 		if col_shape and col_shape.shape is BoxShape3D:
 			var box = col_shape.shape as BoxShape3D
-			if spawn_area_size == Vector3(10, 2, 3) and box.size != Vector3(10, 2, 3):
+			# If the child shape was edited directly in the scene (e.g. via Editable Children),
+			# preserve that shape and sync spawn_area_size to it!
+			if box.size != Vector3(10, 2, 3) and spawn_area_size == Vector3(10, 2, 3):
 				spawn_area_size = box.size
+			elif spawn_area_size != Vector3(10, 2, 3) and box.size == Vector3(10, 2, 3):
+				box.size = spawn_area_size
 			else:
-				_update_spawn_shapes()
-		else:
-			_update_spawn_shapes()
+				spawn_area_size = box.size
+
+			if sync_invisible_wall:
+				var wall = get_node_or_null("InvisibleWall")
+				if wall:
+					var col_wall = wall.get_node_or_null("InvisibleWall") as CollisionShape3D
+					if col_wall and col_wall.shape is BoxShape3D:
+						(col_wall.shape as BoxShape3D).size = box.size
+
+var _setting_change_pending: bool = false
 
 func _enter_tree() -> void:
 	if Engine.is_editor_hint():
-		(func():
-			if is_inside_tree() and preview_in_editor:
-				_sync_initial_spawn_size()
-				_setup_materials()
-				_setup_crowd()
-		).call_deferred()
+		_sync_spawn_size_from_shape()
+		_setup_materials()
 
 func _exit_tree() -> void:
 	if Engine.is_editor_hint():
 		_clear_preview_crowd()
 
 func _on_setting_changed() -> void:
-	if Engine.is_editor_hint() and is_inside_tree():
-		if preview_in_editor:
-			regenerate_crowd()
-		else:
-			_clear_preview_crowd()
+	if not Engine.is_editor_hint() or not is_inside_tree() or not is_node_ready():
+		return
+	if _setting_change_pending:
+		return
+	_setting_change_pending = true
+	_apply_setting_change_deferred.call_deferred()
+
+func _apply_setting_change_deferred() -> void:
+	_setting_change_pending = false
+	if not Engine.is_editor_hint() or not is_inside_tree() or not is_node_ready():
+		return
+	saved_crowd_data.clear()
+	if preview_in_editor:
+		regenerate_crowd()
+	else:
+		regenerate_crowd()
+		_clear_preview_crowd()
 
 func _update_audio_settings() -> void:
 	for member in active_members:
@@ -291,11 +442,20 @@ func _silence_audio_nodes(node: Node) -> void:
 			child.stop()
 
 func reroll() -> void:
+	saved_crowd_data.clear()
 	custom_seed = randi() % 1000000 + 1
 	use_custom_seed = true
 	reroll_seed = false
 	notify_property_list_changed()
 	print("[Crowd] Rerolled seed: %d" % custom_seed)
+	if is_inside_tree():
+		regenerate_crowd()
+
+func rebake() -> void:
+	saved_crowd_data.clear()
+	rebake_positions = false
+	notify_property_list_changed()
+	print("[Crowd] Rebaking crowd positions...")
 	if is_inside_tree():
 		regenerate_crowd()
 
@@ -307,10 +467,23 @@ func _clear_preview_crowd() -> void:
 				remove_child(child)
 			child.queue_free()
 	active_members.clear()
+	_crowd_rids.clear()
+	if existing_male:
+		existing_male.visible = not Engine.is_editor_hint() or preview_in_editor
 
 func regenerate_crowd() -> void:
 	_clear_preview_crowd()
 	_setup_crowd()
+
+func _apply_editor_performance_mode() -> void:
+	if not Engine.is_editor_hint():
+		return
+	for member in active_members:
+		if not is_instance_valid(member):
+			continue
+		if member.has_method("apply_editor_performance_mode"):
+			member.apply_editor_performance_mode(editor_performance_mode)
+		_apply_culling_settings_to_member(member)
 
 func _setup_materials() -> void:
 	var mats = get_shared_materials()
@@ -318,17 +491,21 @@ func _setup_materials() -> void:
 		if mat is StandardMaterial3D:
 			mat.uv1_scale = material_uv1_scale
 			mat.uv1_offset = material_uv1_offset
-			mat.uv1_triplanar = true
-			mat.uv1_world_triplanar = true
+			mat.uv1_triplanar = enable_triplanar
+			mat.uv1_world_triplanar = enable_triplanar
 
 # ─── Lifecycle ─────────────────────────────────────────────────────────────
 
 func _ready() -> void:
-	_update_spawn_shapes()
+	_sync_spawn_size_from_shape()
 	_setup_materials()
 	if Engine.is_editor_hint():
 		if preview_in_editor:
 			_setup_crowd()
+		else:
+			if saved_crowd_data.is_empty():
+				regenerate_crowd()
+			_clear_preview_crowd()
 		return
 
 	_init_pools()
@@ -342,7 +519,13 @@ func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 
-	if not is_visible:
+	# Low-frequency culling & occlusion checks
+	_culling_timer += delta
+	if _culling_timer >= culling_check_interval:
+		_culling_timer = 0.0
+		_check_culling()
+
+	if not _is_rendered:
 		return
 
 	if active_members.size() < 2:
@@ -364,17 +547,290 @@ func _process(delta: float) -> void:
 			next_balloon_time = randf_range(balloon_throw_interval_min, balloon_throw_interval_max)
 			_trigger_random_balloon()
 
-# ─── Visibility Optimization ───────────────────────────────────────────────
+# ─── Visibility & Culling Optimization ─────────────────────────────────────
+
+func _update_render_distances() -> void:
+	for member in active_members:
+		_apply_culling_settings_to_member(member)
+
+func _apply_culling_settings_to_member(member: Node3D) -> void:
+	if not is_instance_valid(member):
+		return
+
+	var row = member.crowd_row if ("crowd_row" in member) else CrowdRow.FRONT
+	var row_dist = front_row_max_distance
+	var row_margin = 0.0
+	var row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+
+	if enable_row_architecture:
+		match row:
+			CrowdRow.FRONT:
+				# Front row appears instantly with no dithering fade
+				row_dist = front_row_max_distance
+				row_margin = 0.0
+				row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+			CrowdRow.MIDDLE:
+				if _mid_row_revealed:
+					row_dist = front_row_max_distance
+					row_margin = 0.0
+					row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+				else:
+					row_dist = middle_row_max_distance
+					row_margin = 5.0 if enable_shader_dithering else 0.0
+					row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF if enable_shader_dithering else GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+			CrowdRow.BACK:
+				if _back_row_revealed:
+					row_dist = front_row_max_distance
+					row_margin = 0.0
+					row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+				else:
+					row_dist = back_row_max_distance
+					row_margin = 3.0 if enable_shader_dithering else 0.0
+					row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF if enable_shader_dithering else GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+	else:
+		row_dist = max_render_distance
+		row_margin = 0.0
+		row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+
+	var in_editor_perf = Engine.is_editor_hint() and editor_performance_mode
+	for child in member.find_children("*", "MeshInstance3D", true, false):
+		var mesh_inst = child as MeshInstance3D
+		if mesh_inst:
+			mesh_inst.visibility_range_end = row_dist
+			mesh_inst.visibility_range_end_margin = row_margin
+			mesh_inst.visibility_range_fade_mode = row_fade_mode
+			if in_editor_perf:
+				mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			elif not enable_row_shadows:
+				mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			elif enable_shadow_optimization:
+				var m_name = mesh_inst.name.to_lower()
+				if ("flipflop" in m_name) or ("nose" in m_name) or ("foot" in m_name) or ("hand" in m_name) or ("neck" in m_name):
+					mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				else:
+					mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+			else:
+				mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+
+func _update_row_mesh_culling(target_row: CrowdRow) -> void:
+	for member in active_members:
+		if not is_instance_valid(member):
+			continue
+		var r = member.crowd_row if ("crowd_row" in member) else CrowdRow.FRONT
+		if r == target_row:
+			_apply_culling_settings_to_member(member)
+
+func _update_shadow_state(cam_dist: float = -1.0) -> void:
+	for member in active_members:
+		if not is_instance_valid(member):
+			continue
+		var row = member.crowd_row if ("crowd_row" in member) else CrowdRow.FRONT
+		var row_dist = front_row_max_distance
+		if enable_row_architecture:
+			match row:
+				CrowdRow.FRONT:
+					row_dist = front_row_max_distance
+				CrowdRow.MIDDLE:
+					row_dist = front_row_max_distance if _mid_row_revealed else middle_row_max_distance
+				CrowdRow.BACK:
+					row_dist = front_row_max_distance if _back_row_revealed else back_row_max_distance
+		else:
+			row_dist = max_render_distance
+
+		var row_shadow_allowed = _is_rendered and enable_row_shadows
+		if cam_dist >= 0.0 and row_shadow_allowed:
+			row_shadow_allowed = (cam_dist <= row_dist)
+
+		var in_editor_perf = Engine.is_editor_hint() and editor_performance_mode
+		for child in member.find_children("*", "MeshInstance3D", true, false):
+			var mesh_inst = child as MeshInstance3D
+			if mesh_inst:
+				if in_editor_perf:
+					mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				elif not row_shadow_allowed:
+					mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				elif enable_shadow_optimization:
+					var m_name = mesh_inst.name.to_lower()
+					if ("flipflop" in m_name) or ("nose" in m_name) or ("foot" in m_name) or ("hand" in m_name) or ("neck" in m_name):
+						mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+					else:
+						mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+				else:
+					mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 
 func _setup_visibility_notifier() -> void:
+	if _visibility_notifier and is_instance_valid(_visibility_notifier):
+		_visibility_notifier.queue_free()
+		_visibility_notifier = null
+
 	var bounds = get_spawn_bounds()
-	var notifier = VisibleOnScreenNotifier3D.new()
-	# Expand AABB slightly so animations don't pop when grazing camera edges
-	var margin = Vector3(2.0, 2.0, 2.0)
-	notifier.aabb = AABB(bounds.position - margin, bounds.size + margin * 2.0)
-	notifier.screen_entered.connect(func(): is_visible = true)
-	notifier.screen_exited.connect(func(): is_visible = false)
-	add_child(notifier)
+	_visibility_notifier = VisibleOnScreenNotifier3D.new()
+	_visibility_notifier.name = "CrowdVisibilityNotifier"
+	
+	var local_center = to_local(bounds.position + bounds.size * 0.5)
+	var margin = Vector3(3.0, 2.0, 3.0)
+	var local_size = bounds.size + margin * 2.0
+	_visibility_notifier.aabb = AABB(local_center - local_size * 0.5, local_size)
+
+	_visibility_notifier.screen_entered.connect(_on_crowd_screen_entered)
+	_visibility_notifier.screen_exited.connect(_on_crowd_screen_exited)
+	add_child(_visibility_notifier)
+
+func _on_crowd_screen_entered() -> void:
+	_is_on_screen = true
+	_check_culling(true)
+
+func _on_crowd_screen_exited() -> void:
+	_is_on_screen = false
+	_set_crowd_rendered(false)
+
+	# When camera doesn't show the crowd, reset rows that are beyond their spawn distance
+	var vp = get_viewport()
+	var cam = vp.get_camera_3d() if vp else null
+	if cam:
+		var bounds = get_spawn_bounds()
+		var center = bounds.position + bounds.size * 0.5
+		var cam_dist = cam.global_position.distance_to(center)
+		if _back_row_revealed and cam_dist > back_row_max_distance:
+			_back_row_revealed = false
+			_update_row_mesh_culling(CrowdRow.BACK)
+		if _mid_row_revealed and cam_dist > middle_row_max_distance:
+			_mid_row_revealed = false
+			_update_row_mesh_culling(CrowdRow.MIDDLE)
+
+func _set_crowd_rendered(rendered: bool) -> void:
+	if _is_rendered == rendered:
+		return
+	_is_rendered = rendered
+	is_visible = rendered
+
+	for member in active_members:
+		if not is_instance_valid(member):
+			continue
+		member.visible = rendered
+		member.process_mode = Node.PROCESS_MODE_INHERIT if rendered else Node.PROCESS_MODE_DISABLED
+		if not rendered and member.has_method("set_row_active"):
+			member.set_row_active(false)
+
+	_update_shadow_state()
+
+func _check_culling(_force_check: bool = false) -> void:
+	if not _is_on_screen:
+		_set_crowd_rendered(false)
+		return
+
+	var vp = get_viewport()
+	if not vp:
+		return
+	var cam = vp.get_camera_3d()
+	if not cam:
+		return
+
+	var bounds = get_spawn_bounds()
+	var center = bounds.position + bounds.size * 0.5
+	center.y += 1.0
+
+	var cam_pos = cam.global_position
+	var dist_sq = cam_pos.distance_squared_to(center)
+	var effective_max_dist = front_row_max_distance if enable_row_architecture else max_render_distance
+	var max_dist_sq = effective_max_dist * effective_max_dist
+
+	# Distance culling (out of max distance, 100m)
+	if dist_sq > max_dist_sq:
+		_set_crowd_rendered(false)
+		if _back_row_revealed:
+			_back_row_revealed = false
+			_update_row_mesh_culling(CrowdRow.BACK)
+		if _mid_row_revealed:
+			_mid_row_revealed = false
+			_update_row_mesh_culling(CrowdRow.MIDDLE)
+		return
+
+	# Line-of-Sight Occlusion Culling
+	if enable_occlusion_culling:
+		var space_state = get_world_3d().direct_space_state
+		if space_state:
+			var half_size = bounds.size * 0.5
+			var test_pts = [
+				center,
+				Vector3(bounds.position.x + half_size.x * 0.2, center.y, bounds.position.z + half_size.z * 0.2),
+				Vector3(bounds.end.x - half_size.x * 0.2, center.y, bounds.end.z - half_size.z * 0.2)
+			]
+
+			var all_occluded = true
+			var ray_query = PhysicsRayQueryParameters3D.create(cam_pos, center)
+			ray_query.collision_mask = collision_mask_world
+			ray_query.collide_with_areas = false
+			ray_query.collide_with_bodies = true
+			ray_query.exclude = _crowd_rids
+
+			for pt in test_pts:
+				ray_query.from = cam_pos
+				ray_query.to = pt
+				var res = space_state.intersect_ray(ray_query)
+				if res.is_empty():
+					all_occluded = false
+					break
+				else:
+					var hit_dist_to_pt = res.position.distance_to(pt)
+					if hit_dist_to_pt <= 0.6:
+						all_occluded = false
+						break
+
+			if all_occluded:
+				_set_crowd_rendered(false)
+				return
+
+	_set_crowd_rendered(true)
+
+	var cam_dist = sqrt(dist_sq)
+
+	# Reveal Latch: when player reaches a row, expand its range so it never fades out while looking at it
+	if enable_row_architecture:
+		if not _mid_row_revealed and cam_dist <= middle_row_max_distance:
+			_mid_row_revealed = true
+			_update_row_mesh_culling(CrowdRow.MIDDLE)
+		if not _back_row_revealed and cam_dist <= back_row_max_distance:
+			_back_row_revealed = true
+			_update_row_mesh_culling(CrowdRow.BACK)
+
+	# Animations start as soon as dither alpha > 0 (or while revealed)
+	var has_back_row = false
+	var has_mid_row = false
+
+	for member in active_members:
+		if not is_instance_valid(member):
+			continue
+		var r = member.crowd_row if ("crowd_row" in member) else CrowdRow.FRONT
+		if r == CrowdRow.BACK:
+			has_back_row = true
+		elif r == CrowdRow.MIDDLE:
+			has_mid_row = true
+
+		var is_active = true
+		if enable_row_architecture:
+			match r:
+				CrowdRow.FRONT:
+					is_active = (cam_dist <= front_row_max_distance)
+				CrowdRow.MIDDLE:
+					is_active = (cam_dist <= middle_row_max_distance) or _mid_row_revealed
+				CrowdRow.BACK:
+					is_active = (cam_dist <= back_row_max_distance) or _back_row_revealed
+
+		if member.has_method("set_row_active"):
+			member.set_row_active(is_active)
+
+	# Hit reactions only work when ALL crowd rows are present
+	if not enable_row_architecture:
+		_all_rows_present = true
+	elif has_back_row:
+		_all_rows_present = _back_row_revealed or (cam_dist <= back_row_max_distance)
+	elif has_mid_row:
+		_all_rows_present = _mid_row_revealed or (cam_dist <= middle_row_max_distance)
+	else:
+		_all_rows_present = (cam_dist <= front_row_max_distance)
+
+	_update_shadow_state(cam_dist)
 
 # ─── Object & VFX Pooling ──────────────────────────────────────────────────
 
@@ -493,7 +949,7 @@ func _snap_point_to_ground(space_state: PhysicsDirectSpaceState3D, pos: Vector3,
 			return { "valid": true, "position": Vector3(pos.x, hit_y, pos.z) }
 	return { "valid": false, "position": pos }
 
-func find_valid_spawn_position(bounds: AABB, placed_positions: Array[Vector3], placed_rids: Array[RID] = [], rng: RandomNumberGenerator = null, max_attempts: int = 80) -> Dictionary:
+func find_valid_spawn_position(bounds: AABB, placed_positions: Array[Vector3], placed_rids: Array[RID] = [], rng: RandomNumberGenerator = null, max_attempts: int = 80, target_row: int = -1) -> Dictionary:
 	var active_rng = rng if rng else _rng
 	var space_state = get_world_3d().direct_space_state
 	var min_spacing_sq = min_member_spacing * min_member_spacing
@@ -528,8 +984,19 @@ func find_valid_spawn_position(bounds: AABB, placed_positions: Array[Vector3], p
 	var found = false
 
 	for attempt in range(max_attempts):
-		var rx = active_rng.randf_range(bounds.position.x, bounds.end.x)
-		var rz = active_rng.randf_range(bounds.position.z, bounds.end.z)
+		var rx: float = 0.0
+		var rz: float = 0.0
+
+		if target_row >= 0 and enable_row_architecture:
+			var z_range = get_row_local_z_range(target_row as CrowdRow)
+			var local_x = active_rng.randf_range(-spawn_area_size.x * 0.5, spawn_area_size.x * 0.5)
+			var local_z = active_rng.randf_range(z_range.x, z_range.y)
+			var world_cand = to_global(Vector3(local_x, 0.0, local_z))
+			rx = world_cand.x
+			rz = world_cand.z
+		else:
+			rx = active_rng.randf_range(bounds.position.x, bounds.end.x)
+			rz = active_rng.randf_range(bounds.position.z, bounds.end.z)
 
 		# 1. Fast 2D horizontal distance check FIRST (zero physics cost)
 		var closest_dist_sq = INF
@@ -599,6 +1066,13 @@ func find_valid_spawn_position(bounds: AABB, placed_positions: Array[Vector3], p
 func _setup_crowd() -> void:
 	_clear_preview_crowd()
 
+	# If layout locking is active and positions are already saved, restore them identically
+	if lock_editor_positions and not saved_crowd_data.is_empty():
+		_spawn_from_saved_layout()
+		return
+
+	saved_crowd_data.clear()
+
 	# Initialize deterministic or random seed
 	if use_custom_seed:
 		_rng.seed = custom_seed
@@ -617,14 +1091,42 @@ func _setup_crowd() -> void:
 	var target_count = crowd_count
 	if use_density_mode and bounds.size.x > 0.0 and bounds.size.z > 0.0:
 		var area_m2 = bounds.size.x * bounds.size.z
-		target_count = max(1, int(round(area_m2 * crowd_density)))
+		var active_density = crowd_density
+		if enable_distance_density_scaling:
+			active_density = clampf(crowd_density, min_distance_density, max_distance_density)
+		target_count = max(1, int(round(area_m2 * active_density)))
+
+	target_count = clampi(target_count, 1, max_crowd_members)
 
 	if not enable_spawning:
 		target_count = 1 if existing_male else 0
 
+	# 3-Row Distribution: Front gets ~50% (capped at max_front_row_members), Mid ~30%, Back ~20%
+	var row_plan: Array[CrowdRow] = []
+	if enable_row_architecture and target_count >= 3:
+		var front_count = clampi(int(ceil(target_count * 0.5)), 1, max_front_row_members)
+		var remaining = target_count - front_count
+		var mid_count = int(round(remaining * 0.6))
+		var back_count = remaining - mid_count
+		for r in range(front_count):
+			row_plan.append(CrowdRow.FRONT)
+		for r in range(mid_count):
+			row_plan.append(CrowdRow.MIDDLE)
+		for r in range(back_count):
+			row_plan.append(CrowdRow.BACK)
+	elif enable_row_architecture and target_count == 2:
+		row_plan.append(CrowdRow.FRONT)
+		row_plan.append(CrowdRow.MIDDLE)
+	elif enable_row_architecture and target_count == 1:
+		row_plan.append(CrowdRow.FRONT)
+	else:
+		for r in range(target_count):
+			row_plan.append(CrowdRow.FRONT)
+
 	for i in range(target_count):
+		var row = row_plan[i] if i < row_plan.size() else CrowdRow.FRONT
 		# 1. Determine valid ground position FIRST
-		var spawn_info = find_valid_spawn_position(bounds, placed_positions, placed_rids, _rng)
+		var spawn_info = find_valid_spawn_position(bounds, placed_positions, placed_rids, _rng, 80, row)
 		if not spawn_info.found:
 			if i == 0 and existing_male:
 				var snap_res = _snap_point_to_ground(get_world_3d().direct_space_state, existing_male.global_position, bounds, placed_rids)
@@ -634,9 +1136,12 @@ func _setup_crowd() -> void:
 
 		var spawn_pos: Vector3 = spawn_info.position
 		var member: Node3D = null
+		var chosen_model_type: int = 0
 
 		if i == 0 and existing_male:
 			member = existing_male
+			member.visible = true
+			chosen_model_type = 0
 		else:
 			var candidate_scenes: Array[PackedScene] = []
 			if enable_male_crowd and male_model_scene:
@@ -651,6 +1156,8 @@ func _setup_crowd() -> void:
 					break
 
 			var scene_to_use = candidate_scenes[_rng.randi_range(0, candidate_scenes.size() - 1)]
+			if female_model_scene and scene_to_use == female_model_scene:
+				chosen_model_type = 1
 			member = scene_to_use.instantiate() as Node3D
 			member.set_meta("is_crowd_preview", true)
 			add_child(member)
@@ -687,6 +1194,7 @@ func _setup_crowd() -> void:
 		# 2. Material/Color selection: crowd members should not share the same color when near each other
 		var shared_mats = get_shared_materials()
 		var mat: Material = MAT_BLUE
+		var chosen_color_idx: int = 0
 		if enable_random_textures and shared_mats.size() > 0:
 			var available_colors = [0, 1, 2] # 0: Blue, 1: Green, 2: Pink
 			var neighbor_colors: Array[int] = []
@@ -707,7 +1215,6 @@ func _setup_crowd() -> void:
 				if not neighbor_colors.has(c):
 					candidate_colors.append(c)
 
-			var chosen_color_idx: int = 0
 			if not candidate_colors.is_empty():
 				chosen_color_idx = candidate_colors[_rng.randi_range(0, candidate_colors.size() - 1)]
 			else:
@@ -722,6 +1229,7 @@ func _setup_crowd() -> void:
 			mat = shared_mats[chosen_color_idx]
 		else:
 			placed_colors.append(0)
+			chosen_color_idx = 0
 
 		var config = {
 			"enable_dance_animation": enable_dance_animation,
@@ -734,27 +1242,143 @@ func _setup_crowd() -> void:
 			"enable_animation_sounds": enable_animation_sounds,
 			"dance_animation_speed": dance_animation_speed,
 			"range_animation_speed": range_animation_speed,
+			"editor_performance_mode": editor_performance_mode if Engine.is_editor_hint() else false,
 		}
+
+		if "crowd_row" in member:
+			member.crowd_row = row
+		if "crowd_manager" in member:
+			member.crowd_manager = self
 
 		if member.has_method("setup_member"):
 			member.setup_member(has_gun, mat, config)
 
 		active_members.append(member)
+		_apply_culling_settings_to_member(member)
+
+		if Engine.is_editor_hint() or lock_editor_positions:
+			saved_crowd_data.append({
+				"local_pos": to_local(spawn_pos),
+				"rot_y": member.rotation.y,
+				"row": row,
+				"has_gun": has_gun,
+				"color_idx": chosen_color_idx,
+				"model_type": chosen_model_type,
+			})
+
+	_crowd_rids = placed_rids.duplicate()
+	if Engine.is_editor_hint() and not saved_crowd_data.is_empty():
+		print("[Crowd] Baked %d crowd positions to layout. Save scene (Ctrl+S) to persist." % saved_crowd_data.size())
+	if not Engine.is_editor_hint():
+		_check_culling(true)
+
+func _spawn_from_saved_layout() -> void:
+	var existing_male = get_node_or_null("CrowdMaleModel") as Node3D
+	var shared_mats = get_shared_materials()
+	var placed_rids: Array[RID] = []
+
+	for i in range(saved_crowd_data.size()):
+		var data: Dictionary = saved_crowd_data[i]
+		var local_pos: Vector3 = data.get("local_pos", Vector3.ZERO)
+		var rot_y: float = data.get("rot_y", 0.0)
+		var row: CrowdRow = data.get("row", CrowdRow.FRONT) as CrowdRow
+		var has_gun: bool = bool(data.get("has_gun", false)) and enable_water_gun_spawn
+		var color_idx: int = int(data.get("color_idx", 0))
+		var model_type: int = int(data.get("model_type", 0))
+
+		var member: Node3D = null
+		if i == 0 and existing_male:
+			member = existing_male
+			member.visible = true
+		else:
+			var scene_to_use: PackedScene = male_model_scene
+			if model_type == 1 and female_model_scene and enable_female_crowd:
+				scene_to_use = female_model_scene
+			elif not enable_male_crowd and female_model_scene:
+				scene_to_use = female_model_scene
+
+			if not scene_to_use:
+				if male_model_scene:
+					scene_to_use = male_model_scene
+				elif female_model_scene:
+					scene_to_use = female_model_scene
+				else:
+					continue
+
+			member = scene_to_use.instantiate() as Node3D
+			member.set_meta("is_crowd_preview", true)
+			add_child(member)
+
+		member.position = local_pos
+		member.rotation.y = rot_y
+
+		# Collect RIDs
+		if member is CollisionObject3D:
+			placed_rids.append(member.get_rid())
+		for child in member.find_children("*", "CollisionObject3D", true, false):
+			var co = child as CollisionObject3D
+			if co:
+				placed_rids.append(co.get_rid())
+
+		# Attach script dynamically if not already attached via Editor UI
+		if not (member is CrowdMember):
+			var crowd_member_script = preload("res://scripts/crowd_member.gd")
+			member.set_script(crowd_member_script)
+
+		var mat: Material = MAT_BLUE
+		if enable_random_textures and shared_mats.size() > 0:
+			var safe_idx = clampi(color_idx, 0, shared_mats.size() - 1)
+			mat = shared_mats[safe_idx]
+
+		var config = {
+			"enable_dance_animation": enable_dance_animation,
+			"enable_water_gun": enable_water_gun_spawn,
+			"enable_hit_reaction": enable_hit_reaction,
+			"enable_hit_animation": enable_hit_animation,
+			"enable_hit_from_player": enable_hit_from_player,
+			"enable_hit_from_crowd": enable_hit_from_crowd,
+			"enable_audio": enable_audio,
+			"enable_animation_sounds": enable_animation_sounds,
+			"dance_animation_speed": dance_animation_speed,
+			"range_animation_speed": range_animation_speed,
+			"editor_performance_mode": editor_performance_mode if Engine.is_editor_hint() else false,
+		}
+
+		if "crowd_row" in member:
+			member.crowd_row = row
+		if "crowd_manager" in member:
+			member.crowd_manager = self
+
+		if member.has_method("setup_member"):
+			member.setup_member(has_gun, mat, config)
+
+		active_members.append(member)
+		_apply_culling_settings_to_member(member)
+
+	_crowd_rids = placed_rids.duplicate()
+	if not Engine.is_editor_hint():
+		_check_culling(true)
 
 # ─── Random Actions (Shooting & Balloon Throwing) ───────────────────────────
 
 func _trigger_random_shot() -> void:
 	var armed_members = active_members.filter(func(m):
-		return (m is CrowdMember) and m.is_armed and not m.is_performing_action
+		var active = m.is_row_active if ("is_row_active" in m) else true
+		return (m is CrowdMember) and m.is_armed and active and not m.is_performing_action
 	)
 	if armed_members.is_empty() or active_members.size() < 2:
 		return
 
 	var shooter = armed_members.pick_random() as CrowdMember
-	var targets = active_members.filter(func(m): return m != shooter)
+	var targets = active_members.filter(func(m):
+		var active = m.is_row_active if ("is_row_active" in m) else true
+		return (m is CrowdMember) and m != shooter and active
+	)
 	if targets.is_empty():
 		return
 	var target = targets.pick_random()
+	if target.has_method("ensure_chest_hitbox_active"):
+		target.ensure_chest_hitbox_active()
 
 	var target_aim = target.global_position + Vector3(
 		randf_range(-0.15, 0.15),
@@ -918,13 +1542,18 @@ func _on_water_gun_fired(shooter: Node3D, muzzle_pos: Vector3, target_pos: Vecto
 
 func _trigger_random_balloon() -> void:
 	var ready_members = active_members.filter(func(m):
-		return (m is CrowdMember) and not m.is_performing_action
+		var active = m.is_row_active if ("is_row_active" in m) else true
+		var armed = m.is_armed if ("is_armed" in m) else false
+		return (m is CrowdMember) and active and not armed and not m.is_performing_action
 	)
 	if ready_members.is_empty() or active_members.size() < 2:
 		return
 
 	var thrower = ready_members.pick_random() as CrowdMember
-	var targets = active_members.filter(func(m): return m != thrower)
+	var targets = active_members.filter(func(m):
+		var active = m.is_row_active if ("is_row_active" in m) else true
+		return (m is CrowdMember) and m != thrower and active
+	)
 	if targets.is_empty():
 		return
 	var target = targets.pick_random()

@@ -30,15 +30,27 @@ func get_target() -> Node:
 	return null
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		set_physics_process(false)
+		set_process(false)
+		return
 	var parent_name = get_parent().name
 	if parent_name == "HitboxLeftThigh":
 		zone_name = "left_leg"
-	elif parent_name == "HitboxLeftShin":
+	elif parent_name == "HitboxLeftShin" or parent_name == "HitboxLeftFoot":
 		zone_name = "left_foot"
 	elif parent_name == "HitboxRightThigh":
 		zone_name = "right_leg"
-	elif parent_name == "HitboxRightShin":
+	elif parent_name == "HitboxRightShin" or parent_name == "HitboxRightFoot":
 		zone_name = "right_foot"
+	elif parent_name in ["HitboxUpperLeftArm", "HitboxLeftArm", "HitboxLeftHand"]:
+		zone_name = "left_arm"
+	elif parent_name in ["HitboxUpperRightArm", "HitboxRightArm", "HitboxRightHand"]:
+		zone_name = "right_arm"
+	elif parent_name == "HitboxHead":
+		zone_name = "head"
+	elif parent_name in ["HitboxChest", "HitboxWaist", "HitboxPelvis"]:
+		zone_name = "body"
 
 	# Walk up the full tree, crossing sub-scene boundaries, to find EnemyBase, AnchaleeBase, Merchant, or any entity with take_hit.
 	var node: Node = get_parent()
@@ -110,6 +122,8 @@ func _ready() -> void:
 		area.add_to_group("merchant_hitbox")
 	elif _target_entity:
 		area.add_to_group("crowd_hitbox")
+		if not Engine.is_editor_hint():
+			set_physics_process(false)
 		
 	# Reparent to BoneAttachment3D at runtime to eliminate one-frame lag
 	if not Engine.is_editor_hint() and _attachment and area.get_parent() != _attachment:
@@ -117,6 +131,10 @@ func _ready() -> void:
 
 	if not Engine.is_editor_hint() and not get_target():
 		push_warning("[HitboxZone] No EnemyBase, AnchaleeBase, Merchant, or target with take_hit found above zone '%s'" % zone_name)
+
+func sync_now() -> void:
+	var area := get_parent() as Area3D
+	_sanitize_scale(area)
 
 func _resolve_attachment_if_needed() -> void:
 	if is_instance_valid(_attachment):
@@ -154,15 +172,15 @@ func _resolve_attachment_if_needed() -> void:
 			_attachment = skeleton.find_child(attach_name, true, false)
 
 func _notification(what: int) -> void:
+	if Engine.is_editor_hint():
+		return
 	if what == Node3D.NOTIFICATION_LOCAL_TRANSFORM_CHANGED or what == Node3D.NOTIFICATION_TRANSFORM_CHANGED:
 		var area := get_parent() as Area3D
 		_sanitize_scale(area)
 
-func _process(_delta: float) -> void:
-	var area := get_parent() as Area3D
-	_sanitize_scale(area)
-
 func _physics_process(_delta: float) -> void:
+	if Engine.is_editor_hint():
+		return
 	var area := get_parent() as Area3D
 	_sanitize_scale(area)
 
@@ -220,7 +238,10 @@ func _reparent_to_attachment(area: Area3D, attachment: BoneAttachment3D) -> void
 		return
 	var old_global_trans = area.global_transform
 	var old_parent = area.get_parent()
+	if old_parent == attachment:
+		return
 	if old_parent:
 		old_parent.remove_child(area)
 	attachment.add_child(area)
 	area.global_transform = old_global_trans
+	_sanitize_scale(area)

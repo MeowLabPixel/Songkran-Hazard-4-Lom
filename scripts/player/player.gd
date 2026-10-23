@@ -700,11 +700,20 @@ func _update_aim_target(delta: float) -> void:
 				if hz:
 					target_zone = hz.zone_name
 					target_enemy = hz.get_target() if hz.has_method("get_target") else (hz._enemy if hz._enemy else hz.get("_anchalee"))
+			elif col is Node:
+				var candidate: Node = col
+				while candidate and not candidate.has_method("request_full_hitboxes") and not (candidate is CharacterBody3D and candidate.has_method("take_hit")):
+					candidate = candidate.get_parent()
+				if candidate:
+					target_enemy = candidate
 		
 		true_aim_position = raw_target_pos
 		aim_target_zone = target_zone
 		aim_target_enemy = target_enemy
 		aim_target_hitbox = target_hitbox
+
+		if target_enemy and target_enemy.has_method("request_full_hitboxes"):
+			target_enemy.request_full_hitboxes()
 
 		var spine_pos = global_position + Vector3(0.0, 1.3, 0.0)
 		var depth_lerp_rate = 3.0 / aim_depth_blend_time if aim_depth_blend_time > 0.001 else 50.0
@@ -904,6 +913,13 @@ func _update_aim_debug_visualizer(start: Vector3, end: Vector3, is_active: bool)
 
 	if result:
 		final_hit_pos = result.position
+		var debug_col = result.get("collider")
+		if debug_col:
+			var candidate: Node = debug_col
+			while candidate and not candidate.has_method("request_full_hitboxes"):
+				candidate = candidate.get_parent()
+			if candidate and candidate.has_method("request_full_hitboxes"):
+				candidate.request_full_hitboxes()
 		# If the gun muzzle ray hits an obstacle earlier than the intended camera aim point (by > 30cm)
 		if end != Vector3.ZERO and final_hit_pos.distance_to(start) < end.distance_to(start) - 0.3:
 			is_obstructed = true

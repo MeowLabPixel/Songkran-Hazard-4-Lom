@@ -30,6 +30,8 @@ signal enemy_hit(hit_data: Dictionary)
 @export var reload_anim_name: String = "Range Zombie  ReloadLoop"
 @export var shot_anim_name: String = "Range Zombie  shot"
 @export var shot_fire_time: float = 3.44
+@export var balloon_throw_anim_name: String = "Balloone Zombie/Balloone Zombie equip and throw"
+@export var balloon_throw_release_time: float = 1.8
 @export var dance_anim_names: Array[String] = [
 	"Dance Animation Male/Dance 1",
 	"Dance Animation Male/Dance 2",
@@ -56,19 +58,108 @@ var is_armed: bool = false
 var is_performing_action: bool = false
 var current_dance_anim: String = ""
 
+# Row & Optimization State
+var crowd_manager: Node = null
+var crowd_row: int = 0
+var is_row_active: bool = true
+var editor_performance_mode: bool = false
+
+# Hitbox Dynamic LOD State
+enum HitboxMode { OFF, CHEST, FULL }
+var _current_hitbox_mode: HitboxMode = HitboxMode.OFF
+var _cached_hitbox_areas: Array[Area3D] = []
+var _cached_chest_area: Area3D = null
+var _full_hitbox_timer: float = 0.0
+const FULL_HITBOX_HOLD_DURATION: float = 0.75
+
 # Internal references
 var skeleton: Skeleton3D = null
 var anim_player: AnimationPlayer = null
 var anim_tree: AnimationTree = null
 var npc_gun: Node3D = null
 var gun_spawn_point: Node3D = null
+var attached_balloon: Node3D = null
 var hit_reaction_modifier: EnemyHitReactionModifier = null
 var hitboxes: Node3D = null
 var _turn_tween: Tween = null
 
+func set_row_active(active: bool) -> void:
+	if is_row_active == active:
+		return
+	is_row_active = active
+	if not active:
+		if anim_player and anim_player.is_playing():
+			anim_player.pause()
+		set_hitbox_mode(HitboxMode.OFF)
+	else:
+		if anim_player:
+			if anim_player.current_animation != "" and anim_player.has_animation(anim_player.current_animation):
+				if not anim_player.is_playing():
+					anim_player.play(anim_player.current_animation)
+			else:
+				resume_base_loop()
+		set_hitbox_mode(HitboxMode.CHEST)
+
+func _physics_process(delta: float) -> void:
+	if Engine.is_editor_hint():
+		return
+	if _current_hitbox_mode == HitboxMode.FULL:
+		_full_hitbox_timer -= delta
+		if _full_hitbox_timer <= 0.0:
+			set_hitbox_mode(HitboxMode.CHEST if is_row_active else HitboxMode.OFF)
+
+func request_full_hitboxes() -> void:
+	_full_hitbox_timer = FULL_HITBOX_HOLD_DURATION
+	if _current_hitbox_mode != HitboxMode.FULL:
+		set_hitbox_mode(HitboxMode.FULL)
+
+func ensure_chest_hitbox_active() -> void:
+	if _current_hitbox_mode == HitboxMode.OFF:
+		set_hitbox_mode(HitboxMode.CHEST)
+	elif _current_hitbox_mode == HitboxMode.CHEST and is_instance_valid(_cached_chest_area):
+		var hz = _cached_chest_area.get_node_or_null("HitboxZone") as HitboxZone
+		if hz:
+			hz.sync_now()
+
+func set_hitbox_mode(mode: HitboxMode) -> void:
+	_current_hitbox_mode = mode
+	match mode:
+		HitboxMode.OFF:
+			for area in _cached_hitbox_areas:
+				_set_area_active(area, false)
+		HitboxMode.CHEST:
+			for area in _cached_hitbox_areas:
+				if area == _cached_chest_area:
+					_set_area_active(area, true)
+				else:
+					_set_area_active(area, false)
+		HitboxMode.FULL:
+			for area in _cached_hitbox_areas:
+				_set_area_active(area, true)
+
+func _set_area_active(area: Area3D, active: bool) -> void:
+	if not is_instance_valid(area):
+		return
+	area.monitorable = active
+	for col in area.find_children("*", "CollisionShape3D", true, false):
+		var shape = col as CollisionShape3D
+		if shape:
+			shape.set_deferred("disabled", not active)
+	var hz = area.get_node_or_null("HitboxZone") as HitboxZone
+	if hz:
+		hz.set_physics_process(active)
+		if active:
+			hz.sync_now()
+
 func _ready() -> void:
 	_resolve_nodes()
 	if Engine.is_editor_hint():
+		if has_meta("is_crowd_preview") or (get_parent() and "preview_in_editor" in get_parent()):
+			if hitboxes and is_instance_valid(hitboxes):
+				hitboxes.queue_free()
+			var col = find_child("CollisionShape3D", false, false) as CollisionShape3D
+			if col:
+				col.disabled = true
 		return
 	_setup_hit_reactions()
 	_setup_hitboxes()
@@ -105,6 +196,20 @@ func _resolve_nodes() -> void:
 	if not hitboxes:
 		hitboxes = find_child("Hitboxes", true, false) as Node3D
 
+	if not attached_balloon:
+		attached_balloon = find_child("WaterBalloon", true, false) as Node3D
+	if attached_balloon:
+		_set_attached_balloon_visible(false)
+
+func _set_attached_balloon_visible(is_vis: bool) -> void:
+	if not attached_balloon or not is_instance_valid(attached_balloon):
+		return
+	attached_balloon.visible = is_vis
+	for child in attached_balloon.find_children("*", "GPUParticles3D", true, false):
+		var p = child as GPUParticles3D
+		if p:
+			p.emitting = false
+
 func _setup_hit_reactions() -> void:
 	if Engine.is_editor_hint() or not enable_hit_reaction or not skeleton:
 		return
@@ -140,6 +245,8 @@ func _setup_hit_reactions() -> void:
 func _setup_hitboxes() -> void:
 	if Engine.is_editor_hint():
 		return
+	_cached_hitbox_areas.clear()
+	_cached_chest_area = null
 	for node in find_children("*", "HitboxZone", true, false):
 		var hz = node as HitboxZone
 		if hz:
@@ -147,6 +254,14 @@ func _setup_hitboxes() -> void:
 			var parent_area = hz.get_parent() as Area3D
 			if parent_area:
 				parent_area.add_to_group("crowd_hitbox")
+				if not _cached_hitbox_areas.has(parent_area):
+					_cached_hitbox_areas.append(parent_area)
+				if parent_area.name == "HitboxChest" or parent_area.name == "HitboxBody":
+					_cached_chest_area = parent_area
+	if _cached_chest_area == null and not _cached_hitbox_areas.is_empty():
+		_cached_chest_area = _cached_hitbox_areas[0]
+
+	set_hitbox_mode(HitboxMode.CHEST if is_row_active else HitboxMode.OFF)
 
 func setup_member(armed: bool, material: Material, config: Dictionary = {}) -> void:
 	_resolve_nodes()
@@ -231,56 +346,101 @@ func get_available_dance_animations() -> Array[String]:
 				list.append(anim)
 	return list
 
+func _get_armed_anim() -> String:
+	if not anim_player:
+		return ""
+	var candidates: Array[String] = [
+		reload_anim_name,
+		"Range Zombie  ReloadLoop",
+		"Range Zombie reload Loop",
+		"Range Zombie Idle ",
+		"Zombie Idle"
+	]
+	for c in candidates:
+		if c != "" and anim_player.has_animation(c):
+			return c
+	var dances = get_available_dance_animations()
+	if not dances.is_empty():
+		return dances[0]
+	return ""
+
+func _get_dance_anim() -> String:
+	if not anim_player:
+		return ""
+	if current_dance_anim != "" and anim_player.has_animation(current_dance_anim):
+		return current_dance_anim
+	var dances = get_available_dance_animations()
+	if not dances.is_empty():
+		current_dance_anim = dances.pick_random()
+		return current_dance_anim
+	if anim_player.has_animation("Zombie Idle"):
+		current_dance_anim = "Zombie Idle"
+		return current_dance_anim
+	return ""
+
 func start_idle_loop() -> void:
 	if not anim_player:
 		return
 
-	if is_armed:
-		var target_anim = reload_anim_name
-		if not anim_player.has_animation(target_anim):
-			if anim_player.has_animation("Range Zombie  ReloadLoop"):
-				target_anim = "Range Zombie  ReloadLoop"
-			elif anim_player.has_animation("Range Zombie reload Loop"):
-				target_anim = "Range Zombie reload Loop"
-			elif anim_player.has_animation("Range Zombie Idle "):
-				target_anim = "Range Zombie Idle "
+	var target_anim: String = ""
+	var speed: float = dance_animation_speed
 
-		if anim_player.has_animation(target_anim):
-			anim_player.speed_scale = range_animation_speed
-			anim_player.play(target_anim, cross_fade_time)
-			var anim_res = anim_player.get_animation(target_anim)
-			if anim_res and anim_res.length > 0.0:
+	if is_armed:
+		target_anim = _get_armed_anim()
+		speed = range_animation_speed
+	elif enable_dance_animation:
+		target_anim = _get_dance_anim()
+		speed = dance_animation_speed
+
+	if target_anim != "" and anim_player.has_animation(target_anim):
+		current_dance_anim = target_anim
+		anim_player.speed_scale = speed
+		anim_player.play(target_anim, cross_fade_time)
+		var anim_res = anim_player.get_animation(target_anim)
+		if anim_res and anim_res.length > 0.0:
+			if Engine.is_editor_hint() and editor_performance_mode:
+				anim_player.seek(anim_res.length * 0.5, true)
+				anim_player.pause()
+				anim_player.active = false
+			else:
 				anim_player.seek(randf_range(0.0, anim_res.length), true)
+
+func apply_editor_performance_mode(enabled: bool) -> void:
+	if not Engine.is_editor_hint():
+		return
+	editor_performance_mode = enabled
+	if not anim_player:
+		return
+	if enabled:
+		var cur_anim = anim_player.current_animation
+		if cur_anim == "" and current_dance_anim != "":
+			cur_anim = current_dance_anim
+		if cur_anim != "" and anim_player.has_animation(cur_anim):
+			var anim_res = anim_player.get_animation(cur_anim)
+			if anim_res and anim_res.length > 0.0:
+				anim_player.seek(anim_res.length * 0.5, true)
+		anim_player.pause()
+		anim_player.active = false
 	else:
-		if enable_dance_animation:
-			var dances = get_available_dance_animations()
-			if dances.size() > 0:
-				current_dance_anim = dances.pick_random()
-				anim_player.speed_scale = dance_animation_speed
-				anim_player.play(current_dance_anim, cross_fade_time)
-				var anim_res = anim_player.get_animation(current_dance_anim)
-				if anim_res and anim_res.length > 0.0:
-					anim_player.seek(randf_range(0.0, anim_res.length), true)
+		anim_player.active = true
+		anim_player.speed_scale = range_animation_speed if is_armed else dance_animation_speed
+		resume_base_loop()
 
 func resume_base_loop() -> void:
 	if not anim_player:
 		return
 	if is_armed:
-		var target_anim = reload_anim_name
-		if not anim_player.has_animation(target_anim):
-			if anim_player.has_animation("Range Zombie  ReloadLoop"):
-				target_anim = "Range Zombie  ReloadLoop"
-			elif anim_player.has_animation("Range Zombie reload Loop"):
-				target_anim = "Range Zombie reload Loop"
-			elif anim_player.has_animation("Range Zombie Idle "):
-				target_anim = "Range Zombie Idle "
-		if anim_player.has_animation(target_anim):
+		var target_anim = _get_armed_anim()
+		if target_anim != "" and anim_player.has_animation(target_anim):
+			current_dance_anim = target_anim
 			anim_player.speed_scale = range_animation_speed
 			anim_player.play(target_anim, cross_fade_time)
 	else:
-		if enable_dance_animation and current_dance_anim != "" and anim_player.has_animation(current_dance_anim):
-			anim_player.speed_scale = dance_animation_speed
-			anim_player.play(current_dance_anim, cross_fade_time)
+		if enable_dance_animation:
+			var target_anim = _get_dance_anim()
+			if target_anim != "" and anim_player.has_animation(target_anim):
+				anim_player.speed_scale = dance_animation_speed
+				anim_player.play(target_anim, cross_fade_time)
 
 func _rotate_smoothly_toward(target_pos: Vector3, duration: float = -1.0) -> void:
 	var dir = target_pos - global_position
@@ -303,7 +463,7 @@ func _rotate_smoothly_toward(target_pos: Vector3, duration: float = -1.0) -> voi
 	, current_yaw, current_yaw + diff, t_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func shoot_at(target_pos: Vector3, on_projectile_release: Callable) -> void:
-	if is_performing_action or not anim_player or not is_armed:
+	if not is_row_active or is_performing_action or not anim_player or not is_armed:
 		return
 	is_performing_action = true
 
@@ -344,22 +504,49 @@ func shoot_at(target_pos: Vector3, on_projectile_release: Callable) -> void:
 		resume_base_loop()
 
 func throw_balloon_at(target_pos: Vector3, on_balloon_release: Callable) -> void:
-	if is_performing_action:
+	if not is_row_active or is_performing_action or is_armed:
 		return
 	is_performing_action = true
 
 	# Smoothly rotate toward target
 	_rotate_smoothly_toward(target_pos)
 
-	var spawn_pos = global_position + Vector3(0, 1.4, 0)
-	if on_balloon_release.is_valid():
-		on_balloon_release.call(self, spawn_pos, target_pos)
+	_set_attached_balloon_visible(true)
 
-	get_tree().create_timer(0.4).timeout.connect(func():
-		if is_instance_valid(self):
-			is_performing_action = false
-			resume_base_loop()
-	)
+	var target_anim = balloon_throw_anim_name
+	if not anim_player or not anim_player.has_animation(target_anim):
+		if anim_player:
+			for cand in ["Balloone Zombie/Balloone Zombie equip and throw", "Balloone Zombie equip and throw", "Balloone Zombie/Balloone Zombie throw", "Balloone Zombie throw"]:
+				if anim_player.has_animation(cand):
+					target_anim = cand
+					break
+
+	if anim_player and anim_player.has_animation(target_anim):
+		anim_player.speed_scale = 1.0
+		anim_player.play(target_anim, cross_fade_time)
+		var anim_len = anim_player.get_animation(target_anim).length
+		var release_time = clamp(balloon_throw_release_time, 0.05, anim_len)
+
+		get_tree().create_timer(release_time).timeout.connect(func():
+			if is_instance_valid(self):
+				_set_attached_balloon_visible(false)
+				var spawn_pos = attached_balloon.global_position if attached_balloon else (global_position + Vector3(0, 1.4, 0))
+				if on_balloon_release.is_valid():
+					on_balloon_release.call(self, spawn_pos, target_pos)
+		)
+
+		get_tree().create_timer(anim_len).timeout.connect(func():
+			if is_instance_valid(self):
+				is_performing_action = false
+				resume_base_loop()
+		)
+	else:
+		var spawn_pos = attached_balloon.global_position if attached_balloon else (global_position + Vector3(0, 1.4, 0))
+		_set_attached_balloon_visible(false)
+		if on_balloon_release.is_valid():
+			on_balloon_release.call(self, spawn_pos, target_pos)
+		is_performing_action = false
+		resume_base_loop()
 
 func get_hit_animation_for_zone(zone: String) -> String:
 	match zone.to_lower():
@@ -381,6 +568,12 @@ func get_hit_animation_for_zone(zone: String) -> String:
 func take_hit(hit_data: Dictionary) -> void:
 	if not enable_hit_reaction:
 		return
+
+	# Hit reactions only work when all crowd rows are present
+	var mgr = crowd_manager if crowd_manager else get_parent()
+	if mgr and mgr.has_method("are_all_rows_present"):
+		if not mgr.are_all_rows_present():
+			return
 
 	var is_from_crowd = hit_data.get("from_crowd", false)
 	var is_from_player = false
@@ -414,6 +607,8 @@ func take_hit(hit_data: Dictionary) -> void:
 	hit_dir.y = 0.0
 	hit_dir = hit_dir.normalized()
 	hit_data["hit_direction"] = hit_dir
+
+	request_full_hitboxes()
 
 	# 1. Emit enemy_hit for procedural spring wiggles
 	enemy_hit.emit(hit_data)

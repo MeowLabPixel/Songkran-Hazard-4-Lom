@@ -89,10 +89,10 @@ curve = SubResource("Curve_0d18r")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_dy42r"]
 particle_flag_align_y = true
-emission_shape_offset = Vector3(0, 0, -0.116)
-emission_shape_scale = Vector3(1, 1, 0)
+emission_shape_offset = Vector3(0, 0, 0.01)
+emission_shape_scale = Vector3(0.645, 0.845, 0.805)
 emission_shape = 2
-emission_sphere_radius = 0.01
+emission_sphere_radius = 0.11
 angle_min = -720.0
 angle_max = 720.0
 direction = Vector3(0, 0, -1)
@@ -526,7 +526,8 @@ draw_pass_1 = SubResource("SphereMesh_jo4dw")
 [node name="Bubble" type="GPUParticles3D" parent="." unique_id=645918487]
 transform = Transform3D(1.435424, -6.6842165e-10, -3.802495e-09, 6.6842165e-10, 1.435424, 0, 4.885856e-09, -2.275154e-18, 1.117142, 0, 0, 0.009935558)
 material_override = ExtResource("4_vpetd")
-amount = 20
+amount = 80
+speed_scale = 1.25
 fixed_fps = 60
 draw_order = 3
 process_material = SubResource("ParticleProcessMaterial_dy42r")

@@ -1,0 +1,156 @@
+[gd_scene format=3 uid="uid://brjmq6756at4m"]
+
+[ext_resource type="PackedScene" uid="uid://01bm3yxhtv1x" path="res://scenes/Crowds/crowd_dance.tscn" id="1_i6xfr"]
+
+[node name="Crowd_Folder" type="Node3D" unique_id=1722097701]
+
+[node name="Crowd_Dance" parent="." unique_id=2077858760 instance=ExtResource("1_i6xfr")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.400001, 0, 118)
+visible = false
+spawn_area_size = Vector3(15, 2, 5)
+crowd_density = 0.5
+min_member_spacing = 2.0
+enable_shadow_optimization = false
+middle_row_max_distance = 20.0
+custom_seed = 757640
+saved_crowd_data = Array[Dictionary]([{
+"color_idx": 2,
+"has_gun": true,
+"local_pos": Vector3(-0.9124937, 0, -1.7723694),
+"model_type": 0,
+"rot_y": 4.629144,
+"row": 0
+}, {
+"color_idx": 0,
+"has_gun": false,
+"local_pos": Vector3(-5.993647, 0, -1.0148163),
+"model_type": 0,
+"rot_y": 1.9149431,
+"row": 0
+}, {
+"color_idx": 1,
+"has_gun": false,
+"local_pos": Vector3(-2.9035811, 0, -2.0481033),
+"model_type": 0,
+"rot_y": 2.1256807,
+"row": 0
+}, {
+"color_idx": 0,
+"has_gun": true,
+"local_pos": Vector3(5.97672, 0.08949995, -1.9353104),
+"model_type": 0,
+"rot_y": 5.831396,
+"row": 0
+}, {
+"color_idx": 0,
+"has_gun": false,
+"local_pos": Vector3(1.4966764, 0, -0.88991547),
+"model_type": 0,
+"rot_y": 4.827199,
+"row": 0
+}, {
+"color_idx": 2,
+"has_gun": false,
+"local_pos": Vector3(-4.272009, 0, -0.85341644),
+"model_type": 0,
+"rot_y": 1.4935516,
+"row": 0
+}, {
+"color_idx": 1,
+"has_gun": false,
+"local_pos": Vector3(-6.8662543, 0, -2.4038467),
+"model_type": 0,
+"rot_y": 1.6143544,
+"row": 0
+}, {
+"color_idx": 0,
+"has_gun": false,
+"local_pos": Vector3(-4.6626253, 0, -2.3539047),
+"model_type": 0,
+"rot_y": 2.5383217,
+"row": 0
+}, {
+"color_idx": 1,
+"has_gun": false,
+"local_pos": Vector3(0.48617363, -2.3841858e-07, -2.326706),
+"model_type": 0,
+"rot_y": 0.4473219,
+"row": 0
+}, {
+"color_idx": 0,
+"has_gun": false,
+"local_pos": Vector3(-1.7748504, 0, -0.9563141),
+"model_type": 0,
+"rot_y": 4.367795,
+"row": 0
+}, {
+"color_idx": 2,
+"has_gun": false,
+"local_pos": Vector3(6.0064983, 0.08949995, 0.17022705),
+"model_type": 0,
+"rot_y": 1.5638624,
+"row": 1
+}, {
+"color_idx": 1,
+"has_gun": false,
+"local_pos": Vector3(-5.4698367, 0, 0.9641495),
+"model_type": 0,
+"rot_y": 2.906372,
+"row": 1
+}, {
+"color_idx": 1,
+"has_gun": false,
+"local_pos": Vector3(-0.29388332, 0, 0.44094086),
+"model_type": 0,
+"rot_y": 0.082931,
+"row": 1
+}, {
+"color_idx": 2,
+"has_gun": false,
+"local_pos": Vector3(-7.41818, 0, 0.9864731),
+"model_type": 0,
+"rot_y": 3.6964204,
+"row": 1
+}, {
+"color_idx": 1,
+"has_gun": false,
+"local_pos": Vector3(-3.167488, 0, 0.831131),
+"model_type": 0,
+"rot_y": 5.8840284,
+"row": 1
+}, {
+"color_idx": 2,
+"has_gun": false,
+"local_pos": Vector3(1.5714674, 0, 0.857666),
+"model_type": 0,
+"rot_y": 6.217617,
+"row": 1
+}, {
+"color_idx": 1,
+"has_gun": false,
+"local_pos": Vector3(5.7388735, 0.08949995, 2.3163757),
+"model_type": 0,
+"rot_y": 5.6132646,
+"row": 2
+}, {
+"color_idx": 0,
+"has_gun": false,
+"local_pos": Vector3(0.37237072, 0, 2.4130936),
+"model_type": 0,
+"rot_y": 3.2793136,
+"row": 2
+}, {
+"color_idx": 2,
+"has_gun": false,
+"local_pos": Vector3(-1.4894481, 0, 2.4434357),
+"model_type": 0,
+"rot_y": 5.0724125,
+"row": 2
+}, {
+"color_idx": 0,
+"has_gun": false,
+"local_pos": Vector3(-4.277868, 0, 2.1484756),
+"model_type": 0,
+"rot_y": 0.45959765,
+"row": 2
+}])

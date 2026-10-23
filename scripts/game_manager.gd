@@ -11,6 +11,16 @@ var difficulty: Difficulty = Difficulty.EXPERT
 const SAVE_PATH = "user://game_settings.cfg"
 var expert_mode_played: bool = false
 var casual_mode_new: bool = false
+var fps_cap: int = 60:
+	set = set_fps_cap
+
+func set_fps_cap(value: int) -> void:
+	fps_cap = maxi(0, value)
+	Engine.max_fps = fps_cap
+	print("[GameManager] FPS cap set to: %d" % fps_cap)
+
+func get_fps_cap() -> int:
+	return fps_cap
 
 var survival_time_elapsed: float = 0.0
 var kill_count: int = 0
@@ -139,6 +149,7 @@ func save_settings() -> void:
 	if file:
 		file.store_var(expert_mode_played)
 		file.store_var(casual_mode_new)
+		file.store_var(fps_cap)
 		file.close()
 
 func load_settings() -> void:
@@ -152,7 +163,12 @@ func load_settings() -> void:
 				var val2 = file.get_var()
 				if val2 is bool:
 					casual_mode_new = val2
+			if not file.eof_reached():
+				var val3 = file.get_var()
+				if val3 is int:
+					fps_cap = val3
 			file.close()
+	Engine.max_fps = fps_cap
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS

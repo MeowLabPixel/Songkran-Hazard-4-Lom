@@ -525,6 +525,9 @@ func _apply_damage_to_result(result: Dictionary) -> Dictionary:
 			var enemy = hitbox_zone._enemy
 			
 			if target:
+				if target.has_method("request_full_hitboxes"):
+					target.request_full_hitboxes()
+
 				if enemy and get_tree().root.has_node("GameManager"):
 					get_tree().root.get_node("GameManager").register_shot_hit()
 				
@@ -591,6 +594,19 @@ func _apply_damage_to_result(result: Dictionary) -> Dictionary:
 		var fallback_zone = "body"
 		if player and "aim_target_enemy" in player and player.aim_target_enemy == node and "aim_target_zone" in player and player.aim_target_zone != "":
 			fallback_zone = player.aim_target_zone
+		elif node is Node3D:
+			var local_hit = (node as Node3D).to_local(result.position)
+			if local_hit.y < 0.35:
+				fallback_zone = "left_foot" if local_hit.x > 0.0 else "right_foot"
+			elif local_hit.y < 0.85:
+				fallback_zone = "left_leg" if local_hit.x > 0.0 else "right_leg"
+			elif local_hit.y > 1.35:
+				fallback_zone = "head"
+			else:
+				fallback_zone = "body"
+
+		if node.has_method("request_full_hitboxes"):
+			node.request_full_hitboxes()
 
 		node.take_hit({
 			"damage": final_damage,

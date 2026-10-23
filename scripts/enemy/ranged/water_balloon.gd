@@ -25,18 +25,27 @@ func launch(target: Vector3, damage: float, radius: float,
 	_travel_time = travel_time
 	_elapsed     = 0.0
 	_active      = true
+	for child in find_children("*", "GPUParticles3D", true, false):
+		var p = child as GPUParticles3D
+		if p and p != splash_particles and (splash_particles == null or not splash_particles.is_ancestor_of(p)):
+			p.restart()
+			p.emitting = true
 
 func launch_pooled(target: Vector3, damage: float, radius: float,
 		arc_height: float = 3.0, travel_time: float = 1.2, callback: Callable = Callable()) -> void:
 	is_pooled = true
 	on_splash_callback = callback
 	visible = true
-	var mesh = get_node_or_null("MeshInstance3D")
+	var mesh = get_node_or_null("Balloon")
+	if not mesh:
+		mesh = get_node_or_null("MeshInstance3D")
 	if mesh:
 		mesh.visible = true
-	if trail_particles:
-		trail_particles.restart()
-		trail_particles.emitting = true
+	for child in find_children("*", "GPUParticles3D", true, false):
+		var p = child as GPUParticles3D
+		if p and p != splash_particles and (splash_particles == null or not splash_particles.is_ancestor_of(p)):
+			p.restart()
+			p.emitting = true
 	launch(target, damage, radius, arc_height, travel_time)
 
 func _process(delta: float) -> void:
@@ -73,11 +82,15 @@ func _splash() -> void:
 		return
 
 	if is_pooled:
-		var mesh = get_node_or_null("MeshInstance3D")
+		var mesh = get_node_or_null("Balloon")
+		if not mesh:
+			mesh = get_node_or_null("MeshInstance3D")
 		if mesh:
 			mesh.visible = false
-		if trail_particles:
-			trail_particles.emitting = false
+		for child in find_children("*", "GPUParticles3D", true, false):
+			var p = child as GPUParticles3D
+			if p and p != splash_particles and (splash_particles == null or not splash_particles.is_ancestor_of(p)):
+				p.emitting = false
 		if splash_particles:
 			splash_particles.restart()
 			splash_particles.emitting = true

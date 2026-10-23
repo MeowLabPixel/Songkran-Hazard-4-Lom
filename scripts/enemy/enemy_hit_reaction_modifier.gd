@@ -219,19 +219,19 @@ func _on_enemy_hit(hit_data: Dictionary) -> void:
 				stiffness_val = arms_stiffness
 				damping_val = arms_damping  
 				force_val = arms_force   
-				target_bones = ["DEF-upper_arm.L", "DEF-forearm.L"]
+				target_bones = ["DEF-shoulder.L", "DEF-upper_arm.L", "DEF-forearm.L", "DEF-hand.L"]
 			"right_arm", "right_hand":
 				stiffness_val = arms_stiffness
 				damping_val = arms_damping  
 				force_val = arms_force   
-				target_bones = ["DEF-upper_arm.R", "DEF-forearm.R"]
+				target_bones = ["DEF-shoulder.R", "DEF-upper_arm.R", "DEF-forearm.R", "DEF-hand.R"]
 			"left_leg", "left_foot":
 				stiffness_val = legs_stiffness
 				damping_val = legs_damping  
 				force_val = legs_force
 				if is_knocked_down:
 					force_val = abs(legs_force) * legs_knockdown_dampening
-				target_bones = ["DEF-thigh.L", "DEF-shin.L"]
+				target_bones = ["DEF-thigh.L", "DEF-shin.L", "DEF-foot.L"]
 				
 				# Merchant-only feature: leg/foot hits cause spine to tilt down like body hit
 				if enemy is Merchant:
@@ -245,7 +245,7 @@ func _on_enemy_hit(hit_data: Dictionary) -> void:
 				force_val = legs_force
 				if is_knocked_down:
 					force_val = abs(legs_force) * legs_knockdown_dampening
-				target_bones = ["DEF-thigh.R", "DEF-shin.R"]
+				target_bones = ["DEF-thigh.R", "DEF-shin.R", "DEF-foot.R"]
 				
 				# Merchant-only feature: leg/foot hits cause spine to tilt down like body hit
 				if enemy is Merchant:
@@ -279,15 +279,32 @@ func _on_enemy_hit(hit_data: Dictionary) -> void:
 	for bone_name in target_bones:
 		_trigger_reaction(skeleton, bone_name, perturbed_axis, stiffness_val, damping_val, force_val * force_mult)
 
+func _find_skeleton_bone(skeleton: Skeleton3D, bone_name: String) -> int:
+	if not skeleton:
+		return -1
+	var idx = skeleton.find_bone(bone_name)
+	if idx != -1:
+		return idx
+	if bone_name.ends_with(".001"):
+		idx = skeleton.find_bone(bone_name.trim_suffix(".001"))
+		if idx != -1:
+			return idx
+	else:
+		idx = skeleton.find_bone(bone_name + ".001")
+		if idx != -1:
+			return idx
+	return -1
+
 func _trigger_reaction(skeleton: Skeleton3D, bone_name: String, axis: Vector3, stiffness_val: float, damping_val: float, force_val: float) -> void:
-	var bone_idx = skeleton.find_bone(bone_name)
+	var bone_idx = _find_skeleton_bone(skeleton, bone_name)
 	if bone_idx == -1: return
+	var resolved_name = skeleton.get_bone_name(bone_idx)
 	
-	var react = _active_reactions.get(bone_name)
+	var react = _active_reactions.get(resolved_name)
 	if not react:
 		react = ActiveReaction.new()
-		react.bone_name = bone_name
-		_active_reactions[bone_name] = react
+		react.bone_name = resolved_name
+		_active_reactions[resolved_name] = react
 		
 	react.axis = axis
 	react.stiffness = stiffness_val
@@ -302,12 +319,15 @@ func trigger_bone_juice(zone: String, hit_dir: Vector3, duration: float, pop: fl
 		"right_foot", "right_leg": target_bones = ["DEF-shin.R", "DEF-foot.R"]
 		_: return
 		
+	var skeleton = get_skeleton()
 	for bone_name in target_bones:
-		var react = _active_juice_reactions.get(bone_name)
+		var bone_idx = _find_skeleton_bone(skeleton, bone_name) if skeleton else -1
+		var resolved_name = skeleton.get_bone_name(bone_idx) if bone_idx != -1 else bone_name
+		var react = _active_juice_reactions.get(resolved_name)
 		if not react:
 			react = ActiveJuiceReaction.new()
-			react.bone_name = bone_name
-			_active_juice_reactions[bone_name] = react
+			react.bone_name = resolved_name
+			_active_juice_reactions[resolved_name] = react
 			
 		react.hit_dir = hit_dir
 		react.timer = duration
@@ -338,10 +358,10 @@ func _get_bone_global_rest(skeleton: Skeleton3D, bone_idx: int) -> Transform3D:
 func _setup_attachments(skeleton: Skeleton3D) -> void:
 	if _attachments_setup: return
 	
-	var left_foot_idx = skeleton.find_bone("DEF-foot.L")
-	var left_shin_idx = skeleton.find_bone("DEF-shin.L")
-	var right_foot_idx = skeleton.find_bone("DEF-foot.R")
-	var right_shin_idx = skeleton.find_bone("DEF-shin.R")
+	var left_foot_idx = _find_skeleton_bone(skeleton, "DEF-foot.L")
+	var left_shin_idx = _find_skeleton_bone(skeleton, "DEF-shin.L")
+	var right_foot_idx = _find_skeleton_bone(skeleton, "DEF-foot.R")
+	var right_shin_idx = _find_skeleton_bone(skeleton, "DEF-shin.R")
 	
 	if left_foot_idx != -1 and left_shin_idx != -1:
 		_left_mesh = _find_flipflop_mesh(skeleton, true)
@@ -510,10 +530,10 @@ func _process_modification() -> void:
 			blend_weight = 0.0
 
 		# Apply local/global transforms and blending
-		var left_foot_idx = skeleton.find_bone("DEF-foot.L")
-		var left_shin_idx = skeleton.find_bone("DEF-shin.L")
-		var right_foot_idx = skeleton.find_bone("DEF-foot.R")
-		var right_shin_idx = skeleton.find_bone("DEF-shin.R")
+		var left_foot_idx = _find_skeleton_bone(skeleton, "DEF-foot.L")
+		var left_shin_idx = _find_skeleton_bone(skeleton, "DEF-shin.L")
+		var right_foot_idx = _find_skeleton_bone(skeleton, "DEF-foot.R")
+		var right_shin_idx = _find_skeleton_bone(skeleton, "DEF-shin.R")
 
 		if _slid_flipflop == "left" and _left_mesh and left_foot_idx != -1 and left_shin_idx != -1:
 			var target_pose = skeleton.get_bone_global_pose(left_foot_idx) * _get_bone_global_rest(skeleton, left_foot_idx).inverse()
@@ -555,7 +575,7 @@ func _process_modification() -> void:
 			to_remove.append(bone_name)
 			continue
 			
-		var bone_idx = skeleton.find_bone(bone_name)
+		var bone_idx = _find_skeleton_bone(skeleton, bone_name)
 		if bone_idx != -1:
 			var pose = skeleton.get_bone_pose(bone_idx)
 			var bone_global_basis = skeleton.get_bone_global_pose(bone_idx).basis
@@ -578,7 +598,7 @@ func _process_modification() -> void:
 		var react = _active_juice_reactions[bone_name]
 		if react.timer > 0.0:
 			react.timer -= delta
-			var b_idx = skeleton.find_bone(bone_name)
+			var b_idx = _find_skeleton_bone(skeleton, bone_name)
 			if b_idx != -1:
 				var pose = skeleton.get_bone_pose(b_idx)
 				
