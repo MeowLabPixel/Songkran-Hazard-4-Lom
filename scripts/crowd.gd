@@ -100,16 +100,37 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 		enable_shadow_optimization = val
 		_update_render_distances()
 @export var culling_check_interval: float = 0.1 ## Interval in seconds for CPU occlusion & camera distance culling checks
+@export var anim_full_fps_distance: float = 10.0: ## Distance from camera within which crowd members animate at 100% full framerate from any angle (0 stagger)
+	set(val):
+		anim_full_fps_distance = val
+@export var anim_half_fps_distance: float = 25.0: ## Distance from camera within which crowd members step every 2nd frame (beyond this, every 3rd frame)
+	set(val):
+		anim_half_fps_distance = val
 
 @export_group("Row & Distance Architecture")
 @export var enable_row_architecture: bool = true: ## Spawns crowd in 3 depth rows (front, middle, back) with row-staggered culling
 	set(val):
 		enable_row_architecture = val
 		_on_setting_changed()
-@export var front_row_max_distance: float = 100.0: ## Max render distance for front row (up to 100m)
+@export var front_row_max_distance: float = 80.0: ## Max render distance for front row (up to 100m)
 	set(val):
 		front_row_max_distance = val
 		_update_render_distances()
+@export var front_row_distant_visibility: bool = true: ## If true, front row remains visible beyond front_row_max_distance with animations/shadows/combat disabled
+	set(val):
+		front_row_distant_visibility = val
+		_update_render_distances()
+@export var front_row_distant_max_distance: float = 140.0: ## Distance where front row finally dither-fades out when front_row_distant_visibility is enabled
+	set(val):
+		front_row_distant_max_distance = val
+		_update_render_distances()
+@export var dither_fade_margin: float = 8.0: ## Distance margin in meters for smooth shader dithering fade-in/out
+	set(val):
+		dither_fade_margin = val
+		_update_render_distances()
+@export_range(0.1, 3.0, 0.05) var dither_fade_duration: float = 1.0: ## Time in seconds for a row to smoothly dither from 0% invisible to 100% solid opaque once triggered
+	set(val):
+		dither_fade_duration = val
 @export var middle_row_max_distance: float = 60.0: ## Max render distance for middle row (up to 50m)
 	set(val):
 		middle_row_max_distance = val
@@ -309,10 +330,18 @@ var _visibility_notifier: VisibleOnScreenNotifier3D = null
 var _culling_timer: float = 0.0
 var _is_on_screen: bool = true
 var _is_rendered: bool = true
+var _is_occluded: bool = false
+var _member_occlusion_cursor: int = 0
+const MEMBER_OCCLUSION_BATCH_SIZE: int = 8
 var _crowd_rids: Array[RID] = []
 var _all_rows_present: bool = false
+var _front_row_revealed: bool = false
 var _mid_row_revealed: bool = false
 var _back_row_revealed: bool = false
+var _front_row_fade: float = 1.0
+var _mid_row_fade: float = 1.0
+var _back_row_fade: float = 1.0
+var _is_beyond_front_max: bool = false
 
 func are_all_rows_present() -> bool:
 	return _all_rows_present
@@ -492,6 +521,10 @@ func _setup_materials() -> void:
 			mat.uv1_offset = material_uv1_offset
 			mat.uv1_triplanar = enable_triplanar
 			mat.uv1_world_triplanar = enable_triplanar
+			if enable_shader_dithering:
+				mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_HASH
+			else:
+				mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
 
 # ─── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -518,13 +551,28 @@ func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 
+	# Advance time-based dither fade-in for rows currently fading in
+	if enable_shader_dithering and dither_fade_duration > 0.0 and _is_rendered:
+		var fade_step = delta / dither_fade_duration
+		var vp = get_viewport()
+		var cam = vp.get_camera_3d() if vp else null
+		if _front_row_revealed and _front_row_fade < 1.0:
+			_front_row_fade = minf(1.0, _front_row_fade + fade_step)
+			_update_row_fade(CrowdRow.FRONT, _front_row_fade, cam)
+		if _mid_row_revealed and _mid_row_fade < 1.0:
+			_mid_row_fade = minf(1.0, _mid_row_fade + fade_step)
+			_update_row_fade(CrowdRow.MIDDLE, _mid_row_fade, cam)
+		if _back_row_revealed and _back_row_fade < 1.0:
+			_back_row_fade = minf(1.0, _back_row_fade + fade_step)
+			_update_row_fade(CrowdRow.BACK, _back_row_fade, cam)
+
 	# Low-frequency culling & occlusion checks
 	_culling_timer += delta
 	if _culling_timer >= culling_check_interval:
 		_culling_timer = 0.0
 		_check_culling()
 
-	if not _is_rendered:
+	if not _is_rendered or _is_occluded or _is_beyond_front_max:
 		return
 
 	if active_members.size() < 2:
@@ -558,38 +606,26 @@ func _apply_culling_settings_to_member(member: Node3D) -> void:
 
 	var row = member.crowd_row if ("crowd_row" in member) else CrowdRow.FRONT
 	var row_dist = front_row_max_distance
-	var row_margin = 0.0
-	var row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
-
 	if enable_row_architecture:
 		match row:
 			CrowdRow.FRONT:
-				# Front row appears instantly with no dithering fade
-				row_dist = front_row_max_distance
-				row_margin = 0.0
-				row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+				row_dist = front_row_distant_max_distance if front_row_distant_visibility else front_row_max_distance
 			CrowdRow.MIDDLE:
-				if _mid_row_revealed:
-					row_dist = front_row_max_distance
-					row_margin = 0.0
-					row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
-				else:
-					row_dist = middle_row_max_distance
-					row_margin = 5.0 if enable_shader_dithering else 0.0
-					row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF if enable_shader_dithering else GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+				row_dist = front_row_max_distance if _mid_row_revealed else middle_row_max_distance
 			CrowdRow.BACK:
-				if _back_row_revealed:
-					row_dist = front_row_max_distance
-					row_margin = 0.0
-					row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
-				else:
-					row_dist = back_row_max_distance
-					row_margin = 3.0 if enable_shader_dithering else 0.0
-					row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF if enable_shader_dithering else GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+				row_dist = front_row_max_distance if _back_row_revealed else back_row_max_distance
 	else:
 		row_dist = max_render_distance
-		row_margin = 0.0
-		row_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+
+	var trans_val = 0.0
+	if not Engine.is_editor_hint():
+		match row:
+			CrowdRow.FRONT:
+				trans_val = 0.0 if (_front_row_fade >= 1.0) else (1.0 - _front_row_fade)
+			CrowdRow.MIDDLE:
+				trans_val = 0.0 if (_mid_row_fade >= 1.0) else (1.0 - _mid_row_fade)
+			CrowdRow.BACK:
+				trans_val = 0.0 if (_back_row_fade >= 1.0) else (1.0 - _back_row_fade)
 
 	var in_editor_perf = Engine.is_editor_hint() and editor_performance_mode
 	var meshes = member.cached_meshes if ("cached_meshes" in member and not member.cached_meshes.is_empty()) else member.find_children("*", "MeshInstance3D", true, false)
@@ -598,9 +634,10 @@ func _apply_culling_settings_to_member(member: Node3D) -> void:
 			continue
 		var mesh_inst = child as MeshInstance3D
 		if mesh_inst:
+			mesh_inst.transparency = trans_val
 			mesh_inst.visibility_range_end = row_dist
-			mesh_inst.visibility_range_end_margin = row_margin
-			mesh_inst.visibility_range_fade_mode = row_fade_mode
+			mesh_inst.visibility_range_end_margin = 0.0
+			mesh_inst.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
 			if in_editor_perf:
 				mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			elif not enable_row_shadows:
@@ -613,6 +650,32 @@ func _apply_culling_settings_to_member(member: Node3D) -> void:
 					mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 			else:
 				mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+
+func _update_row_fade(row: CrowdRow, progress: float, _cam: Camera3D = null) -> void:
+	var is_solid = progress >= 1.0
+	var final_row_dist = front_row_distant_max_distance if (row == CrowdRow.FRONT and front_row_distant_visibility) else (front_row_max_distance if enable_row_architecture else max_render_distance)
+	var trans_val = 0.0 if is_solid else clampf(1.0 - progress, 0.0, 1.0)
+
+	for member in active_members:
+		if not is_instance_valid(member):
+			continue
+		var r = member.crowd_row if ("crowd_row" in member) else CrowdRow.FRONT
+		if r != row:
+			continue
+
+		if not member.visible and _is_rendered:
+			member.visible = true
+
+		var meshes = member.cached_meshes if ("cached_meshes" in member and not member.cached_meshes.is_empty()) else member.find_children("*", "MeshInstance3D", true, false)
+		for child in meshes:
+			if not is_instance_valid(child):
+				continue
+			var mesh_inst = child as MeshInstance3D
+			if mesh_inst:
+				mesh_inst.transparency = trans_val
+				mesh_inst.visibility_range_end = final_row_dist
+				mesh_inst.visibility_range_end_margin = 0.0
+				mesh_inst.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
 
 func _update_row_mesh_culling(target_row: CrowdRow) -> void:
 	for member in active_members:
@@ -639,7 +702,8 @@ func _update_shadow_state(cam_dist: float = -1.0) -> void:
 		else:
 			row_dist = max_render_distance
 
-		var row_shadow_allowed = _is_rendered and enable_row_shadows
+		var is_mem_occluded = member.get_meta("_member_occluded", false) if member.has_meta("_member_occluded") else false
+		var row_shadow_allowed = _is_rendered and not _is_occluded and not is_mem_occluded and enable_row_shadows
 		if cam_dist >= 0.0 and row_shadow_allowed:
 			row_shadow_allowed = (cam_dist <= row_dist)
 
@@ -678,7 +742,7 @@ func _setup_visibility_notifier() -> void:
 	_visibility_notifier.name = "CrowdVisibilityNotifier"
 	
 	var local_center = to_local(bounds.position + bounds.size * 0.5)
-	var margin = Vector3(3.0, 2.0, 3.0)
+	var margin = Vector3(8.0, 4.0, 8.0)
 	var local_size = bounds.size + margin * 2.0
 	_visibility_notifier.aabb = AABB(local_center - local_size * 0.5, local_size)
 
@@ -692,21 +756,51 @@ func _on_crowd_screen_entered() -> void:
 
 func _on_crowd_screen_exited() -> void:
 	_is_on_screen = false
+	_is_occluded = false
 	_set_crowd_rendered(false)
 
-	# When camera doesn't show the crowd, reset rows that are beyond their spawn distance
+	# When camera doesn't show the crowd, reset rows that are beyond their trigger distance
 	var vp = get_viewport()
 	var cam = vp.get_camera_3d() if vp else null
 	if cam:
 		var bounds = get_spawn_bounds()
 		var center = bounds.position + bounds.size * 0.5
 		var cam_dist = cam.global_position.distance_to(center)
+		var effective_front_dist = (front_row_distant_max_distance if front_row_distant_visibility else front_row_max_distance) if enable_row_architecture else max_render_distance
+		if _front_row_revealed and cam_dist > effective_front_dist:
+			_front_row_revealed = false
+			_front_row_fade = 0.0
 		if _back_row_revealed and cam_dist > back_row_max_distance:
 			_back_row_revealed = false
-			_update_row_mesh_culling(CrowdRow.BACK)
+			_back_row_fade = 0.0
 		if _mid_row_revealed and cam_dist > middle_row_max_distance:
 			_mid_row_revealed = false
-			_update_row_mesh_culling(CrowdRow.MIDDLE)
+			_mid_row_fade = 0.0
+
+func _is_point_occluded(space_state: PhysicsDirectSpaceState3D, cam_pos: Vector3, target_pos: Vector3, base_exclude: Array[RID], clearance_margin: float = 1.8) -> bool:
+	var ray_query = PhysicsRayQueryParameters3D.create(cam_pos, target_pos)
+	ray_query.collision_mask = collision_mask_world
+	ray_query.collide_with_areas = false
+	ray_query.collide_with_bodies = true
+	var current_exclude = base_exclude.duplicate()
+	ray_query.exclude = current_exclude
+
+	# Loop up to 4 times to pass through dynamic CharacterBody3D (player, enemies, NPCs)
+	for _attempt in range(4):
+		var res = space_state.intersect_ray(ray_query)
+		if res.is_empty():
+			return false # Line of sight is clear
+		var collider = res.collider
+		if is_instance_valid(collider) and collider is CharacterBody3D:
+			current_exclude.append(collider.get_rid())
+			ray_query.exclude = current_exclude
+			continue
+		# It hit world geometry. If the hit is very close to the target point, consider it clear (ground slope/props)
+		var hit_dist_to_target = res.position.distance_to(target_pos)
+		if hit_dist_to_target <= clearance_margin:
+			return false
+		return true # Blocked by static world geometry
+	return false
 
 func _set_crowd_rendered(rendered: bool) -> void:
 	if _is_rendered == rendered:
@@ -716,7 +810,21 @@ func _set_crowd_rendered(rendered: bool) -> void:
 	for member in active_members:
 		if not is_instance_valid(member):
 			continue
-		member.visible = rendered
+		member.set_meta("_member_occluded", false)
+		var is_row_revealed = true
+		if enable_row_architecture:
+			var r = member.crowd_row if ("crowd_row" in member) else CrowdRow.FRONT
+			match r:
+				CrowdRow.FRONT:
+					is_row_revealed = _front_row_revealed
+				CrowdRow.MIDDLE:
+					is_row_revealed = _mid_row_revealed
+				CrowdRow.BACK:
+					is_row_revealed = _back_row_revealed
+		else:
+			is_row_revealed = _front_row_revealed
+
+		member.visible = rendered and is_row_revealed
 		member.process_mode = Node.PROCESS_MODE_INHERIT if rendered else Node.PROCESS_MODE_DISABLED
 		if not rendered and member.has_method("set_row_active"):
 			member.set_row_active(false)
@@ -737,75 +845,125 @@ func _check_culling(_force_check: bool = false) -> void:
 
 	var bounds = get_spawn_bounds()
 	var center = bounds.position + bounds.size * 0.5
-	center.y += 1.0
-
 	var cam_pos = cam.global_position
-	var dist_sq = cam_pos.distance_squared_to(center)
-	var effective_max_dist = front_row_max_distance if enable_row_architecture else max_render_distance
+	var dist_sq = cam_pos.distance_squared_to(center + Vector3(0.0, 1.0, 0.0))
+	var effective_max_dist = (front_row_distant_max_distance if front_row_distant_visibility else front_row_max_distance) if enable_row_architecture else max_render_distance
 	var max_dist_sq = effective_max_dist * effective_max_dist
 
-	# Distance culling (out of max distance, 100m)
+	# Distance culling (out of max distance)
 	if dist_sq > max_dist_sq:
 		_set_crowd_rendered(false)
-		if _back_row_revealed:
-			_back_row_revealed = false
-			_update_row_mesh_culling(CrowdRow.BACK)
-		if _mid_row_revealed:
-			_mid_row_revealed = false
-			_update_row_mesh_culling(CrowdRow.MIDDLE)
+		_front_row_revealed = false
+		_mid_row_revealed = false
+		_back_row_revealed = false
+		_front_row_fade = 0.0
+		_mid_row_fade = 0.0
+		_back_row_fade = 0.0
 		return
-
-	# Line-of-Sight Occlusion Culling
-	if enable_occlusion_culling:
-		var space_state = get_world_3d().direct_space_state
-		if space_state:
-			var half_size = bounds.size * 0.5
-			var test_pts = [
-				center,
-				Vector3(bounds.position.x + half_size.x * 0.2, center.y, bounds.position.z + half_size.z * 0.2),
-				Vector3(bounds.end.x - half_size.x * 0.2, center.y, bounds.end.z - half_size.z * 0.2)
-			]
-
-			var all_occluded = true
-			var ray_query = PhysicsRayQueryParameters3D.create(cam_pos, center)
-			ray_query.collision_mask = collision_mask_world
-			ray_query.collide_with_areas = false
-			ray_query.collide_with_bodies = true
-			ray_query.exclude = _crowd_rids
-
-			for pt in test_pts:
-				ray_query.from = cam_pos
-				ray_query.to = pt
-				var res = space_state.intersect_ray(ray_query)
-				if res.is_empty():
-					all_occluded = false
-					break
-				else:
-					var hit_dist_to_pt = res.position.distance_to(pt)
-					if hit_dist_to_pt <= 0.6:
-						all_occluded = false
-						break
-
-			if all_occluded:
-				_set_crowd_rendered(false)
-				return
 
 	_set_crowd_rendered(true)
 
-	var cam_dist = sqrt(dist_sq)
+	var space_state = get_world_3d().direct_space_state if enable_occlusion_culling else null
 
-	# Reveal Latch: when player reaches a row, expand its range so it never fades out while looking at it
+	# 1. Group-level multi-point occlusion check (Option A: Zero-Pop Pause)
+	var group_occluded = false
+	if enable_occlusion_culling and space_state:
+		var half_size = bounds.size * 0.5
+		var dx = half_size.x * 0.85
+		var dz = half_size.z * 0.85
+		var head_y = center.y + 1.8
+		var chest_y = center.y + 1.0
+
+		var test_pts = [
+			Vector3(center.x, head_y, center.z),
+			Vector3(center.x - dx, head_y, center.z - dz),
+			Vector3(center.x + dx, head_y, center.z + dz),
+			Vector3(center.x - dx, head_y, center.z + dz),
+			Vector3(center.x + dx, head_y, center.z - dz),
+			Vector3(center.x - dx, chest_y, center.z - dz),
+			Vector3(center.x + dx, chest_y, center.z + dz),
+			Vector3(center.x - dx, chest_y, center.z + dz),
+			Vector3(center.x + dx, chest_y, center.z - dz),
+		]
+
+		group_occluded = true
+		for pt in test_pts:
+			if not _is_point_occluded(space_state, cam_pos, pt, _crowd_rids, 1.8):
+				group_occluded = false
+				break # Early out: visible!
+
+	var was_group_occluded = _is_occluded
+	_is_occluded = group_occluded
+
+	# 2. Per-Member Occlusion Check (Zero-Pop Mode)
+	# When on-screen, member.visible remains true so the hardware GPU Early-Z depth buffer
+	# rejects hidden pixels with 0 ms latency on the exact frame the camera moves.
+	# Occlusion status strictly drives CPU skeleton/animation pausing and shadow casting.
+	if enable_occlusion_culling and space_state and not active_members.is_empty():
+		var total_members = active_members.size()
+		var batch_count = total_members if group_occluded else mini(MEMBER_OCCLUSION_BATCH_SIZE, total_members)
+		for _step in range(batch_count):
+			if _member_occlusion_cursor >= total_members:
+				_member_occlusion_cursor = 0
+			var member = active_members[_member_occlusion_cursor]
+			_member_occlusion_cursor += 1
+
+			if not is_instance_valid(member):
+				continue
+
+			var m_pos = member.global_position
+			var head_pt = m_pos + Vector3(0.0, 1.9, 0.0)
+			var chest_pt = m_pos + Vector3(0.0, 1.1, 0.0)
+
+			var mem_occluded = false
+			if group_occluded:
+				mem_occluded = true
+			elif _is_point_occluded(space_state, cam_pos, head_pt, _crowd_rids, 1.8):
+				if _is_point_occluded(space_state, cam_pos, chest_pt, _crowd_rids, 1.8):
+					mem_occluded = true
+
+			member.set_meta("_member_occluded", mem_occluded)
+	elif not enable_occlusion_culling or not space_state:
+		if was_group_occluded:
+			for member in active_members:
+				if is_instance_valid(member):
+					member.set_meta("_member_occluded", false)
+
+	if was_group_occluded and not _is_occluded:
+		for member in active_members:
+			if is_instance_valid(member):
+				member.set_meta("_member_occluded", false)
+
+	var cam_dist = sqrt(dist_sq)
+	_is_beyond_front_max = enable_row_architecture and (cam_dist > front_row_max_distance)
+
+	# Trigger row reveal & time-based dither fade-in
 	if enable_row_architecture:
+		if not _front_row_revealed and cam_dist <= effective_max_dist:
+			_front_row_revealed = true
+			_front_row_fade = 1.0 if (_force_check or not enable_shader_dithering) else 0.0
+			_update_row_fade(CrowdRow.FRONT, _front_row_fade, cam)
+
 		if not _mid_row_revealed and cam_dist <= middle_row_max_distance:
 			_mid_row_revealed = true
-			_update_row_mesh_culling(CrowdRow.MIDDLE)
+			_mid_row_fade = 1.0 if (_force_check or not enable_shader_dithering) else 0.0
+			_update_row_fade(CrowdRow.MIDDLE, _mid_row_fade, cam)
+
 		if not _back_row_revealed and cam_dist <= back_row_max_distance:
 			_back_row_revealed = true
-			_update_row_mesh_culling(CrowdRow.BACK)
+			_back_row_fade = 1.0 if (_force_check or not enable_shader_dithering) else 0.0
+			_update_row_fade(CrowdRow.BACK, _back_row_fade, cam)
+	else:
+		if not _front_row_revealed and cam_dist <= max_render_distance:
+			_front_row_revealed = true
+			_front_row_fade = 1.0 if (_force_check or not enable_shader_dithering) else 0.0
+			_update_row_fade(CrowdRow.FRONT, _front_row_fade, cam)
 
 	# Animations start as soon as dither alpha > 0 (or while revealed)
 	var has_back_row = false
 	var has_mid_row = false
+	var full_fps_dist_sq = anim_full_fps_distance * anim_full_fps_distance
+	var half_fps_dist_sq = anim_half_fps_distance * anim_half_fps_distance
 
 	for member in active_members:
 		if not is_instance_valid(member):
@@ -816,22 +974,49 @@ func _check_culling(_force_check: bool = false) -> void:
 		elif r == CrowdRow.MIDDLE:
 			has_mid_row = true
 
+		var is_row_revealed = true
 		var is_active = true
 		if enable_row_architecture:
 			match r:
 				CrowdRow.FRONT:
+					is_row_revealed = _front_row_revealed
 					is_active = (cam_dist <= front_row_max_distance)
 				CrowdRow.MIDDLE:
+					is_row_revealed = _mid_row_revealed
 					is_active = (cam_dist <= middle_row_max_distance) or _mid_row_revealed
 				CrowdRow.BACK:
+					is_row_revealed = _back_row_revealed
 					is_active = (cam_dist <= back_row_max_distance) or _back_row_revealed
+		else:
+			is_row_revealed = _front_row_revealed
+			is_active = (cam_dist <= max_render_distance)
+
+		member.visible = is_row_revealed
+
+		var mem_occluded = member.get_meta("_member_occluded", false) if member.has_meta("_member_occluded") else false
+		if _is_occluded or mem_occluded:
+			is_active = false
 
 		if member.has_method("set_row_active"):
 			member.set_row_active(is_active)
 
-	# Hit reactions only work when ALL crowd rows are present
+		# Omni-directional distance-based animation stepping:
+		# Calculates true 3D distance from camera to each member so stepping looks
+		# 100% full FPS from any angle (front, back, left, right) whenever close to the player.
+		if "anim_step_interval" in member:
+			var m_dist_sq = cam_pos.distance_squared_to(member.global_position)
+			if m_dist_sq <= full_fps_dist_sq:
+				member.anim_step_interval = 1
+			elif m_dist_sq <= half_fps_dist_sq:
+				member.anim_step_interval = 2
+			else:
+				member.anim_step_interval = 3
+
+	# Hit reactions only work when ALL crowd rows are present and front row is active
 	if not enable_row_architecture:
 		_all_rows_present = true
+	elif _is_beyond_front_max:
+		_all_rows_present = false
 	elif has_back_row:
 		_all_rows_present = _back_row_revealed or (cam_dist <= back_row_max_distance)
 	elif has_mid_row:

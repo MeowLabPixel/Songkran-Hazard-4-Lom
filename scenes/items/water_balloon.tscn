@@ -497,18 +497,22 @@ trail_particles = NodePath("Water")
 splash_particles = NodePath("Bomb")
 
 [node name="Balloon" type="MeshInstance3D" parent="." unique_id=108221586]
+cast_shadow = 0
 mesh = SubResource("SphereMesh_6q14k")
 
 [node name="Balloon2" type="MeshInstance3D" parent="Balloon" unique_id=466208097]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 2.2705162e-09, -0.13374564)
+cast_shadow = 0
 mesh = SubResource("CylinderMesh_6q14k")
 
 [node name="Balloon3" type="MeshInstance3D" parent="Balloon" unique_id=585504373]
 transform = Transform3D(0.365, 0, 0, 0, -1.0053619e-08, 0.335, 0, -0.23, -1.4643315e-08, 0, 0, -0.1202939)
+cast_shadow = 0
 mesh = SubResource("SphereMesh_on0ny")
 
 [node name="Balloon4" type="MeshInstance3D" parent="Balloon" unique_id=2088762878]
 transform = Transform3D(0.368, 0, 0, 0, -1.0272176e-08, 0.363, 0, -0.235, -1.5867235e-08, 0, 0, -0.12845483)
+cast_shadow = 0
 mesh = SubResource("SphereMesh_on0ny")
 
 [node name="Water" type="GPUParticles3D" parent="." unique_id=1250768153]

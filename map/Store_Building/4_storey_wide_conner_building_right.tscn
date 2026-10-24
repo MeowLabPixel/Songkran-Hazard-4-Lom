@@ -1911,7 +1911,7 @@ shape = SubResource("ConvexPolygonShape3D_rlxd3")
 transform = Transform3D(-1.759999, 0, -2.959518e-07, 0, 0.91999966, 0, 2.6575248e-07, 0, -1.96, 0.093455076, -0.01639379, -0.054758996)
 
 [node name="IronGate v2 - front2" parent="fl1 - Big/Door" unique_id=831504610 instance=ExtResource("4_gkahd")]
-transform = Transform3D(-5.0838274e-08, 0, -0.009659096, 0, 0.021739135, 0, 0.42551032, 0, -9.30527e-10, -1.1637807e-05, -0.0017774887, -0.0009879805)
+transform = Transform3D(-5.0838302e-08, 0, -0.009659096, 0, 0.021739135, 0, 0.42551038, 0, -9.3052643e-10, -1.1630356e-05, -0.0017774887, -0.00087730214)
 
 [node name="Celling" type="MeshInstance3D" parent="fl1 - Big" unique_id=1893593781]
 transform = Transform3D(1.9769998, 0, 8.526513e-14, 0, 0.6, 0, 0, 0, 2.219, 0.045999996, 0.017999995, 0.046503924)

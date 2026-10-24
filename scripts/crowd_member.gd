@@ -64,6 +64,7 @@ var crowd_row: int = 0
 var is_row_active: bool = true
 var editor_performance_mode: bool = false
 var member_index: int = 0
+var anim_step_interval: int = 1
 var _anim_accumulated_delta: float = 0.0
 var cached_meshes: Array[MeshInstance3D] = []
 var cached_rids: Array[RID] = []
@@ -91,11 +92,18 @@ func set_row_active(active: bool) -> void:
 	if is_row_active == active:
 		return
 	is_row_active = active
+	set_process(active)
+	set_physics_process(active)
 	if not active:
 		if anim_player:
 			anim_player.pause()
 			anim_player.active = false
 		set_hitbox_mode(HitboxMode.OFF)
+		if hit_reaction_modifier:
+			hit_reaction_modifier.active = false
+		if _turn_tween and _turn_tween.is_valid():
+			_turn_tween.kill()
+			is_performing_action = false
 	else:
 		if anim_player:
 			anim_player.active = true
@@ -112,8 +120,8 @@ func _process(delta: float) -> void:
 	if not is_row_active or not anim_player or not anim_player.active:
 		return
 
-	# If performing an action (shooting, throwing balloon, hit reaction) or front row: step every frame
-	if is_performing_action or _current_hitbox_mode == HitboxMode.FULL or crowd_row == 0:
+	# If performing an action (shooting, throwing balloon, hit reaction) or within full FPS distance: step every frame
+	if is_performing_action or _current_hitbox_mode == HitboxMode.FULL or anim_step_interval <= 1:
 		if _anim_accumulated_delta > 0.0:
 			anim_player.advance(_anim_accumulated_delta + delta)
 			_anim_accumulated_delta = 0.0
@@ -125,9 +133,9 @@ func _process(delta: float) -> void:
 	var frame_idx: int = Engine.get_process_frames()
 	var should_step: bool = false
 
-	if crowd_row == 1: # MIDDLE ROW: step every 2nd frame, staggered across members
+	if anim_step_interval == 2: # Medium range: step every 2nd frame, staggered across members
 		should_step = ((frame_idx + member_index) % 2 == 0)
-	elif crowd_row == 2: # BACK ROW: step every 3rd frame, staggered across members
+	elif anim_step_interval >= 3: # Far range: step every 3rd frame, staggered across members
 		should_step = ((frame_idx + member_index) % 3 == 0)
 	else:
 		should_step = true
