@@ -376,16 +376,25 @@ var _connected_curve: Curve3D = null
 var _needs_regenerate: bool = false
 
 func _ready() -> void:
+	if not Engine.is_editor_hint():
+		set_process(false)
+		return
 	_init_default_scenes_if_needed()
 	_ensure_curve_connected()
 
 func _enter_tree() -> void:
+	if not Engine.is_editor_hint():
+		set_process(false)
+		return
 	_ensure_curve_connected()
 
 func _exit_tree() -> void:
 	_disconnect_curve()
 
 func _process(_delta: float) -> void:
+	if not Engine.is_editor_hint():
+		set_process(false)
+		return
 	_ensure_curve_connected()
 	if _needs_regenerate:
 		_needs_regenerate = false
@@ -402,6 +411,8 @@ func _make_curve_unique() -> void:
 			generate()
 
 func _ensure_curve_connected() -> void:
+	if not Engine.is_editor_hint():
+		return
 	if curve != _connected_curve:
 		_disconnect_curve()
 		_connected_curve = curve
@@ -416,6 +427,8 @@ func _disconnect_curve() -> void:
 		_connected_curve = null
 
 func _on_curve_changed() -> void:
+	if not Engine.is_editor_hint():
+		return
 	if auto_update_on_curve_change:
 		_needs_regenerate = true
 

@@ -42,9 +42,10 @@ func _process_modification() -> void:
 	
 	var delta = get_process_delta_time()
 	if delta <= 0.0: delta = 0.016
+	delta = clampf(delta, 0.001, 0.05)
 	
 	# Process impact sway lerping and decay
-	impact_sway_z = lerp(impact_sway_z, target_impact_sway_z, delta * 8.0) # Smooth transition to peak sway
+	impact_sway_z = lerp(impact_sway_z, target_impact_sway_z, clampf(1.0 - exp(-8.0 * delta), 0.0, 1.0)) # Smooth transition to peak sway
 	target_impact_sway_z = move_toward(target_impact_sway_z, 0.0, delta * impact_decay_rate)
 	
 	var local_vel = enemy.global_transform.basis.inverse() * enemy.velocity
@@ -82,8 +83,9 @@ func _process_modification() -> void:
 	var target_tilt_x = deg_to_rad(-dir.z * max_tilt_angle * speed_factor * lean_multiplier)
 	var target_tilt_z = 0.0
 	
-	current_tilt_x = lerp_angle(current_tilt_x, target_tilt_x, delta * tilt_speed)
-	current_tilt_z = lerp_angle(current_tilt_z, target_tilt_z, delta * tilt_speed)
+	var tilt_weight = clampf(1.0 - exp(-tilt_speed * delta), 0.0, 1.0)
+	current_tilt_x = lerp_angle(current_tilt_x, target_tilt_x, tilt_weight)
+	current_tilt_z = lerp_angle(current_tilt_z, target_tilt_z, tilt_weight)
 	
 	# Blend lean, locomotion sway, and impact sway into the roll axis (Z) of the group
 	var total_tilt_z = current_tilt_z + movement_sway + impact_sway_z

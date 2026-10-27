@@ -516,9 +516,9 @@ func _physics_process(delta: float) -> void:
 	
 	var angular_velocity = 0.0
 	if delta > 0.0:
-		angular_velocity = rotation_delta / delta
+		angular_velocity = clampf(rotation_delta / delta, -PI * 2.0, PI * 2.0)
 		
-	_smoothed_angular_velocity = lerp(_smoothed_angular_velocity, angular_velocity, delta * 15.0)
+	_smoothed_angular_velocity = lerp(_smoothed_angular_velocity, angular_velocity, clampf(1.0 - exp(-15.0 * delta), 0.0, 1.0))
 	
 	# Only apply turn lean when in walking state
 	var is_walking = false
@@ -538,9 +538,10 @@ func _physics_process(delta: float) -> void:
 	var target_y = clamp(turn_yaw_rad, deg_to_rad(-max_yaw_angle), deg_to_rad(max_yaw_angle))
 	
 	if rig:
-		rig.rotation.x = lerp_angle(rig.rotation.x, 0.0, delta * turn_tilt_speed)
-		rig.rotation.y = lerp_angle(rig.rotation.y, target_y, delta * turn_tilt_speed)
-		rig.rotation.z = lerp_angle(rig.rotation.z, target_z, delta * turn_tilt_speed)
+		var tilt_rig_weight = clampf(1.0 - exp(-turn_tilt_speed * delta), 0.0, 1.0)
+		rig.rotation.x = lerp_angle(rig.rotation.x, 0.0, tilt_rig_weight)
+		rig.rotation.y = lerp_angle(rig.rotation.y, target_y, tilt_rig_weight)
+		rig.rotation.z = lerp_angle(rig.rotation.z, target_z, tilt_rig_weight)
 
 	# Manage collision shape size based on ducking state
 	var current_state_name = state_machine.get_current_state_name() if state_machine else ""

@@ -251,7 +251,7 @@ transparency = 1
 shading_mode = 0
 albedo_color = Color(1, 1, 1, 0.5882353)
 grow = true
-grow_amount = 0.15
+grow_amount = 0.117
 stencil_mode = 3
 stencil_flags = 1
 stencil_compare = 5
@@ -273,7 +273,7 @@ stencil_mode = 1
 stencil_flags = 2
 stencil_reference = 40
 stencil_color = Color(1, 1, 1, 0.5882353)
-stencil_outline_thickness = 0.15
+stencil_outline_thickness = 0.117
 metadata/extras = {
 "yp": {
 "active_ypaint_node": "",

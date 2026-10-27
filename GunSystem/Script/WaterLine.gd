@@ -1,3 +1,4 @@
+@tool
 extends Node3D
 
 @export var life_time: float = 0.03
@@ -5,6 +6,11 @@ extends Node3D
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
 
 func set_line(spawn_pos: Vector3, target_pos: Vector3) -> void:
+	if not mesh_instance:
+		mesh_instance = get_node_or_null("MeshInstance3D") as MeshInstance3D
+	if not mesh_instance:
+		return
+
 	var to_target = target_pos - spawn_pos
 	var distance := to_target.length()
 	if distance < 0.05:

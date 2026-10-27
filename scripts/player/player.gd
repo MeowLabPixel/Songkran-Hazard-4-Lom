@@ -1063,18 +1063,18 @@ func _update_skeleton_tilt(delta: float) -> void:
 	# Turn left (angular_velocity > 0) -> lean left (negative Z tilt)
 	angular_velocity = 0.0
 	if delta > 0.0:
-		angular_velocity = rotation_delta / delta
+		angular_velocity = clampf(rotation_delta / delta, -PI * 2.0, PI * 2.0)
 	
 	# Smooth the turn speed for step detection — reduces noise spikes
 	# Fast smoothing toward higher values, fast decay toward zero.
 	var raw_speed = abs(angular_velocity)
 	if raw_speed > _smoothed_turn_speed:
-		_smoothed_turn_speed = lerp(_smoothed_turn_speed, raw_speed, delta * 25.0)
+		_smoothed_turn_speed = lerp(_smoothed_turn_speed, raw_speed, clampf(1.0 - exp(-25.0 * delta), 0.0, 1.0))
 	else:
-		_smoothed_turn_speed = lerp(_smoothed_turn_speed, raw_speed, delta * 18.0)
+		_smoothed_turn_speed = lerp(_smoothed_turn_speed, raw_speed, clampf(1.0 - exp(-18.0 * delta), 0.0, 1.0))
 
 	# Smooth directional angular velocity to eliminate visual jitter from mouse polling
-	_smoothed_angular_velocity = lerp(_smoothed_angular_velocity, angular_velocity, delta * 15.0)
+	_smoothed_angular_velocity = lerp(_smoothed_angular_velocity, angular_velocity, clampf(1.0 - exp(-15.0 * delta), 0.0, 1.0))
 
 	var current_tilt_sensitivity = rotation_tilt_sensitivity * 0.5 if is_aimming else rotation_tilt_sensitivity
 	var turn_tilt_deg = -_smoothed_angular_velocity * current_tilt_sensitivity
@@ -1097,9 +1097,10 @@ func _update_skeleton_tilt(delta: float) -> void:
 
 	# Rotate the rig node on the Y-axis (yaw) for turning inertia
 	# Z turning lean is now handled additively by the unified SpineLeanModifier
-	rig.rotation.x = lerp_angle(rig.rotation.x, 0.0, delta * TILT_SPEED)
-	rig.rotation.y = lerp_angle(rig.rotation.y, target_y, delta * TILT_SPEED)
-	rig.rotation.z = lerp_angle(rig.rotation.z, 0.0, delta * TILT_SPEED)
+	var tilt_rig_weight = clampf(1.0 - exp(-TILT_SPEED * delta), 0.0, 1.0)
+	rig.rotation.x = lerp_angle(rig.rotation.x, 0.0, tilt_rig_weight)
+	rig.rotation.y = lerp_angle(rig.rotation.y, target_y, tilt_rig_weight)
+	rig.rotation.z = lerp_angle(rig.rotation.z, 0.0, tilt_rig_weight)
 
 func update_crosshair_accuracy(delta: float) -> void:
 	if not cross_hair:
@@ -2025,8 +2026,6 @@ func _update_idle_turn_blend(delta: float) -> void:
 			_anim_time -= 1.06
 		elif _anim_time < 0.0:
 			_anim_time += 1.06
-			
-		print("[AnimTime RealTime] ", snapped(_anim_time, 0.001), " | TargetScale: ", snapped(target_scale, 0.01), " | Returning: ", _is_returning_to_neutral)
 
 		# RealTime Footstep Trigger Detection for turning
 		var turn_cooldown = clamp(200.0 / max(abs(target_scale), 0.5), 80.0, 250.0)

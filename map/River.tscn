@@ -1,0 +1,132 @@
+[gd_scene format=3 uid="uid://ohxcskfs4erl"]
+
+[ext_resource type="Material" uid="uid://djrooiqsn0r5w" path="res://map/GroundTexture/Pavement_Materials.tres" id="1_i6l3c"]
+[ext_resource type="Texture2D" uid="uid://bik32le7hwcbf" path="res://map/GroundTexture/Concrete/Concrete_05/Concrete_05_basecolor.png" id="2_85rwh"]
+[ext_resource type="Texture2D" uid="uid://c3b1c5uh5e1qi" path="res://map/GroundTexture/Concrete/Concrete_05/Concrete_05_normal.png" id="3_ejmqm"]
+[ext_resource type="PackedScene" uid="uid://dvihcw1cabv2m" path="res://map/bush.tscn" id="4_ytdjf"]
+
+[sub_resource type="Curve3D" id="Curve3D_iccx4"]
+closed = true
+_data = {
+"points": PackedVector3Array(-3, 0, 0, 3, 0, 0, -56, 0, -4.5, 0, 0, 0, 0, 0, 0, 0, 0, -4.5, 0, 0, 0, 4, 0, 1.5, 56, 0, -4.5, 0, 0, 0, 0, 0, 0, 59.5, 0, 0, 4, 0, -1.5, 0, 0, 0, 56, 0, 4.5, 0, 0, 0, 0, 0, 0, 0, 0, 4.5, 4, 0, 0, -4, 0, -1.5, -56, 0, 4.5, 0, 0, 0, 0, 0, 0, -59.499985, 0, -0.40187073),
+"tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
+}
+point_count = 8
+
+[sub_resource type="Gradient" id="Gradient_s1qfn"]
+interpolation_mode = 1
+offsets = PackedFloat32Array(0, 0.234375, 0.7534722, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0.32243413, 0.32243413, 0.32243413, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_3v8bn"]
+gradient = SubResource("Gradient_s1qfn")
+fill_from = Vector2(0, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yus0k"]
+albedo_color = Color(0.70387197, 0.70387197, 0.70387197, 1)
+albedo_texture = SubResource("GradientTexture2D_3v8bn")
+detail_enabled = true
+detail_blend_mode = 3
+detail_uv_layer = 1
+detail_albedo = ExtResource("2_85rwh")
+detail_normal = ExtResource("3_ejmqm")
+uv1_scale = Vector3(0.55, 0.55, 0.55)
+uv2_scale = Vector3(0.18, 0.18, 0.18)
+uv2_triplanar = true
+uv2_triplanar_sharpness = 150.0
+uv2_world_triplanar = true
+texture_filter = 5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s1qfn"]
+albedo_color = Color(0.70387197, 0.70387197, 0.70387197, 1)
+detail_enabled = true
+detail_blend_mode = 3
+detail_uv_layer = 1
+detail_albedo = ExtResource("2_85rwh")
+detail_normal = ExtResource("3_ejmqm")
+uv1_scale = Vector3(0.55, 0.55, 0.55)
+uv2_scale = Vector3(0.18, 0.18, 0.18)
+uv2_triplanar = true
+uv2_triplanar_sharpness = 150.0
+uv2_world_triplanar = true
+texture_filter = 5
+
+[node name="River" type="Node3D" unique_id=1110180793]
+
+[node name="Path3D" type="Path3D" parent="." unique_id=680879483]
+transform = Transform3D(1.032, 0, 0, 0, 1, 0, 0, 0, 1.462, 0, 0.345, 0)
+curve = SubResource("Curve3D_iccx4")
+
+[node name="Pavement" type="CSGPolygon3D" parent="Path3D" unique_id=1162567176]
+layers = 1025
+use_collision = true
+polygon = PackedVector2Array(2, 0.2, 0.075, 0.2, -0.715, -0.57, 2, -0.57)
+mode = 2
+path_node = NodePath("..")
+path_interval_type = 0
+path_interval = 0.7
+path_simplify_angle = 0.0
+path_rotation = 2
+path_rotation_accurate = true
+path_local = true
+path_continuous_u = true
+path_u_distance = 1.0
+path_joined = false
+material = ExtResource("1_i6l3c")
+
+[node name="Corner" type="CSGPolygon3D" parent="Path3D" unique_id=104027321]
+layers = 1025
+polygon = PackedVector2Array(-0.3, -0.3, 0.2, -0.3, 0.2, 0.25, -0.3, 0.25)
+mode = 2
+path_node = NodePath("..")
+path_interval_type = 0
+path_interval = 0.7
+path_simplify_angle = 0.0
+path_rotation = 2
+path_rotation_accurate = false
+path_local = true
+path_continuous_u = true
+path_u_distance = 1.0
+path_joined = false
+material = SubResource("StandardMaterial3D_yus0k")
+
+[node name="Corner2" type="CSGPolygon3D" parent="Path3D" unique_id=1884002734]
+layers = 1025
+polygon = PackedVector2Array(2.55, -2.06, 2, -0.3, 2, 0.25, 2.55, 0.25)
+mode = 2
+path_node = NodePath("..")
+path_interval_type = 0
+path_interval = 0.7
+path_simplify_angle = 0.0
+path_rotation = 2
+path_rotation_accurate = false
+path_local = true
+path_continuous_u = true
+path_u_distance = 1.0
+path_joined = false
+material = SubResource("StandardMaterial3D_s1qfn")
+
+[node name="BushScene11" parent="." unique_id=2069309021 instance=ExtResource("4_ytdjf")]
+transform = Transform3D(-0.6, 0, -1.509958e-07, 0, 1, 0, 9.059749e-08, 0, -1, 43.93487, 0, -3.4420166)
+
+[node name="BushScene12" parent="." unique_id=178950487 instance=ExtResource("4_ytdjf")]
+transform = Transform3D(-0.6, 0, -1.509958e-07, 0, 1, 0, 9.059749e-08, 0, -1, 15.53487, 0, -3.4420166)
+
+[node name="BushScene13" parent="." unique_id=1327737390 instance=ExtResource("4_ytdjf")]
+transform = Transform3D(-0.6, 0, -1.509958e-07, 0, 1, 0, 9.059748e-08, 0, -1, -12.765137, 0, -3.4420166)
+
+[node name="BushScene14" parent="." unique_id=739462716 instance=ExtResource("4_ytdjf")]
+transform = Transform3D(-0.65, 0, -1.509958e-07, 0, 1, 0, 9.814727e-08, 0, -1, -41.46514, 0, -3.4420166)
+
+[node name="BushScene15" parent="." unique_id=1977053202 instance=ExtResource("4_ytdjf")]
+transform = Transform3D(-0.6, 0, -1.509958e-07, 0, 1, 0, 9.059749e-08, 0, -1, 15.734871, 0, 3.4579773)
+
+[node name="BushScene16" parent="." unique_id=1081871836 instance=ExtResource("4_ytdjf")]
+transform = Transform3D(-0.6, 0, -1.509958e-07, 0, 1, 0, 9.059749e-08, 0, -1, 44.034874, 0, 3.4579773)
+
+[node name="BushScene17" parent="." unique_id=1860966292 instance=ExtResource("4_ytdjf")]
+transform = Transform3D(-0.6, 0, -1.509958e-07, 0, 1, 0, 9.059748e-08, 0, -1, -12.665138, 0, 3.4579773)
+
+[node name="BushScene18" parent="." unique_id=1923309774 instance=ExtResource("4_ytdjf")]
+transform = Transform3D(-0.65, 0, -1.509958e-07, 0, 1, 0, 9.814727e-08, 0, -1, -41.365135, 0, 3.4579773)

@@ -21,6 +21,7 @@ var _anchalee: AnchaleeBase = null
 var _merchant: Merchant = null
 var _attachment: BoneAttachment3D = null
 var _target_entity: Node = null
+var _area: Area3D = null
 
 func get_target() -> Node:
 	if _enemy: return _enemy
@@ -76,6 +77,7 @@ func _ready() -> void:
 	if not area:
 		push_error("[HitboxZone] Parent must be Area3D (zone '%s')" % zone_name)
 		return
+	_area = area
 
 	_sanitize_scale(area)
 	
@@ -114,26 +116,28 @@ func _ready() -> void:
 	
 	if not area.body_entered.is_connected(_on_body_entered):
 		area.body_entered.connect(_on_body_entered)
+	var is_standard_entity = (_enemy != null or _anchalee != null or _merchant != null)
 	if _enemy:
 		area.add_to_group("enemy")
 	elif _anchalee:
 		area.add_to_group("anchalee_hitbox")
 	elif _merchant:
 		area.add_to_group("merchant_hitbox")
-	elif _target_entity:
+	else:
 		area.add_to_group("crowd_hitbox")
+		area.monitoring = false
 		if not Engine.is_editor_hint():
 			set_physics_process(false)
 		
-	# Reparent to BoneAttachment3D at runtime to eliminate one-frame lag
-	if not Engine.is_editor_hint() and _attachment and area.get_parent() != _attachment:
+	# Reparent to BoneAttachment3D at runtime to eliminate one-frame lag only for standard enemies/Anchalee/Merchant (never reparent crowd members)
+	if not Engine.is_editor_hint() and _attachment and area.get_parent() != _attachment and is_standard_entity:
 		_reparent_to_attachment.call_deferred(area, _attachment)
 
-	if not Engine.is_editor_hint() and not get_target():
+	if not Engine.is_editor_hint() and not get_target() and is_standard_entity:
 		push_warning("[HitboxZone] No EnemyBase, AnchaleeBase, Merchant, or target with take_hit found above zone '%s'" % zone_name)
 
 func sync_now() -> void:
-	var area := get_parent() as Area3D
+	var area := _area if is_instance_valid(_area) else (get_parent() as Area3D)
 	_sanitize_scale(area)
 
 func _resolve_attachment_if_needed() -> void:
@@ -174,14 +178,18 @@ func _resolve_attachment_if_needed() -> void:
 func _notification(what: int) -> void:
 	if Engine.is_editor_hint():
 		return
-	if what == Node3D.NOTIFICATION_LOCAL_TRANSFORM_CHANGED or what == Node3D.NOTIFICATION_TRANSFORM_CHANGED:
-		var area := get_parent() as Area3D
-		_sanitize_scale(area)
+	if is_instance_valid(_enemy) or is_instance_valid(_anchalee) or is_instance_valid(_merchant):
+		if what == Node3D.NOTIFICATION_LOCAL_TRANSFORM_CHANGED or what == Node3D.NOTIFICATION_TRANSFORM_CHANGED:
+			var area := _area if is_instance_valid(_area) else (get_parent() as Area3D)
+			_sanitize_scale(area)
 
 func _physics_process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
-	var area := get_parent() as Area3D
+	if not (is_instance_valid(_enemy) or is_instance_valid(_anchalee) or is_instance_valid(_merchant)):
+		set_physics_process(false)
+		return
+	var area := _area if is_instance_valid(_area) else (get_parent() as Area3D)
 	_sanitize_scale(area)
 
 func _sanitize_scale(area: Area3D) -> void:

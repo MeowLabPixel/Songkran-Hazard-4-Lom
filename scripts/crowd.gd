@@ -94,18 +94,22 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 	set(val):
 		max_render_distance = val
 		_update_render_distances()
-@export var enable_occlusion_culling: bool = true ## Raycast line-of-sight occlusion test against walls/buildings
+@export var enable_occlusion_culling: bool = false ## Raycast line-of-sight occlusion test against walls/buildings
 @export var enable_shadow_optimization: bool = true: ## Disable shadows on micro-meshes (fingers, flipflops, nose, etc.)
 	set(val):
 		enable_shadow_optimization = val
 		_update_render_distances()
 @export var culling_check_interval: float = 0.1 ## Interval in seconds for CPU occlusion & camera distance culling checks
-@export var anim_full_fps_distance: float = 10.0: ## Distance from camera within which crowd members animate at 100% full framerate from any angle (0 stagger)
+@export var start_from_30_fps: bool = true ## When true, crowd members at close range animate at 30 FPS (staggered alternating frames) instead of 60 FPS, halving CPU bone calculations
+@export var anim_full_fps_distance: float = 7.0: ## Distance from camera within which crowd members animate at 100% full framerate (or 30 FPS if start_from_30_fps is enabled)
 	set(val):
 		anim_full_fps_distance = val
-@export var anim_half_fps_distance: float = 25.0: ## Distance from camera within which crowd members step every 2nd frame (beyond this, every 3rd frame)
+@export var anim_half_fps_distance: float = 15.0: ## Distance from camera within which crowd members step at medium range (always 30 FPS)
 	set(val):
 		anim_half_fps_distance = val
+@export var anim_far_fps_distance: float = 30.0: ## Distance up to which far-range crowd members animate (15 FPS). Beyond 30m, animations pause completely (no movement, 0 CPU cost).
+	set(val):
+		anim_far_fps_distance = val
 
 @export_group("Row & Distance Architecture")
 @export var enable_row_architecture: bool = true: ## Spawns crowd in 3 depth rows (front, middle, back) with row-staggered culling
@@ -147,11 +151,22 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 	set(val):
 		front_row_is_negative_z = val
 		_on_setting_changed()
-@export var enable_shader_dithering: bool = true: ## Use GPU dither fade per row (VISIBILITY_RANGE_FADE_SELF)
+@export var enable_shader_dithering: bool = false: ## Use GPU dither fade per row (VISIBILITY_RANGE_FADE_SELF)
 	set(val):
 		enable_shader_dithering = val
 		_update_render_distances()
-@export_range(0.1, 1.0, 0.05) var activity_distance_ratio: float = 0.75 ## Fraction of row distance beyond which animation/combat pauses (75%)
+@export_range(0.1, 1.0, 0.05) var activity_distance_ratio: float = 0.35 ## Fraction of row distance beyond which animation/combat pauses (35%)
+
+@export_group("Balloon Pop Animation")
+@export var enable_balloon_pop_in: bool = true ## Pop revealed crowd rows in with an elastic balloon inflation animation
+@export var enable_balloon_pop_out: bool = true ## Pop hidden crowd rows out with a playful balloon deflation animation when walking away
+@export var pop_distance: float = 60.0: ## Distance in meters where the crowd pops in / pops out
+	set(val):
+		pop_distance = val
+		_update_render_distances()
+@export_range(0.1, 1.5, 0.05) var balloon_pop_duration: float = 0.45 ## Duration of the pop-in squash & stretch animation
+@export_range(0.1, 1.5, 0.05) var balloon_pop_out_duration: float = 0.35 ## Duration of the pop-out deflation animation
+@export_range(0.0, 0.2, 0.01) var balloon_pop_stagger: float = 0.04 ## Delay between each member in the row popping up/down
 @export var enable_distance_density_scaling: bool = true: ## Dynamically scale crowd density from min_distance_density to max_distance_density based on distance (100m to 25m)
 	set(val):
 		enable_distance_density_scaling = val
@@ -316,8 +331,21 @@ static func get_random_crowd_material() -> Material:
 var active_members: Array[Node3D] = []
 var _water_line_pool: Array[Node3D] = []
 var _balloon_pool: Array[Node3D] = []
+var _muzzle_vfx_pool: Array[Node3D] = []
+var _hit_vfx_pool: Array[Node3D] = []
 var _water_line_index: int = 0
 var _balloon_index: int = 0
+var _muzzle_vfx_index: int = 0
+var _hit_vfx_index: int = 0
+const VFX_POOL_SIZE: int = 4
+
+var _materials_dither_active: bool = false
+var _occlusion_ray_query: PhysicsRayQueryParameters3D = null
+var _cached_spawn_bounds: AABB = AABB()
+var _has_cached_spawn_bounds: bool = false
+
+var _candidate_shooters: Array[CrowdMember] = []
+var _candidate_targets: Array[CrowdMember] = []
 
 var shot_timer: float = 0.0
 var next_shot_time: float = 2.0
@@ -342,6 +370,8 @@ var _front_row_fade: float = 1.0
 var _mid_row_fade: float = 1.0
 var _back_row_fade: float = 1.0
 var _is_beyond_front_max: bool = false
+var _is_validating_physics: bool = false
+var _initial_culling_done: bool = false
 
 func are_all_rows_present() -> bool:
 	return _all_rows_present
@@ -415,6 +445,7 @@ func _sync_spawn_size_from_shape() -> void:
 					var col_wall = wall.get_node_or_null("InvisibleWall") as CollisionShape3D
 					if col_wall and col_wall.shape is BoxShape3D:
 						(col_wall.shape as BoxShape3D).size = box.size
+	_has_cached_spawn_bounds = false
 
 var _setting_change_pending: bool = false
 
@@ -521,10 +552,12 @@ func _setup_materials() -> void:
 			mat.uv1_offset = material_uv1_offset
 			mat.uv1_triplanar = enable_triplanar
 			mat.uv1_world_triplanar = enable_triplanar
-			if enable_shader_dithering:
-				mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_HASH
-			else:
-				mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+			mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+	_materials_dither_active = false
+
+func _update_materials_transparency_mode() -> void:
+	# Materials remain permanently at TRANSPARENCY_DISABLED to prevent Vulkan pipeline rebuild hitches
+	pass
 
 # ─── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -534,37 +567,43 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		if preview_in_editor:
 			_setup_crowd()
+			_apply_editor_performance_mode()
+			_deferred_physics_validation()
 		else:
 			if saved_crowd_data.is_empty():
 				regenerate_crowd()
 			_clear_preview_crowd()
 		return
 
+	# Enforce runtime safety clamps on LOD stepping distances so scene inspector overrides (.tscn)
+	# cannot inadvertently lock members to 60 FPS beyond close range:
+	anim_full_fps_distance = minf(anim_full_fps_distance, 7.0)
+	anim_half_fps_distance = minf(anim_half_fps_distance, 15.0)
+	anim_far_fps_distance = maxf(anim_far_fps_distance, 30.0)
+	enable_shader_dithering = false
+	if pop_distance > 0.0:
+		front_row_max_distance = maxf(front_row_max_distance, pop_distance)
+		max_render_distance = maxf(max_render_distance, pop_distance + 15.0)
+
 	_init_pools()
 	_setup_visibility_notifier()
 	_setup_crowd()
+	_deferred_physics_validation()
 
 	next_shot_time = _rng.randf_range(shot_interval_min, shot_interval_max)
 	next_balloon_time = _rng.randf_range(balloon_throw_interval_min, balloon_throw_interval_max)
+	_culling_timer = _rng.randf_range(0.0, culling_check_interval)
 
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 
-	# Advance time-based dither fade-in for rows currently fading in
-	if enable_shader_dithering and dither_fade_duration > 0.0 and _is_rendered:
-		var fade_step = delta / dither_fade_duration
+	if not _initial_culling_done:
 		var vp = get_viewport()
 		var cam = vp.get_camera_3d() if vp else null
-		if _front_row_revealed and _front_row_fade < 1.0:
-			_front_row_fade = minf(1.0, _front_row_fade + fade_step)
-			_update_row_fade(CrowdRow.FRONT, _front_row_fade, cam)
-		if _mid_row_revealed and _mid_row_fade < 1.0:
-			_mid_row_fade = minf(1.0, _mid_row_fade + fade_step)
-			_update_row_fade(CrowdRow.MIDDLE, _mid_row_fade, cam)
-		if _back_row_revealed and _back_row_fade < 1.0:
-			_back_row_fade = minf(1.0, _back_row_fade + fade_step)
-			_update_row_fade(CrowdRow.BACK, _back_row_fade, cam)
+		if cam:
+			_initial_culling_done = true
+			_check_culling(true)
 
 	# Low-frequency culling & occlusion checks
 	_culling_timer += delta
@@ -611,21 +650,11 @@ func _apply_culling_settings_to_member(member: Node3D) -> void:
 			CrowdRow.FRONT:
 				row_dist = front_row_distant_max_distance if front_row_distant_visibility else front_row_max_distance
 			CrowdRow.MIDDLE:
-				row_dist = front_row_max_distance if _mid_row_revealed else middle_row_max_distance
+				row_dist = middle_row_max_distance
 			CrowdRow.BACK:
-				row_dist = front_row_max_distance if _back_row_revealed else back_row_max_distance
+				row_dist = back_row_max_distance
 	else:
 		row_dist = max_render_distance
-
-	var trans_val = 0.0
-	if not Engine.is_editor_hint():
-		match row:
-			CrowdRow.FRONT:
-				trans_val = 0.0 if (_front_row_fade >= 1.0) else (1.0 - _front_row_fade)
-			CrowdRow.MIDDLE:
-				trans_val = 0.0 if (_mid_row_fade >= 1.0) else (1.0 - _mid_row_fade)
-			CrowdRow.BACK:
-				trans_val = 0.0 if (_back_row_fade >= 1.0) else (1.0 - _back_row_fade)
 
 	var in_editor_perf = Engine.is_editor_hint() and editor_performance_mode
 	var meshes = member.cached_meshes if ("cached_meshes" in member and not member.cached_meshes.is_empty()) else member.find_children("*", "MeshInstance3D", true, false)
@@ -634,8 +663,8 @@ func _apply_culling_settings_to_member(member: Node3D) -> void:
 			continue
 		var mesh_inst = child as MeshInstance3D
 		if mesh_inst:
-			mesh_inst.transparency = trans_val
-			mesh_inst.visibility_range_end = row_dist
+			mesh_inst.transparency = 0.0
+			mesh_inst.visibility_range_end = 0.0
 			mesh_inst.visibility_range_end_margin = 0.0
 			mesh_inst.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
 			if in_editor_perf:
@@ -651,31 +680,31 @@ func _apply_culling_settings_to_member(member: Node3D) -> void:
 			else:
 				mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 
-func _update_row_fade(row: CrowdRow, progress: float, _cam: Camera3D = null) -> void:
-	var is_solid = progress >= 1.0
-	var final_row_dist = front_row_distant_max_distance if (row == CrowdRow.FRONT and front_row_distant_visibility) else (front_row_max_distance if enable_row_architecture else max_render_distance)
-	var trans_val = 0.0 if is_solid else clampf(1.0 - progress, 0.0, 1.0)
+func _update_row_fade(_row: CrowdRow, _progress: float, _cam: Camera3D = null) -> void:
+	# Dither fading is handled natively on GPU via GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+	pass
 
+func _pop_in_row(row: CrowdRow) -> void:
+	var stagger_idx: int = 0
 	for member in active_members:
 		if not is_instance_valid(member):
 			continue
 		var r = member.crowd_row if ("crowd_row" in member) else CrowdRow.FRONT
-		if r != row:
+		if r == row and member.has_method("play_balloon_pop_in"):
+			var delay = stagger_idx * balloon_pop_stagger
+			member.play_balloon_pop_in(delay, balloon_pop_duration)
+			stagger_idx += 1
+
+func _pop_out_row(row: CrowdRow) -> void:
+	var stagger_idx: int = 0
+	for member in active_members:
+		if not is_instance_valid(member):
 			continue
-
-		if not member.visible and _is_rendered:
-			member.visible = true
-
-		var meshes = member.cached_meshes if ("cached_meshes" in member and not member.cached_meshes.is_empty()) else member.find_children("*", "MeshInstance3D", true, false)
-		for child in meshes:
-			if not is_instance_valid(child):
-				continue
-			var mesh_inst = child as MeshInstance3D
-			if mesh_inst:
-				mesh_inst.transparency = trans_val
-				mesh_inst.visibility_range_end = final_row_dist
-				mesh_inst.visibility_range_end_margin = 0.0
-				mesh_inst.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+		var r = member.crowd_row if ("crowd_row" in member) else CrowdRow.FRONT
+		if r == row and member.has_method("play_balloon_pop_out"):
+			var delay = stagger_idx * balloon_pop_stagger
+			member.play_balloon_pop_out(delay, balloon_pop_out_duration)
+			stagger_idx += 1
 
 func _update_row_mesh_culling(target_row: CrowdRow) -> void:
 	for member in active_members:
@@ -685,52 +714,10 @@ func _update_row_mesh_culling(target_row: CrowdRow) -> void:
 		if r == target_row:
 			_apply_culling_settings_to_member(member)
 
-func _update_shadow_state(cam_dist: float = -1.0) -> void:
-	for member in active_members:
-		if not is_instance_valid(member):
-			continue
-		var row = member.crowd_row if ("crowd_row" in member) else CrowdRow.FRONT
-		var row_dist = front_row_max_distance
-		if enable_row_architecture:
-			match row:
-				CrowdRow.FRONT:
-					row_dist = front_row_max_distance
-				CrowdRow.MIDDLE:
-					row_dist = front_row_max_distance if _mid_row_revealed else middle_row_max_distance
-				CrowdRow.BACK:
-					row_dist = front_row_max_distance if _back_row_revealed else back_row_max_distance
-		else:
-			row_dist = max_render_distance
-
-		var is_mem_occluded = member.get_meta("_member_occluded", false) if member.has_meta("_member_occluded") else false
-		var row_shadow_allowed = _is_rendered and not _is_occluded and not is_mem_occluded and enable_row_shadows
-		if cam_dist >= 0.0 and row_shadow_allowed:
-			row_shadow_allowed = (cam_dist <= row_dist)
-
-		var in_editor_perf = Engine.is_editor_hint() and editor_performance_mode
-		var prev_state = member.get_meta("_last_shadow_allowed", null)
-		if prev_state != null and prev_state == row_shadow_allowed and not in_editor_perf:
-			continue
-		member.set_meta("_last_shadow_allowed", row_shadow_allowed)
-
-		var meshes = member.cached_meshes if ("cached_meshes" in member and not member.cached_meshes.is_empty()) else member.find_children("*", "MeshInstance3D", true, false)
-		for child in meshes:
-			if not is_instance_valid(child):
-				continue
-			var mesh_inst = child as MeshInstance3D
-			if mesh_inst:
-				if in_editor_perf:
-					mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-				elif not row_shadow_allowed:
-					mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-				elif enable_shadow_optimization:
-					var m_name = mesh_inst.name.to_lower()
-					if ("flipflop" in m_name) or ("nose" in m_name) or ("foot" in m_name) or ("hand" in m_name) or ("neck" in m_name):
-						mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-					else:
-						mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-				else:
-					mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+func _update_shadow_state(_cam_dist: float = -1.0) -> void:
+	# Shadows are configured once per member in _apply_culling_settings_to_member
+	# to avoid periodic shadow atlas invalidation and micro-stutter.
+	pass
 
 func _setup_visibility_notifier() -> void:
 	if _visibility_notifier and is_instance_valid(_visibility_notifier):
@@ -742,7 +729,7 @@ func _setup_visibility_notifier() -> void:
 	_visibility_notifier.name = "CrowdVisibilityNotifier"
 	
 	var local_center = to_local(bounds.position + bounds.size * 0.5)
-	var margin = Vector3(8.0, 4.0, 8.0)
+	var margin = Vector3(2.0, 1.5, 2.0)
 	var local_size = bounds.size + margin * 2.0
 	_visibility_notifier.aabb = AABB(local_center - local_size * 0.5, local_size)
 
@@ -752,6 +739,8 @@ func _setup_visibility_notifier() -> void:
 
 func _on_crowd_screen_entered() -> void:
 	_is_on_screen = true
+	if not Engine.is_editor_hint():
+		set_process(true)
 	_check_culling(true)
 
 func _on_crowd_screen_exited() -> void:
@@ -766,34 +755,48 @@ func _on_crowd_screen_exited() -> void:
 		var bounds = get_spawn_bounds()
 		var center = bounds.position + bounds.size * 0.5
 		var cam_dist = cam.global_position.distance_to(center)
-		var effective_front_dist = (front_row_distant_max_distance if front_row_distant_visibility else front_row_max_distance) if enable_row_architecture else max_render_distance
+		var effective_front_dist = pop_distance if pop_distance > 0.0 else ((front_row_distant_max_distance if front_row_distant_visibility else front_row_max_distance) if enable_row_architecture else max_render_distance)
+		var mid_dist = (pop_distance * 0.75 if pop_distance > 0.0 else middle_row_max_distance)
+		var back_dist = (pop_distance * 0.50 if pop_distance > 0.0 else back_row_max_distance)
 		if _front_row_revealed and cam_dist > effective_front_dist:
 			_front_row_revealed = false
 			_front_row_fade = 0.0
-		if _back_row_revealed and cam_dist > back_row_max_distance:
+		if _back_row_revealed and cam_dist > back_dist:
 			_back_row_revealed = false
 			_back_row_fade = 0.0
-		if _mid_row_revealed and cam_dist > middle_row_max_distance:
+		if _mid_row_revealed and cam_dist > mid_dist:
 			_mid_row_revealed = false
 			_mid_row_fade = 0.0
+	_update_materials_transparency_mode()
+	if not Engine.is_editor_hint():
+		set_process(false)
 
 func _is_point_occluded(space_state: PhysicsDirectSpaceState3D, cam_pos: Vector3, target_pos: Vector3, base_exclude: Array[RID], clearance_margin: float = 1.8) -> bool:
-	var ray_query = PhysicsRayQueryParameters3D.create(cam_pos, target_pos)
-	ray_query.collision_mask = collision_mask_world
-	ray_query.collide_with_areas = false
-	ray_query.collide_with_bodies = true
-	var current_exclude = base_exclude.duplicate()
-	ray_query.exclude = current_exclude
+	if not _occlusion_ray_query:
+		_occlusion_ray_query = PhysicsRayQueryParameters3D.new()
+		_occlusion_ray_query.collision_mask = collision_mask_world
+		_occlusion_ray_query.collide_with_areas = false
+		_occlusion_ray_query.collide_with_bodies = true
+
+	_occlusion_ray_query.from = cam_pos
+	_occlusion_ray_query.to = target_pos
+	_occlusion_ray_query.exclude = base_exclude
+
+	var current_exclude: Array[RID] = []
+	var has_custom_exclude: bool = false
 
 	# Loop up to 4 times to pass through dynamic CharacterBody3D (player, enemies, NPCs)
 	for _attempt in range(4):
-		var res = space_state.intersect_ray(ray_query)
+		var res = space_state.intersect_ray(_occlusion_ray_query)
 		if res.is_empty():
 			return false # Line of sight is clear
 		var collider = res.collider
 		if is_instance_valid(collider) and collider is CharacterBody3D:
+			if not has_custom_exclude:
+				current_exclude = base_exclude.duplicate()
+				has_custom_exclude = true
 			current_exclude.append(collider.get_rid())
-			ray_query.exclude = current_exclude
+			_occlusion_ray_query.exclude = current_exclude
 			continue
 		# It hit world geometry. If the hit is very close to the target point, consider it clear (ground slope/props)
 		var hit_dist_to_target = res.position.distance_to(target_pos)
@@ -810,7 +813,8 @@ func _set_crowd_rendered(rendered: bool) -> void:
 	for member in active_members:
 		if not is_instance_valid(member):
 			continue
-		member.set_meta("_member_occluded", false)
+		if "is_occluded" in member:
+			member.is_occluded = false
 		var is_row_revealed = true
 		if enable_row_architecture:
 			var r = member.crowd_row if ("crowd_row" in member) else CrowdRow.FRONT
@@ -830,6 +834,7 @@ func _set_crowd_rendered(rendered: bool) -> void:
 			member.set_row_active(false)
 
 	_update_shadow_state()
+	_update_materials_transparency_mode()
 
 func _check_culling(_force_check: bool = false) -> void:
 	if not _is_on_screen:
@@ -842,12 +847,16 @@ func _check_culling(_force_check: bool = false) -> void:
 	var cam = vp.get_camera_3d()
 	if not cam:
 		return
+	_initial_culling_done = true
 
 	var bounds = get_spawn_bounds()
 	var center = bounds.position + bounds.size * 0.5
 	var cam_pos = cam.global_position
 	var dist_sq = cam_pos.distance_squared_to(center + Vector3(0.0, 1.0, 0.0))
-	var effective_max_dist = (front_row_distant_max_distance if front_row_distant_visibility else front_row_max_distance) if enable_row_architecture else max_render_distance
+	var effective_max_dist = maxf(
+		(front_row_distant_max_distance if front_row_distant_visibility else front_row_max_distance) if enable_row_architecture else max_render_distance,
+		(pop_distance + 6.0) if pop_distance > 0.0 else 0.0
+	)
 	var max_dist_sq = effective_max_dist * effective_max_dist
 
 	# Distance culling (out of max distance)
@@ -859,6 +868,16 @@ func _check_culling(_force_check: bool = false) -> void:
 		_front_row_fade = 0.0
 		_mid_row_fade = 0.0
 		_back_row_fade = 0.0
+		return
+
+	# Frustum / behind-camera view plane culling:
+	# If the entire bounding sphere of the crowd is strictly behind the camera forward plane, cull immediately.
+	var cam_forward: Vector3 = -cam.global_transform.basis.z.normalized()
+	var to_crowd: Vector3 = center - cam_pos
+	var forward_proj: float = to_crowd.dot(cam_forward)
+	var crowd_radius: float = bounds.size.length() * 0.5
+	if forward_proj < -crowd_radius:
+		_set_crowd_rendered(false)
 		return
 
 	_set_crowd_rendered(true)
@@ -922,48 +941,100 @@ func _check_culling(_force_check: bool = false) -> void:
 				if _is_point_occluded(space_state, cam_pos, chest_pt, _crowd_rids, 1.8):
 					mem_occluded = true
 
-			member.set_meta("_member_occluded", mem_occluded)
+			if "is_occluded" in member:
+				member.is_occluded = mem_occluded
 	elif not enable_occlusion_culling or not space_state:
 		if was_group_occluded:
 			for member in active_members:
-				if is_instance_valid(member):
-					member.set_meta("_member_occluded", false)
+				if is_instance_valid(member) and "is_occluded" in member:
+					member.is_occluded = false
 
 	if was_group_occluded and not _is_occluded:
 		for member in active_members:
-			if is_instance_valid(member):
-				member.set_meta("_member_occluded", false)
+			if is_instance_valid(member) and "is_occluded" in member:
+				member.is_occluded = false
 
 	var cam_dist = sqrt(dist_sq)
 	_is_beyond_front_max = enable_row_architecture and (cam_dist > front_row_max_distance)
 
 	# Trigger row reveal & time-based dither fade-in
+	const POP_HYSTERESIS: float = 3.0
 	if enable_row_architecture:
-		if not _front_row_revealed and cam_dist <= effective_max_dist:
+		var target_pop_dist = pop_distance if pop_distance > 0.0 else front_row_max_distance
+		var front_dist = target_pop_dist
+		var mid_dist = target_pop_dist * 0.75 if pop_distance > 0.0 else middle_row_max_distance
+		var back_dist = target_pop_dist * 0.50 if pop_distance > 0.0 else back_row_max_distance
+
+		# Front Row Pop-In / Pop-Out:
+		if not _front_row_revealed and cam_dist <= front_dist:
 			_front_row_revealed = true
 			_front_row_fade = 1.0 if (_force_check or not enable_shader_dithering) else 0.0
 			_update_row_fade(CrowdRow.FRONT, _front_row_fade, cam)
+			if not _force_check and enable_balloon_pop_in:
+				_pop_in_row(CrowdRow.FRONT)
+		elif _front_row_revealed and cam_dist > (front_dist + POP_HYSTERESIS):
+			_front_row_revealed = false
+			_front_row_fade = 0.0
+			_update_row_fade(CrowdRow.FRONT, 0.0, cam)
+			if not _force_check and enable_balloon_pop_out:
+				_pop_out_row(CrowdRow.FRONT)
+			else:
+				_update_row_mesh_culling(CrowdRow.FRONT)
 
-		if not _mid_row_revealed and cam_dist <= middle_row_max_distance:
+		# Middle Row Pop-In / Pop-Out:
+		if not _mid_row_revealed and cam_dist <= mid_dist:
 			_mid_row_revealed = true
 			_mid_row_fade = 1.0 if (_force_check or not enable_shader_dithering) else 0.0
 			_update_row_fade(CrowdRow.MIDDLE, _mid_row_fade, cam)
+			if not _force_check and enable_balloon_pop_in:
+				_pop_in_row(CrowdRow.MIDDLE)
+		elif _mid_row_revealed and cam_dist > (mid_dist + POP_HYSTERESIS):
+			_mid_row_revealed = false
+			_mid_row_fade = 0.0
+			_update_row_fade(CrowdRow.MIDDLE, 0.0, cam)
+			if not _force_check and enable_balloon_pop_out:
+				_pop_out_row(CrowdRow.MIDDLE)
+			else:
+				_update_row_mesh_culling(CrowdRow.MIDDLE)
 
-		if not _back_row_revealed and cam_dist <= back_row_max_distance:
+		# Back Row Pop-In / Pop-Out:
+		if not _back_row_revealed and cam_dist <= back_dist:
 			_back_row_revealed = true
 			_back_row_fade = 1.0 if (_force_check or not enable_shader_dithering) else 0.0
 			_update_row_fade(CrowdRow.BACK, _back_row_fade, cam)
+			if not _force_check and enable_balloon_pop_in:
+				_pop_in_row(CrowdRow.BACK)
+		elif _back_row_revealed and cam_dist > (back_dist + POP_HYSTERESIS):
+			_back_row_revealed = false
+			_back_row_fade = 0.0
+			_update_row_fade(CrowdRow.BACK, 0.0, cam)
+			if not _force_check and enable_balloon_pop_out:
+				_pop_out_row(CrowdRow.BACK)
+			else:
+				_update_row_mesh_culling(CrowdRow.BACK)
 	else:
-		if not _front_row_revealed and cam_dist <= max_render_distance:
+		var target_dist = pop_distance if pop_distance > 0.0 else max_render_distance
+		if not _front_row_revealed and cam_dist <= target_dist:
 			_front_row_revealed = true
 			_front_row_fade = 1.0 if (_force_check or not enable_shader_dithering) else 0.0
 			_update_row_fade(CrowdRow.FRONT, _front_row_fade, cam)
+			if not _force_check and enable_balloon_pop_in:
+				_pop_in_row(CrowdRow.FRONT)
+		elif _front_row_revealed and cam_dist > (target_dist + POP_HYSTERESIS):
+			_front_row_revealed = false
+			_front_row_fade = 0.0
+			_update_row_fade(CrowdRow.FRONT, 0.0, cam)
+			if not _force_check and enable_balloon_pop_out:
+				_pop_out_row(CrowdRow.FRONT)
+			else:
+				_update_row_mesh_culling(CrowdRow.FRONT)
 
 	# Animations start as soon as dither alpha > 0 (or while revealed)
 	var has_back_row = false
 	var has_mid_row = false
 	var full_fps_dist_sq = anim_full_fps_distance * anim_full_fps_distance
 	var half_fps_dist_sq = anim_half_fps_distance * anim_half_fps_distance
+	var far_fps_dist_sq = anim_far_fps_distance * anim_far_fps_distance
 
 	for member in active_members:
 		if not is_instance_valid(member):
@@ -975,42 +1046,46 @@ func _check_culling(_force_check: bool = false) -> void:
 			has_mid_row = true
 
 		var is_row_revealed = true
-		var is_active = true
 		if enable_row_architecture:
 			match r:
 				CrowdRow.FRONT:
 					is_row_revealed = _front_row_revealed
-					is_active = (cam_dist <= front_row_max_distance)
 				CrowdRow.MIDDLE:
 					is_row_revealed = _mid_row_revealed
-					is_active = (cam_dist <= middle_row_max_distance) or _mid_row_revealed
 				CrowdRow.BACK:
 					is_row_revealed = _back_row_revealed
-					is_active = (cam_dist <= back_row_max_distance) or _back_row_revealed
 		else:
 			is_row_revealed = _front_row_revealed
-			is_active = (cam_dist <= max_render_distance)
 
-		member.visible = is_row_revealed
+		var is_popping_out = member.is_popping_out if ("is_popping_out" in member) else false
+		if is_popping_out:
+			member.visible = true
+		else:
+			member.visible = is_row_revealed
 
-		var mem_occluded = member.get_meta("_member_occluded", false) if member.has_meta("_member_occluded") else false
-		if _is_occluded or mem_occluded:
-			is_active = false
+		var mem_occluded = member.is_occluded if ("is_occluded" in member) else false
+
+		# Distance from camera to this specific crowd member
+		var m_dist_sq = cam_pos.distance_squared_to(member.global_position)
+		var is_within_motion_range = (m_dist_sq <= far_fps_dist_sq)
+
+		# Active if: row is revealed, not occluded, AND within 30m motion range
+		var is_active = is_row_revealed and not _is_occluded and not mem_occluded and is_within_motion_range
 
 		if member.has_method("set_row_active"):
 			member.set_row_active(is_active)
 
-		# Omni-directional distance-based animation stepping:
-		# Calculates true 3D distance from camera to each member so stepping looks
-		# 100% full FPS from any angle (front, back, left, right) whenever close to the player.
+		# Omni-directional distance-based animation stepping LOD:
 		if "anim_step_interval" in member:
-			var m_dist_sq = cam_pos.distance_squared_to(member.global_position)
-			if m_dist_sq <= full_fps_dist_sq:
-				member.anim_step_interval = 1
-			elif m_dist_sq <= half_fps_dist_sq:
-				member.anim_step_interval = 2
+			if is_active:
+				if m_dist_sq <= full_fps_dist_sq:
+					member.anim_step_interval = 2 if start_from_30_fps else 1
+				elif m_dist_sq <= half_fps_dist_sq:
+					member.anim_step_interval = 2 # Medium range: always 30 FPS!
+				else:
+					member.anim_step_interval = 4 # Far range (up to 30m): 15 FPS!
 			else:
-				member.anim_step_interval = 3
+				member.anim_step_interval = 4
 
 	# Hit reactions only work when ALL crowd rows are present and front row is active
 	if not enable_row_architecture:
@@ -1046,6 +1121,26 @@ func _init_pools() -> void:
 			add_child(balloon)
 			_balloon_pool.append(balloon)
 
+	if muzzle_vfx_scene:
+		for i in range(VFX_POOL_SIZE):
+			var vfx = muzzle_vfx_scene.instantiate() as Node3D
+			vfx.top_level = true
+			vfx.visible = false
+			if not (enable_audio and enable_vfx_sounds):
+				_silence_audio_nodes(vfx)
+			add_child(vfx)
+			_muzzle_vfx_pool.append(vfx)
+
+	if hit_vfx_scene:
+		for i in range(VFX_POOL_SIZE):
+			var vfx = hit_vfx_scene.instantiate() as Node3D
+			vfx.top_level = true
+			vfx.visible = false
+			if not (enable_audio and enable_vfx_sounds):
+				_silence_audio_nodes(vfx)
+			add_child(vfx)
+			_hit_vfx_pool.append(vfx)
+
 func get_pooled_water_line() -> Node3D:
 	if _water_line_pool.is_empty():
 		return null
@@ -1066,6 +1161,24 @@ func get_pooled_balloon() -> Node3D:
 	var fallback = _balloon_pool[_balloon_index]
 	return fallback if is_instance_valid(fallback) else null
 
+func get_pooled_muzzle_vfx() -> Node3D:
+	if _muzzle_vfx_pool.is_empty():
+		return null
+	for vfx in _muzzle_vfx_pool:
+		if is_instance_valid(vfx) and not vfx.visible:
+			return vfx
+	_muzzle_vfx_index = (_muzzle_vfx_index + 1) % _muzzle_vfx_pool.size()
+	return _muzzle_vfx_pool[_muzzle_vfx_index] if is_instance_valid(_muzzle_vfx_pool[_muzzle_vfx_index]) else null
+
+func get_pooled_hit_vfx() -> Node3D:
+	if _hit_vfx_pool.is_empty():
+		return null
+	for vfx in _hit_vfx_pool:
+		if is_instance_valid(vfx) and not vfx.visible:
+			return vfx
+	_hit_vfx_index = (_hit_vfx_index + 1) % _hit_vfx_pool.size()
+	return _hit_vfx_pool[_hit_vfx_index] if is_instance_valid(_hit_vfx_pool[_hit_vfx_index]) else null
+
 func _trigger_vfx_node(vfx_node: Node, anim_name: String = "") -> void:
 	if not vfx_node:
 		return
@@ -1074,43 +1187,51 @@ func _trigger_vfx_node(vfx_node: Node, anim_name: String = "") -> void:
 		vfx_node.play(false, false, false)
 		return
 
-	if vfx_node is GPUParticles3D:
-		if "visible" in vfx_node: vfx_node.visible = true
-		vfx_node.restart()
-		vfx_node.emitting = true
-
-	var sub_emitters: Array = []
-	if vfx_node is GPUParticles3D and vfx_node.sub_emitter != ^"":
-		var target = vfx_node.get_node_or_null(vfx_node.sub_emitter)
-		if target: sub_emitters.append(target)
-	for p in vfx_node.find_children("*", "GPUParticles3D", true, false):
-		if p is GPUParticles3D and p.sub_emitter != ^"":
-			var target = p.get_node_or_null(p.sub_emitter)
+	var cached_particles = vfx_node.get_meta("_vfx_particles") if vfx_node.has_meta("_vfx_particles") else null
+	if cached_particles == null:
+		cached_particles = []
+		var sub_emitters: Array = []
+		if vfx_node is GPUParticles3D and vfx_node.sub_emitter != ^"":
+			var target = vfx_node.get_node_or_null(vfx_node.sub_emitter)
 			if target: sub_emitters.append(target)
+		for p in vfx_node.find_children("*", "GPUParticles3D", true, false):
+			if p is GPUParticles3D and p.sub_emitter != ^"":
+				var target = p.get_node_or_null(p.sub_emitter)
+				if target: sub_emitters.append(target)
 
-	for child in vfx_node.find_children("*", "GPUParticles3D", true, false):
-		if child is GPUParticles3D:
-			if sub_emitters.has(child):
-				continue
-			if "visible" in child: child.visible = true
-			child.restart()
-			child.emitting = true
+		if vfx_node is GPUParticles3D and not sub_emitters.has(vfx_node):
+			cached_particles.append(vfx_node)
+		for child in vfx_node.find_children("*", "GPUParticles3D", true, false):
+			if child is GPUParticles3D and not sub_emitters.has(child):
+				cached_particles.append(child)
+		vfx_node.set_meta("_vfx_particles", cached_particles)
 
-	var anim_players: Array = []
-	if vfx_node is AnimationPlayer:
-		anim_players.append(vfx_node)
-	for child in vfx_node.find_children("*", "AnimationPlayer", true, false):
-		if child is AnimationPlayer:
-			anim_players.append(child)
+	for p in cached_particles:
+		if is_instance_valid(p):
+			p.visible = true
+			p.restart()
+			p.emitting = true
 
-	for ap in anim_players:
-		if ap is AnimationPlayer:
+	var cached_anim_players = vfx_node.get_meta("_vfx_anim_players") if vfx_node.has_meta("_vfx_anim_players") else null
+	if cached_anim_players == null:
+		cached_anim_players = []
+		if vfx_node is AnimationPlayer:
+			cached_anim_players.append(vfx_node)
+		for child in vfx_node.find_children("*", "AnimationPlayer", true, false):
+			if child is AnimationPlayer:
+				cached_anim_players.append(child)
+		vfx_node.set_meta("_vfx_anim_players", cached_anim_players)
+
+	for ap in cached_anim_players:
+		if is_instance_valid(ap):
 			if anim_name != "" and ap.has_animation(anim_name):
 				ap.play(anim_name)
 
 # ─── Spawn Area & Collision Detection ──────────────────────────────────────
 
 func get_spawn_bounds() -> AABB:
+	if _has_cached_spawn_bounds and not Engine.is_editor_hint():
+		return _cached_spawn_bounds
 	var area = get_node_or_null("CrowdSpawnArea")
 	if area:
 		var col_shape = area.get_node_or_null("CrowdSpawnArea") as CollisionShape3D
@@ -1119,8 +1240,12 @@ func get_spawn_bounds() -> AABB:
 			var scale_factor = col_shape.global_transform.basis.get_scale().abs()
 			var size = box.size * scale_factor
 			var center = col_shape.global_position
-			return AABB(center - size * 0.5, size)
-	return AABB(global_position - Vector3(spawn_area_size.x * 0.5, 0, spawn_area_size.z * 0.5), spawn_area_size)
+			_cached_spawn_bounds = AABB(center - size * 0.5, size)
+			_has_cached_spawn_bounds = true
+			return _cached_spawn_bounds
+	_cached_spawn_bounds = AABB(global_position - Vector3(spawn_area_size.x * 0.5, 0, spawn_area_size.z * 0.5), spawn_area_size)
+	_has_cached_spawn_bounds = true
+	return _cached_spawn_bounds
 
 func _snap_point_to_ground(space_state: PhysicsDirectSpaceState3D, pos: Vector3, bounds: AABB, placed_rids: Array[RID] = []) -> Dictionary:
 	if not space_state:
@@ -1134,13 +1259,21 @@ func _snap_point_to_ground(space_state: PhysicsDirectSpaceState3D, pos: Vector3,
 	ray_query.collision_mask = collision_mask_world
 	ray_query.collide_with_areas = false
 	ray_query.collide_with_bodies = true
-	ray_query.exclude = placed_rids
-	var res = space_state.intersect_ray(ray_query)
-	if not res.is_empty():
+	var current_exclude = placed_rids.duplicate()
+	for _att in range(3):
+		ray_query.exclude = current_exclude
+		var res = space_state.intersect_ray(ray_query)
+		if res.is_empty():
+			break
+		var collider = res.collider
+		if is_instance_valid(collider) and collider is CharacterBody3D:
+			current_exclude.append(collider.get_rid())
+			continue
 		var hit_norm = res.normal
 		var hit_y = res.position.y
 		if hit_y <= (bounds.end.y + 0.1) and hit_y >= ray_bottom and hit_norm.y >= ground_snap_min_normal_y:
 			return { "valid": true, "position": Vector3(pos.x, hit_y, pos.z) }
+		break
 	return { "valid": false, "position": pos }
 
 func find_valid_spawn_position(bounds: AABB, placed_positions: Array[Vector3], placed_rids: Array[RID] = [], rng: RandomNumberGenerator = null, max_attempts: int = 80, target_row: int = -1) -> Dictionary:
@@ -1255,7 +1388,148 @@ func find_valid_spawn_position(bounds: AABB, placed_positions: Array[Vector3], p
 	else:
 		return { "found": false, "position": Vector3.ZERO }
 
+func _deferred_physics_validation() -> void:
+	if not is_inside_tree() or _is_validating_physics:
+		return
+	_is_validating_physics = true
+	# Wait 2 physics frames so StaticBody3D, CSG shapes, and terrain colliders are fully registered in PhysicsServer3D
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	_is_validating_physics = false
+	if not is_inside_tree():
+		return
+	_validate_and_snap_members()
+	if not Engine.is_editor_hint():
+		_check_culling(true)
+
+func _validate_and_snap_members() -> void:
+	if not is_inside_tree():
+		return
+	var world_3d = get_world_3d()
+	if not world_3d:
+		return
+	var space_state = world_3d.direct_space_state
+	if not space_state or not enable_collision_check:
+		return
+
+	var bounds = get_spawn_bounds()
+	var ray_top = bounds.end.y + ground_snap_height
+	var ray_bottom = bounds.position.y - ground_snap_depth
+
+	var ray_query = PhysicsRayQueryParameters3D.create(Vector3.ZERO, Vector3.ZERO)
+	ray_query.collision_mask = collision_mask_world
+	ray_query.collide_with_areas = false
+	ray_query.collide_with_bodies = true
+
+	var shape_query = PhysicsShapeQueryParameters3D.new()
+	var test_shape = CapsuleShape3D.new()
+	test_shape.radius = 0.35
+	test_shape.height = 1.75
+	shape_query.shape = test_shape
+	shape_query.collision_mask = collision_mask_world
+	shape_query.collide_with_areas = false
+	shape_query.collide_with_bodies = true
+
+	var placed_positions: Array[Vector3] = []
+	for member in active_members:
+		if is_instance_valid(member):
+			placed_positions.append(member.global_position)
+
+	var needs_saved_data_update = false
+
+	for i in range(active_members.size()):
+		var member = active_members[i]
+		if not is_instance_valid(member):
+			continue
+
+		var pos = member.global_position
+		placed_positions[i] = Vector3(999999, 999999, 999999)
+
+		var current_exclude = _crowd_rids.duplicate()
+		var ray_res: Dictionary = {}
+
+		# 1. Ground Raycast (passing through any dynamic CharacterBody3D)
+		for _att in range(3):
+			ray_query.exclude = current_exclude
+			ray_query.from = Vector3(pos.x, ray_top, pos.z)
+			ray_query.to = Vector3(pos.x, ray_bottom, pos.z)
+			ray_res = space_state.intersect_ray(ray_query)
+			if ray_res.is_empty():
+				break
+			var col = ray_res.collider
+			if is_instance_valid(col) and col is CharacterBody3D:
+				current_exclude.append(col.get_rid())
+				continue
+			break
+
+		var is_ground_valid = false
+		var hit_ground_y = pos.y
+
+		if not ray_res.is_empty():
+			var hit_norm = ray_res.normal
+			var hit_y = ray_res.position.y
+			if hit_y <= (bounds.end.y + 0.1) and hit_y >= ray_bottom and hit_norm.y >= ground_snap_min_normal_y:
+				is_ground_valid = true
+				hit_ground_y = hit_y
+
+		# 2. Wall / Obstacle Headroom Check
+		var is_clear = false
+		if is_ground_valid:
+			shape_query.transform = Transform3D(Basis.IDENTITY, Vector3(pos.x, hit_ground_y + 0.9, pos.z))
+			var shape_exclude = current_exclude.duplicate()
+			if ray_res.has("collider") and ray_res.collider is CollisionObject3D:
+				shape_exclude.append(ray_res.collider.get_rid())
+			shape_query.exclude = shape_exclude
+
+			var hits = space_state.intersect_shape(shape_query, 4)
+			var blocked = false
+			for h in hits:
+				var c = h.collider
+				if is_instance_valid(c) and not (c is CharacterBody3D):
+					blocked = true
+					break
+			if not blocked:
+				is_clear = true
+
+		if is_ground_valid and is_clear:
+			# Snap feet flush to ground
+			member.global_position.y = hit_ground_y
+			placed_positions[i] = member.global_position
+			if i < saved_crowd_data.size() and lock_editor_positions:
+				saved_crowd_data[i]["local_pos"] = to_local(member.global_position)
+				needs_saved_data_update = true
+		else:
+			# Relocate member away from wall or out-of-bounds terrain
+			var target_row = member.crowd_row if ("crowd_row" in member) else CrowdRow.FRONT
+			var spawn_info = find_valid_spawn_position(bounds, placed_positions, _crowd_rids, _rng, 80, target_row)
+			if spawn_info.found:
+				member.global_position = spawn_info.position
+				placed_positions[i] = spawn_info.position
+				if i < saved_crowd_data.size() and lock_editor_positions:
+					saved_crowd_data[i]["local_pos"] = to_local(spawn_info.position)
+					needs_saved_data_update = true
+			else:
+				placed_positions[i] = member.global_position
+
+	if needs_saved_data_update and Engine.is_editor_hint():
+		notify_property_list_changed()
+
 # ─── Crowd Initialization & Member Setup ───────────────────────────────────
+
+func _get_member_config() -> Dictionary:
+	return {
+		"enable_dance_animation": enable_dance_animation,
+		"enable_water_gun": enable_water_gun_spawn,
+		"enable_hit_reaction": enable_hit_reaction,
+		"enable_hit_animation": enable_hit_animation,
+		"enable_hit_from_player": enable_hit_from_player,
+		"enable_hit_from_crowd": enable_hit_from_crowd,
+		"enable_audio": enable_audio,
+		"enable_animation_sounds": enable_animation_sounds,
+		"dance_animation_speed": dance_animation_speed,
+		"range_animation_speed": range_animation_speed,
+		"editor_performance_mode": editor_performance_mode if Engine.is_editor_hint() else false,
+	}
 
 func _setup_crowd() -> void:
 	_clear_preview_crowd()
@@ -1263,6 +1537,7 @@ func _setup_crowd() -> void:
 	# If layout locking is active and positions are already saved, restore them identically
 	if lock_editor_positions and not saved_crowd_data.is_empty():
 		_spawn_from_saved_layout()
+		_deferred_physics_validation()
 		return
 
 	saved_crowd_data.clear()
@@ -1273,6 +1548,7 @@ func _setup_crowd() -> void:
 	else:
 		_rng.randomize()
 
+	var member_config = _get_member_config()
 	var bounds = get_spawn_bounds()
 	var placed_positions: Array[Vector3] = []
 	var placed_colors: Array[int] = []
@@ -1353,7 +1629,11 @@ func _setup_crowd() -> void:
 			if female_model_scene and scene_to_use == female_model_scene:
 				chosen_model_type = 1
 			member = scene_to_use.instantiate() as Node3D
+			member.name = "CrowdMember_%d" % i
 			member.set_meta("is_crowd_preview", true)
+			if not (member is CrowdMember):
+				var crowd_member_script = preload("res://scripts/crowd_member.gd")
+				member.set_script(crowd_member_script)
 			add_child(member)
 
 		placed_positions.append(spawn_pos)
@@ -1363,15 +1643,6 @@ func _setup_crowd() -> void:
 		# Collect RIDs from placed member to exclude from future spawn raycasts/shapes
 		if member is CollisionObject3D:
 			placed_rids.append(member.get_rid())
-		for child in member.find_children("*", "CollisionObject3D", true, false):
-			var co = child as CollisionObject3D
-			if co:
-				placed_rids.append(co.get_rid())
-
-		# Attach script dynamically if not already attached via Editor UI
-		if not (member is CrowdMember):
-			var crowd_member_script = preload("res://scripts/crowd_member.gd")
-			member.set_script(crowd_member_script)
 
 		# 1. Armed spacing check: crowd members with guns should not be near each other
 		var can_have_gun = enable_water_gun_spawn
@@ -1425,20 +1696,6 @@ func _setup_crowd() -> void:
 			placed_colors.append(0)
 			chosen_color_idx = 0
 
-		var config = {
-			"enable_dance_animation": enable_dance_animation,
-			"enable_water_gun": enable_water_gun_spawn,
-			"enable_hit_reaction": enable_hit_reaction,
-			"enable_hit_animation": enable_hit_animation,
-			"enable_hit_from_player": enable_hit_from_player,
-			"enable_hit_from_crowd": enable_hit_from_crowd,
-			"enable_audio": enable_audio,
-			"enable_animation_sounds": enable_animation_sounds,
-			"dance_animation_speed": dance_animation_speed,
-			"range_animation_speed": range_animation_speed,
-			"editor_performance_mode": editor_performance_mode if Engine.is_editor_hint() else false,
-		}
-
 		if "crowd_row" in member:
 			member.crowd_row = row
 		if "crowd_manager" in member:
@@ -1447,7 +1704,7 @@ func _setup_crowd() -> void:
 			member.member_index = i
 
 		if member.has_method("setup_member"):
-			member.setup_member(has_gun, mat, config)
+			member.setup_member(has_gun, mat, member_config)
 
 		active_members.append(member)
 		_apply_culling_settings_to_member(member)
@@ -1467,11 +1724,13 @@ func _setup_crowd() -> void:
 		print("[Crowd] Baked %d crowd positions to layout. Save scene (Ctrl+S) to persist." % saved_crowd_data.size())
 	if not Engine.is_editor_hint():
 		_check_culling(true)
+	_deferred_physics_validation()
 
 func _spawn_from_saved_layout() -> void:
 	var existing_male = get_node_or_null("CrowdMaleModel") as Node3D
 	var shared_mats = get_shared_materials()
 	var placed_rids: Array[RID] = []
+	var member_config = _get_member_config()
 
 	for i in range(saved_crowd_data.size()):
 		var data: Dictionary = saved_crowd_data[i]
@@ -1502,7 +1761,11 @@ func _spawn_from_saved_layout() -> void:
 					continue
 
 			member = scene_to_use.instantiate() as Node3D
+			member.name = "CrowdMember_%d" % i
 			member.set_meta("is_crowd_preview", true)
+			if not (member is CrowdMember):
+				var crowd_member_script = preload("res://scripts/crowd_member.gd")
+				member.set_script(crowd_member_script)
 			add_child(member)
 
 		member.position = local_pos
@@ -1511,34 +1774,11 @@ func _spawn_from_saved_layout() -> void:
 		# Collect RIDs
 		if member is CollisionObject3D:
 			placed_rids.append(member.get_rid())
-		for child in member.find_children("*", "CollisionObject3D", true, false):
-			var co = child as CollisionObject3D
-			if co:
-				placed_rids.append(co.get_rid())
-
-		# Attach script dynamically if not already attached via Editor UI
-		if not (member is CrowdMember):
-			var crowd_member_script = preload("res://scripts/crowd_member.gd")
-			member.set_script(crowd_member_script)
 
 		var mat: Material = MAT_BLUE
 		if enable_random_textures and shared_mats.size() > 0:
 			var safe_idx = clampi(color_idx, 0, shared_mats.size() - 1)
 			mat = shared_mats[safe_idx]
-
-		var config = {
-			"enable_dance_animation": enable_dance_animation,
-			"enable_water_gun": enable_water_gun_spawn,
-			"enable_hit_reaction": enable_hit_reaction,
-			"enable_hit_animation": enable_hit_animation,
-			"enable_hit_from_player": enable_hit_from_player,
-			"enable_hit_from_crowd": enable_hit_from_crowd,
-			"enable_audio": enable_audio,
-			"enable_animation_sounds": enable_animation_sounds,
-			"dance_animation_speed": dance_animation_speed,
-			"range_animation_speed": range_animation_speed,
-			"editor_performance_mode": editor_performance_mode if Engine.is_editor_hint() else false,
-		}
 
 		if "crowd_row" in member:
 			member.crowd_row = row
@@ -1548,7 +1788,7 @@ func _spawn_from_saved_layout() -> void:
 			member.member_index = i
 
 		if member.has_method("setup_member"):
-			member.setup_member(has_gun, mat, config)
+			member.setup_member(has_gun, mat, member_config)
 
 		active_members.append(member)
 		_apply_culling_settings_to_member(member)
@@ -1556,25 +1796,26 @@ func _spawn_from_saved_layout() -> void:
 	_crowd_rids = placed_rids.duplicate()
 	if not Engine.is_editor_hint():
 		_check_culling(true)
+	_deferred_physics_validation()
 
 # ─── Random Actions (Shooting & Balloon Throwing) ───────────────────────────
 
 func _trigger_random_shot() -> void:
-	var armed_members = active_members.filter(func(m):
-		var active = m.is_row_active if ("is_row_active" in m) else true
-		return (m is CrowdMember) and m.is_armed and active and not m.is_performing_action
-	)
-	if armed_members.is_empty() or active_members.size() < 2:
+	_candidate_shooters.clear()
+	for m in active_members:
+		if m is CrowdMember and m.is_armed and m.is_row_active and not m.is_performing_action:
+			_candidate_shooters.append(m)
+	if _candidate_shooters.is_empty() or active_members.size() < 2:
 		return
 
-	var shooter = armed_members.pick_random() as CrowdMember
-	var targets = active_members.filter(func(m):
-		var active = m.is_row_active if ("is_row_active" in m) else true
-		return (m is CrowdMember) and m != shooter and active
-	)
-	if targets.is_empty():
+	var shooter = _candidate_shooters.pick_random() as CrowdMember
+	_candidate_targets.clear()
+	for m in active_members:
+		if m is CrowdMember and m != shooter and m.is_row_active:
+			_candidate_targets.append(m)
+	if _candidate_targets.is_empty():
 		return
-	var target = targets.pick_random()
+	var target = _candidate_targets.pick_random()
 	if target.has_method("ensure_chest_hitbox_active"):
 		target.ensure_chest_hitbox_active()
 
@@ -1617,12 +1858,17 @@ func _on_water_gun_fired(shooter: Node3D, muzzle_pos: Vector3, target_pos: Vecto
 
 	# 1. Muzzle VFX
 	if cur_muzzle_vfx_scene:
-		var muzzle_vfx = cur_muzzle_vfx_scene.instantiate() as Node3D
-		if muzzle_vfx:
+		var muzzle_vfx: Node3D = null
+		var is_pooled = (cur_muzzle_vfx_scene == muzzle_vfx_scene)
+		if is_pooled:
+			muzzle_vfx = get_pooled_muzzle_vfx()
+		else:
+			muzzle_vfx = cur_muzzle_vfx_scene.instantiate() as Node3D
 			var tree = get_tree()
 			var container = tree.current_scene if (tree and tree.current_scene) else self
 			container.add_child(muzzle_vfx)
 
+		if muzzle_vfx:
 			var spawn_node: Node3D = null
 			if shooter is CrowdMember and shooter.gun_spawn_point:
 				spawn_node = shooter.gun_spawn_point
@@ -1638,14 +1884,19 @@ func _on_water_gun_fired(shooter: Node3D, muzzle_pos: Vector3, target_pos: Vecto
 			muzzle_vfx.scale = cur_muzzle_scale
 			if not (enable_audio and enable_vfx_sounds):
 				_silence_audio_nodes(muzzle_vfx)
+			muzzle_vfx.visible = true
 			_trigger_vfx_node(muzzle_vfx, cur_muzzle_anim)
 
+			var tree = get_tree()
 			if tree:
 				tree.create_timer(1.2).timeout.connect(func():
 					if is_instance_valid(muzzle_vfx):
-						muzzle_vfx.queue_free()
+						if is_pooled:
+							muzzle_vfx.visible = false
+						else:
+							muzzle_vfx.queue_free()
 				)
-			else:
+			elif not is_pooled:
 				muzzle_vfx.queue_free()
 
 	# 2. Physics Raycast for surface detection and normal
@@ -1683,12 +1934,17 @@ func _on_water_gun_fired(shooter: Node3D, muzzle_pos: Vector3, target_pos: Vecto
 
 	# 4. Hit VFX (Splatter) oriented with surface normal
 	if cur_hit_vfx_scene:
-		var hit_vfx = cur_hit_vfx_scene.instantiate() as Node3D
-		if hit_vfx:
+		var hit_vfx: Node3D = null
+		var is_pooled_hit = (cur_hit_vfx_scene == hit_vfx_scene)
+		if is_pooled_hit:
+			hit_vfx = get_pooled_hit_vfx()
+		else:
+			hit_vfx = cur_hit_vfx_scene.instantiate() as Node3D
 			var tree = get_tree()
 			var container = tree.current_scene if (tree and tree.current_scene) else self
 			container.add_child(hit_vfx)
 
+		if hit_vfx:
 			var normal = hit_normal
 			if normal.length_squared() < 0.01:
 				normal = Vector3.UP
@@ -1708,14 +1964,19 @@ func _on_water_gun_fired(shooter: Node3D, muzzle_pos: Vector3, target_pos: Vecto
 			if not (enable_audio and enable_vfx_sounds):
 				_silence_audio_nodes(hit_vfx)
 
+			hit_vfx.visible = true
 			_trigger_vfx_node(hit_vfx, cur_impact_anim)
 
+			var tree = get_tree()
 			if tree:
 				tree.create_timer(3.0).timeout.connect(func():
 					if is_instance_valid(hit_vfx):
-						hit_vfx.queue_free()
+						if is_pooled_hit:
+							hit_vfx.visible = false
+						else:
+							hit_vfx.queue_free()
 				)
-			else:
+			elif not is_pooled_hit:
 				hit_vfx.queue_free()
 
 	if enable_audio and enable_vfx_sounds and SoundManager:
@@ -1737,22 +1998,21 @@ func _on_water_gun_fired(shooter: Node3D, muzzle_pos: Vector3, target_pos: Vecto
 				break
 
 func _trigger_random_balloon() -> void:
-	var ready_members = active_members.filter(func(m):
-		var active = m.is_row_active if ("is_row_active" in m) else true
-		var armed = m.is_armed if ("is_armed" in m) else false
-		return (m is CrowdMember) and active and not armed and not m.is_performing_action
-	)
-	if ready_members.is_empty() or active_members.size() < 2:
+	_candidate_shooters.clear()
+	for m in active_members:
+		if m is CrowdMember and m.is_row_active and not m.is_armed and not m.is_performing_action:
+			_candidate_shooters.append(m)
+	if _candidate_shooters.is_empty() or active_members.size() < 2:
 		return
 
-	var thrower = ready_members.pick_random() as CrowdMember
-	var targets = active_members.filter(func(m):
-		var active = m.is_row_active if ("is_row_active" in m) else true
-		return (m is CrowdMember) and m != thrower and active
-	)
-	if targets.is_empty():
+	var thrower = _candidate_shooters.pick_random() as CrowdMember
+	_candidate_targets.clear()
+	for m in active_members:
+		if m is CrowdMember and m != thrower and m.is_row_active:
+			_candidate_targets.append(m)
+	if _candidate_targets.is_empty():
 		return
-	var target = targets.pick_random()
+	var target = _candidate_targets.pick_random()
 
 	var target_pos = target.global_position
 	thrower.throw_balloon_at(target_pos, _on_balloon_thrown)

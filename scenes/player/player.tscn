@@ -24768,6 +24768,7 @@ aim_deadzone_down = 0.25
 [node name="Post Process Effects" type="Node3D" parent="Camera" unique_id=1100324191]
 
 [node name="ScreenspaceGodray" type="MeshInstance3D" parent="Camera/Post Process Effects" unique_id=1529221800]
+process_mode = 4
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
 visible = false
 cast_shadow = 0
@@ -24778,6 +24779,7 @@ surface_material_override/0 = SubResource("ShaderMaterial_godray")
 script = ExtResource("36_7obkq")
 
 [node name="Outline Shader" type="MeshInstance3D" parent="Camera/Post Process Effects" unique_id=1026949302]
+process_mode = 4
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.8946991)
 visible = false
 cast_shadow = 0

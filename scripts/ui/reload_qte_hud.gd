@@ -26,7 +26,6 @@ var mode: String = "qte" # "qte" or "superpump"
 @export var superpump_confirm_hold: float = 0.15
 var _is_resolving_qte: bool = false
 var _superpump_hold_confirm_timer: float = 0.0
-var _has_released_since_qte: bool = false
 var _superpump_gauge_completed: bool = false
 var _last_qte_hit_time: float = -1.0
 var _finish_tween: Tween = null
@@ -354,7 +353,6 @@ func start(p_current_air: float = 0.0, p_max_air: float = 100.0) -> void:
 		_finish_tween = null
 	_is_resolving_qte = false
 	_superpump_hold_confirm_timer = 0.0
-	_has_released_since_qte = false
 	start_air = p_current_air
 	max_air = p_max_air
 	elapsed_time = 0.0
@@ -466,7 +464,6 @@ func cancel() -> void:
 		_finish_tween = null
 	_is_resolving_qte = false
 	_superpump_hold_confirm_timer = 0.0
-	_has_released_since_qte = false
 	set_process(false)
 	set_process_input(false)
 	visible = false
@@ -487,7 +484,6 @@ func transition_to_superpump() -> void:
 		_finish_tween = null
 	_is_resolving_qte = false
 	_superpump_hold_confirm_timer = 0.0
-	_has_released_since_qte = false
 	_superpump_gauge_completed = false
 	if reload_progress > 0.0:
 		start_air = clampf(start_air + (max_air - start_air) * reload_progress, 0.0, max_air)
@@ -553,16 +549,12 @@ func _process(delta: float) -> void:
 		_process_superpump(delta)
 
 func _process_qte_resolution_hold(delta: float) -> void:
-	if not _has_released_since_qte:
-		if not _is_reload_pressed():
-			_has_released_since_qte = true
+	if _is_reload_pressed():
+		_superpump_hold_confirm_timer += delta
+		if _superpump_hold_confirm_timer >= superpump_confirm_hold:
+			transition_to_superpump()
 	else:
-		if _is_reload_pressed():
-			_superpump_hold_confirm_timer += delta
-			if _superpump_hold_confirm_timer >= superpump_confirm_hold:
-				transition_to_superpump()
-		else:
-			_superpump_hold_confirm_timer = 0.0
+		_superpump_hold_confirm_timer = 0.0
 
 func _process_qte(delta: float) -> void:
 	actual_time += delta
@@ -905,7 +897,6 @@ func _resolve(success: bool) -> void:
 		# Allow hold confirmation into superpump (on success or fail)
 		_is_resolving_qte = true
 		_superpump_hold_confirm_timer = 0.0
-		_has_released_since_qte = not _is_reload_pressed()
 		set_process(true)
 		set_process_input(false)
 		
@@ -915,7 +906,8 @@ func _resolve(success: bool) -> void:
 		
 		await get_tree().create_timer(0.3).timeout
 		if not _is_resolving_qte or not visible:
-			visible = false
+			if mode != "superpump":
+				visible = false
 			return
 		
 		if container and background_dim:
@@ -925,14 +917,16 @@ func _resolve(success: bool) -> void:
 			_finish_tween.tween_property(background_dim, "color:a", 0.0, 0.25)
 			await _finish_tween.finished
 			if not _is_resolving_qte or not visible:
-				visible = false
+				if mode != "superpump":
+					visible = false
 				return
 		
 		# If player is currently holding Reload to confirm superpump, wait for confirmation
 		while _is_resolving_qte and _is_reload_pressed() and _superpump_hold_confirm_timer < superpump_confirm_hold:
 			await get_tree().process_frame
 			if not _is_resolving_qte or not visible:
-				visible = false
+				if mode != "superpump":
+					visible = false
 				return
 		
 		_is_resolving_qte = false

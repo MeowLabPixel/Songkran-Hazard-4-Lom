@@ -72,6 +72,25 @@ var show_crosshair: bool = true
 var look_at_player_camera: bool = false
 var debug_visualize_raycast: bool = false
 
+# --- Performance / Debug Stats Overlay (FPS & Draw Calls) ---
+var show_perf_overlay: bool = false
+var _perf_canvas: CanvasLayer = null
+var _perf_label: Label = null
+var _perf_update_timer: float = 0.0
+const PERF_UPDATE_INTERVAL: float = 0.1 # Update 10 times/sec to prevent string allocation churn
+
+signal perf_overlay_visibility_changed(is_visible: bool)
+
+func toggle_perf_overlay() -> void:
+	set_perf_overlay_visible(not show_perf_overlay)
+
+func set_perf_overlay_visible(is_visible: bool) -> void:
+	show_perf_overlay = is_visible
+	if _perf_canvas:
+		_perf_canvas.visible = is_visible
+	print("[GameManager] Performance overlay toggled: ", is_visible)
+	perf_overlay_visibility_changed.emit(is_visible)
+
 signal gameplay_ui_visibility_changed(is_visible: bool)
 signal look_at_player_camera_changed(is_looking_at_player: bool)
 signal debug_visualize_raycast_changed(is_enabled: bool)
@@ -170,9 +189,43 @@ func load_settings() -> void:
 			file.close()
 	Engine.max_fps = fps_cap
 
+func _setup_perf_overlay() -> void:
+	_perf_canvas = CanvasLayer.new()
+	_perf_canvas.layer = 125 # Above normal game UI
+	_perf_canvas.name = "PerformanceOverlay"
+	add_child(_perf_canvas)
+
+	_perf_label = Label.new()
+	_perf_label.name = "PerfLabel"
+	_perf_label.position = Vector2(24, 24)
+	_perf_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	# Clean styling with contrast outline and shadow
+	_perf_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4, 1.0)) # Lime green
+	_perf_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	_perf_label.add_theme_constant_override("shadow_offset_x", 1)
+	_perf_label.add_theme_constant_override("shadow_offset_y", 1)
+	_perf_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	_perf_label.add_theme_constant_override("outline_size", 2)
+	_perf_canvas.add_child(_perf_label)
+	
+	_perf_canvas.visible = show_perf_overlay
+
+func _update_perf_overlay(delta: float) -> void:
+	if not show_perf_overlay or not _perf_label:
+		return
+		
+	_perf_update_timer += delta
+	if _perf_update_timer >= PERF_UPDATE_INTERVAL:
+		_perf_update_timer = 0.0
+		var fps = Engine.get_frames_per_second()
+		var draw_calls = Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
+		_perf_label.text = "FPS: %d\nDraw Calls: %d" % [fps, draw_calls]
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	load_settings()
+	_setup_perf_overlay()
 	# Reset state when autoload loads
 	reset_game()
 
@@ -238,6 +291,8 @@ func _initialize_total_enemies() -> void:
 	print("[GameManager] Total enemies in level initialized: %d (Pre-placed: %d, Spawner spawn: %d)" % [total_enemies_in_level, pre_placed, spawner_spawn_count])
 
 func _process(delta: float) -> void:
+	_update_perf_overlay(delta)
+
 	if not is_game_active or is_game_ended:
 		return
 		
@@ -345,6 +400,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			toggle_look_at_player_camera()
 		elif event.keycode == KEY_0:
 			toggle_debug_visualize_raycast()
+		elif event.keycode == KEY_9 or event.keycode == KEY_F3:
+			toggle_perf_overlay()
 
 func restart_game_to_disclaimer() -> void:
 	print("[GameManager] Backspace pressed. Resetting game and restarting to startup main menu.")

@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://dnj2gtkrmil0l"]
+
+[ext_resource type="Script" uid="uid://bvh23ltpxvasg" path="res://scripts/crowd_static.gd" id="1_static"]
+
+[node name="CrowdStatic" type="Node3D" unique_id=26435393]
+script = ExtResource("1_static")
+row_count = 5
+total_crowd_count = 100
+facing_randomness_deg = 0.0
+custom_seed = 12353
+vfx_front_row_count = 2

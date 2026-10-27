@@ -1500,9 +1500,9 @@ func _sync_player_head_rotation(delta: float) -> void:
 				target_tilt_z = clampf(-local_vel.x * 0.02 - ang_vel * 0.04, -0.20, 0.20)
 
 			var tilt_dir: float = -1.0 if player_portrait_reverse_side_tilt else 1.0
-
-			_p_current_tilt_x = lerpf(_p_current_tilt_x, target_tilt_x * player_portrait_lean_multiplier, delta * player_portrait_tilt_speed)
-			_p_current_tilt_z = lerpf(_p_current_tilt_z, target_tilt_z * player_portrait_lean_multiplier * player_portrait_side_tilt_multiplier * tilt_dir, delta * player_portrait_tilt_speed)
+			var p_tilt_weight = clampf(1.0 - exp(-player_portrait_tilt_speed * delta), 0.0, 1.0)
+			_p_current_tilt_x = lerpf(_p_current_tilt_x, target_tilt_x * player_portrait_lean_multiplier, p_tilt_weight)
+			_p_current_tilt_z = lerpf(_p_current_tilt_z, target_tilt_z * player_portrait_lean_multiplier * player_portrait_side_tilt_multiplier * tilt_dir, p_tilt_weight)
 
 			# Apply tilt to spine, chest, and shoulder bones
 			_apply_tilt_to_portrait_bone(_p_dst_skel, "DEF-spine", _p_current_tilt_x * 1.0, _p_current_tilt_z * 1.0)

@@ -117,6 +117,9 @@ var ik_parent_bones: Array[String] = [
 	"MCH-upper_arm_ik_target.parent.R"
 ]
 
+static func _decay_factor(speed: float, delta: float) -> float:
+	return clampf(1.0 - exp(-speed * delta), 0.0, 1.0)
+
 func _process_modification() -> void:
 	var skeleton: Skeleton3D = get_skeleton()
 	if not skeleton:
@@ -131,13 +134,14 @@ func _process_modification() -> void:
 		delta = get_physics_process_delta_time()
 	if delta <= 0.0:
 		delta = 0.016 # fallback
+	delta = clampf(delta, 0.001, 0.05)
 
 	# Smooth input vector to eliminate digital snap discontinuities when changing keys
-	_smooth_input_dir = _smooth_input_dir.lerp(input_dir, delta * 12.0)
+	_smooth_input_dir = _smooth_input_dir.lerp(input_dir, _decay_factor(12.0, delta))
 
 	# 1. Base input tilt (smooth continuous sprint ramping: 6.0 deg walk -> 9.0 deg sprint)
 	var target_sprint_factor = 1.0 if is_sprinting else 0.0
-	sprint_transition_factor = lerpf(sprint_transition_factor, target_sprint_factor, delta * 5.0)
+	sprint_transition_factor = lerpf(sprint_transition_factor, target_sprint_factor, _decay_factor(5.0, delta))
 	var current_sprint_mult = lerpf(1.0, sprint_tilt_multiplier, sprint_transition_factor)
 
 	# Mouse rotation tilt boost is 100% effective during walk/run, and 50% effective during sprint
@@ -186,7 +190,7 @@ func _process_modification() -> void:
 	# Smooth in-out lerp transition for combined diagonal side lean reduction (-35%)
 	var is_combined_input = (abs(_smooth_input_dir.x) > 0.1) and (abs(_smooth_input_dir.y) > 0.1)
 	var target_combined_factor = (1.0 - combined_side_tilt_reduction) if is_combined_input else 1.0
-	_combined_side_factor = lerpf(_combined_side_factor, target_combined_factor, delta * 8.0)
+	_combined_side_factor = lerpf(_combined_side_factor, target_combined_factor, _decay_factor(8.0, delta))
 	base_roll *= _combined_side_factor
 
 	# Hold & Release Direction Reversal Lean Inertia:
@@ -209,8 +213,12 @@ func _process_modification() -> void:
 	var raw_local_accel = Vector3.ZERO
 	if delta > 0.001:
 		raw_local_accel = (local_vel - prev_local_velocity) / delta
+		# Clamp acceleration to realistic physical threshold to prevent frame-spike spikes
+		raw_local_accel.x = clampf(raw_local_accel.x, -35.0, 35.0)
+		raw_local_accel.y = clampf(raw_local_accel.y, -35.0, 35.0)
+		raw_local_accel.z = clampf(raw_local_accel.z, -35.0, 35.0)
 	prev_local_velocity = local_vel
-	_smooth_local_accel = _smooth_local_accel.lerp(raw_local_accel, delta * 8.0)
+	_smooth_local_accel = _smooth_local_accel.lerp(raw_local_accel, _decay_factor(8.0, delta))
 
 	# Additive acceleration pitch and roll boost (Only when accelerating INTO movement)
 	var accel_forward = -_smooth_local_accel.z
@@ -300,14 +308,14 @@ func _process_modification() -> void:
 	var max_allowed_deg = 16.0 * maxf(1.0, current_sprint_mult) * maxf(1.0, effective_mouse_rot_boost) * maxf(1.0, spine_tilt_multiplier)
 	var max_allowed_rad = deg_to_rad(max_allowed_deg)
 	if abs(target_tilt_x) > max_allowed_rad:
-		target_tilt_x = lerpf(target_tilt_x, sign(target_tilt_x) * max_allowed_rad, delta * 10.0)
+		target_tilt_x = lerpf(target_tilt_x, sign(target_tilt_x) * max_allowed_rad, _decay_factor(10.0, delta))
 	if abs(target_tilt_z) > max_allowed_rad:
-		target_tilt_z = lerpf(target_tilt_z, sign(target_tilt_z) * max_allowed_rad, delta * 10.0)
+		target_tilt_z = lerpf(target_tilt_z, sign(target_tilt_z) * max_allowed_rad, _decay_factor(10.0, delta))
 
 	# Smooth lerp decay and recovery of all lean/tilt features during Action States (Aim, Reload, Grab, Get_hit, Takedown, Die)
 	var is_in_action_state = is_aiming or is_reloading or is_grab or is_quick_turn or is_action_state
 	var target_action_weight = 1.0 if is_in_action_state else 0.0
-	_action_decay_weight = lerpf(_action_decay_weight, target_action_weight, delta * 8.0)
+	_action_decay_weight = lerpf(_action_decay_weight, target_action_weight, _decay_factor(8.0, delta))
 	var master_action_scale = lerpf(1.0, 0.0, _action_decay_weight)
 
 	target_tilt_x *= master_action_scale
@@ -329,8 +337,9 @@ func _process_modification() -> void:
 			# Stopping (input released to zero): Continuous steady lerp speed so spine follows the smooth mathematical curve without speed snaps
 			var speed_multiplier = lerpf(1.5, 1.2, elapsed_t)
 			active_tilt_speed = tilt_speed * speed_multiplier
-	current_tilt_x = lerp_angle(current_tilt_x, target_tilt_x, delta * active_tilt_speed)
-	current_tilt_z = lerp_angle(current_tilt_z, target_tilt_z, delta * active_tilt_speed)
+	var tilt_lerp_w = _decay_factor(active_tilt_speed, delta)
+	current_tilt_x = lerp_angle(current_tilt_x, target_tilt_x, tilt_lerp_w)
+	current_tilt_z = lerp_angle(current_tilt_z, target_tilt_z, tilt_lerp_w)
 
 	if not _debug_non_zero_printed and input_dir != Vector2.ZERO:
 		_debug_non_zero_printed = true
@@ -344,7 +353,7 @@ func _process_modification() -> void:
 	# No bobbing when aiming, reloading, grabbed, or in action states
 	var should_bob = (input_dir != Vector2.ZERO or is_rotating_in_place) and not is_in_action_state
 	var target_bob_weight = 1.0 if should_bob else 0.0
-	_current_bob_weight = lerpf(_current_bob_weight, target_bob_weight, delta * 6.0)
+	_current_bob_weight = lerpf(_current_bob_weight, target_bob_weight, _decay_factor(6.0, delta))
 
 	# Continuous smooth lerp between Walk and Sprint bobbing parameters
 	var walk_speed = bobbing_speed
@@ -439,9 +448,9 @@ func _process_modification() -> void:
 		skeleton.set_bone_pose(bone_idx, pose)
 
 	# Smoothly decay procedural shoulder recoil
-	shoulder_recoil_pos = shoulder_recoil_pos.lerp(Vector3.ZERO, delta * shoulder_recoil_recovery_speed)
-	shoulder_recoil_rot = shoulder_recoil_rot.lerp(Vector3.ZERO, delta * shoulder_recoil_recovery_speed)
-	body_recoil_rot = lerpf(body_recoil_rot, 0.0, delta * body_recoil_recovery_speed)
+	shoulder_recoil_pos = shoulder_recoil_pos.lerp(Vector3.ZERO, _decay_factor(shoulder_recoil_recovery_speed, delta))
+	shoulder_recoil_rot = shoulder_recoil_rot.lerp(Vector3.ZERO, _decay_factor(shoulder_recoil_recovery_speed, delta))
+	body_recoil_rot = lerpf(body_recoil_rot, 0.0, _decay_factor(body_recoil_recovery_speed, delta))
 
 	# 1:1 Synchronized coupling: read 2D crosshair sway_offset to drive 3D shoulder bone sway
 	var sway_pitch_offset = 0.0

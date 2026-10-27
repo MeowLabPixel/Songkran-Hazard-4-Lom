@@ -61,7 +61,7 @@ var current_dance_anim: String = ""
 # Row & Optimization State
 var crowd_manager: Node = null
 var crowd_row: int = 0
-var is_row_active: bool = true
+var is_row_active: bool = false
 var editor_performance_mode: bool = false
 var member_index: int = 0
 var anim_step_interval: int = 1
@@ -69,11 +69,18 @@ var _anim_accumulated_delta: float = 0.0
 var cached_meshes: Array[MeshInstance3D] = []
 var cached_rids: Array[RID] = []
 
+var is_occluded: bool = false
+var last_shadow_allowed: int = -1
+var _is_setup_done: bool = false
+var _nodes_resolved: bool = false
+
 # Hitbox Dynamic LOD State
 enum HitboxMode { OFF, CHEST, FULL }
 var _current_hitbox_mode: HitboxMode = HitboxMode.OFF
 var _cached_hitbox_areas: Array[Area3D] = []
+var _cached_hitbox_entries: Array[Dictionary] = []
 var _cached_chest_area: Area3D = null
+var _cached_chest_entry: Dictionary = {}
 var _full_hitbox_timer: float = 0.0
 const FULL_HITBOX_HOLD_DURATION: float = 0.75
 
@@ -87,14 +94,75 @@ var attached_balloon: Node3D = null
 var hit_reaction_modifier: EnemyHitReactionModifier = null
 var hitboxes: Node3D = null
 var _turn_tween: Tween = null
+var _pop_in_tween: Tween = null
+var is_popping_out: bool = false
+
+func play_balloon_pop_in(delay: float = 0.0, duration: float = 0.45) -> void:
+	if _pop_in_tween and _pop_in_tween.is_valid():
+		_pop_in_tween.kill()
+
+	is_popping_out = false
+	visible = true
+	# Start squashed flat against the ground like a deflated balloon
+	scale = Vector3(0.2, 0.02, 0.2)
+
+	_pop_in_tween = create_tween()
+	if delay > 0.0:
+		_pop_in_tween.tween_interval(delay)
+
+	var t_stretch = duration * 0.65
+	var t_bounce = duration * 0.35
+
+	# Phase 1: Rapid inflation stretch upward
+	_pop_in_tween.tween_property(self, "scale", Vector3(0.85, 1.25, 0.85), t_stretch)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+	# Phase 2: Elastic overshoot and settle into rest size
+	_pop_in_tween.tween_property(self, "scale", Vector3.ONE, t_bounce)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func play_balloon_pop_out(delay: float = 0.0, duration: float = 0.45, on_complete: Callable = Callable()) -> void:
+	if _pop_in_tween and _pop_in_tween.is_valid():
+		_pop_in_tween.kill()
+
+	is_popping_out = true
+	visible = true
+
+	_pop_in_tween = create_tween()
+	if delay > 0.0:
+		_pop_in_tween.tween_interval(delay)
+
+	var t_anticipate = duration * 0.25
+	var t_squash = duration * 0.55
+	var t_sink = duration * 0.20
+
+	# Phase 1: Brief anticipatory stretch upward before deflating
+	_pop_in_tween.tween_property(self, "scale", Vector3(0.85, 1.25, 0.85), t_anticipate)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+	# Phase 2: Rapid balloon deflation squashing flat into the ground as a wide pancake
+	_pop_in_tween.tween_property(self, "scale", Vector3(1.35, 0.03, 1.35), t_squash)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+	# Phase 3: Sink flat into zero on the ground
+	_pop_in_tween.tween_property(self, "scale", Vector3.ZERO, t_sink)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+	_pop_in_tween.tween_callback(func():
+		visible = false
+		scale = Vector3.ONE
+		is_popping_out = false
+		if on_complete.is_valid():
+			on_complete.call()
+	)
 
 func set_row_active(active: bool) -> void:
-	if is_row_active == active:
+	if is_row_active == active and is_processing() == active:
 		return
 	is_row_active = active
 	set_process(active)
-	set_physics_process(active)
 	if not active:
+		set_physics_process(false)
 		if anim_player:
 			anim_player.pause()
 			anim_player.active = false
@@ -106,6 +174,8 @@ func set_row_active(active: bool) -> void:
 			is_performing_action = false
 	else:
 		if anim_player:
+			if not Engine.is_editor_hint():
+				anim_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 			anim_player.active = true
 			if anim_player.current_animation != "" and anim_player.has_animation(anim_player.current_animation):
 				if not anim_player.is_playing():
@@ -120,8 +190,16 @@ func _process(delta: float) -> void:
 	if not is_row_active or not anim_player or not anim_player.active:
 		return
 
-	# If performing an action (shooting, throwing balloon, hit reaction) or within full FPS distance: step every frame
-	if is_performing_action or _current_hitbox_mode == HitboxMode.FULL or anim_step_interval <= 1:
+	# If performing an action (shooting, throwing balloon, hit reaction): step full 60 FPS
+	if is_performing_action:
+		if _anim_accumulated_delta > 0.0:
+			anim_player.advance(_anim_accumulated_delta + delta)
+			_anim_accumulated_delta = 0.0
+		else:
+			anim_player.advance(delta)
+		return
+
+	if anim_step_interval <= 1:
 		if _anim_accumulated_delta > 0.0:
 			anim_player.advance(_anim_accumulated_delta + delta)
 			_anim_accumulated_delta = 0.0
@@ -133,10 +211,12 @@ func _process(delta: float) -> void:
 	var frame_idx: int = Engine.get_process_frames()
 	var should_step: bool = false
 
-	if anim_step_interval == 2: # Medium range: step every 2nd frame, staggered across members
+	if anim_step_interval == 2: # Medium range: step every 2nd frame (30 FPS), staggered across members
 		should_step = ((frame_idx + member_index) % 2 == 0)
-	elif anim_step_interval >= 3: # Far range: step every 3rd frame, staggered across members
+	elif anim_step_interval == 3: # Step every 3rd frame (20 FPS)
 		should_step = ((frame_idx + member_index) % 3 == 0)
+	elif anim_step_interval >= 4: # Far range: step every 4th frame (15 FPS), staggered across members
+		should_step = ((frame_idx + member_index) % 4 == 0)
 	else:
 		should_step = true
 
@@ -144,59 +224,48 @@ func _process(delta: float) -> void:
 		anim_player.advance(_anim_accumulated_delta)
 		_anim_accumulated_delta = 0.0
 
-func _physics_process(delta: float) -> void:
-	if Engine.is_editor_hint():
-		return
-	if _current_hitbox_mode == HitboxMode.FULL:
-		_full_hitbox_timer -= delta
-		if _full_hitbox_timer <= 0.0:
-			set_hitbox_mode(HitboxMode.CHEST if is_row_active else HitboxMode.OFF)
+func _physics_process(_delta: float) -> void:
+	# Crowd members never need physics ticking
+	set_physics_process(false)
 
 func request_full_hitboxes() -> void:
-	_full_hitbox_timer = FULL_HITBOX_HOLD_DURATION
-	if _current_hitbox_mode != HitboxMode.FULL:
-		set_hitbox_mode(HitboxMode.FULL)
+	# No-op for crowd members: unified full-body hitbox already covers head, body, and legs
+	ensure_chest_hitbox_active()
 
 func ensure_chest_hitbox_active() -> void:
 	if _current_hitbox_mode == HitboxMode.OFF:
 		set_hitbox_mode(HitboxMode.CHEST)
-	elif _current_hitbox_mode == HitboxMode.CHEST and is_instance_valid(_cached_chest_area):
-		var hz = _cached_chest_area.get_node_or_null("HitboxZone") as HitboxZone
-		if hz:
-			hz.sync_now()
 
 func set_hitbox_mode(mode: HitboxMode) -> void:
+	if _current_hitbox_mode == mode:
+		return
 	_current_hitbox_mode = mode
+	set_physics_process(false)
 	match mode:
 		HitboxMode.OFF:
-			for area in _cached_hitbox_areas:
-				_set_area_active(area, false)
-		HitboxMode.CHEST:
-			for area in _cached_hitbox_areas:
-				if area == _cached_chest_area:
-					_set_area_active(area, true)
-				else:
-					_set_area_active(area, false)
-		HitboxMode.FULL:
-			for area in _cached_hitbox_areas:
-				_set_area_active(area, true)
+			for entry in _cached_hitbox_entries:
+				_set_entry_active(entry, false, false)
+		HitboxMode.CHEST, HitboxMode.FULL:
+			for entry in _cached_hitbox_entries:
+				var is_unified = (entry.get("area") == _cached_chest_area)
+				_set_entry_active(entry, is_unified, false)
 
-func _set_area_active(area: Area3D, active: bool) -> void:
+func _set_entry_active(entry: Dictionary, active_collision: bool, _active_sync: bool) -> void:
+	var area: Area3D = entry.get("area")
 	if not is_instance_valid(area):
 		return
-	area.monitorable = active
-	for col in area.find_children("*", "CollisionShape3D", true, false):
-		var shape = col as CollisionShape3D
-		if shape:
-			shape.set_deferred("disabled", not active)
-	var hz = area.get_node_or_null("HitboxZone") as HitboxZone
-	if hz:
-		hz.set_physics_process(active)
-		if active:
-			hz.sync_now()
+	area.monitoring = false
+	area.monitorable = active_collision
+	var shape: CollisionShape3D = entry.get("shape")
+	if is_instance_valid(shape):
+		shape.set_deferred("disabled", not active_collision)
+	var hz: HitboxZone = entry.get("zone")
+	if is_instance_valid(hz):
+		hz.set_physics_process(false)
 
 func _ready() -> void:
-	_resolve_nodes()
+	set_process(false)
+	set_physics_process(false)
 	if Engine.is_editor_hint():
 		if has_meta("is_crowd_preview") or (get_parent() and "preview_in_editor" in get_parent()):
 			if hitboxes and is_instance_valid(hitboxes):
@@ -213,11 +282,17 @@ func _ready() -> void:
 				attached_balloon.queue_free()
 				attached_balloon = null
 		return
-	_optimize_skeleton_bones()
-	_setup_hit_reactions()
-	_setup_hitboxes()
+	if not _is_setup_done:
+		_resolve_nodes()
+		_optimize_skeleton_bones()
+		_setup_hit_reactions()
+		_setup_hitboxes()
 
 func _resolve_nodes() -> void:
+	if _nodes_resolved:
+		return
+	_nodes_resolved = true
+
 	if not is_instance_valid(skeleton):
 		skeleton = find_child("GeneralSkeleton", true, false) as Skeleton3D
 		if not skeleton:
@@ -229,6 +304,8 @@ func _resolve_nodes() -> void:
 		anim_player = find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if anim_player:
 		anim_player.speed_scale = range_animation_speed if is_armed else dance_animation_speed
+		if not Engine.is_editor_hint():
+			anim_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 
 	if not is_instance_valid(anim_tree):
 		anim_tree = find_child("AnimationTree", true, false) as AnimationTree
@@ -273,45 +350,26 @@ func _resolve_nodes() -> void:
 	cached_rids.clear()
 	if self is CollisionObject3D:
 		cached_rids.append(get_rid())
-	for node in find_children("*", "CollisionObject3D", true, false):
-		if is_instance_valid(node) and (node is CollisionObject3D):
-			cached_rids.append(node.get_rid())
+
+	# Prune 15 unused BoneAttachment3D nodes at runtime to eliminate 300 bone matrix calculations per crowd scene
+	if skeleton and not Engine.is_editor_hint():
+		for child in skeleton.get_children():
+			if child is BoneAttachment3D and child.name != "HitboxAttachRightHand":
+				child.queue_free()
+
+	# Disable CharacterBody3D capsule collision at runtime (InvisibleWall handles boundary collision)
+	var col = find_child("CollisionShape3D", false, false) as CollisionShape3D
+	if col and not Engine.is_editor_hint():
+		col.disabled = true
 
 func _optimize_skeleton_bones() -> void:
-	if not skeleton or Engine.is_editor_hint():
-		return
-	var bone_count = skeleton.get_bone_count()
-	if bone_count <= 40:
-		return
-
-	var keep_bones: Dictionary = {}
-	for b in range(bone_count):
-		var b_name = skeleton.get_bone_name(b)
-		if b_name.begins_with("DEF-") or b_name in ["root", "Root", "torso", "chest", "Hips"]:
-			var curr = b
-			while curr != -1 and not keep_bones.has(curr):
-				keep_bones[curr] = true
-				curr = skeleton.get_bone_parent(curr)
-
-	for child in skeleton.get_children():
-		if child is BoneAttachment3D and child.bone_idx >= 0:
-			var curr = child.bone_idx
-			while curr != -1 and not keep_bones.has(curr):
-				keep_bones[curr] = true
-				curr = skeleton.get_bone_parent(curr)
-
-	for b in range(bone_count):
-		if not keep_bones.has(b):
-			skeleton.set_bone_enabled(b, false)
+	# In Godot 4, disabling skeleton bones breaks MeshInstance3D Skin bindings and triggers thousands of C++ engine errors per frame.
+	return
 
 func _set_attached_balloon_visible(is_vis: bool) -> void:
 	if not attached_balloon or not is_instance_valid(attached_balloon):
 		return
 	attached_balloon.visible = is_vis
-	for child in attached_balloon.find_children("*", "GPUParticles3D", true, false):
-		var p = child as GPUParticles3D
-		if p:
-			p.emitting = false
 
 func _setup_hit_reactions() -> void:
 	if Engine.is_editor_hint() or not enable_hit_reaction or not skeleton:
@@ -352,7 +410,9 @@ func _setup_hitboxes() -> void:
 	if Engine.is_editor_hint():
 		return
 	_cached_hitbox_areas.clear()
+	_cached_hitbox_entries.clear()
 	_cached_chest_area = null
+	_cached_chest_entry = {}
 	for node in find_children("*", "HitboxZone", true, false):
 		var hz = node as HitboxZone
 		if hz:
@@ -362,22 +422,65 @@ func _setup_hitboxes() -> void:
 				parent_area.add_to_group("crowd_hitbox")
 				if not _cached_hitbox_areas.has(parent_area):
 					_cached_hitbox_areas.append(parent_area)
-				if parent_area.name == "HitboxChest" or parent_area.name == "HitboxBody":
-					_cached_chest_area = parent_area
+					var col_shape: CollisionShape3D = null
+					for col in parent_area.find_children("*", "CollisionShape3D", true, false):
+						if col is CollisionShape3D:
+							col_shape = col
+							break
+					var entry = { "area": parent_area, "shape": col_shape, "zone": hz }
+					_cached_hitbox_entries.append(entry)
+					if parent_area.name == "HitboxChest" or parent_area.name == "HitboxBody":
+						_cached_chest_area = parent_area
+						_cached_chest_entry = entry
 	if _cached_chest_area == null and not _cached_hitbox_areas.is_empty():
 		_cached_chest_area = _cached_hitbox_areas[0]
+		_cached_chest_entry = _cached_hitbox_entries[0]
 
-	set_hitbox_mode(HitboxMode.CHEST if is_row_active else HitboxMode.OFF)
+	# Configure _cached_chest_area as the unified full-body hitbox covering head to toe
+	if is_instance_valid(_cached_chest_area):
+		_cached_chest_area.top_level = false
+		_cached_chest_area.position = Vector3(0.0, 0.9, 0.0)
+		_cached_chest_area.rotation = Vector3.ZERO
+		var shape_node = _cached_chest_entry.get("shape") as CollisionShape3D
+		if is_instance_valid(shape_node):
+			shape_node.position = Vector3.ZERO
+			shape_node.rotation = Vector3.ZERO
+			var full_capsule = CapsuleShape3D.new()
+			full_capsule.radius = 0.32
+			full_capsule.height = 1.75
+			shape_node.shape = full_capsule
+
+	# Free the 15 redundant limb Area3D nodes so only the unified HitboxChest remains in the scene tree
+	for entry in _cached_hitbox_entries:
+		var area = entry.get("area") as Area3D
+		if is_instance_valid(area) and area != _cached_chest_area:
+			area.queue_free()
+
+	_cached_hitbox_areas.clear()
+	_cached_hitbox_entries.clear()
+	if is_instance_valid(_cached_chest_area):
+		_cached_hitbox_areas.append(_cached_chest_area)
+		_cached_hitbox_entries.append(_cached_chest_entry)
+
+	# Ensure all hitboxes are cleanly disabled on initial spawn
+	for entry in _cached_hitbox_entries:
+		_set_entry_active(entry, false, false)
+	_current_hitbox_mode = HitboxMode.OFF
+
+	if is_row_active:
+		set_hitbox_mode(HitboxMode.CHEST)
 
 func setup_member(armed: bool, material: Material, config: Dictionary = {}) -> void:
-	_resolve_nodes()
-	if not Engine.is_editor_hint():
-		_setup_hit_reactions()
-		_setup_hitboxes()
-
+	_is_setup_done = true
 	for k in config:
 		if k in self:
 			set(k, config[k])
+
+	_resolve_nodes()
+	if not Engine.is_editor_hint():
+		_optimize_skeleton_bones()
+		_setup_hit_reactions()
+		_setup_hitboxes()
 
 	is_armed = armed and enable_water_gun
 	if is_armed:
@@ -709,17 +812,32 @@ func take_hit(hit_data: Dictionary) -> void:
 		return
 
 	var zone: String = hit_data.get("hit_zone", "body")
+	var hit_pos: Vector3 = hit_data.get("position", Vector3.ZERO)
+	var source = hit_data.get("source")
+	if hit_pos == Vector3.ZERO and source and is_instance_valid(source) and source is Node3D:
+		hit_pos = source.global_position
+
+	# Dynamic height-based zone classification for unified full-body hitbox:
+	if hit_pos != Vector3.ZERO:
+		var local_y: float = to_local(hit_pos).y
+		if local_y >= 1.35:
+			zone = "head"
+		elif local_y <= 0.65:
+			var local_x: float = to_local(hit_pos).x
+			zone = "left_leg" if local_x < 0.0 else "right_leg"
+		elif zone == "" or zone == "body" or zone == "chest":
+			zone = "body"
+		hit_data["hit_zone"] = zone
+
 	var hit_dir: Vector3 = hit_data.get("hit_direction", Vector3.ZERO)
 
 	if hit_dir == Vector3.ZERO:
-		var hit_pos = hit_data.get("position", global_position)
-		var source = hit_data.get("source")
-		if source and is_instance_valid(source) and source is Node3D:
+		if hit_pos != Vector3.ZERO and source and is_instance_valid(source) and source is Node3D:
 			hit_dir = (hit_pos - source.global_position).normalized()
 		else:
 			var players = get_tree().get_nodes_in_group("player")
 			if players.size() > 0 and is_instance_valid(players[0]):
-				hit_dir = (hit_pos - players[0].global_position).normalized()
+				hit_dir = ((hit_pos if hit_pos != Vector3.ZERO else global_position) - players[0].global_position).normalized()
 			else:
 				hit_dir = -global_transform.basis.z
 
@@ -727,10 +845,12 @@ func take_hit(hit_data: Dictionary) -> void:
 	hit_dir = hit_dir.normalized()
 	hit_data["hit_direction"] = hit_dir
 
-	request_full_hitboxes()
-
 	if hit_reaction_modifier:
 		hit_reaction_modifier.active = true
+		get_tree().create_timer(0.5).timeout.connect(func():
+			if is_instance_valid(self) and hit_reaction_modifier and not is_performing_action:
+				hit_reaction_modifier.active = false
+		)
 
 	# 1. Emit enemy_hit for procedural spring wiggles
 	enemy_hit.emit(hit_data)
@@ -751,5 +871,7 @@ func take_hit(hit_data: Dictionary) -> void:
 			get_tree().create_timer(return_delay).timeout.connect(func():
 				if is_instance_valid(self):
 					is_performing_action = false
+					if hit_reaction_modifier:
+						hit_reaction_modifier.active = false
 					resume_base_loop()
 			)

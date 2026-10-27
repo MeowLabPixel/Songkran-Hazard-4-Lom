@@ -53,15 +53,17 @@ func _process_modification() -> void:
 	
 	var delta = get_process_delta_time()
 	if delta <= 0.0: delta = 0.016
+	delta = clampf(delta, 0.001, 0.05)
 	
-	# Update hit reaction spring physics
+	# Update hit reaction spring physics using clamped sub-step to prevent Euler integration explosion during lag spikes
+	var sim_delta = clampf(delta, 0.001, 0.0333)
 	var force_x = -hit_stiffness * hit_tilt_x - hit_damping * hit_vel_x
-	hit_vel_x += force_x * delta
-	hit_tilt_x += hit_vel_x * delta
+	hit_vel_x += force_x * sim_delta
+	hit_tilt_x += hit_vel_x * sim_delta
 	
 	var force_z = -hit_stiffness * hit_tilt_z - hit_damping * hit_vel_z
-	hit_vel_z += force_z * delta
-	hit_tilt_z += hit_vel_z * delta
+	hit_vel_z += force_z * sim_delta
+	hit_tilt_z += hit_vel_z * sim_delta
 	
 	var local_vel = anchalee.global_transform.basis.inverse() * anchalee.velocity
 	
@@ -89,8 +91,9 @@ func _process_modification() -> void:
 	var target_tilt_x = deg_to_rad(-dir.z * max_tilt_angle * speed_factor * lean_multiplier * forward_factor)
 	var target_tilt_z = deg_to_rad(dir.x * max_tilt_angle * speed_factor * lean_multiplier)
 	
-	current_tilt_x = lerp_angle(current_tilt_x, target_tilt_x, delta * tilt_speed)
-	current_tilt_z = lerp_angle(current_tilt_z, target_tilt_z, delta * tilt_speed)
+	var tilt_weight = clampf(1.0 - exp(-tilt_speed * delta), 0.0, 1.0)
+	current_tilt_x = lerp_angle(current_tilt_x, target_tilt_x, tilt_weight)
+	current_tilt_z = lerp_angle(current_tilt_z, target_tilt_z, tilt_weight)
 	
 	# Additively combine movement tilt and hit reaction tilt
 	var total_tilt_x = current_tilt_x + hit_tilt_x
