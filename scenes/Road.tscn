@@ -829,9 +829,6 @@ dither_fade_duration = 0.75
 middle_row_max_distance = 40.0
 back_row_max_distance = 20.0
 enable_shader_dithering = true
-enable_balloon_pop_out = null
-pop_distance = null
-balloon_pop_out_duration = null
 enable_row_shadows = false
 material_uv1_scale = Vector3(1, 1, 1)
 enable_triplanar = false
@@ -953,9 +950,6 @@ dither_fade_duration = 0.75
 middle_row_max_distance = 40.0
 back_row_max_distance = 20.0
 enable_shader_dithering = true
-enable_balloon_pop_out = null
-pop_distance = null
-balloon_pop_out_duration = null
 enable_row_shadows = false
 material_uv1_scale = Vector3(1, 1, 1)
 enable_triplanar = false
@@ -1029,7 +1023,7 @@ saved_crowd_data = Array[Dictionary]([{
 "has_gun": false,
 "local_pos": Vector3(3.6539497, -0.04000012, 0.999115),
 "model_type": 0,
-"rot_y": 0.9004857,
+"rot_y": 0.9004856999999999,
 "row": 1
 }, {
 "color_idx": 2,
@@ -1078,9 +1072,6 @@ middle_row_max_distance = 40.0
 back_row_max_distance = 20.0
 front_row_is_negative_z = false
 enable_shader_dithering = true
-enable_balloon_pop_out = null
-pop_distance = null
-balloon_pop_out_duration = null
 enable_row_shadows = false
 material_uv1_scale = Vector3(1, 1, 1)
 enable_triplanar = false
@@ -1203,9 +1194,6 @@ middle_row_max_distance = 40.0
 back_row_max_distance = 20.0
 front_row_is_negative_z = false
 enable_shader_dithering = true
-enable_balloon_pop_out = null
-pop_distance = null
-balloon_pop_out_duration = null
 enable_row_shadows = false
 material_uv1_scale = Vector3(1, 1, 1)
 enable_triplanar = false
@@ -1330,9 +1318,6 @@ dither_fade_duration = 0.75
 middle_row_max_distance = 40.0
 back_row_max_distance = 20.0
 enable_shader_dithering = true
-enable_balloon_pop_out = null
-pop_distance = null
-balloon_pop_out_duration = null
 enable_row_shadows = false
 material_uv1_scale = Vector3(1, 1, 1)
 enable_triplanar = false
@@ -1454,9 +1439,6 @@ dither_fade_duration = 0.75
 middle_row_max_distance = 40.0
 back_row_max_distance = 20.0
 enable_shader_dithering = true
-enable_balloon_pop_out = null
-pop_distance = null
-balloon_pop_out_duration = null
 enable_row_shadows = false
 material_uv1_scale = Vector3(1, 1, 1)
 enable_triplanar = false
@@ -1579,9 +1561,6 @@ middle_row_max_distance = 40.0
 back_row_max_distance = 20.0
 front_row_is_negative_z = false
 enable_shader_dithering = true
-enable_balloon_pop_out = null
-pop_distance = null
-balloon_pop_out_duration = null
 enable_row_shadows = false
 material_uv1_scale = Vector3(1, 1, 1)
 enable_triplanar = false
@@ -1704,9 +1683,6 @@ middle_row_max_distance = 40.0
 back_row_max_distance = 20.0
 front_row_is_negative_z = false
 enable_shader_dithering = true
-enable_balloon_pop_out = null
-pop_distance = null
-balloon_pop_out_duration = null
 enable_row_shadows = false
 material_uv1_scale = Vector3(1, 1, 1)
 enable_triplanar = false
@@ -1831,9 +1807,6 @@ dither_fade_duration = 0.75
 middle_row_max_distance = 40.0
 back_row_max_distance = 20.0
 enable_shader_dithering = true
-enable_balloon_pop_out = null
-pop_distance = null
-balloon_pop_out_duration = null
 enable_row_shadows = false
 material_uv1_scale = Vector3(1, 1, 1)
 enable_triplanar = false
@@ -1940,7 +1913,7 @@ saved_crowd_data = Array[Dictionary]([{
 }])
 
 [node name="Crowd_Dance2" parent="Crowd_Folder3" unique_id=76986737 instance=ExtResource("21_toqgr")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.3999987, 0, 2.7833862)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.180768, 0, 2.7833862)
 spawn_area_size = Vector3(8, 0.5, 5)
 crowd_density = 0.5
 max_crowd_members = 14
@@ -1955,9 +1928,6 @@ dither_fade_duration = 0.75
 middle_row_max_distance = 40.0
 back_row_max_distance = 20.0
 enable_shader_dithering = true
-enable_balloon_pop_out = null
-pop_distance = null
-balloon_pop_out_duration = null
 enable_row_shadows = false
 material_uv1_scale = Vector3(1, 1, 1)
 enable_triplanar = false
@@ -2080,9 +2050,6 @@ middle_row_max_distance = 40.0
 back_row_max_distance = 20.0
 front_row_is_negative_z = false
 enable_shader_dithering = true
-enable_balloon_pop_out = null
-pop_distance = null
-balloon_pop_out_duration = null
 enable_row_shadows = false
 material_uv1_scale = Vector3(1, 1, 1)
 enable_triplanar = false
@@ -2189,7 +2156,7 @@ saved_crowd_data = Array[Dictionary]([{
 }])
 
 [node name="Crowd_Dance4" parent="Crowd_Folder3" unique_id=2066764692 instance=ExtResource("21_toqgr")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.0999994, 0, 9)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.8807688, 0, 9)
 spawn_area_size = Vector3(8, 0.5, 5)
 crowd_density = 0.5
 max_crowd_members = 14
@@ -2205,9 +2172,6 @@ middle_row_max_distance = 40.0
 back_row_max_distance = 20.0
 front_row_is_negative_z = false
 enable_shader_dithering = true
-enable_balloon_pop_out = null
-pop_distance = null
-balloon_pop_out_duration = null
 enable_row_shadows = false
 material_uv1_scale = Vector3(1, 1, 1)
 enable_triplanar = false

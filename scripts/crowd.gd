@@ -11,7 +11,7 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 		if preview_in_editor == val:
 			return
 		preview_in_editor = val
-		if Engine.is_editor_hint() and is_inside_tree():
+		if Engine.is_editor_hint() and is_inside_tree() and is_node_ready():
 			if preview_in_editor:
 				_setup_crowd()
 				_apply_editor_performance_mode()
@@ -20,7 +20,8 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export var editor_performance_mode: bool = true: ## In-editor only performance mode: freezes preview animations at 50% and turns off cast shadows to eliminate editor lag. Does not affect running game!
 	set(val):
 		editor_performance_mode = val
-		_apply_editor_performance_mode()
+		if is_inside_tree() and is_node_ready():
+			_apply_editor_performance_mode()
 
 @export_group("Crowd Spawning")
 @export var spawn_area_size: Vector3 = Vector3(10, 2, 3): ## Size of the spawn area box (X: Width, Y: Height, Z: Depth). Automatically updates the shape in the editor!
@@ -28,12 +29,13 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 		if spawn_area_size == val:
 			return
 		spawn_area_size = val
-		_update_spawn_shapes()
-		_on_setting_changed()
+		if is_inside_tree() and is_node_ready():
+			_update_spawn_shapes()
+			_on_setting_changed()
 @export var sync_invisible_wall: bool = true: ## Automatically sync InvisibleWall shape size with spawn_area_size
 	set(val):
 		sync_invisible_wall = val
-		if val:
+		if val and is_inside_tree() and is_node_ready():
 			_update_spawn_shapes()
 @export var enable_spawning: bool = true:
 	set(val):
@@ -93,12 +95,14 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export var max_render_distance: float = 100.0: ## Distance beyond which crowd members are hidden / not rendered
 	set(val):
 		max_render_distance = val
-		_update_render_distances()
+		if is_inside_tree() and is_node_ready():
+			_update_render_distances()
 @export var enable_occlusion_culling: bool = false ## Raycast line-of-sight occlusion test against walls/buildings
 @export var enable_shadow_optimization: bool = true: ## Disable shadows on micro-meshes (fingers, flipflops, nose, etc.)
 	set(val):
 		enable_shadow_optimization = val
-		_update_render_distances()
+		if is_inside_tree() and is_node_ready():
+			_update_render_distances()
 @export var culling_check_interval: float = 0.1 ## Interval in seconds for CPU occlusion & camera distance culling checks
 @export var start_from_30_fps: bool = true ## When true, crowd members at close range animate at 30 FPS (staggered alternating frames) instead of 60 FPS, halving CPU bone calculations
 @export var anim_full_fps_distance: float = 7.0: ## Distance from camera within which crowd members animate at 100% full framerate (or 30 FPS if start_from_30_fps is enabled)
@@ -119,30 +123,36 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export var front_row_max_distance: float = 80.0: ## Max render distance for front row (up to 100m)
 	set(val):
 		front_row_max_distance = val
-		_update_render_distances()
+		if is_inside_tree() and is_node_ready():
+			_update_render_distances()
 @export var front_row_distant_visibility: bool = true: ## If true, front row remains visible beyond front_row_max_distance with animations/shadows/combat disabled
 	set(val):
 		front_row_distant_visibility = val
-		_update_render_distances()
+		if is_inside_tree() and is_node_ready():
+			_update_render_distances()
 @export var front_row_distant_max_distance: float = 140.0: ## Distance where front row finally dither-fades out when front_row_distant_visibility is enabled
 	set(val):
 		front_row_distant_max_distance = val
-		_update_render_distances()
+		if is_inside_tree() and is_node_ready():
+			_update_render_distances()
 @export var dither_fade_margin: float = 8.0: ## Distance margin in meters for smooth shader dithering fade-in/out
 	set(val):
 		dither_fade_margin = val
-		_update_render_distances()
+		if is_inside_tree() and is_node_ready():
+			_update_render_distances()
 @export_range(0.1, 3.0, 0.05) var dither_fade_duration: float = 1.0: ## Time in seconds for a row to smoothly dither from 0% invisible to 100% solid opaque once triggered
 	set(val):
 		dither_fade_duration = val
 @export var middle_row_max_distance: float = 60.0: ## Max render distance for middle row (up to 50m)
 	set(val):
 		middle_row_max_distance = val
-		_update_render_distances()
+		if is_inside_tree() and is_node_ready():
+			_update_render_distances()
 @export var back_row_max_distance: float = 30.0: ## Max render distance for back row (up to 25m)
 	set(val):
 		back_row_max_distance = val
-		_update_render_distances()
+		if is_inside_tree() and is_node_ready():
+			_update_render_distances()
 @export var max_front_row_members: int = 10: ## Front row cap (user limit: max 8 crowd)
 	set(val):
 		max_front_row_members = val
@@ -154,7 +164,8 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export var enable_shader_dithering: bool = false: ## Use GPU dither fade per row (VISIBILITY_RANGE_FADE_SELF)
 	set(val):
 		enable_shader_dithering = val
-		_update_render_distances()
+		if is_inside_tree() and is_node_ready():
+			_update_render_distances()
 @export_range(0.1, 1.0, 0.05) var activity_distance_ratio: float = 0.35 ## Fraction of row distance beyond which animation/combat pauses (35%)
 
 @export_group("Balloon Pop Animation")
@@ -163,7 +174,8 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export var pop_distance: float = 60.0: ## Distance in meters where the crowd pops in / pops out
 	set(val):
 		pop_distance = val
-		_update_render_distances()
+		if is_inside_tree() and is_node_ready():
+			_update_render_distances()
 @export_range(0.1, 1.5, 0.05) var balloon_pop_duration: float = 0.45 ## Duration of the pop-in squash & stretch animation
 @export_range(0.1, 1.5, 0.05) var balloon_pop_out_duration: float = 0.35 ## Duration of the pop-out deflation animation
 @export_range(0.0, 0.2, 0.01) var balloon_pop_stagger: float = 0.04 ## Delay between each member in the row popping up/down
@@ -182,7 +194,8 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export var enable_row_shadows: bool = true: ## Each row enables its own shadow independently based on its render distance
 	set(val):
 		enable_row_shadows = val
-		_update_shadow_state()
+		if is_inside_tree() and is_node_ready():
+			_update_shadow_state()
 
 @export_group("Appearance & Animation")
 @export var enable_random_textures: bool = true:
@@ -196,15 +209,18 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export var material_uv1_scale: Vector3 = Vector3(1, 1, 1):
 	set(val):
 		material_uv1_scale = val
-		_setup_materials()
+		if is_inside_tree() and is_node_ready():
+			_setup_materials()
 @export var material_uv1_offset: Vector3 = Vector3.ZERO:
 	set(val):
 		material_uv1_offset = val
-		_setup_materials()
+		if is_inside_tree() and is_node_ready():
+			_setup_materials()
 @export var enable_triplanar: bool = false:
 	set(val):
 		enable_triplanar = val
-		_setup_materials()
+		if is_inside_tree() and is_node_ready():
+			_setup_materials()
 @export_range(0.1, 3.0, 0.05) var dance_animation_speed: float = 1.25: ## Speed slider for dance animations
 	set(val):
 		dance_animation_speed = val
@@ -241,7 +257,7 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 		_on_setting_changed()
 @export var reroll_seed: bool = false: ## Toggle in the Inspector to roll a new seed and refresh the crowd
 	set(value):
-		if value:
+		if value and is_inside_tree() and is_node_ready():
 			reroll()
 
 @export_group("Layout Persistence")
@@ -401,6 +417,8 @@ func get_row_local_z_range(row: CrowdRow) -> Vector2:
 				return Vector2(-half_d, half_d)
 
 func _update_spawn_shapes() -> void:
+	if not is_inside_tree() or not is_node_ready():
+		return
 	var area = get_node_or_null("CrowdSpawnArea")
 	if area:
 		var col_shape = area.get_node_or_null("CrowdSpawnArea") as CollisionShape3D
@@ -519,6 +537,8 @@ func rebake() -> void:
 		regenerate_crowd()
 
 func _clear_preview_crowd() -> void:
+	if not is_inside_tree():
+		return
 	var existing_male = get_node_or_null("CrowdMaleModel") as Node3D
 	for child in get_children():
 		if child != existing_male and (child is CrowdMember or child.has_meta("is_crowd_preview")):

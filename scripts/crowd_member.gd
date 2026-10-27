@@ -16,11 +16,13 @@ signal enemy_hit(hit_data: Dictionary)
 @export var enable_audio: bool = true:
 	set(val):
 		enable_audio = val
-		_apply_audio_state()
+		if is_inside_tree() and is_node_ready():
+			_apply_audio_state()
 @export var enable_animation_sounds: bool = true:
 	set(val):
 		enable_animation_sounds = val
-		_apply_audio_state()
+		if is_inside_tree() and is_node_ready():
+			_apply_audio_state()
 
 @export_group("Animation")
 @export_range(0.1, 3.0, 0.05) var dance_animation_speed: float = 1.0

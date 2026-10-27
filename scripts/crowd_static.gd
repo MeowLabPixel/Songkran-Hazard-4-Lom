@@ -62,8 +62,9 @@ class MemberInstanceData:
 @export var uv_scale: Vector3 = Vector3(1.3, 1.3, 1.3):
 	set(val):
 		uv_scale = val
-		_setup_materials()
-		_on_config_changed()
+		if is_inside_tree() and is_node_ready():
+			_setup_materials()
+			_on_config_changed()
 
 @export_range(0.0, 1.0, 0.05) var anim_pose_percentage: float = 0.5:
 	set(val):
@@ -99,23 +100,26 @@ class MemberInstanceData:
 @export var enable_npc_guns: bool = true:
 	set(val):
 		enable_npc_guns = val
-		_baked_meshes.clear()
-		_on_config_changed()
+		if is_inside_tree() and is_node_ready():
+			_baked_meshes.clear()
+			_on_config_changed()
 
 @export var npc_gun_scene: PackedScene = preload("res://GunSystem/npc_gun_static_crowd.tscn"):
 	set(val):
 		npc_gun_scene = val
-		_baked_meshes.clear()
-		_on_config_changed()
+		if is_inside_tree() and is_node_ready():
+			_baked_meshes.clear()
+			_on_config_changed()
 
 @export var rebake_poses_now: bool = false:
 	set(val):
 		if val:
 			rebake_poses_now = false
-			_baked_meshes.clear()
-			_gun_relative_transform = Transform3D.IDENTITY
-			_bake_and_build_crowd()
-			_setup_ambient_projectiles()
+			if is_inside_tree() and is_node_ready():
+				_baked_meshes.clear()
+				_gun_relative_transform = Transform3D.IDENTITY
+				_bake_and_build_crowd()
+				_setup_ambient_projectiles()
 
 @export_group("Cheering & Animation")
 @export var enable_cheering: bool = true:
@@ -140,12 +144,12 @@ class MemberInstanceData:
 @export var enable_ambient_projectiles: bool = true:
 	set(val):
 		enable_ambient_projectiles = val
-		if not val:
-			_cleanup_ambient_projectiles()
-		else:
-			if is_node_ready():
+		if is_inside_tree() and is_node_ready():
+			if not val:
+				_cleanup_ambient_projectiles()
+			else:
 				_setup_ambient_projectiles()
-		_update_process_state()
+			_update_process_state()
 
 @export_range(1, 5, 1) var vfx_front_row_count: int = 1
 @export var waterline_scene: PackedScene = preload("res://GunSystem/Scene/WaterLineVFX/WaterLine.tscn")
@@ -363,6 +367,8 @@ func _apply_config_deferred() -> void:
 	_bake_and_build_crowd()
 
 func _clear_guns() -> void:
+	if not is_inside_tree():
+		return
 	if is_instance_valid(_guns_container):
 		for child in _guns_container.get_children():
 			child.queue_free()
@@ -377,6 +383,8 @@ func _clear_guns() -> void:
 			child.queue_free()
 
 func _clear_multimeshes() -> void:
+	if not is_inside_tree():
+		return
 	_clear_guns()
 
 	for mmi in _pose_multimeshes:
@@ -767,6 +775,8 @@ func _bake_and_build_crowd() -> void:
 # ─── Ambient Projectiles ───────────────────────────────────────────────────
 
 func _cleanup_ambient_projectiles() -> void:
+	if not is_inside_tree():
+		return
 	_waterline_pool.clear()
 	_balloon_pool.clear()
 	if is_instance_valid(_projectiles_container):

@@ -83,13 +83,13 @@ var _collision_bounds_cache: Dictionary = {}
 ## Click to generate buildings along the path
 @export var generate_buildings: bool = false:
 	set(val):
-		if val:
+		if val and is_inside_tree() and is_node_ready():
 			generate()
 
 ## Click to clear all generated buildings
 @export var clear_buildings: bool = false:
 	set(val):
-		if val:
+		if val and is_inside_tree():
 			clear()
 
 ## Automatically re-generates when curve points change
@@ -98,7 +98,7 @@ var _collision_bounds_cache: Dictionary = {}
 ## Click to make this path's Curve3D unique (prevents sharing curves when duplicating nodes)
 @export var make_curve_unique: bool = false:
 	set(val):
-		if val:
+		if val and is_inside_tree():
 			_make_curve_unique()
 
 # ==================== ORIENTATION & FLIP ====================
@@ -244,25 +244,27 @@ var _collision_bounds_cache: Dictionary = {}
 @export var gate_mode: GateMode = GateMode.RANDOM_CHANCE:
 	set(val):
 		gate_mode = val
-		_apply_gate_settings_to_existing()
+		if is_inside_tree() and is_node_ready():
+			_apply_gate_settings_to_existing()
 
 ## Probability of a front iron gate being closed (solid/visible)
 @export_range(0.0, 1.0) var gate_closed_chance: float = 0.5:
 	set(val):
 		gate_closed_chance = val
-		if gate_mode == GateMode.RANDOM_CHANCE:
+		if gate_mode == GateMode.RANDOM_CHANCE and is_inside_tree() and is_node_ready():
 			_apply_gate_settings_to_existing()
 
 ## Only affect front shop doors, leaving rear / back gates intact
 @export var toggle_front_gates_only: bool = true:
 	set(val):
 		toggle_front_gates_only = val
-		_apply_gate_settings_to_existing()
+		if is_inside_tree() and is_node_ready():
+			_apply_gate_settings_to_existing()
 
 ## Click to re-roll gates without rebuilding the buildings
 @export var reroll_gates: bool = false:
 	set(val):
-		if val:
+		if val and is_inside_tree() and is_node_ready():
 			_apply_gate_settings_to_existing()
 
 ## Click to set all front gates to CLOSED (solid)
@@ -270,14 +272,16 @@ var _collision_bounds_cache: Dictionary = {}
 	set(val):
 		if val:
 			gate_mode = GateMode.ALL_CLOSED
-			_apply_gate_settings_to_existing()
+			if is_inside_tree() and is_node_ready():
+				_apply_gate_settings_to_existing()
 
 ## Click to set all front gates to OPEN (accessible)
 @export var set_all_gates_open: bool = false:
 	set(val):
 		if val:
 			gate_mode = GateMode.ALL_OPEN
-			_apply_gate_settings_to_existing()
+			if is_inside_tree() and is_node_ready():
+				_apply_gate_settings_to_existing()
 
 # ==================== BUILDING POOL ====================
 @export_group("Building Pool")
@@ -314,8 +318,9 @@ var _collision_bounds_cache: Dictionary = {}
 		if _has_generated_buildings():
 			generate()
 
-## Generates side party wall occluders between adjacent buildings (culls down-the-street geometry)
-@export var occlude_party_walls: bool = true:
+## Generates side party wall occluders between adjacent buildings (culls down-the-street geometry).
+## False by default to eliminate acute-angle self-culling during fast 180° camera turns; BackWallOccluder handles 100% of street background culling.
+@export var occlude_party_walls: bool = false:
 	set(val):
 		occlude_party_walls = val
 		if _has_generated_buildings():
@@ -328,12 +333,55 @@ var _collision_bounds_cache: Dictionary = {}
 		if _has_generated_buildings():
 			generate()
 
+## Distance in meters the rear back wall occluder is moved forward into the building interior (default 0.35m = 35cm).
+@export var occluder_back_inset: float = 0.35:
+	set(val):
+		occluder_back_inset = maxf(val, 0.0)
+		if _has_generated_buildings():
+			generate()
+
+## Distance in meters the side party wall occluders are moved inward into the building interior (default 0.25m = 25cm).
+@export var occluder_side_inset: float = 0.25:
+	set(val):
+		occluder_side_inset = maxf(val, 0.0)
+		if _has_generated_buildings():
+			generate()
+
 ## Inset from front facade in meters (ensures side occluders do not clip front doors, balconies, or sidewalks)
 @export var occluder_front_inset: float = 0.5:
 	set(val):
 		occluder_front_inset = maxf(val, 0.0)
 		if _has_generated_buildings():
 			generate()
+
+## Extra margin in meters added to each mesh's bounding box for culling tests (default 3.5m).
+## Prevents popping during fast 180° camera turns by expanding bounds tested by occlusion and frustum culling.
+@export var extra_cull_margin: float = 3.5:
+	set(val):
+		extra_cull_margin = maxf(val, 0.0)
+		if is_inside_tree() and is_node_ready():
+			_apply_cull_margin_to_existing()
+
+## Scale multiplier for occluder wall dimensions (default 0.85 = 15% reduction).
+## Keeps both back wall and side party wall occluders safely inside the building core without poking out.
+@export_range(0.5, 1.0, 0.01) var occluder_size_scale: float = 0.85:
+	set(val):
+		occluder_size_scale = clampf(val, 0.1, 1.0)
+		if _has_generated_buildings():
+			generate()
+
+## Automatically deactivates occluders for buildings that are close to the player or camera.
+## Completely prevents near-plane clipping and screen-blanking when walking inside or near buildings.
+@export var disable_near_camera_occluders: bool = true:
+	set(val):
+		disable_near_camera_occluders = val
+		if not val:
+			_restore_all_occluders()
+
+## Distance in meters from the camera or player within which a building's occluders are temporarily deactivated (default 10.0m).
+@export var near_occluder_disable_distance: float = 10.0:
+	set(val):
+		near_occluder_disable_distance = maxf(val, 1.0)
 
 # ==================== DISTANCE DITHER FADE ====================
 @export_group("Distance Dither Fade")
@@ -342,26 +390,30 @@ var _collision_bounds_cache: Dictionary = {}
 @export var enable_distance_fade: bool = true:
 	set(val):
 		enable_distance_fade = val
-		_apply_fade_settings_to_existing()
+		if is_inside_tree() and is_node_ready():
+			_apply_fade_settings_to_existing()
 
 ## Maximum render distance in meters. Beyond this distance, the building is completely dissolved and culled from rendering.
 @export var fade_max_distance: float = 120.0:
 	set(val):
 		fade_max_distance = maxf(val, 5.0)
-		_apply_fade_settings_to_existing()
+		if is_inside_tree() and is_node_ready():
+			_apply_fade_settings_to_existing()
 
 ## Distance margin in meters over which the GPU dither fade occurs.
 ## For example, if max is 120m and margin is 25m, the building begins dissolving at 95m and is fully culled at 120m.
 @export var fade_transition_margin: float = 25.0:
 	set(val):
 		fade_transition_margin = maxf(val, 0.0)
-		_apply_fade_settings_to_existing()
+		if is_inside_tree() and is_node_ready():
+			_apply_fade_settings_to_existing()
 
 ## Screen-space fade mode (VISIBILITY_RANGE_FADE_SELF enables AAA sub-pixel dithering in Forward+).
 @export var fade_mode: GeometryInstance3D.VisibilityRangeFadeMode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF:
 	set(val):
 		fade_mode = val
-		_apply_fade_settings_to_existing()
+		if is_inside_tree() and is_node_ready():
+			_apply_fade_settings_to_existing()
 
 # ==================== BAKE ACTION ====================
 @export_group("Bake to Scene")
@@ -374,32 +426,35 @@ var _collision_bounds_cache: Dictionary = {}
 
 var _connected_curve: Curve3D = null
 var _needs_regenerate: bool = false
+var _near_occluder_check_timer: float = 0.0
 
 func _ready() -> void:
-	if not Engine.is_editor_hint():
-		set_process(false)
-		return
 	_init_default_scenes_if_needed()
-	_ensure_curve_connected()
+	if Engine.is_editor_hint():
+		_ensure_curve_connected()
+	set_process(true)
 
 func _enter_tree() -> void:
-	if not Engine.is_editor_hint():
-		set_process(false)
-		return
-	_ensure_curve_connected()
+	if Engine.is_editor_hint():
+		_ensure_curve_connected()
+	set_process(true)
 
 func _exit_tree() -> void:
 	_disconnect_curve()
 
-func _process(_delta: float) -> void:
-	if not Engine.is_editor_hint():
-		set_process(false)
-		return
-	_ensure_curve_connected()
-	if _needs_regenerate:
-		_needs_regenerate = false
-		if auto_update_on_curve_change and is_inside_tree():
-			generate()
+func _process(delta: float) -> void:
+	if Engine.is_editor_hint():
+		_ensure_curve_connected()
+		if _needs_regenerate:
+			_needs_regenerate = false
+			if auto_update_on_curve_change and is_inside_tree():
+				generate()
+	
+	if disable_near_camera_occluders and generate_occluders:
+		_near_occluder_check_timer += delta
+		if _near_occluder_check_timer >= 0.05:
+			_near_occluder_check_timer = 0.0
+			_update_near_occluders()
 
 func _make_curve_unique() -> void:
 	if curve:
@@ -619,6 +674,8 @@ func _get_or_create_container() -> Node3D:
 	return container
 
 func _has_generated_buildings() -> bool:
+	if not is_inside_tree() or not is_node_ready():
+		return false
 	var container: Node3D = get_node_or_null("GeneratedBuildings") as Node3D
 	return container != null and container.get_child_count() > 0
 
@@ -628,13 +685,12 @@ func clear() -> void:
 	if container:
 		for child in container.get_children():
 			container.remove_child(child)
-			if child.is_inside_tree():
-				child.queue_free()
-			else:
-				child.free()
+			child.queue_free()
 
 ## Main PCG generation algorithm
 func generate() -> void:
+	if not is_inside_tree() or not is_node_ready():
+		return
 	if curve == null:
 		push_warning("BuildingPathPCG: Path3D has no Curve3D assigned.")
 		return
@@ -784,8 +840,6 @@ func _spawn_building(container: Node3D, scene: PackedScene, d: float, rng: Rando
 		building_ctrl = PCG_BUILDING_INSTANCE_SCRIPT.new()
 		building_ctrl.name = "PCGBuildingInstance"
 		instance.add_child(building_ctrl)
-		if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
-			building_ctrl.owner = get_tree().edited_scene_root
 
 	# Apply Iron Gate setting
 	if building_ctrl:
@@ -828,8 +882,6 @@ func _generate_building_occluders(instance: Node3D, scene: PackedScene, prefix: 
 	var occ_group: Node3D = Node3D.new()
 	occ_group.name = "Occluders"
 	instance.add_child(occ_group)
-	if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
-		occ_group.owner = get_tree().edited_scene_root
 
 	var scene_name: String = scene.resource_path.get_file().get_basename().to_lower()
 	var is_left_corner: bool = scene_name.contains("conner_building_left") or scene_name.contains("corner_building_left")
@@ -837,32 +889,32 @@ func _generate_building_occluders(instance: Node3D, scene: PackedScene, prefix: 
 
 	# 1. Back Wall Occluder (culls background city / buildings behind the street)
 	if occlude_back_wall:
-		var back_w: float = maxf(width - (occluder_wall_inset * 2.0), 0.1)
+		var back_w: float = maxf((width * occluder_size_scale) - (occluder_side_inset * 2.0), 0.1)
 		var back_h: float = maxf(height - (occluder_wall_inset * 2.0), 0.1)
 		var back_pos: Vector3 = Vector3(
 			(min_x + max_x) * 0.5,
 			(min_y + max_y) * 0.5,
-			min_z + occluder_wall_inset
+			min_z + occluder_back_inset
 		)
 		_create_quad_occluder(occ_group, "BackWallOccluder", Vector2(back_w, back_h), back_pos, 0.0)
 
 	# 2. Side Party Wall Occluders (culls down-the-street geometry)
 	if occlude_party_walls:
-		var z_start: float = min_z + occluder_wall_inset
+		var z_start: float = min_z + occluder_back_inset
 		var z_end: float = max_z - occluder_front_inset
-		var eff_depth: float = maxf(z_end - z_start, 0.5)
+		var eff_depth: float = maxf((z_end - z_start) * occluder_size_scale, 0.5)
 		var party_h: float = maxf(height - (occluder_wall_inset * 2.0), 0.1)
 		var party_z: float = (z_start + z_end) * 0.5
 		var party_y: float = (min_y + max_y) * 0.5
 
 		# Left Wall: skip if left corner building (outer side faces open side street)
 		if not is_left_corner:
-			var left_pos: Vector3 = Vector3(min_x + occluder_wall_inset, party_y, party_z)
+			var left_pos: Vector3 = Vector3(min_x + occluder_side_inset, party_y, party_z)
 			_create_quad_occluder(occ_group, "LeftPartyWallOccluder", Vector2(eff_depth, party_h), left_pos, 90.0)
 
 		# Right Wall: skip if right corner building (outer side faces open side street)
 		if not is_right_corner:
-			var right_pos: Vector3 = Vector3(max_x - occluder_wall_inset, party_y, party_z)
+			var right_pos: Vector3 = Vector3(max_x - occluder_side_inset, party_y, party_z)
 			_create_quad_occluder(occ_group, "RightPartyWallOccluder", Vector2(eff_depth, party_h), right_pos, 90.0)
 
 ## Helper to create and attach a QuadOccluder3D
@@ -879,10 +931,74 @@ func _create_quad_occluder(parent: Node3D, node_name: String, quad_size: Vector2
 		occ_inst.rotation_degrees = Vector3(0.0, local_rot_y_deg, 0.0)
 
 	parent.add_child(occ_inst)
-	if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
-		occ_inst.owner = get_tree().edited_scene_root
 
 	return occ_inst
+
+## Dynamically deactivates occluders when camera or player is near or inside a building
+func _update_near_occluders() -> void:
+	if not is_inside_tree() or not is_node_ready():
+		return
+	var container: Node3D = get_node_or_null("GeneratedBuildings") as Node3D
+	if not container or container.get_child_count() == 0:
+		return
+
+	# 1. Resolve active camera position
+	var cam: Camera3D = get_viewport().get_camera_3d() if get_viewport() else null
+	var cam_pos: Vector3 = cam.global_position if cam else Vector3(INF, INF, INF)
+	var has_cam: bool = cam != null
+
+	# 2. Resolve active player position if available
+	var player_pos: Vector3 = Vector3(INF, INF, INF)
+	var has_player: bool = false
+	if get_tree():
+		var player_node: Node = get_tree().get_first_node_in_group("player")
+		if player_node and player_node is Node3D:
+			player_pos = (player_node as Node3D).global_position
+			has_player = true
+
+	if not has_cam and not has_player:
+		return
+
+	var threshold_sq: float = near_occluder_disable_distance * near_occluder_disable_distance
+
+	for child in container.get_children():
+		if child.name == "MultiMeshes" or not (child is Node3D):
+			continue
+		
+		var b_node: Node3D = child as Node3D
+		var occ_group: Node = b_node.get_node_or_null("Occluders")
+		if not occ_group:
+			continue
+
+		for occ in occ_group.get_children():
+			if not (occ is OccluderInstance3D):
+				continue
+			var occ_inst: OccluderInstance3D = occ as OccluderInstance3D
+			var occ_pos: Vector3 = occ_inst.global_position
+
+			var dist_sq: float = INF
+			if has_cam:
+				dist_sq = minf(dist_sq, cam_pos.distance_squared_to(occ_pos))
+			if has_player:
+				dist_sq = minf(dist_sq, player_pos.distance_squared_to(occ_pos))
+
+			var should_be_active: bool = dist_sq >= threshold_sq
+			if occ_inst.visible != should_be_active:
+				occ_inst.visible = should_be_active
+
+## Restores all occluders to active when proximity deactivation is turned off
+func _restore_all_occluders() -> void:
+	var container: Node3D = get_node_or_null("GeneratedBuildings") as Node3D
+	if not container:
+		return
+	for child in container.get_children():
+		if child.name == "MultiMeshes" or not (child is Node3D):
+			continue
+		var occ_group: Node = (child as Node3D).get_node_or_null("Occluders")
+		if occ_group:
+			for occ in occ_group.get_children():
+				if occ is OccluderInstance3D:
+					(occ as OccluderInstance3D).visible = true
 
 ## Calculates the position and right-handed orientation Basis at curve distance d
 func _compute_transform_at_distance(d: float) -> Transform3D:
@@ -926,6 +1042,8 @@ func _compute_transform_at_distance(d: float) -> Transform3D:
 
 ## Re-applies gate settings to currently existing buildings without regenerating positions
 func _apply_gate_settings_to_existing() -> void:
+	if not is_inside_tree() or not is_node_ready():
+		return
 	var container: Node3D = get_node_or_null("GeneratedBuildings") as Node3D
 	if not container:
 		return
@@ -971,9 +1089,34 @@ func _apply_distance_fade_to_building(node: Node3D) -> void:
 			mi.visibility_range_end = dist
 			mi.visibility_range_end_margin = margin
 			mi.visibility_range_fade_mode = mode
+			mi.extra_cull_margin = extra_cull_margin
+
+## Re-applies extra cull margin to all currently spawned buildings and MultiMeshes
+func _apply_cull_margin_to_existing() -> void:
+	if not is_inside_tree() or not is_node_ready():
+		return
+	var container: Node3D = get_node_or_null("GeneratedBuildings") as Node3D
+	if not container:
+		return
+
+	for child in container.get_children():
+		if child.name == "MultiMeshes":
+			for mm in child.get_children():
+				if mm is MultiMeshInstance3D:
+					(mm as MultiMeshInstance3D).extra_cull_margin = extra_cull_margin
+			continue
+
+		if child is Node3D:
+			var meshes: Array[Node] = (child as Node3D).find_children("*", "MeshInstance3D", true, false)
+			for m in meshes:
+				var mi: MeshInstance3D = m as MeshInstance3D
+				if mi:
+					mi.extra_cull_margin = extra_cull_margin
 
 ## Re-applies distance dither fade settings to all currently spawned buildings and MultiMeshes
 func _apply_fade_settings_to_existing() -> void:
+	if not is_inside_tree() or not is_node_ready():
+		return
 	var container: Node3D = get_node_or_null("GeneratedBuildings") as Node3D
 	if not container:
 		return
@@ -1093,6 +1236,8 @@ func _apply_multimesh_batching(container: Node3D) -> void:
 		mmi.multimesh = mm
 		if mat != null:
 			mmi.material_override = mat
+
+		mmi.extra_cull_margin = extra_cull_margin
 
 		if enable_distance_fade:
 			mmi.visibility_range_end = fade_max_distance
