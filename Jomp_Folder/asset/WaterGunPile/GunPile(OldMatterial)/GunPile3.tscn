@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://xdtq7idejiha"]
+
+[ext_resource type="PackedScene" uid="uid://ccsuw6xsbxf1o" path="res://Water Gun Glock/Gun_Optimized.fbx" id="1_qouu7"]
+[ext_resource type="PackedScene" uid="uid://bfnsutt8eht5" path="res://Water Gun Rifle/rifle_fix_test.glb" id="2_c5hji"]
+[ext_resource type="PackedScene" uid="uid://dn82gkocbbxpg" path="res://Water Gun Shotty/ShotGunfix.glb" id="3_3jkev"]
+
+[node name="GunPile1" type="Node3D" unique_id=187156827]
+
+[node name="Gun_Optimized3" parent="." unique_id=752221808 instance=ExtResource("1_qouu7")]
+transform = Transform3D(-4.3711402e-08, -1.0000002, 0, 1.0000004, -4.37114e-08, 0, 0, 0, 1.0000004, 0.040280193, 0.06129542, 0.26898497)
+
+[node name="Gun_Optimized4" parent="." unique_id=306021073 instance=ExtResource("1_qouu7")]
+transform = Transform3D(0.10255024, -0.99470925, -0.006119605, 0.99294305, 0.10273265, -0.05925307, 0.059568245, -2.6038103e-09, 0.9982246, -0.0090684, 0.21268919, -0.07955247)
+
+[node name="Gun_Optimized5" parent="." unique_id=53191645 instance=ExtResource("1_qouu7")]
+transform = Transform3D(-0.17205775, 0.6027963, -0.7791234, 0.9840857, 0.14083639, -0.108357534, 0.044411372, -0.7853673, -0.6174349, 0.32250386, 0.21268913, 0.30493876)
+
+[node name="rifle_fix_test" parent="." unique_id=1802651693 instance=ExtResource("2_c5hji")]
+transform = Transform3D(0.086597465, 0.20918354, 0.9740344, 0.9557219, 0.25856456, -0.14049864, -0.28124073, 0.943073, -0.1775302, -0.113114074, 0.15547675, -0.03590408)
+
+[node name="rifle_fix_test2" parent="." unique_id=2105375079 instance=ExtResource("2_c5hji")]
+transform = Transform3D(0.031897914, -0.40362474, 0.9143683, 0.9991119, -0.012316516, -0.04029101, 0.027524235, 0.9148419, 0.40287364, -0.113114074, 0.18124658, -0.2572756)
+
+[node name="ShotGunfix3" parent="." unique_id=226713688 instance=ExtResource("3_3jkev")]
+transform = Transform3D(4.1280007e-08, 0.9443761, 0.32886654, 1.0000001, -4.3711374e-08, 0, 1.4375217e-08, 0.32886648, -0.94437635, -0.45773017, 0.074979156, -0.0042129755)
+
+[node name="ShotGunfix4" parent="." unique_id=927195762 instance=ExtResource("3_3jkev")]
+transform = Transform3D(-0.09922121, 0.21586005, 0.97137, 0.99506545, 0.021524064, 0.09685844, 3.530751e-08, 0.97618675, -0.21693054, -0.34577692, 0.11763987, 0.5053805)
+
+[node name="ShotGunfix5" parent="." unique_id=1980618720 instance=ExtResource("3_3jkev")]
+transform = Transform3D(-0.07750107, 0.41382423, -0.9070517, -0.9848283, 0.10990813, 0.13429001, 0.15526497, 0.90369725, 0.39902803, 0.09776193, 0.119433075, 0.17227697)

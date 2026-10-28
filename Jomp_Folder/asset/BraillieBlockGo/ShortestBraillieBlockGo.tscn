@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://d4q5ug2snq78"]
+
+[ext_resource type="PackedScene" uid="uid://ciikw8iqr6pcm" path="res://Jomp_Folder/asset/BraillieBlockGo/BraillieBlockGo.glb" id="1_vbobn"]
+
+[node name="LongBraillieBlockGo" type="Node3D" unique_id=236526923]
+
+[node name="BraillieBlockGo33" parent="." unique_id=299764691 instance=ExtResource("1_vbobn")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 6.1770363)
+
+[node name="BraillieBlockGo34" parent="." unique_id=208409181 instance=ExtResource("1_vbobn")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 5.3470383)
+
+[node name="BraillieBlockGo35" parent="." unique_id=947570089 instance=ExtResource("1_vbobn")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 4.5170364)
+
+[node name="BraillieBlockGo36" parent="." unique_id=1041041765 instance=ExtResource("1_vbobn")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 3.6870384)
+
+[node name="BraillieBlockGo37" parent="." unique_id=1070235083 instance=ExtResource("1_vbobn")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 2.8570375)
+
+[node name="BraillieBlockGo38" parent="." unique_id=1351884144 instance=ExtResource("1_vbobn")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 2.0270395)
+
+[node name="BraillieBlockGo39" parent="." unique_id=1650094305 instance=ExtResource("1_vbobn")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 1.1970377)
+
+[node name="BraillieBlockGo40" parent="." unique_id=98272981 instance=ExtResource("1_vbobn")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 0.3670349)

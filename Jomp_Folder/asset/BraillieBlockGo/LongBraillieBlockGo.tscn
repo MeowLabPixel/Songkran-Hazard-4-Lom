@@ -5,121 +5,241 @@
 [node name="LongBraillieBlockGo" type="Node3D" unique_id=236526923]
 
 [node name="BraillieBlockGo" parent="." unique_id=70478186 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 16.183773)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 32.73675)
 
 [node name="BraillieBlockGo2" parent="." unique_id=1847464745 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 15.353774)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 31.906754)
 
 [node name="BraillieBlockGo3" parent="." unique_id=956270110 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 14.523774)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 31.076752)
 
 [node name="BraillieBlockGo4" parent="." unique_id=1208020621 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 13.693774)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 30.246754)
 
 [node name="BraillieBlockGo5" parent="." unique_id=861610489 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 12.863775)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 29.416754)
 
 [node name="BraillieBlockGo6" parent="." unique_id=166295387 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 12.033775)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 28.586754)
 
 [node name="BraillieBlockGo7" parent="." unique_id=474371480 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 11.203775)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 27.756754)
 
 [node name="BraillieBlockGo8" parent="." unique_id=190998325 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 10.3737755)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 26.926754)
 
 [node name="BraillieBlockGo9" parent="." unique_id=618709596 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 9.543776)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 26.096754)
 
 [node name="BraillieBlockGo10" parent="." unique_id=9904942 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 8.713777)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 25.266754)
 
 [node name="BraillieBlockGo11" parent="." unique_id=1004452364 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 7.8837776)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 24.436756)
 
 [node name="BraillieBlockGo12" parent="." unique_id=1382012633 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 7.0537777)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 23.606756)
 
 [node name="BraillieBlockGo13" parent="." unique_id=844425252 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 6.223778)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 22.776756)
 
 [node name="BraillieBlockGo14" parent="." unique_id=1301964409 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 5.393778)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 21.946756)
 
 [node name="BraillieBlockGo15" parent="." unique_id=81342371 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 4.563778)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 21.116756)
 
 [node name="BraillieBlockGo16" parent="." unique_id=1692296506 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 3.7337782)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 20.286757)
 
 [node name="BraillieBlockGo17" parent="." unique_id=1194152458 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 2.9037786)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 19.456757)
 
 [node name="BraillieBlockGo18" parent="." unique_id=679499747 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 2.0737786)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 18.626757)
 
 [node name="BraillieBlockGo19" parent="." unique_id=233030179 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 1.2437772)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 17.796755)
 
 [node name="BraillieBlockGo20" parent="." unique_id=1501246288 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 0.41377646)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 16.966755)
 
 [node name="BraillieBlockGo21" parent="." unique_id=494822128 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -0.4159456)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 16.137032)
 
 [node name="BraillieBlockGo22" parent="." unique_id=403830626 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -1.2459453)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 15.307034)
 
 [node name="BraillieBlockGo23" parent="." unique_id=1234266510 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -2.075945)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 14.477034)
 
 [node name="BraillieBlockGo24" parent="." unique_id=1703946255 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -2.9059448)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 13.647034)
 
 [node name="BraillieBlockGo25" parent="." unique_id=987394559 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -3.7359445)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 12.817034)
 
 [node name="BraillieBlockGo26" parent="." unique_id=292897033 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -4.5659447)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 11.987034)
 
 [node name="BraillieBlockGo27" parent="." unique_id=776863828 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -5.3959446)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 11.157034)
 
 [node name="BraillieBlockGo28" parent="." unique_id=1129714887 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -6.2259445)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 10.327034)
 
 [node name="BraillieBlockGo29" parent="." unique_id=2134626757 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -7.0559435)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 9.497035)
 
 [node name="BraillieBlockGo30" parent="." unique_id=1741788134 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -7.8859415)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 8.667037)
 
 [node name="BraillieBlockGo31" parent="." unique_id=578793025 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -8.715942)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 7.837036)
 
 [node name="BraillieBlockGo32" parent="." unique_id=1095388528 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -9.54594)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 7.007038)
 
 [node name="BraillieBlockGo33" parent="." unique_id=299764691 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -10.375942)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 6.1770363)
 
 [node name="BraillieBlockGo34" parent="." unique_id=208409181 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -11.20594)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 5.3470383)
 
 [node name="BraillieBlockGo35" parent="." unique_id=947570089 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -12.035942)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 4.5170364)
 
 [node name="BraillieBlockGo36" parent="." unique_id=1041041765 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -12.86594)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 3.6870384)
 
 [node name="BraillieBlockGo37" parent="." unique_id=1070235083 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -13.695941)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 2.8570375)
 
 [node name="BraillieBlockGo38" parent="." unique_id=1351884144 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -14.525939)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 2.0270395)
 
 [node name="BraillieBlockGo39" parent="." unique_id=1650094305 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -15.355941)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 1.1970377)
 
 [node name="BraillieBlockGo40" parent="." unique_id=98272981 instance=ExtResource("1_ohbcy")]
-transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, -16.185944)
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 0.3670349)
+
+[node name="BraillieBlockGo41" parent="." unique_id=447379952 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 65.93706)
+
+[node name="BraillieBlockGo42" parent="." unique_id=1348059160 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 65.107056)
+
+[node name="BraillieBlockGo43" parent="." unique_id=1184654730 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 64.277054)
+
+[node name="BraillieBlockGo44" parent="." unique_id=2090616519 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 63.447052)
+
+[node name="BraillieBlockGo45" parent="." unique_id=1520147290 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 62.617054)
+
+[node name="BraillieBlockGo46" parent="." unique_id=409449226 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 61.787056)
+
+[node name="BraillieBlockGo47" parent="." unique_id=1442917444 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 60.957054)
+
+[node name="BraillieBlockGo48" parent="." unique_id=921338660 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 60.127052)
+
+[node name="BraillieBlockGo49" parent="." unique_id=1513622082 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 59.297054)
+
+[node name="BraillieBlockGo50" parent="." unique_id=239582116 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 58.467056)
+
+[node name="BraillieBlockGo51" parent="." unique_id=530261765 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 57.637054)
+
+[node name="BraillieBlockGo52" parent="." unique_id=187936112 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 56.807056)
+
+[node name="BraillieBlockGo53" parent="." unique_id=879181909 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 55.97706)
+
+[node name="BraillieBlockGo54" parent="." unique_id=1978408464 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 55.147057)
+
+[node name="BraillieBlockGo55" parent="." unique_id=421086349 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 54.317055)
+
+[node name="BraillieBlockGo56" parent="." unique_id=1078468817 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 53.487057)
+
+[node name="BraillieBlockGo57" parent="." unique_id=322308748 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 52.65706)
+
+[node name="BraillieBlockGo58" parent="." unique_id=1460820736 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 51.827057)
+
+[node name="BraillieBlockGo59" parent="." unique_id=645856497 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 50.997055)
+
+[node name="BraillieBlockGo60" parent="." unique_id=1869854648 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020994842, 50.167053)
+
+[node name="BraillieBlockGo61" parent="." unique_id=1732979762 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 49.337334)
+
+[node name="BraillieBlockGo62" parent="." unique_id=1840743066 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 48.50733)
+
+[node name="BraillieBlockGo63" parent="." unique_id=1583162339 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 47.677334)
+
+[node name="BraillieBlockGo64" parent="." unique_id=1946671374 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 46.847336)
+
+[node name="BraillieBlockGo65" parent="." unique_id=665720764 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 46.017334)
+
+[node name="BraillieBlockGo66" parent="." unique_id=1911547198 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 45.187332)
+
+[node name="BraillieBlockGo67" parent="." unique_id=101235409 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 44.357334)
+
+[node name="BraillieBlockGo68" parent="." unique_id=204613098 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 43.527336)
+
+[node name="BraillieBlockGo69" parent="." unique_id=320872232 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 42.697334)
+
+[node name="BraillieBlockGo70" parent="." unique_id=889836108 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 41.867336)
+
+[node name="BraillieBlockGo71" parent="." unique_id=625686857 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 41.03734)
+
+[node name="BraillieBlockGo72" parent="." unique_id=429006199 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 40.207336)
+
+[node name="BraillieBlockGo73" parent="." unique_id=1158245105 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 39.377335)
+
+[node name="BraillieBlockGo74" parent="." unique_id=745162035 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 38.54734)
+
+[node name="BraillieBlockGo75" parent="." unique_id=1934842538 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 37.71734)
+
+[node name="BraillieBlockGo76" parent="." unique_id=1098237567 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 36.887337)
+
+[node name="BraillieBlockGo77" parent="." unique_id=1180691824 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 36.05734)
+
+[node name="BraillieBlockGo78" parent="." unique_id=1895650459 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 35.22734)
+
+[node name="BraillieBlockGo79" parent="." unique_id=1353177179 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 34.39734)
+
+[node name="BraillieBlockGo80" parent="." unique_id=93069883 instance=ExtResource("1_ohbcy")]
+transform = Transform3D(-0.00022503691, 0, 0.39999995, 0, 0.226, 0, -0.39999995, 0, -0.00022503691, 0, -0.020995319, 33.567337)
