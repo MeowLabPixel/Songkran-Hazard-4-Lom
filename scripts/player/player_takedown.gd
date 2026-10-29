@@ -8,6 +8,10 @@ var anim_name = "TD/Take down anim"
 @export_range(0.8, 2.0, 0.05) var release_speed_scale: float = 1.25   ## Explosive release speed scale when kick strikes
 @export_range(1.0, 3.0, 0.1) var acceleration_curve: float = 1.4     ## Exponential acceleration curve during windup
 
+@export_group("Damage Settings")
+@export_range(0.0, 50.0, 0.1) var takedown_damage: float = 3.0           ## Direct damage dealt to the primary takedown target
+@export_range(0.0, 50.0, 0.1) var takedown_splash_damage: float = 2.3    ## Collateral splash / domino damage dealt to surrounding targets
+
 @export_group("Hit Stop Settings")
 @export var enable_hit_stop: bool = true
 @export var enable_domino_hit_stop: bool = true
@@ -242,7 +246,7 @@ func _update(delta: float) -> void:
 			var is_fatal: bool = false
 			if is_instance_valid(enemy):
 				if "current_hp" in enemy:
-					is_fatal = (enemy.current_hp <= 1.33 or enemy.current_hp <= 0)
+					is_fatal = (enemy.current_hp <= takedown_splash_damage) if takedown_splash_damage > 0.0 else (enemy.current_hp <= 0)
 				if not is_fatal and ("is_takedown_defeat" in enemy or "is_defeated" in enemy):
 					is_fatal = (enemy.get("is_takedown_defeat") == true or enemy.get("is_defeated") == true)
 			_domino_timer = domino_fatal_delay if is_fatal else domino_delay
@@ -382,7 +386,7 @@ func _register_enemy_takedown_hit(enemy: Node, hit_node: Node = null) -> void:
 		if _pending_domino_hits.size() == 1:
 			var is_fatal: bool = false
 			if "current_hp" in enemy:
-				is_fatal = (enemy.current_hp <= 1.33 or enemy.current_hp <= 0)
+				is_fatal = (enemy.current_hp <= takedown_splash_damage) if takedown_splash_damage > 0.0 else (enemy.current_hp <= 0)
 			if not is_fatal and ("is_takedown_defeat" in enemy or "is_defeated" in enemy):
 				is_fatal = (enemy.get("is_takedown_defeat") == true or enemy.get("is_defeated") == true)
 			_domino_timer = domino_fatal_delay if is_fatal else domino_delay
@@ -534,7 +538,7 @@ func _execute_primary_hit(enemy: Node) -> void:
 
 	if enemy.has_method("take_hit"):
 		enemy.take_hit({
-			"damage": 1.33,
+			"damage": takedown_damage,
 			"hit_zone": "body",
 			"hit_type": "takedown",
 			"hit_direction": hit_dir,
@@ -615,7 +619,7 @@ func _execute_splash_hit(hit_info: Dictionary) -> void:
 		was_already_dead = true
 
 	enemy.take_hit({
-		"damage": 1.33,
+		"damage": takedown_splash_damage,
 		"hit_zone": zone_name,
 		"hit_type": "takedown_splash",
 		"hit_direction": hit_dir,

@@ -483,8 +483,6 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_w2h1s")
 
-[sub_resource type="MultiMesh" id="MultiMesh_ligby"]
-
 [node name="NPC_Gun" type="Node3D" unique_id=570137082]
 
 [node name="Typical_WaterGun_Model" type="Node3D" parent="." unique_id=941040778]
@@ -543,6 +541,3 @@ mesh = SubResource("ArrayMesh_42ad1")
 metadata/extras = {
 "yp_decal": {}
 }
-
-[node name="MultiMeshInstance3D" type="MultiMeshInstance3D" parent="." unique_id=2039018412]
-multimesh = SubResource("MultiMesh_ligby")

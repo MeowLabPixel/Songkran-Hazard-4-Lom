@@ -345,11 +345,66 @@ func exit_takedown_camera_transition() -> void:
 
 
 func is_action_camera_active() -> bool:
-	if is_death_camera_active:
+	if is_death_camera_active or is_shop_camera_active:
 		return true
 	var is_offsetting = absf(action_offset_x) > 0.01 or absf(action_offset_y) > 0.01 or absf(action_pitch) > 0.01 or absf(action_spring_length) > 0.01
 	var is_tweening = (offset_x_tween != null and offset_x_tween.is_running()) or (offset_tween != null and offset_tween.is_running()) or (pitch_tween != null and pitch_tween.is_running()) or (spring_tween != null and spring_tween.is_running())
 	return is_offsetting or is_tweening
+
+# Shop Camera Transition Mode
+var is_shop_camera_active: bool = false
+var _is_entering_shop_cam: bool = false
+var _shop_cam_target: Node3D = null
+var _shop_cam_blend: float = 0.0
+var _shop_cam_tween: Tween = null
+var _shop_cam_from_transform: Transform3D = Transform3D.IDENTITY
+var _shop_cam_from_fov: float = 65.0
+
+func transition_to_shop_camera(target_cam: Node3D, duration: float = 0.5, on_finished: Callable = Callable()) -> void:
+	if not target_cam or not is_instance_valid(target_cam) or not camera:
+		if on_finished.is_valid():
+			on_finished.call()
+		return
+	if _shop_cam_tween and _shop_cam_tween.is_valid():
+		_shop_cam_tween.kill()
+		
+	is_shop_camera_active = true
+	_is_entering_shop_cam = true
+	_shop_cam_target = target_cam
+	_shop_cam_from_transform = camera.global_transform
+	_shop_cam_from_fov = camera.fov
+	_shop_cam_blend = 0.0
+	camera_trauma = 0.0
+	camera.h_offset = 0.0
+	camera.v_offset = 0.0
+	
+	_shop_cam_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	_shop_cam_tween.tween_property(self, "_shop_cam_blend", 1.0, duration)
+	if on_finished.is_valid():
+		_shop_cam_tween.tween_callback(on_finished)
+
+func exit_shop_camera(duration: float = 0.5, on_finished: Callable = Callable()) -> void:
+	if not is_shop_camera_active or not camera:
+		is_shop_camera_active = false
+		if on_finished.is_valid():
+			on_finished.call()
+		return
+	if _shop_cam_tween and _shop_cam_tween.is_valid():
+		_shop_cam_tween.kill()
+		
+	_is_entering_shop_cam = false
+	_shop_cam_from_transform = camera.global_transform
+	_shop_cam_from_fov = camera.fov
+	_shop_cam_blend = 1.0
+	
+	_shop_cam_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	_shop_cam_tween.tween_property(self, "_shop_cam_blend", 0.0, duration)
+	_shop_cam_tween.tween_callback(func():
+		is_shop_camera_active = false
+		_shop_cam_target = null
+		if on_finished.is_valid():
+			on_finished.call()
+	)
 
 # Cinematic Overhead Pull-Back Death Camera
 @export var death_cam_dutch_tilt_angle: float = 15.0
@@ -702,9 +757,32 @@ func _process(delta: float) -> void:
 		
 		# The local offset is now simply interpolated fast to follow the fully-smoothed spring arm!
 		current_local_transform = current_local_transform.interpolate_with(target_local_transform, _exp_decay(25.0, delta)).orthonormalized()
+		var player_cam_transform = global_transform * current_local_transform
 		
-		# Apply the smoothed local offset to the pivot's current global transform
-		camera.global_transform = global_transform * current_local_transform
+		# Apply Shop Camera Lerp if active
+		if is_shop_camera_active:
+			if _is_entering_shop_cam and is_instance_valid(_shop_cam_target):
+				var target_xform = _shop_cam_target.global_transform
+				var target_fov = (_shop_cam_target as Camera3D).fov if (_shop_cam_target is Camera3D) else defaut_camera_fov
+				var q_from = _shop_cam_from_transform.basis.orthonormalized().get_rotation_quaternion()
+				var q_to = target_xform.basis.orthonormalized().get_rotation_quaternion()
+				var cur_quat = q_from.slerp(q_to, _shop_cam_blend)
+				var cur_origin = _shop_cam_from_transform.origin.lerp(target_xform.origin, _shop_cam_blend)
+				camera.global_transform = Transform3D(Basis(cur_quat), cur_origin)
+				camera.fov = lerpf(_shop_cam_from_fov, target_fov, _shop_cam_blend)
+			else:
+				var q_player = player_cam_transform.basis.orthonormalized().get_rotation_quaternion()
+				var q_shop = _shop_cam_from_transform.basis.orthonormalized().get_rotation_quaternion()
+				var cur_quat = q_player.slerp(q_shop, _shop_cam_blend)
+				var cur_origin = player_cam_transform.origin.lerp(_shop_cam_from_transform.origin, _shop_cam_blend)
+				camera.global_transform = Transform3D(Basis(cur_quat), cur_origin)
+				camera.fov = lerpf(defaut_camera_fov, _shop_cam_from_fov, _shop_cam_blend)
+			camera.h_offset = 0.0
+			camera.v_offset = 0.0
+			return
+		else:
+			# Apply the smoothed local offset to the pivot's current global transform
+			camera.global_transform = player_cam_transform
 		
 		var is_aiming_now_calc = character and character.is_aimming
 		var is_grab_now_calc = character and character.is_grab
@@ -742,7 +820,7 @@ func _process(delta: float) -> void:
 
 
 func _input(event: InputEvent)-> void:
-	if is_death_camera_active:
+	if is_death_camera_active or is_shop_camera_active:
 		return
 	if event.is_action_pressed("ui_cancel"):
 		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
@@ -751,8 +829,9 @@ func _input(event: InputEvent)-> void:
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		
 	if event is InputEventMouseMotion:
-		var mouse_event: Vector2 = event.screen_relative * mouse_sensitivity
-		camera_look(mouse_event)
+		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED and not (character and character.get("is_in_shop")):
+			var mouse_event: Vector2 = event.screen_relative * mouse_sensitivity
+			camera_look(mouse_event)
 	#if event.is_action_pressed("swap_camera_alignment"):
 		#swap_camera_align()
 	if event.is_action_pressed("aim"):
@@ -827,7 +906,7 @@ func _apply_camera_rotation(delta: float = 0.016) -> void:
 	var is_aiming_now = character and character.is_aimming
 	var is_grab_now = character and character.is_grab
 	
-	if not character.is_quick_turn:
+	if not character.is_quick_turn and not is_shop_camera_active:
 		character.transform.basis = Basis()
 		character.rotate_object_local(Vector3(0,1,0), -(camera_rotation.x + takedown_yaw_offset))
 

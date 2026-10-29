@@ -1,0 +1,814 @@
+[gd_scene format=3 uid="uid://c4tq8v2e8g3m1"]
+
+[ext_resource type="Script" uid="uid://b8tye3s6k4ww" path="res://scripts/ui/merchant_shop_menu.gd" id="1_shop"]
+[ext_resource type="FontFile" uid="uid://cdcjipjgje6i5" path="res://scenes/font/iannnnn-DOG-Bold.ttf" id="2_dog_bold"]
+[ext_resource type="FontFile" uid="uid://ou8xc5g0xeno" path="res://scenes/font/iannnnnVCD 2007 Bold.ttf" id="3_vcd_bold"]
+[ext_resource type="PackedScene" uid="uid://dn82gkocbbxpg" path="res://Water Gun Shotty/ShotGunfix.glb" id="4_shotgun_model"]
+[ext_resource type="Shader" uid="uid://dcegifxq1hct2" path="res://shaders/cosine_water_bg.gdshader" id="5_water_bg_shader"]
+[ext_resource type="Shader" uid="uid://332p7t565wdu" path="res://shaders/stylized_bucket_water.gdshader" id="6_bucket_water_shader"]
+[ext_resource type="Texture2D" uid="uid://bvftd4htxxko2" path="res://scenes/ui/merchant_checker_curtain.png" id="7_curtain_tex"]
+[ext_resource type="PackedScene" uid="uid://c0jyhggqnqgcw" path="res://GunSystem/Scene/WaterGun/shotgun.tscn" id="8_3h11r"]
+[ext_resource type="Texture2D" uid="uid://xiwlawixdesc" path="res://scenes/ui/merchant_checker_pattern.png" id="8_pattern_tex"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_water_bg"]
+shader = ExtResource("5_water_bg_shader")
+shader_parameter/uv_scale = 1.2
+shader_parameter/color_alpha = 0.85
+shader_parameter/water_colour = Color(0.04, 0.1, 0.28, 1)
+shader_parameter/sky_colour = Color(0.08, 0.52, 0.72, 1)
+shader_parameter/foam_colour = Color(0.7, 0.9, 1, 1)
+shader_parameter/specular_colour = Color(1, 1, 1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_circle_window"]
+bg_color = Color(0.04, 0.08, 0.22, 0.95)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.098, 0.086, 0.455, 1)
+corner_radius_top_left = 220
+corner_radius_top_right = 220
+corner_radius_bottom_right = 220
+corner_radius_bottom_left = 220
+shadow_color = Color(0, 0.087, 0.316, 1)
+shadow_offset = Vector2(8, 10)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yellow_beam"]
+bg_color = Color(0.988, 0.831, 0.13, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.098, 0.086, 0.455, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0.087, 0.316, 1)
+shadow_offset = Vector2(4, 5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_desc_card"]
+bg_color = Color(0.05, 0.06, 0.2, 0.95)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.098, 0.086, 0.455, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 32
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 32
+shadow_color = Color(0, 0.087, 0.316, 1)
+shadow_offset = Vector2(6, 7)
+
+[sub_resource type="Environment" id="Environment_preview"]
+background_mode = 1
+background_color = Color(0.04, 0.07, 0.18, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.75, 0.85, 1, 1)
+ambient_light_energy = 0.9
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bucket_water"]
+render_priority = 0
+shader = ExtResource("6_bucket_water_shader")
+shader_parameter/absorption_color = Color(0.05, 0.55, 0.85, 1)
+shader_parameter/fresnel_radius = 2.0
+shader_parameter/fresnel_color = Color(0.15, 0.8, 1, 1)
+shader_parameter/roughness = 0.15
+shader_parameter/specular = 0.35
+shader_parameter/depth_distance = 15.0
+shader_parameter/beers_law = 4.0
+shader_parameter/displacement_strength = 0.15
+shader_parameter/displacement_scroll_speed = 0.1
+shader_parameter/displacement_scroll_offset = Vector2(-0.2, 0.3)
+shader_parameter/displacement_scale_offset = 0.5
+shader_parameter/displacement_scale = Vector2(0.04, 0.04)
+shader_parameter/edge_thickness = 0.25
+shader_parameter/edge_speed = 0.35
+shader_parameter/edge_noise_scale = Vector2(0.4, 0.4)
+shader_parameter/influence_size = 1.0
+shader_parameter/player_wave_frequenzy = 10.0
+shader_parameter/player_wave_speed = 5.0
+shader_parameter/caustic_size = 2.0
+shader_parameter/caustic_range = 40.0
+shader_parameter/caustic_strength = 0.08
+shader_parameter/ssr_mix_strength = 0.5
+shader_parameter/ssr_travel = 50.0
+shader_parameter/ssr_resolution_near = 1.0
+shader_parameter/ssr_resolution_far = 5.0
+shader_parameter/ssr_tolerance = 1.0
+shader_parameter/refraction_strength = 0.6
+shader_parameter/normal_map_strength = 0.8
+shader_parameter/scroll_speed = 0.25
+shader_parameter/scroll_offset = Vector2(0.1, -0.3)
+shader_parameter/scale_offset = 0.5
+shader_parameter/normal_map_scale = Vector2(0.1, 0.1)
+shader_parameter/wind_intensity = 0.4
+shader_parameter/wind_direction = Vector3(1, 0, 0)
+shader_parameter/player_position = Vector3(0, 0, 0)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_water"]
+material = SubResource("ShaderMaterial_bucket_water")
+size = Vector2(3.5, 3.5)
+subdivide_width = 32
+subdivide_depth = 32
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_buy_card"]
+bg_color = Color(0.91, 0.31, 0.36, 0.97)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.098, 0.086, 0.455, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 36
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 36
+shadow_color = Color(0, 0.087, 0.316, 1)
+shadow_offset = Vector2(8, 10)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_coin_badge"]
+bg_color = Color(1, 0.88, 0.35, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.098, 0.086, 0.455, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 24
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 24
+shadow_color = Color(0, 0.087, 0.316, 1)
+shadow_offset = Vector2(3, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_item_row"]
+bg_color = Color(0.18, 0.05, 0.1, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.098, 0.086, 0.455, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 24
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 24
+shadow_color = Color(0, 0.087, 0.316, 1)
+shadow_offset = Vector2(4, 5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_confirm_card"]
+bg_color = Color(0.05, 0.06, 0.22, 0.98)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.098, 0.086, 0.455, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 36
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 36
+shadow_color = Color(0, 0.087, 0.316, 1)
+shadow_offset = Vector2(8, 10)
+
+[node name="MerchantShopMenu" type="CanvasLayer" unique_id=650997050 node_paths=PackedStringArray("state_options", "state_buy", "state_confirm", "curtain_overlay", "curtain_left", "curtain_right", "top_ribbon", "bottom_ribbon", "background_water", "yellow_beam", "btn_buy", "btn_tune", "btn_sell", "desc_label", "coins_label", "shotgun_row_btn", "shotgun_row_status", "shotgun_pivot", "status_label", "confirm_prompt_label", "confirm_cost_label", "btn_confirm", "btn_cancle", "confirm_shotgun_pivot")]
+process_mode = 3
+layer = 120
+script = ExtResource("1_shop")
+state_options = NodePath("StateRoot_Options")
+state_buy = NodePath("StateRoot_BuyMenu")
+state_confirm = NodePath("StateRoot_Confirm")
+curtain_overlay = NodePath("CurtainOverlay")
+curtain_left = NodePath("CurtainOverlay/CurtainLeft")
+curtain_right = NodePath("CurtainOverlay/CurtainRight")
+top_ribbon = NodePath("TopRibbon")
+bottom_ribbon = NodePath("BottomRibbon")
+background_water = NodePath("BackgroundWater")
+yellow_beam = NodePath("StateRoot_Options/CenterWindow/YellowBeam")
+btn_buy = NodePath("StateRoot_Options/CenterWindow/OptionsVBox/Btn_Buy")
+btn_tune = NodePath("StateRoot_Options/CenterWindow/OptionsVBox/Btn_Tune")
+btn_sell = NodePath("StateRoot_Options/CenterWindow/OptionsVBox/Btn_Sell")
+desc_label = NodePath("StateRoot_Options/DescriptionCard/Margin/DescLabel")
+coins_label = NodePath("StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/HeaderHBox/CoinBadge/Margin/CoinLabel")
+shotgun_row_btn = NodePath("StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/ShotgunRow/RowButton")
+shotgun_row_status = NodePath("StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/ShotgunRow/Margin/HBox/StatusBadge/BadgeLabel")
+shotgun_pivot = NodePath("StateRoot_BuyMenu/LeftCircularFrame/TurntableSVC/TurntableViewport/ShotgunPivot")
+status_label = NodePath("StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/StatusLabel")
+confirm_prompt_label = NodePath("StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/PromptTitle")
+confirm_cost_label = NodePath("StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/CostSubtitle")
+btn_confirm = NodePath("StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/ButtonHBox/ConfirmButton")
+btn_cancle = NodePath("StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/ButtonHBox/CancleButton")
+confirm_shotgun_pivot = NodePath("StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/WeaponPreviewFrame/TurntableSVC/TurntableViewport/ShotgunPivot")
+
+[node name="BackgroundWater" type="ColorRect" parent="." unique_id=944025548]
+material = SubResource("ShaderMaterial_water_bg")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="BackgroundDimmer" type="ColorRect" parent="." unique_id=190794214]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.04, 0.03, 0.12, 0.45)
+
+[node name="TopRibbon" type="TextureRect" parent="." unique_id=485612820]
+texture_repeat = 2
+custom_minimum_size = Vector2(1600, 52)
+offset_left = -160.0
+offset_top = -6.0
+offset_right = 1440.0
+offset_bottom = 46.0
+rotation = -0.0261799
+mouse_filter = 2
+texture = ExtResource("8_pattern_tex")
+stretch_mode = 1
+
+[node name="BottomRibbon" type="TextureRect" parent="." unique_id=567869297]
+texture_repeat = 2
+custom_minimum_size = Vector2(1600, 52)
+offset_left = -160.0
+offset_top = 674.0
+offset_right = 1440.0
+offset_bottom = 726.0
+rotation = 0.0261799
+mouse_filter = 2
+texture = ExtResource("8_pattern_tex")
+stretch_mode = 1
+
+[node name="StateRoot_Options" type="Control" parent="." unique_id=106115663]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterWindow" type="PanelContainer" parent="StateRoot_Options" unique_id=2041045337]
+custom_minimum_size = Vector2(440, 440)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -220.0
+offset_right = 220.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_circle_window")
+
+[node name="YellowBeam" type="Panel" parent="StateRoot_Options/CenterWindow" unique_id=198530070]
+custom_minimum_size = Vector2(480, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_yellow_beam")
+
+[node name="OptionsVBox" type="VBoxContainer" parent="StateRoot_Options/CenterWindow" unique_id=1666818031]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/separation = 22
+
+[node name="Btn_Buy" type="Button" parent="StateRoot_Options/CenterWindow/OptionsVBox" unique_id=444106169]
+custom_minimum_size = Vector2(260, 62)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 28
+text = "BUY"
+
+[node name="Btn_Tune" type="Button" parent="StateRoot_Options/CenterWindow/OptionsVBox" unique_id=1835269159]
+custom_minimum_size = Vector2(260, 62)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 28
+text = "TUNE"
+
+[node name="Btn_Sell" type="Button" parent="StateRoot_Options/CenterWindow/OptionsVBox" unique_id=1055405406]
+custom_minimum_size = Vector2(260, 62)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 28
+text = "SELL"
+
+[node name="DescriptionCard" type="PanelContainer" parent="StateRoot_Options" unique_id=239372829]
+custom_minimum_size = Vector2(420, 110)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -460.0
+offset_top = -180.0
+offset_right = -40.0
+offset_bottom = -70.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_desc_card")
+
+[node name="Margin" type="MarginContainer" parent="StateRoot_Options/DescriptionCard" unique_id=601492831]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="DescLabel" type="Label" parent="StateRoot_Options/DescriptionCard/Margin" unique_id=785826012]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.087, 0.316, 1)
+theme_override_colors/font_outline_color = Color(0.098, 0.086, 0.455, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 5
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 20
+text = "Buy water gun and drying item"
+autowrap_mode = 2
+
+[node name="OptionsGuide" type="Label" parent="StateRoot_Options" unique_id=2010778899]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -54.0
+offset_right = 200.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 0.92, 0.5, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.087, 0.316, 1)
+theme_override_colors/font_outline_color = Color(0.098, 0.086, 0.455, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 5
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 18
+text = "[E] Select    [Q] / [ESC] Exit Shop"
+horizontal_alignment = 1
+
+[node name="StateRoot_BuyMenu" type="Control" parent="." unique_id=248110786]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LeftCircularFrame" type="PanelContainer" parent="StateRoot_BuyMenu" unique_id=1916383128]
+clip_children = 1
+custom_minimum_size = Vector2(440, 440)
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 80.0
+offset_top = -220.0
+offset_right = 520.0
+offset_bottom = 220.0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_circle_window")
+
+[node name="TurntableSVC" type="SubViewportContainer" parent="StateRoot_BuyMenu/LeftCircularFrame" unique_id=120306538]
+layout_mode = 2
+stretch = true
+
+[node name="TurntableViewport" type="SubViewport" parent="StateRoot_BuyMenu/LeftCircularFrame/TurntableSVC" unique_id=2130823156]
+own_world_3d = true
+handle_input_locally = false
+size = Vector2i(2, 2)
+render_target_update_mode = 0
+
+[node name="Camera3D" type="Camera3D" parent="StateRoot_BuyMenu/LeftCircularFrame/TurntableSVC/TurntableViewport" unique_id=1736371945]
+transform = Transform3D(1, 0, 0, 0, 0.906308, 0.422618, 0, -0.422618, 0.906308, 0, 0.55, 1.25)
+environment = SubResource("Environment_preview")
+fov = 42.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="StateRoot_BuyMenu/LeftCircularFrame/TurntableSVC/TurntableViewport" unique_id=1349880047]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 1.5, 2.5, 2)
+light_color = Color(1, 0.98, 0.9, 1)
+light_energy = 1.4
+
+[node name="WaterSurface" type="MeshInstance3D" parent="StateRoot_BuyMenu/LeftCircularFrame/TurntableSVC/TurntableViewport" unique_id=2034405212]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+mesh = SubResource("PlaneMesh_water")
+
+[node name="ShotgunPivot" type="Node3D" parent="StateRoot_BuyMenu/LeftCircularFrame/TurntableSVC/TurntableViewport" unique_id=1070622256]
+transform = Transform3D(0.866025, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866025, 0, 0.08, 0)
+
+[node name="ShotGunfix" parent="StateRoot_BuyMenu/LeftCircularFrame/TurntableSVC/TurntableViewport/ShotgunPivot" unique_id=590231695 instance=ExtResource("4_shotgun_model")]
+transform = Transform3D(0.65, 0, 0, 0, 0.65, 0, 0, 0, 0.65, 0, -0.05, 0)
+
+[node name="RightBuyCard" type="PanelContainer" parent="StateRoot_BuyMenu" unique_id=1555087145]
+custom_minimum_size = Vector2(580, 480)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -660.0
+offset_top = -240.0
+offset_right = -80.0
+offset_bottom = 240.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_buy_card")
+
+[node name="Margin" type="MarginContainer" parent="StateRoot_BuyMenu/RightBuyCard" unique_id=872479168]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
+
+[node name="ContentVBox" type="VBoxContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin" unique_id=926120051]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="HeaderHBox" type="HBoxContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox" unique_id=23117324]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/HeaderHBox" unique_id=345771632]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.087, 0.316, 1)
+theme_override_colors/font_outline_color = Color(0.098, 0.086, 0.455, 1)
+theme_override_constants/shadow_offset_x = 3
+theme_override_constants/shadow_offset_y = 3
+theme_override_constants/outline_size = 7
+theme_override_fonts/font = ExtResource("3_vcd_bold")
+theme_override_font_sizes/font_size = 38
+text = "BUY"
+
+[node name="Spacer" type="Control" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/HeaderHBox" unique_id=125890720]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CoinBadge" type="PanelContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/HeaderHBox" unique_id=926460170]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_coin_badge")
+
+[node name="Margin" type="MarginContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/HeaderHBox/CoinBadge" unique_id=1790039897]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 4
+
+[node name="CoinLabel" type="Label" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/HeaderHBox/CoinBadge/Margin" unique_id=469202571]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.098, 0.086, 0.455, 1)
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 20
+text = "🪙 0"
+
+[node name="HSeparator" type="HSeparator" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox" unique_id=871715609]
+layout_mode = 2
+
+[node name="ItemListVBox" type="VBoxContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox" unique_id=1528974247]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ShotgunRow" type="PanelContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox" unique_id=1182910667]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_item_row")
+
+[node name="Margin" type="MarginContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/ShotgunRow" unique_id=1774231051]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="HBox" type="HBoxContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/ShotgunRow/Margin" unique_id=1525101439]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ItemInfoVBox" type="VBoxContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/ShotgunRow/Margin/HBox" unique_id=399663270]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ItemName" type="Label" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/ShotgunRow/Margin/HBox/ItemInfoVBox" unique_id=1371148611]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.087, 0.316, 1)
+theme_override_colors/font_outline_color = Color(0.098, 0.086, 0.455, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 20
+text = "Water Splash Gun"
+
+[node name="ItemStats" type="Label" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/ShotgunRow/Margin/HBox/ItemInfoVBox" unique_id=994572697]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.9, 1, 0.85)
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 14
+text = "Heavy spread blast | High soak capacity"
+
+[node name="StatusBadge" type="PanelContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/ShotgunRow/Margin/HBox" unique_id=1494683474]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="BadgeLabel" type="Label" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/ShotgunRow/Margin/HBox/StatusBadge" unique_id=962613522]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.988, 0.831, 0.13, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.087, 0.316, 1)
+theme_override_colors/font_outline_color = Color(0.098, 0.086, 0.455, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 18
+text = "🪙 50"
+horizontal_alignment = 1
+
+[node name="RowButton" type="Button" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/ShotgunRow" unique_id=599236804]
+layout_mode = 2
+flat = true
+
+[node name="SniperRow" type="PanelContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox" unique_id=2000894088]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_item_row")
+
+[node name="Margin" type="MarginContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/SniperRow" unique_id=143023314]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="HBox" type="HBoxContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/SniperRow/Margin" unique_id=963361532]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ItemInfoVBox" type="VBoxContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/SniperRow/Margin/HBox" unique_id=640995455]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ItemName" type="Label" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/SniperRow/Margin/HBox/ItemInfoVBox" unique_id=500688233]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 0.7)
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 18
+text = "Long-Range Pressure Rifle (Locked)"
+
+[node name="ItemStats" type="Label" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/SniperRow/Margin/HBox/ItemInfoVBox" unique_id=445262111]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.65, 0.6)
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 13
+text = "Unlocks in next chapter"
+
+[node name="StatusLabel" type="Label" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/SniperRow/Margin/HBox" unique_id=1014082820]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.55, 0.6, 0.7)
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 16
+text = "🔒 LOCKED"
+
+[node name="TowelRow" type="PanelContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox" unique_id=763425890]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_item_row")
+
+[node name="Margin" type="MarginContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/TowelRow" unique_id=297435747]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="HBox" type="HBoxContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/TowelRow/Margin" unique_id=1669748028]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ItemInfoVBox" type="VBoxContainer" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/TowelRow/Margin/HBox" unique_id=1399279649]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ItemName" type="Label" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/TowelRow/Margin/HBox/ItemInfoVBox" unique_id=209316849]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 0.7)
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 18
+text = "Fast-Dry Towel (Locked)"
+
+[node name="ItemStats" type="Label" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/TowelRow/Margin/HBox/ItemInfoVBox" unique_id=928346034]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.65, 0.6)
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 13
+text = "Dries clothes rapidly to remove wetness"
+
+[node name="StatusLabel" type="Label" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox/ItemListVBox/TowelRow/Margin/HBox" unique_id=162829552]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.55, 0.6, 0.7)
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 16
+text = "🔒 LOCKED"
+
+[node name="StatusLabel" type="Label" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox" unique_id=1417326932]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.95, 0.65, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.087, 0.316, 1)
+theme_override_colors/font_outline_color = Color(0.098, 0.086, 0.455, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+
+[node name="BuyGuideLabel" type="Label" parent="StateRoot_BuyMenu/RightBuyCard/Margin/ContentVBox" unique_id=123209882]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_colors/font_shadow_color = Color(0, 0.087, 0.316, 1)
+theme_override_colors/font_outline_color = Color(0.098, 0.086, 0.455, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 16
+text = "[E] / Click: Select Item        [Q] / [ESC]: Back to Options"
+horizontal_alignment = 2
+
+[node name="StateRoot_Confirm" type="Control" parent="." unique_id=138503192]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ConfirmDimmer" type="ColorRect" parent="StateRoot_Confirm" unique_id=1796826486]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="ConfirmCard" type="PanelContainer" parent="StateRoot_Confirm" unique_id=319226141]
+custom_minimum_size = Vector2(540, 420)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -270.0
+offset_top = -210.0
+offset_right = 270.0
+offset_bottom = 210.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_confirm_card")
+
+[node name="Margin" type="MarginContainer" parent="StateRoot_Confirm/ConfirmCard" unique_id=1535717632]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 22
+
+[node name="ConfirmVBox" type="VBoxContainer" parent="StateRoot_Confirm/ConfirmCard/Margin" unique_id=151101177]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="PromptTitle" type="Label" parent="StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox" unique_id=320199141]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.25, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.087, 0.316, 1)
+theme_override_colors/font_outline_color = Color(0.098, 0.086, 0.455, 1)
+theme_override_constants/shadow_offset_x = 3
+theme_override_constants/shadow_offset_y = 3
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("3_vcd_bold")
+theme_override_font_sizes/font_size = 32
+text = "Buy Water Splash Gun?"
+horizontal_alignment = 1
+
+[node name="CostSubtitle" type="Label" parent="StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox" unique_id=590606828]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.087, 0.316, 1)
+theme_override_colors/font_outline_color = Color(0.098, 0.086, 0.455, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 18
+text = "Cost: 50 Coins  |  Remaining: 0 Coins"
+horizontal_alignment = 1
+
+[node name="WeaponPreviewFrame" type="PanelContainer" parent="StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox" unique_id=964758664]
+custom_minimum_size = Vector2(0, 160)
+layout_mode = 2
+
+[node name="TurntableSVC" type="SubViewportContainer" parent="StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/WeaponPreviewFrame" unique_id=1658079706]
+layout_mode = 2
+stretch = true
+
+[node name="TurntableViewport" type="SubViewport" parent="StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/WeaponPreviewFrame/TurntableSVC" unique_id=2062556567]
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(2, 2)
+render_target_update_mode = 0
+
+[node name="Camera3D" type="Camera3D" parent="StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/WeaponPreviewFrame/TurntableSVC/TurntableViewport" unique_id=1364046187]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0.22, 0.9)
+fov = 36.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/WeaponPreviewFrame/TurntableSVC/TurntableViewport" unique_id=1263829135]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 1, 2, 2)
+light_color = Color(1, 0.95, 0.85, 1)
+light_energy = 1.3
+
+[node name="ShotgunPivot" type="Node3D" parent="StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/WeaponPreviewFrame/TurntableSVC/TurntableViewport" unique_id=425022045]
+
+[node name="Shotgun" parent="StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/WeaponPreviewFrame/TurntableSVC/TurntableViewport/ShotgunPivot" unique_id=560072649 instance=ExtResource("8_3h11r")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0.3308003, 0.043891937)
+visible = true
+
+[node name="ShotGunfix" parent="StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/WeaponPreviewFrame/TurntableSVC/TurntableViewport/ShotgunPivot" unique_id=71836627 instance=ExtResource("4_shotgun_model")]
+transform = Transform3D(0.85, 0, 0, 0, 0.85, 0, 0, 0, 0.85, 0, -0.05, 0)
+
+[node name="ButtonHBox" type="HBoxContainer" parent="StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox" unique_id=1955141913]
+layout_mode = 2
+size_flags_vertical = 10
+theme_override_constants/separation = 24
+
+[node name="ConfirmButton" type="Button" parent="StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/ButtonHBox" unique_id=1033735857]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 24
+text = "Confirm"
+
+[node name="CancleButton" type="Button" parent="StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/ButtonHBox" unique_id=803219028]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("2_dog_bold")
+theme_override_font_sizes/font_size = 24
+text = "Cancle"
+
+[node name="CurtainOverlay" type="Control" parent="." unique_id=1671269926]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CurtainLeft" type="TextureRect" parent="CurtainOverlay" unique_id=2094998977]
+texture_repeat = 2
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 640.0
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("7_curtain_tex")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="CurtainRight" type="TextureRect" parent="CurtainOverlay" unique_id=1447358383]
+texture_repeat = 2
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -640.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("7_curtain_tex")
+expand_mode = 1
+stretch_mode = 1

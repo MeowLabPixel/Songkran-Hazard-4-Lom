@@ -2,6 +2,7 @@ class_name StateIdle
 extends EnemyState
 
 @export var detection_radius: float = 10.0
+@export var alert_radius: float = 12.0
 
 var combat_initiated: bool = false
 var _idle_timer: float = 0.0
@@ -77,22 +78,26 @@ func _alert_all_zombies() -> void:
 
 	var enemies = enemy.get_tree().get_nodes_in_group("enemies")
 	for other_enemy in enemies:
-		if is_instance_valid(other_enemy) and other_enemy != enemy:
-			var sm = other_enemy.get_node_or_null("EnemyStateMachine")
-			if sm:
-				var idle_state = sm.get_node_or_null("StateIdle")
-				if idle_state and "combat_initiated" in idle_state:
-					idle_state.combat_initiated = true
+		if is_instance_valid(other_enemy) and other_enemy != enemy and other_enemy.is_inside_tree():
+			# Only alert zombies within alert_radius
+			if enemy.global_position.distance_to(other_enemy.global_position) <= alert_radius:
+				var sm = other_enemy.get_node_or_null("EnemyStateMachine")
+				if sm:
+					var idle_state = sm.get_node_or_null("StateIdle")
+					if idle_state and "combat_initiated" in idle_state:
+						idle_state.combat_initiated = true
 
 func _is_any_other_zombie_in_combat() -> bool:
 	if not enemy or not enemy.is_inside_tree():
 		return false
 	var enemies = enemy.get_tree().get_nodes_in_group("enemies")
 	for other_enemy in enemies:
-		if is_instance_valid(other_enemy) and other_enemy != enemy:
-			var sm = other_enemy.get_node_or_null("EnemyStateMachine")
-			if sm and sm.current_state:
-				var state_name = sm.current_state.name
-				if state_name != "StateIdle" and state_name != "StateDefeated":
-					return true
+		if is_instance_valid(other_enemy) and other_enemy != enemy and other_enemy.is_inside_tree():
+			# Only consider nearby zombies within alert_radius
+			if enemy.global_position.distance_to(other_enemy.global_position) <= alert_radius:
+				var sm = other_enemy.get_node_or_null("EnemyStateMachine")
+				if sm and sm.current_state:
+					var state_name = sm.current_state.name
+					if state_name != "StateIdle" and state_name != "StateDefeated":
+						return true
 	return false

@@ -206,7 +206,7 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 	set(val):
 		min_same_color_distance = val
 		_on_setting_changed()
-@export var material_uv1_scale: Vector3 = Vector3(1, 1, 1):
+@export var material_uv1_scale: Vector3 = Vector3(1.3, 1.3, 1.3):
 	set(val):
 		material_uv1_scale = val
 		if is_inside_tree() and is_node_ready():
@@ -473,8 +473,7 @@ func _enter_tree() -> void:
 		_setup_materials()
 
 func _exit_tree() -> void:
-	if Engine.is_editor_hint():
-		_clear_preview_crowd()
+	pass
 
 func _on_setting_changed() -> void:
 	if not Engine.is_editor_hint() or not is_inside_tree() or not is_node_ready():
@@ -540,7 +539,7 @@ func _clear_preview_crowd() -> void:
 	if not is_inside_tree():
 		return
 	var existing_male = get_node_or_null("CrowdMaleModel") as Node3D
-	for child in get_children():
+	for child in get_children(true):
 		if child != existing_male and (child is CrowdMember or child.has_meta("is_crowd_preview")):
 			if child.get_parent() == self:
 				remove_child(child)
@@ -581,18 +580,23 @@ func _update_materials_transparency_mode() -> void:
 
 # ─── Lifecycle ─────────────────────────────────────────────────────────────
 
+func _setup_editor_preview_deferred() -> void:
+	if not is_inside_tree() or not is_node_ready():
+		return
+	if preview_in_editor:
+		_setup_crowd()
+		_apply_editor_performance_mode()
+		_deferred_physics_validation()
+	else:
+		if saved_crowd_data.is_empty():
+			regenerate_crowd()
+		_clear_preview_crowd()
+
 func _ready() -> void:
 	_sync_spawn_size_from_shape()
 	_setup_materials()
 	if Engine.is_editor_hint():
-		if preview_in_editor:
-			_setup_crowd()
-			_apply_editor_performance_mode()
-			_deferred_physics_validation()
-		else:
-			if saved_crowd_data.is_empty():
-				regenerate_crowd()
-			_clear_preview_crowd()
+		_setup_editor_preview_deferred.call_deferred()
 		return
 
 	# Enforce runtime safety clamps on LOD stepping distances so scene inspector overrides (.tscn)
@@ -1413,8 +1417,16 @@ func _deferred_physics_validation() -> void:
 		return
 	_is_validating_physics = true
 	# Wait 2 physics frames so StaticBody3D, CSG shapes, and terrain colliders are fully registered in PhysicsServer3D
-	await get_tree().physics_frame
-	await get_tree().physics_frame
+	var tree = get_tree()
+	if not tree:
+		_is_validating_physics = false
+		return
+	await tree.physics_frame
+	tree = get_tree()
+	if not tree:
+		_is_validating_physics = false
+		return
+	await tree.physics_frame
 	_is_validating_physics = false
 	if not is_inside_tree():
 		return
@@ -1654,7 +1666,8 @@ func _setup_crowd() -> void:
 			if not (member is CrowdMember):
 				var crowd_member_script = preload("res://scripts/crowd_member.gd")
 				member.set_script(crowd_member_script)
-			add_child(member)
+			var internal_mode = Node.INTERNAL_MODE_BACK if Engine.is_editor_hint() else Node.INTERNAL_MODE_DISABLED
+			add_child(member, false, internal_mode)
 
 		placed_positions.append(spawn_pos)
 		member.global_position = spawn_pos
@@ -1786,7 +1799,8 @@ func _spawn_from_saved_layout() -> void:
 			if not (member is CrowdMember):
 				var crowd_member_script = preload("res://scripts/crowd_member.gd")
 				member.set_script(crowd_member_script)
-			add_child(member)
+			var internal_mode = Node.INTERNAL_MODE_BACK if Engine.is_editor_hint() else Node.INTERNAL_MODE_DISABLED
+			add_child(member, false, internal_mode)
 
 		member.position = local_pos
 		member.rotation.y = rot_y

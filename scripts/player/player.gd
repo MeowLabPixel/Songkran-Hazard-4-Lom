@@ -76,6 +76,7 @@ func trigger_shoulder_recoil(kick_z: float = 0.06, kick_pitch: float = 0.08) -> 
 @export var pickup_detect: Area3D
 
 var HP = MaxHP
+var is_in_shop: bool = false
 var takedown_target: Node = null
 var takedown_prompt_label: Label = null
 var hit_damage_already_applied: bool = false
@@ -472,6 +473,11 @@ func _ready() -> void:
 var current_aim_influence: float = 0.25
 
 func _process(delta: float) -> void:
+	if is_in_shop:
+		is_aimming = false
+		if cross_hair:
+			cross_hair.hide()
+
 	if superpump_cooldown > 0.0:
 		superpump_cooldown -= delta
 	if glance_recovery_cooldown > 0.0:
@@ -1251,6 +1257,12 @@ func set_velocity_from_motion(vel: Vector3)-> void:
 	velocity = vel
 
 func _physics_process(_delta: float) -> void:
+	if is_in_shop:
+		velocity = Vector3.ZERO
+		Motion.velocity = Vector3.ZERO
+		move_and_slide()
+		return
+
 	if quick_turn_cooldown > 0.0:
 		quick_turn_cooldown -= _delta
 		
@@ -1564,6 +1576,8 @@ func cancel_aim() -> void:
 		camera.exit_aim()
 
 func can_aim() -> bool:
+	if is_in_shop:
+		return false
 	if HP <= 0:
 		return false
 	if is_grab:

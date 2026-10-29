@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cme_buy_select"]
+
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_script"]
+[ext_resource type="AudioStream" uid="uid://bbj16fmwmt7a3" path="res://Audio-Sfx-Music/Voicelines/Merchant/BuyMenuSelect/Buy_Menu_Select_1.wav" id="2_bs1"]
+[ext_resource type="AudioStream" uid="uid://bcpaalfqdjjh6" path="res://Audio-Sfx-Music/Voicelines/Merchant/BuyMenuSelect/Buy_Menu_Select_2.wav" id="3_bs2"]
+[ext_resource type="AudioStream" uid="uid://c67lytk502rj4" path="res://Audio-Sfx-Music/Voicelines/Merchant/BuyMenuSelect/Buy_Menu_Select_3.wav" id="4_bs3"]
+
+[resource]
+script = ExtResource("1_script")
+name = "Buy_Menu_Select"
+category = "Voiceline"
+is_3d = true
+volume_db = 2.0
+volume_randomness_db = 0.0
+pitch_range = Vector2(0.98, 1.02)
+unit_size = 5.0
+max_distance = 18.0
+streams = Array[AudioStream]([ExtResource("2_bs1"), ExtResource("3_bs2"), ExtResource("4_bs3")])

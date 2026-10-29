@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cme_exit_shop"]
+
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_script"]
+[ext_resource type="AudioStream" uid="uid://dqtsbk5pda7ic" path="res://Audio-Sfx-Music/Voicelines/Merchant/ExitShop/Exit_Shop_1.wav" id="2_ex1"]
+[ext_resource type="AudioStream" uid="uid://csgmify7l2gs2" path="res://Audio-Sfx-Music/Voicelines/Merchant/ExitShop/Exit_Shop_2.wav" id="3_ex2"]
+[ext_resource type="AudioStream" uid="uid://66yepw4o7e1j" path="res://Audio-Sfx-Music/Voicelines/Merchant/ExitShop/Exit_Shop_3.wav" id="4_ex3"]
+[ext_resource type="AudioStream" uid="uid://dglg2rtifk1q3" path="res://Audio-Sfx-Music/Voicelines/Merchant/ExitShop/Exit_Shop_4.wav" id="5_ex4"]
+[ext_resource type="AudioStream" uid="uid://rwfvkxondbd3" path="res://Audio-Sfx-Music/Voicelines/Merchant/ExitShop/Exit_Shop_5.wav" id="6_ex5"]
+[ext_resource type="AudioStream" uid="uid://do6uce1np4ee1" path="res://Audio-Sfx-Music/Voicelines/Merchant/ExitShop/Exit_Shop_6.wav" id="7_ex6"]
+
+[resource]
+script = ExtResource("1_script")
+name = "Exit_Shop"
+category = "Voiceline"
+is_3d = true
+volume_db = 2.0
+volume_randomness_db = 0.0
+pitch_range = Vector2(0.98, 1.02)
+unit_size = 5.0
+max_distance = 18.0
+streams = Array[AudioStream]([ExtResource("2_ex1"), ExtResource("3_ex2"), ExtResource("4_ex3"), ExtResource("5_ex4"), ExtResource("6_ex5"), ExtResource("7_ex6")])

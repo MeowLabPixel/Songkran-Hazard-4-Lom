@@ -183,7 +183,7 @@ func _ready() -> void:
 	custom_pitch_scale = PITCH_INCREMENTS.pick_random()
 	
 	add_to_group("enemies")
-	MAX_HP = float(randi_range(10, 12))
+	MAX_HP = float(randi_range(8, 11))
 	current_hp = MAX_HP
 	is_takedown_defeat = false
 	if not anim_set:

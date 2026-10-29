@@ -540,7 +540,7 @@ size = Vector2i(180, 179)
 render_target_update_mode = 4
 
 [node name="FollowerPortraitCamera" type="Camera3D" parent="HUDRoot/BottomRightCluster/FollowerPortrait/FollowerPortraitSVC/FollowerPortraitViewport" unique_id=1107662328]
-transform = Transform3D(-0.9998818, -0.0015304633, -0.015306465, 0, 0.9950361, -0.09949217, 0.01538279, -0.09948017, -0.99492073, -0.01, 1.385, -0.65)
+transform = Transform3D(-0.9998818, -0.0015304632, -0.015306465, 0, 0.99503607, -0.09949217, 0.01538279, -0.09948016, -0.99492073, -0.01, 1.385, -0.65)
 projection = 1
 current = true
 size = 0.425

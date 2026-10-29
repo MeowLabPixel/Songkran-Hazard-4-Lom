@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cme_buy_fail"]
+
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_script"]
+[ext_resource type="AudioStream" uid="uid://d00wgrvr6hxhe" path="res://Audio-Sfx-Music/Voicelines/Merchant/BuyFail/Buy_Fail_1.wav" id="2_bf1"]
+[ext_resource type="AudioStream" uid="uid://cregkuewsckk3" path="res://Audio-Sfx-Music/Voicelines/Merchant/BuyFail/Buy_Fail_2.wav" id="3_bf2"]
+[ext_resource type="AudioStream" uid="uid://dfdvikfrcs3nv" path="res://Audio-Sfx-Music/Voicelines/Merchant/BuyFail/Buy_Fail_3.wav" id="4_bf3"]
+[ext_resource type="AudioStream" uid="uid://dqpad2j56gkd0" path="res://Audio-Sfx-Music/Voicelines/Merchant/BuyFail/Buy_Fail_4.wav" id="5_bf4"]
+
+[resource]
+script = ExtResource("1_script")
+name = "Buy_Fail"
+category = "Voiceline"
+is_3d = true
+volume_db = 2.0
+volume_randomness_db = 0.0
+pitch_range = Vector2(0.98, 1.02)
+unit_size = 5.0
+max_distance = 18.0
+streams = Array[AudioStream]([ExtResource("2_bf1"), ExtResource("3_bf2"), ExtResource("4_bf3"), ExtResource("5_bf4")])

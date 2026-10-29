@@ -2,7 +2,7 @@ extends Control
 
 @onready var transition_rect: ColorRect = $CanvasLayer/TransitionRect
 
-var world_scene_path: String = "res://scenes/world.tscn"
+var world_scene_path: String = "res://scenes/world(Copy).tscn"
 var is_loading_started := false
 var is_scene_ready := false
 var scene_instance: Node = null

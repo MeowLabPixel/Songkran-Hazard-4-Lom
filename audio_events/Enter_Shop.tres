@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cme_enter_shop"]
+
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_script"]
+[ext_resource type="AudioStream" uid="uid://csc2v1am71jun" path="res://Audio-Sfx-Music/Voicelines/Merchant/EnterShop/Enter_Shop_1.wav" id="2_es1"]
+[ext_resource type="AudioStream" uid="uid://cjnb00ri4r8wh" path="res://Audio-Sfx-Music/Voicelines/Merchant/EnterShop/Enter_Shop_2.wav" id="3_es2"]
+
+[resource]
+script = ExtResource("1_script")
+name = "Enter_Shop"
+category = "Voiceline"
+is_3d = true
+volume_db = 2.0
+volume_randomness_db = 0.0
+pitch_range = Vector2(0.98, 1.02)
+unit_size = 5.0
+max_distance = 18.0
+streams = Array[AudioStream]([ExtResource("2_es1"), ExtResource("3_es2")])

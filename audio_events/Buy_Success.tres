@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SoundEvent" format=3 uid="uid://cme_buy_success"]
+
+[ext_resource type="Script" uid="uid://bn1ewx4f6ebw4" path="res://scripts/audio/sound_event.gd" id="1_script"]
+[ext_resource type="AudioStream" uid="uid://dus48hpxlwemw" path="res://Audio-Sfx-Music/Voicelines/Merchant/BuySuccess/Buy_Success_1.wav" id="2_sc1"]
+[ext_resource type="AudioStream" uid="uid://bs0r6rb2sye7d" path="res://Audio-Sfx-Music/Voicelines/Merchant/BuySuccess/Buy_Success_2.wav" id="3_sc2"]
+[ext_resource type="AudioStream" uid="uid://dsfr7xggvfdcf" path="res://Audio-Sfx-Music/Voicelines/Merchant/BuySuccess/Buy_Success_3.wav" id="4_sc3"]
+[ext_resource type="AudioStream" uid="uid://kmn1khss7b2q" path="res://Audio-Sfx-Music/Voicelines/Merchant/BuySuccess/Buy_Success_4.wav" id="5_sc4"]
+[ext_resource type="AudioStream" uid="uid://bitxtxd0hki8j" path="res://Audio-Sfx-Music/Voicelines/Merchant/BuySuccess/Buy_Success_5.wav" id="6_sc5"]
+
+[resource]
+script = ExtResource("1_script")
+name = "Buy_Success"
+category = "Voiceline"
+is_3d = true
+volume_db = 2.0
+volume_randomness_db = 0.0
+pitch_range = Vector2(0.98, 1.02)
+unit_size = 5.0
+max_distance = 18.0
+streams = Array[AudioStream]([ExtResource("2_sc1"), ExtResource("3_sc2"), ExtResource("4_sc3"), ExtResource("5_sc4"), ExtResource("6_sc5")])

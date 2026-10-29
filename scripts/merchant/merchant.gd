@@ -46,15 +46,30 @@ signal enemy_hit(hit_data: Dictionary)
 @export var legs_reaction_damping: float = 18.0
 @export var legs_reaction_force: float = -10.0
 
-@export_group("Shop & Tinkering (Future Interface)")
+@export_group("Shop & Tinkering")
 @export var shop_trigger_area: Area3D = null
 @export var shop_camera: Node3D = null
+@export var shop_camera_lerp_duration: float = 0.8
+@export var shop_close_anim_delay: float = 0.5
+@export var animation_tree_path: NodePath = NodePath("AnimationTree")
+@export var interaction_radius: float = 1.1
+@export var max_interaction_distance: float = 1.7
+@export var min_interaction_facing_dot: float = 0.2
+@export var min_merchant_front_dot: float = 0.25
+@export var shop_menu_scene: PackedScene = preload("res://scenes/ui/merchant_shop_menu.tscn")
 
 # Internal Node References
 var skeleton: Skeleton3D = null
 var head_lookat: LookAtModifier3D = null
 var aim_target_marker: Marker3D = null
 var hit_reaction_modifier: EnemyHitReactionModifier = null
+var animation_tree: AnimationTree = null
+var anim_state_machine: AnimationNodeStateMachinePlayback = null
+var shop_menu: MerchantShopMenu = null
+var nearby_player: CharacterBody3D = null
+var is_player_in_range: bool = false
+var _prompt_ui: CanvasLayer = null
+var _prompt_label: Label = null
 
 # Runtime Tracking State
 var current_glance_pos: Vector3 = Vector3.ZERO
@@ -62,13 +77,37 @@ var active_target: Node3D = null
 var current_influence: float = 0.0
 var current_player: CharacterBody3D = null
 var is_in_interaction: bool = false
+var current_voice_player: AudioStreamPlayer3D = null
 
 func _ready() -> void:
 	_setup_head_lookat_ik()
 	_setup_hit_reaction_modifier()
 	_setup_fabric_hitboxes()
+	_setup_shop_trigger()
+	_setup_shop_bucket()
+	_setup_animation_tree()
+
+func _setup_animation_tree() -> void:
+	animation_tree = get_node_or_null(animation_tree_path) as AnimationTree
+	if not animation_tree:
+		animation_tree = find_child("AnimationTree", true, false) as AnimationTree
+	if animation_tree:
+		animation_tree.active = true
+		anim_state_machine = animation_tree.get("parameters/playback") as AnimationNodeStateMachinePlayback
+
+func _setup_shop_bucket() -> void:
+	var cam = get_shop_camera()
+	if cam:
+		cam.current = false
+	var water_mesh = find_child("Water Mesh", true, false) as MeshInstance3D
+	if water_mesh and not water_mesh.material_override:
+		var water_mat = load("res://shaders/bucket_water_material.tres") as Material
+		if water_mat:
+			water_mesh.material_override = water_mat
 
 func _process(delta: float) -> void:
+	_update_player_stun_interaction()
+
 	if not enable_head_look:
 		if head_lookat:
 			head_lookat.influence = 0.0
@@ -345,18 +384,300 @@ func _get_target_head_pos(node: Node3D) -> Vector3:
 
 # ─── Shop & Water Gun Tinkering Interface (Hooks) ────────────────────────────
 
-func enter_interaction(player: CharacterBody3D) -> void:
+func get_shop_camera() -> Camera3D:
+	if shop_camera and is_instance_valid(shop_camera) and shop_camera is Camera3D:
+		return shop_camera as Camera3D
+	var cam = get_node_or_null("Shop Bucket/ShopCamera") as Camera3D
+	if not cam:
+		cam = find_child("ShopCamera", true, false) as Camera3D
+	if cam:
+		shop_camera = cam
+		cam.current = false
+	return cam
+
+func play_shop_open_anim() -> void:
+	if not anim_state_machine and animation_tree:
+		anim_state_machine = animation_tree.get("parameters/playback") as AnimationNodeStateMachinePlayback
+	if anim_state_machine:
+		anim_state_machine.travel(&"OPEN")
+
+func play_shop_close_anim() -> void:
+	if not anim_state_machine and animation_tree:
+		anim_state_machine = animation_tree.get("parameters/playback") as AnimationNodeStateMachinePlayback
+	if anim_state_machine:
+		anim_state_machine.travel(&"Close")
+
+func enter_interaction(player: CharacterBody3D, on_camera_ready: Callable = Callable()) -> void:
 	current_player = player
 	is_in_interaction = true
 	# Lock gaze firmly on the customer during dialogue/shopping
 	active_target = player
 
-func exit_interaction() -> void:
+	# Trigger AnimationTree state machine: IDLE -> OPEN -> Open_Loop
+	play_shop_open_anim()
+
+	var target_cam = get_shop_camera()
+	var cam_controller = player.get("camera") if player else null
+	if cam_controller and target_cam and cam_controller.has_method("transition_to_shop_camera"):
+		cam_controller.transition_to_shop_camera(target_cam, shop_camera_lerp_duration, on_camera_ready)
+	else:
+		if on_camera_ready.is_valid():
+			on_camera_ready.call()
+
+func exit_interaction(on_camera_exited: Callable = Callable()) -> void:
+	# Delay transition to Close animation by shop_close_anim_delay (0.5s)
+	if shop_close_anim_delay > 0.0:
+		get_tree().create_timer(shop_close_anim_delay).timeout.connect(func():
+			play_shop_close_anim()
+		)
+	else:
+		play_shop_close_anim()
+
+	var cam_controller = current_player.get("camera") if current_player else null
+	if cam_controller and cam_controller.has_method("exit_shop_camera"):
+		cam_controller.exit_shop_camera(shop_camera_lerp_duration, on_camera_exited)
+	else:
+		if on_camera_exited.is_valid():
+			on_camera_exited.call()
+
 	current_player = null
 	is_in_interaction = false
 
 func is_customer_present() -> bool:
 	return is_in_interaction and is_instance_valid(current_player)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_player_in_range or is_in_interaction:
+		return
+		
+	if not _is_player_stun_overlapping(nearby_player):
+		return
+
+	if event is InputEventKey and event.pressed and not event.is_echo():
+		if event.keycode == KEY_E:
+			if nearby_player:
+				open_shop_menu(nearby_player)
+				get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("takedown"):
+		if nearby_player:
+			open_shop_menu(nearby_player)
+			get_viewport().set_input_as_handled()
+
+func open_shop_menu(player: CharacterBody3D) -> void:
+	if not _is_player_stun_overlapping(player):
+		return
+
+	if not shop_menu or not is_instance_valid(shop_menu):
+		if shop_menu_scene:
+			shop_menu = shop_menu_scene.instantiate() as MerchantShopMenu
+		else:
+			shop_menu = MerchantShopMenu.new()
+		add_child(shop_menu)
+		shop_menu.shop_closed.connect(_on_shop_closed)
+		
+	_set_prompt_visible(false)
+	shop_menu.open_shop(player, self)
+
+func _on_shop_closed() -> void:
+	if is_player_in_range and _is_player_stun_overlapping(nearby_player):
+		_set_prompt_visible(true)
+
+func stop_merchant_voice() -> void:
+	if current_voice_player and is_instance_valid(current_voice_player):
+		if current_voice_player.playing:
+			current_voice_player.stop()
+		current_voice_player.queue_free()
+		current_voice_player = null
+
+func play_merchant_voice(event_name: String) -> AudioStreamPlayer3D:
+	stop_merchant_voice()
+	if typeof(SoundManager) != TYPE_NIL and SoundManager.has_method("play_3d"):
+		current_voice_player = SoundManager.play_3d(event_name, self)
+		return current_voice_player
+	return null
+
+func _get_player_stun_detector(player: Node) -> Area3D:
+	if not player or not is_instance_valid(player):
+		return null
+	var stun_area = player.get("stun_detect") as Area3D
+	if not stun_area:
+		stun_area = player.get_node_or_null("Re4Lom Base Rig/rig/Skeleton3D/spine02/Stunned detect2") as Area3D
+	if not stun_area:
+		stun_area = player.find_child("Stunned detect2", true, false) as Area3D
+	return stun_area
+
+func _get_interaction_point() -> Vector3:
+	if shop_trigger_area and is_instance_valid(shop_trigger_area):
+		var col = shop_trigger_area.find_child("CollisionShape3D", true, false) as CollisionShape3D
+		if col:
+			return col.global_position
+		return shop_trigger_area.global_position
+	return to_global(Vector3(0.0, 1.0, 0.85))
+
+func _is_player_stun_overlapping(player: Node) -> bool:
+	if not player or not is_instance_valid(player):
+		return false
+	var stun_area = _get_player_stun_detector(player)
+	if not stun_area or not is_instance_valid(stun_area):
+		return false
+	if not shop_trigger_area or not is_instance_valid(shop_trigger_area):
+		return false
+
+	# 1. Physics overlap validation with shop trigger area
+	if not stun_area.overlaps_area(shop_trigger_area):
+		return false
+
+	# 2. Maximum global distance validation between player stun detector and counter
+	var interact_pos = _get_interaction_point()
+	var stun_pos = stun_area.global_position
+	var dist = stun_pos.distance_to(interact_pos)
+	if dist > max_interaction_distance:
+		return false
+
+	# 3. Orientation validation: Player must be facing towards merchant/bucket
+	var player_fwd: Vector3 = -player.global_transform.basis.z.normalized()
+	var to_merchant: Vector3 = (global_position - player.global_position)
+	to_merchant.y = 0.0
+	if to_merchant.length_squared() > 0.001:
+		to_merchant = to_merchant.normalized()
+		if player_fwd.dot(to_merchant) < min_interaction_facing_dot:
+			return false
+
+	# 4. Front hemisphere validation: Player must be in front of merchant (not behind back or walls)
+	var merchant_fwd: Vector3 = _get_forward_dir()
+	merchant_fwd.y = 0.0
+	var to_player: Vector3 = (player.global_position - global_position)
+	to_player.y = 0.0
+	if to_player.length_squared() > 0.001 and merchant_fwd.length_squared() > 0.001:
+		to_player = to_player.normalized()
+		merchant_fwd = merchant_fwd.normalized()
+		if merchant_fwd.dot(to_player) < min_merchant_front_dot:
+			return false
+
+	return true
+
+func _update_player_stun_interaction() -> void:
+	if is_in_interaction:
+		if is_player_in_range:
+			is_player_in_range = false
+			_set_prompt_visible(false)
+		return
+
+	var player = _find_player() as CharacterBody3D
+	var is_overlapping = _is_player_stun_overlapping(player)
+
+	if is_overlapping:
+		if not is_player_in_range or nearby_player != player:
+			nearby_player = player
+			is_player_in_range = true
+			_set_prompt_visible(true)
+	else:
+		if is_player_in_range or nearby_player != null:
+			nearby_player = null
+			is_player_in_range = false
+			_set_prompt_visible(false)
+
+func _setup_shop_trigger() -> void:
+	if not shop_trigger_area:
+		shop_trigger_area = get_node_or_null("ShopTriggerArea") as Area3D
+		if not shop_trigger_area:
+			shop_trigger_area = Area3D.new()
+			shop_trigger_area.name = "ShopTriggerArea"
+			var col_shape = CollisionShape3D.new()
+			var cyl = CylinderShape3D.new()
+			cyl.radius = interaction_radius
+			cyl.height = 2.0
+			col_shape.shape = cyl
+			col_shape.position = Vector3(0.0, 1.0, 0.85)
+			shop_trigger_area.add_child(col_shape)
+			add_child(shop_trigger_area)
+			
+	# Configure collision layer for player stun detection (Layer 14: 8192)
+	shop_trigger_area.collision_layer = 8192
+	shop_trigger_area.collision_mask = 0
+		
+	_setup_prompt_ui()
+
+func _setup_prompt_ui() -> void:
+	if _prompt_ui and is_instance_valid(_prompt_ui):
+		return
+	_prompt_ui = CanvasLayer.new()
+	_prompt_ui.layer = 110
+	_prompt_ui.name = "MerchantPromptUI"
+	add_child(_prompt_ui)
+	
+	var margin_bottom = MarginContainer.new()
+	margin_bottom.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	margin_bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin_bottom.add_theme_constant_override("margin_bottom", 64)
+	_prompt_ui.add_child(margin_bottom)
+	
+	var center = CenterContainer.new()
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin_bottom.add_child(center)
+	
+	var panel = PanelContainer.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.custom_minimum_size = Vector2(220, 52)
+	var sb = StyleBoxFlat.new()
+	sb.bg_color = Color(0.04, 0.07, 0.12, 0.88)
+	sb.border_width_left = 2
+	sb.border_width_top = 2
+	sb.border_width_right = 2
+	sb.border_width_bottom = 2
+	sb.border_color = Color(0.35, 0.8, 1.0, 0.95)
+	sb.corner_radius_top_left = 12
+	sb.corner_radius_top_right = 12
+	sb.corner_radius_bottom_left = 12
+	sb.corner_radius_bottom_right = 12
+	sb.shadow_color = Color(0, 0.25, 0.5, 0.4)
+	sb.shadow_size = 12
+	panel.add_theme_stylebox_override("panel", sb)
+	center.add_child(panel)
+	
+	var margin = MarginContainer.new()
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_theme_constant_override("margin_left", 20)
+	margin.add_theme_constant_override("margin_right", 20)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_bottom", 10)
+	panel.add_child(margin)
+	
+	_prompt_label = Label.new()
+	_prompt_label.text = "[E] Open Shop"
+	var font_bold = preload("res://scenes/font/iannnnn-DOG-Bold.ttf")
+	_prompt_label.add_theme_font_override("font", font_bold)
+	_prompt_label.add_theme_font_size_override("font_size", 22)
+	_prompt_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
+	_prompt_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_prompt_label.add_theme_constant_override("outline_size", 6)
+	margin.add_child(_prompt_label)
+	
+	_prompt_ui.visible = false
+
+func _set_prompt_visible(vis: bool) -> void:
+	if _prompt_ui and is_instance_valid(_prompt_ui):
+		if vis and _prompt_label:
+			var lang = "en"
+			if get_tree().root.has_node("GameManager"):
+				lang = GameManager.selected_language
+			if lang == "th":
+				_prompt_label.text = "[E] ร้านค้าปืนฉีดน้ำ"
+			else:
+				_prompt_label.text = "[E] Open Shop"
+		_prompt_ui.visible = vis
+
+func _on_shop_body_entered(_body: Node3D) -> void:
+	pass
+
+func _on_shop_body_exited(_body: Node3D) -> void:
+	pass
+
+func _on_shop_area_entered(_area: Area3D) -> void:
+	pass
+
+func _on_shop_area_exited(_area: Area3D) -> void:
+	pass
 
 # ─── Combat & Hit Reaction ───────────────────────────────────────────────────
 
