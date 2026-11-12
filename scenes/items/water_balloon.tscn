@@ -518,6 +518,7 @@ mesh = SubResource("SphereMesh_on0ny")
 [node name="Water" type="GPUParticles3D" parent="." unique_id=1250768153]
 transform = Transform3D(1.435424, -6.6842165e-10, -3.802495e-09, 6.6842165e-10, 1.435424, 0, 4.885856e-09, -2.275154e-18, 1.117142, 0, 0, 0.009935558)
 material_override = ExtResource("3_0lith")
+emitting = false
 amount = 30
 sub_emitter = NodePath("../DropletSplash_SubEmitter")
 lifetime = 2.0
@@ -530,6 +531,7 @@ draw_pass_1 = SubResource("SphereMesh_jo4dw")
 [node name="Bubble" type="GPUParticles3D" parent="." unique_id=645918487]
 transform = Transform3D(1.435424, -6.6842165e-10, -3.802495e-09, 6.6842165e-10, 1.435424, 0, 4.885856e-09, -2.275154e-18, 1.117142, 0, 0, 0.009935558)
 material_override = ExtResource("4_vpetd")
+emitting = false
 amount = 80
 speed_scale = 1.25
 fixed_fps = 60

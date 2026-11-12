@@ -78,6 +78,8 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 		min_member_spacing = val
 		_on_setting_changed()
 @export var male_model_scene: PackedScene = preload("res://scenes/Crowds/crowd_male_model.tscn")
+@export var male_model_balloon_scene: PackedScene = preload("res://scenes/Crowds/crowd_male_model_Balloon.tscn")
+@export var male_model_gun_scene: PackedScene = preload("res://scenes/Crowds/crowd_male_model_Gun.tscn")
 @export var female_model_scene: PackedScene = null  # Coming soon!
 @export var enable_male_crowd: bool = true:
 	set(val):
@@ -336,6 +338,18 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 		if is_equal_approx(min_gun_spacing, val):
 			return
 		min_gun_spacing = val
+		_on_setting_changed()
+@export var enable_balloon_spawn: bool = true:
+	set(val):
+		if enable_balloon_spawn == val:
+			return
+		enable_balloon_spawn = val
+		_on_setting_changed()
+@export_range(0.0, 1.0) var balloon_spawn_chance: float = 0.25:
+	set(val):
+		if is_equal_approx(balloon_spawn_chance, val):
+			return
+		balloon_spawn_chance = val
 		_on_setting_changed()
 
 @export_group("Seed & Randomization")
@@ -1763,26 +1777,43 @@ func _setup_crowd() -> void:
 		var member: Node3D = null
 		var chosen_model_type: int = 0
 
+		# 1. Determine combat / balloon role before instantiating prefab
+		var can_have_gun = enable_water_gun_spawn
+		if can_have_gun:
+			for armed_pos in armed_positions:
+				if spawn_pos.distance_to(armed_pos) < min_gun_spacing:
+					can_have_gun = false
+					break
+
+		var has_gun: bool = can_have_gun and (_rng.randf() < gun_spawn_chance)
+		var has_balloon: bool = false
+		if has_gun:
+			armed_positions.append(spawn_pos)
+		elif enable_balloon_spawn and enable_balloon_throwing:
+			has_balloon = (_rng.randf() < balloon_spawn_chance)
+
 		if i == 0 and existing_male:
 			member = existing_male
 			member.visible = true
 			chosen_model_type = 0
 		else:
-			var candidate_scenes: Array[PackedScene] = []
-			if enable_male_crowd and male_model_scene:
-				candidate_scenes.append(male_model_scene)
-			if enable_female_crowd and female_model_scene:
-				candidate_scenes.append(female_model_scene)
+			var scene_to_use: PackedScene = male_model_scene
+			if has_gun and male_model_gun_scene:
+				scene_to_use = male_model_gun_scene
+			elif has_balloon and male_model_balloon_scene:
+				scene_to_use = male_model_balloon_scene
+			elif enable_female_crowd and female_model_scene and not enable_male_crowd:
+				scene_to_use = female_model_scene
+				chosen_model_type = 1
+			elif male_model_scene:
+				scene_to_use = male_model_scene
 
-			if candidate_scenes.is_empty():
+			if not scene_to_use:
 				if male_model_scene:
-					candidate_scenes.append(male_model_scene)
+					scene_to_use = male_model_scene
 				else:
 					break
 
-			var scene_to_use = candidate_scenes[_rng.randi_range(0, candidate_scenes.size() - 1)]
-			if female_model_scene and scene_to_use == female_model_scene:
-				chosen_model_type = 1
 			member = scene_to_use.instantiate() as Node3D
 			member.name = "CrowdMember_%d" % i
 			member.set_meta("is_crowd_preview", true)
@@ -1799,18 +1830,6 @@ func _setup_crowd() -> void:
 		# Collect RIDs from placed member to exclude from future spawn raycasts/shapes
 		if member is CollisionObject3D:
 			placed_rids.append(member.get_rid())
-
-		# 1. Armed spacing check: crowd members with guns should not be near each other
-		var can_have_gun = enable_water_gun_spawn
-		if can_have_gun:
-			for armed_pos in armed_positions:
-				if spawn_pos.distance_to(armed_pos) < min_gun_spacing:
-					can_have_gun = false
-					break
-
-		var has_gun = can_have_gun and (_rng.randf() < gun_spawn_chance)
-		if has_gun:
-			armed_positions.append(spawn_pos)
 
 		# 2. Material/Color selection: crowd members should not share the same color when near each other
 		var shared_mats = get_shared_materials()
@@ -1860,7 +1879,7 @@ func _setup_crowd() -> void:
 			member.member_index = i
 
 		if member.has_method("setup_member"):
-			member.setup_member(has_gun, mat, member_config)
+			member.setup_member(has_gun, mat, member_config, has_balloon)
 
 		active_members.append(member)
 		_apply_culling_settings_to_member(member)
@@ -1871,6 +1890,7 @@ func _setup_crowd() -> void:
 				"rot_y": member.rotation.y,
 				"row": row,
 				"has_gun": has_gun,
+				"has_balloon": has_balloon,
 				"color_idx": chosen_color_idx,
 				"model_type": chosen_model_type,
 			})
@@ -1894,6 +1914,7 @@ func _spawn_from_saved_layout() -> void:
 		var rot_y: float = data.get("rot_y", 0.0)
 		var row: CrowdRow = data.get("row", CrowdRow.FRONT) as CrowdRow
 		var has_gun: bool = bool(data.get("has_gun", false)) and enable_water_gun_spawn
+		var has_balloon: bool = bool(data.get("has_balloon", false)) and enable_balloon_spawn
 		var color_idx: int = int(data.get("color_idx", 0))
 		var model_type: int = int(data.get("model_type", 0))
 
@@ -1903,7 +1924,11 @@ func _spawn_from_saved_layout() -> void:
 			member.visible = true
 		else:
 			var scene_to_use: PackedScene = male_model_scene
-			if model_type == 1 and female_model_scene and enable_female_crowd:
+			if has_gun and male_model_gun_scene:
+				scene_to_use = male_model_gun_scene
+			elif has_balloon and male_model_balloon_scene:
+				scene_to_use = male_model_balloon_scene
+			elif model_type == 1 and female_model_scene and enable_female_crowd:
 				scene_to_use = female_model_scene
 			elif not enable_male_crowd and female_model_scene:
 				scene_to_use = female_model_scene
@@ -1945,7 +1970,7 @@ func _spawn_from_saved_layout() -> void:
 			member.member_index = i
 
 		if member.has_method("setup_member"):
-			member.setup_member(has_gun, mat, member_config)
+			member.setup_member(has_gun, mat, member_config, has_balloon)
 
 		active_members.append(member)
 		_apply_culling_settings_to_member(member)
@@ -2157,8 +2182,9 @@ func _on_water_gun_fired(shooter: Node3D, muzzle_pos: Vector3, target_pos: Vecto
 func _trigger_random_balloon() -> void:
 	_candidate_shooters.clear()
 	for m in active_members:
-		if m is CrowdMember and m.is_row_active and not m.is_armed and not m.is_performing_action:
-			_candidate_shooters.append(m)
+		if m is CrowdMember and m.is_row_active and not m.is_performing_action:
+			if m.is_balloon_thrower or (is_instance_valid(m.attached_balloon) and not m.is_armed):
+				_candidate_shooters.append(m)
 	if _candidate_shooters.is_empty() or active_members.size() < 2:
 		return
 

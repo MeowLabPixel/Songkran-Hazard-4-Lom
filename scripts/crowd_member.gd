@@ -108,6 +108,7 @@ var anim_tree: AnimationTree = null
 var npc_gun: Node3D = null
 var gun_spawn_point: Node3D = null
 var attached_balloon: Node3D = null
+var is_balloon_thrower: bool = false
 var hit_reaction_modifier: EnemyHitReactionModifier = null
 var hitboxes: Node3D = null
 var _turn_tween: Tween = null
@@ -328,7 +329,7 @@ func _ready() -> void:
 				for child in skeleton.get_children():
 					if child is BoneAttachment3D and child.name != "HitboxAttachRightHand":
 						child.queue_free()
-			if not is_armed:
+			if not is_armed and not is_balloon_thrower and not is_instance_valid(attached_balloon):
 				_remove_hand_attachment()
 		return
 	if not _is_setup_done:
@@ -363,6 +364,29 @@ func _resolve_nodes() -> void:
 
 	if not is_instance_valid(hitboxes):
 		hitboxes = find_child("Hitboxes", true, false) as Node3D
+
+	# Resolve right hand attachment and accessories if present in the scene
+	var hand = skeleton.get_node_or_null("HitboxAttachRightHand") if skeleton else null
+	if hand:
+		if not is_instance_valid(npc_gun):
+			npc_gun = hand.get_node_or_null("NPCGun") as Node3D
+		if is_instance_valid(npc_gun) and not is_instance_valid(gun_spawn_point):
+			gun_spawn_point = npc_gun.find_child("GunSpawnPoint", true, false) as Node3D
+		if not is_instance_valid(attached_balloon):
+			attached_balloon = hand.get_node_or_null("WaterBalloon") as Node3D
+
+	if is_instance_valid(attached_balloon):
+		is_balloon_thrower = true
+		attached_balloon.visible = false
+		if "trail_particles" in attached_balloon:
+			attached_balloon.trail_particles = null
+		if "splash_particles" in attached_balloon:
+			attached_balloon.splash_particles = null
+		for child in attached_balloon.find_children("*", "GPUParticles3D", true, false):
+			child.queue_free()
+
+	if is_instance_valid(npc_gun):
+		is_armed = true
 
 	# Cache meshes and collision RIDs once to avoid thousands of find_children() calls during gameplay
 	cached_meshes.clear()
@@ -441,11 +465,7 @@ func _equip_gun() -> void:
 
 func _unequip_gun() -> void:
 	if is_instance_valid(npc_gun):
-		npc_gun.queue_free()
-		npc_gun = null
-		gun_spawn_point = null
-	if not is_instance_valid(attached_balloon):
-		_remove_hand_attachment()
+		npc_gun.visible = false
 
 func _spawn_hand_balloon() -> void:
 	if is_instance_valid(attached_balloon):
@@ -568,7 +588,7 @@ func _setup_hitboxes() -> void:
 	if is_row_active and enable_hitbox:
 		set_hitbox_mode(HitboxMode.CHEST)
 
-func setup_member(armed: bool, material: Material, config: Dictionary = {}) -> void:
+func setup_member(armed: bool, material: Material, config: Dictionary = {}, balloon_thrower: bool = false) -> void:
 	_is_setup_done = true
 	for k in config:
 		if k in self:
@@ -581,13 +601,19 @@ func setup_member(armed: bool, material: Material, config: Dictionary = {}) -> v
 		_setup_hitboxes()
 
 	is_armed = armed and enable_water_gun
+	if balloon_thrower or (is_instance_valid(attached_balloon) and not is_armed):
+		is_balloon_thrower = true
+
 	if is_armed:
 		_equip_gun()
 		if is_instance_valid(attached_balloon):
-			attached_balloon.queue_free()
-			attached_balloon = null
+			attached_balloon.visible = false
 	else:
 		_unequip_gun()
+
+	if is_balloon_thrower:
+		if is_instance_valid(attached_balloon):
+			attached_balloon.visible = false
 
 	if material:
 		set_crowd_material(material)
@@ -827,7 +853,8 @@ func throw_balloon_at(target_pos: Vector3, on_balloon_release: Callable) -> void
 	# Smoothly rotate toward target
 	_rotate_smoothly_toward(target_pos)
 
-	_spawn_hand_balloon()
+	if not is_instance_valid(attached_balloon):
+		_spawn_hand_balloon()
 	_set_attached_balloon_visible(true)
 
 	var target_anim = balloon_throw_anim_name
@@ -855,8 +882,6 @@ func throw_balloon_at(target_pos: Vector3, on_balloon_release: Callable) -> void
 		get_tree().create_timer(anim_len).timeout.connect(func():
 			if is_instance_valid(self):
 				is_performing_action = false
-				if not is_armed:
-					_remove_hand_attachment()
 				resume_base_loop()
 		)
 	else:
@@ -865,8 +890,6 @@ func throw_balloon_at(target_pos: Vector3, on_balloon_release: Callable) -> void
 		if on_balloon_release.is_valid():
 			on_balloon_release.call(self, spawn_pos, target_pos)
 		is_performing_action = false
-		if not is_armed:
-			_remove_hand_attachment()
 		resume_base_loop()
 
 func get_hit_animation_for_zone(zone: String) -> String:
