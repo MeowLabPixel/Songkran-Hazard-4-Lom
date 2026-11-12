@@ -19,6 +19,8 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 				_clear_preview_crowd()
 @export var editor_performance_mode: bool = true: ## In-editor only performance mode: freezes preview animations at 50% and turns off cast shadows to eliminate editor lag. Does not affect running game!
 	set(val):
+		if editor_performance_mode == val:
+			return
 		editor_performance_mode = val
 		if is_inside_tree() and is_node_ready():
 			_apply_editor_performance_mode()
@@ -34,72 +36,102 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 			_on_setting_changed()
 @export var sync_invisible_wall: bool = true: ## Automatically sync InvisibleWall shape size with spawn_area_size
 	set(val):
+		if sync_invisible_wall == val:
+			return
 		sync_invisible_wall = val
 		if val and is_inside_tree() and is_node_ready():
 			_update_spawn_shapes()
 @export var enable_spawning: bool = true:
 	set(val):
+		if enable_spawning == val:
+			return
 		enable_spawning = val
 		_on_setting_changed()
 @export var use_density_mode: bool = true: ## When true, crowd count is calculated from Area3D footprint * crowd_density
 	set(val):
+		if use_density_mode == val:
+			return
 		use_density_mode = val
 		_on_setting_changed()
 @export_range(0.01, 1.0, 0.01) var crowd_density: float = 0.4: ## Crowd density (members per m² of the Area3D box footprint)
 	set(val):
+		if is_equal_approx(crowd_density, val):
+			return
 		crowd_density = val
 		_on_setting_changed()
 @export_range(1, 40, 1) var max_crowd_members: int = 25: ## Hard safety cap on total crowd members spawned
 	set(val):
+		if max_crowd_members == val:
+			return
 		max_crowd_members = val
 		_on_setting_changed()
 @export_range(1, 150, 1) var crowd_count: int = 12: ## Fallback fixed count when use_density_mode is false
 	set(val):
+		if crowd_count == val:
+			return
 		crowd_count = val
 		_on_setting_changed()
 @export var min_member_spacing: float = 1.2:
 	set(val):
+		if is_equal_approx(min_member_spacing, val):
+			return
 		min_member_spacing = val
 		_on_setting_changed()
 @export var male_model_scene: PackedScene = preload("res://scenes/Crowds/crowd_male_model.tscn")
 @export var female_model_scene: PackedScene = null  # Coming soon!
 @export var enable_male_crowd: bool = true:
 	set(val):
+		if enable_male_crowd == val:
+			return
 		enable_male_crowd = val
 		_on_setting_changed()
 @export var enable_female_crowd: bool = true:
 	set(val):
+		if enable_female_crowd == val:
+			return
 		enable_female_crowd = val
 		_on_setting_changed()
 
 @export_group("Collision & Ground Snapping")
 @export var enable_collision_check: bool = true:
 	set(val):
+		if enable_collision_check == val:
+			return
 		enable_collision_check = val
 		_on_setting_changed()
 @export var collision_mask_world: int = 1
 @export var ground_snap_height: float = 0.2: ## Headroom buffer above spawn area ceiling to cast downward ray (keep small to avoid roofs)
 	set(val):
+		if is_equal_approx(ground_snap_height, val):
+			return
 		ground_snap_height = val
 		_on_setting_changed()
 @export var ground_snap_depth: float = 10.0: ## Depth below spawn area to search downward for ground
 	set(val):
+		if is_equal_approx(ground_snap_depth, val):
+			return
 		ground_snap_depth = val
 		_on_setting_changed()
 @export_range(0.0, 1.0, 0.05) var ground_snap_min_normal_y: float = 0.5: ## Minimum upward normal Y to consider ground walkable
 	set(val):
+		if is_equal_approx(ground_snap_min_normal_y, val):
+			return
 		ground_snap_min_normal_y = val
 		_on_setting_changed()
 
 @export_group("Performance & Culling")
 @export var max_render_distance: float = 100.0: ## Distance beyond which crowd members are hidden / not rendered
 	set(val):
+		if is_equal_approx(max_render_distance, val):
+			return
 		max_render_distance = val
 		if is_inside_tree() and is_node_ready():
 			_update_render_distances()
 @export var enable_occlusion_culling: bool = false ## Raycast line-of-sight occlusion test against walls/buildings
 @export var enable_shadow_optimization: bool = true: ## Disable shadows on micro-meshes (fingers, flipflops, nose, etc.)
 	set(val):
+		if enable_shadow_optimization == val:
+			return
 		enable_shadow_optimization = val
 		if is_inside_tree() and is_node_ready():
 			_update_render_distances()
@@ -107,62 +139,90 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export var start_from_30_fps: bool = true ## When true, crowd members at close range animate at 30 FPS (staggered alternating frames) instead of 60 FPS, halving CPU bone calculations
 @export var anim_full_fps_distance: float = 7.0: ## Distance from camera within which crowd members animate at 100% full framerate (or 30 FPS if start_from_30_fps is enabled)
 	set(val):
+		if is_equal_approx(anim_full_fps_distance, val):
+			return
 		anim_full_fps_distance = val
 @export var anim_half_fps_distance: float = 15.0: ## Distance from camera within which crowd members step at medium range (always 30 FPS)
 	set(val):
+		if is_equal_approx(anim_half_fps_distance, val):
+			return
 		anim_half_fps_distance = val
 @export var anim_far_fps_distance: float = 30.0: ## Distance up to which far-range crowd members animate (15 FPS). Beyond 30m, animations pause completely (no movement, 0 CPU cost).
 	set(val):
+		if is_equal_approx(anim_far_fps_distance, val):
+			return
 		anim_far_fps_distance = val
 
 @export_group("Row & Distance Architecture")
 @export var enable_row_architecture: bool = true: ## Spawns crowd in 3 depth rows (front, middle, back) with row-staggered culling
 	set(val):
+		if enable_row_architecture == val:
+			return
 		enable_row_architecture = val
 		_on_setting_changed()
 @export var front_row_max_distance: float = 80.0: ## Max render distance for front row (up to 100m)
 	set(val):
+		if is_equal_approx(front_row_max_distance, val):
+			return
 		front_row_max_distance = val
 		if is_inside_tree() and is_node_ready():
 			_update_render_distances()
 @export var front_row_distant_visibility: bool = true: ## If true, front row remains visible beyond front_row_max_distance with animations/shadows/combat disabled
 	set(val):
+		if front_row_distant_visibility == val:
+			return
 		front_row_distant_visibility = val
 		if is_inside_tree() and is_node_ready():
 			_update_render_distances()
 @export var front_row_distant_max_distance: float = 140.0: ## Distance where front row finally dither-fades out when front_row_distant_visibility is enabled
 	set(val):
+		if is_equal_approx(front_row_distant_max_distance, val):
+			return
 		front_row_distant_max_distance = val
 		if is_inside_tree() and is_node_ready():
 			_update_render_distances()
 @export var dither_fade_margin: float = 8.0: ## Distance margin in meters for smooth shader dithering fade-in/out
 	set(val):
+		if is_equal_approx(dither_fade_margin, val):
+			return
 		dither_fade_margin = val
 		if is_inside_tree() and is_node_ready():
 			_update_render_distances()
 @export_range(0.1, 3.0, 0.05) var dither_fade_duration: float = 1.0: ## Time in seconds for a row to smoothly dither from 0% invisible to 100% solid opaque once triggered
 	set(val):
+		if is_equal_approx(dither_fade_duration, val):
+			return
 		dither_fade_duration = val
 @export var middle_row_max_distance: float = 60.0: ## Max render distance for middle row (up to 50m)
 	set(val):
+		if is_equal_approx(middle_row_max_distance, val):
+			return
 		middle_row_max_distance = val
 		if is_inside_tree() and is_node_ready():
 			_update_render_distances()
 @export var back_row_max_distance: float = 30.0: ## Max render distance for back row (up to 25m)
 	set(val):
+		if is_equal_approx(back_row_max_distance, val):
+			return
 		back_row_max_distance = val
 		if is_inside_tree() and is_node_ready():
 			_update_render_distances()
 @export var max_front_row_members: int = 10: ## Front row cap (user limit: max 8 crowd)
 	set(val):
+		if max_front_row_members == val:
+			return
 		max_front_row_members = val
 		_on_setting_changed()
 @export var front_row_is_negative_z: bool = true: ## If true, front row is along -Z (Godot forward); if false, along +Z
 	set(val):
+		if front_row_is_negative_z == val:
+			return
 		front_row_is_negative_z = val
 		_on_setting_changed()
 @export var enable_shader_dithering: bool = false: ## Use GPU dither fade per row (VISIBILITY_RANGE_FADE_SELF)
 	set(val):
+		if enable_shader_dithering == val:
+			return
 		enable_shader_dithering = val
 		if is_inside_tree() and is_node_ready():
 			_update_render_distances()
@@ -173,6 +233,8 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export var enable_balloon_pop_out: bool = true ## Pop hidden crowd rows out with a playful balloon deflation animation when walking away
 @export var pop_distance: float = 60.0: ## Distance in meters where the crowd pops in / pops out
 	set(val):
+		if is_equal_approx(pop_distance, val):
+			return
 		pop_distance = val
 		if is_inside_tree() and is_node_ready():
 			_update_render_distances()
@@ -181,18 +243,26 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export_range(0.0, 0.2, 0.01) var balloon_pop_stagger: float = 0.04 ## Delay between each member in the row popping up/down
 @export var enable_distance_density_scaling: bool = true: ## Dynamically scale crowd density from min_distance_density to max_distance_density based on distance (100m to 25m)
 	set(val):
+		if enable_distance_density_scaling == val:
+			return
 		enable_distance_density_scaling = val
 		_on_setting_changed()
 @export var min_distance_density: float = 0.2: ## Density at 100m distance
 	set(val):
+		if is_equal_approx(min_distance_density, val):
+			return
 		min_distance_density = val
 		_on_setting_changed()
 @export var max_distance_density: float = 0.5: ## Density at 25m distance
 	set(val):
+		if is_equal_approx(max_distance_density, val):
+			return
 		max_distance_density = val
 		_on_setting_changed()
 @export var enable_row_shadows: bool = true: ## Each row enables its own shadow independently based on its render distance
 	set(val):
+		if enable_row_shadows == val:
+			return
 		enable_row_shadows = val
 		if is_inside_tree() and is_node_ready():
 			_update_shadow_state()
@@ -200,59 +270,85 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export_group("Appearance & Animation")
 @export var enable_random_textures: bool = true:
 	set(val):
+		if enable_random_textures == val:
+			return
 		enable_random_textures = val
 		_on_setting_changed()
 @export var min_same_color_distance: float = 2.5: ## Minimum distance between crowd members sharing the same shirt color
 	set(val):
+		if is_equal_approx(min_same_color_distance, val):
+			return
 		min_same_color_distance = val
 		_on_setting_changed()
 @export var material_uv1_scale: Vector3 = Vector3(1.3, 1.3, 1.3):
 	set(val):
+		if material_uv1_scale == val:
+			return
 		material_uv1_scale = val
 		if is_inside_tree() and is_node_ready():
 			_setup_materials()
 @export var material_uv1_offset: Vector3 = Vector3.ZERO:
 	set(val):
+		if material_uv1_offset == val:
+			return
 		material_uv1_offset = val
 		if is_inside_tree() and is_node_ready():
 			_setup_materials()
 @export var enable_triplanar: bool = false:
 	set(val):
+		if enable_triplanar == val:
+			return
 		enable_triplanar = val
 		if is_inside_tree() and is_node_ready():
 			_setup_materials()
 @export_range(0.1, 3.0, 0.05) var dance_animation_speed: float = 1.25: ## Speed slider for dance animations
 	set(val):
+		if is_equal_approx(dance_animation_speed, val):
+			return
 		dance_animation_speed = val
 		_on_setting_changed()
 @export_range(0.1, 3.0, 0.05) var range_animation_speed: float = 1.75: ## Speed slider for ranged water gun reload and shot animations
 	set(val):
+		if is_equal_approx(range_animation_speed, val):
+			return
 		range_animation_speed = val
 		_on_setting_changed()
 @export var enable_dance_animation: bool = true:
 	set(val):
+		if enable_dance_animation == val:
+			return
 		enable_dance_animation = val
 		_on_setting_changed()
 @export var enable_water_gun_spawn: bool = true:
 	set(val):
+		if enable_water_gun_spawn == val:
+			return
 		enable_water_gun_spawn = val
 		_on_setting_changed()
 @export_range(0.0, 1.0) var gun_spawn_chance: float = 0.35:
 	set(val):
+		if is_equal_approx(gun_spawn_chance, val):
+			return
 		gun_spawn_chance = val
 		_on_setting_changed()
 @export var min_gun_spacing: float = 6.0: ## Minimum distance between crowd members equipped with water guns
 	set(val):
+		if is_equal_approx(min_gun_spacing, val):
+			return
 		min_gun_spacing = val
 		_on_setting_changed()
 
 @export_group("Seed & Randomization")
 @export var use_custom_seed: bool = false: ## If true, crowd layout, characters, guns, and colors are 100% deterministic
 	set(val):
+		if use_custom_seed == val:
+			return
 		use_custom_seed = val
 		_on_setting_changed()
 @export var custom_seed: int = 0: ## Specific integer seed. Set any number to lock in a layout
 	set(val):
+		if custom_seed == val:
+			return
 		custom_seed = val
 		_on_setting_changed()
 @export var reroll_seed: bool = false: ## Toggle in the Inspector to roll a new seed and refresh the crowd
@@ -263,6 +359,8 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export_group("Layout Persistence")
 @export var lock_editor_positions: bool = true: ## When true, exact positions and rotations from the editor preview are saved and restored identically in game
 	set(val):
+		if lock_editor_positions == val:
+			return
 		lock_editor_positions = val
 		if not val:
 			saved_crowd_data.clear()
@@ -286,6 +384,8 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export_group("Hit Reactions")
 @export var enable_hitbox: bool = false: ## Master toggle for crowd hitboxes. When false, completely disables all hitbox collisions across crowd members.
 	set(val):
+		if enable_hitbox == val:
+			return
 		enable_hitbox = val
 		_update_hitbox_state()
 @export var enable_hit_reaction: bool = true
@@ -296,14 +396,20 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export_group("Audio Settings")
 @export var enable_audio: bool = true: ## Master audio toggle. If false, completely disables all sound from crowd shooting, VFX, and animations
 	set(val):
+		if enable_audio == val:
+			return
 		enable_audio = val
 		_update_audio_settings()
 @export var enable_vfx_sounds: bool = true: ## Toggle sound effects from water gun shots, beam VFX, and hit splatter
 	set(val):
+		if enable_vfx_sounds == val:
+			return
 		enable_vfx_sounds = val
 		_update_audio_settings()
 @export var enable_animation_sounds: bool = true: ## Toggle sounds triggered by or associated with animations (footsteps, voice, audio tracks)
 	set(val):
+		if enable_animation_sounds == val:
+			return
 		enable_animation_sounds = val
 		_update_audio_settings()
 
@@ -602,7 +708,6 @@ func _setup_editor_preview_deferred() -> void:
 	if preview_in_editor:
 		_setup_crowd()
 		_apply_editor_performance_mode()
-		_deferred_physics_validation()
 	else:
 		if saved_crowd_data.is_empty():
 			regenerate_crowd()
@@ -1431,6 +1536,8 @@ func find_valid_spawn_position(bounds: AABB, placed_positions: Array[Vector3], p
 func _deferred_physics_validation() -> void:
 	if not is_inside_tree() or _is_validating_physics:
 		return
+	if Engine.is_editor_hint() and lock_editor_positions and not saved_crowd_data.is_empty():
+		return
 	_is_validating_physics = true
 	# Wait 2 physics frames so StaticBody3D, CSG shapes, and terrain colliders are fully registered in PhysicsServer3D
 	var tree = get_tree()
@@ -1586,7 +1693,6 @@ func _setup_crowd() -> void:
 	# If layout locking is active and positions are already saved, restore them identically
 	if lock_editor_positions and not saved_crowd_data.is_empty():
 		_spawn_from_saved_layout()
-		_deferred_physics_validation()
 		return
 
 	saved_crowd_data.clear()

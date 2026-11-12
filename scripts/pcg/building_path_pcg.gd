@@ -93,7 +93,13 @@ var _collision_bounds_cache: Dictionary = {}
 			clear()
 
 ## Automatically re-generates when curve points change
-@export var auto_update_on_curve_change: bool = false
+@export var auto_update_on_curve_change: bool = false:
+	set(val):
+		if auto_update_on_curve_change == val:
+			return
+		auto_update_on_curve_change = val
+		if Engine.is_editor_hint():
+			set_process(val)
 
 ## Click to make this path's Curve3D unique (prevents sharing curves when duplicating nodes)
 @export var make_curve_unique: bool = false:
@@ -107,6 +113,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## This will also automatically swap the corner building mesh (Left <-> Right).
 @export var flip_front_to_back: bool = false:
 	set(val):
+		if flip_front_to_back == val:
+			return
 		flip_front_to_back = val
 		if _has_generated_buildings():
 			generate()
@@ -114,6 +122,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Extra rotation around local Y in degrees (useful for fine-tuning)
 @export var extra_rotation_degrees: float = 0.0:
 	set(val):
+		if is_equal_approx(extra_rotation_degrees, val):
+			return
 		extra_rotation_degrees = val
 		if _has_generated_buildings():
 			generate()
@@ -121,6 +131,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Lateral offset from the path line (positive moves to one side, negative to the other)
 @export var lateral_offset: float = 0.0:
 	set(val):
+		if is_equal_approx(lateral_offset, val):
+			return
 		lateral_offset = val
 		if _has_generated_buildings():
 			generate()
@@ -128,6 +140,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Height offset relative to path points
 @export var height_offset: float = 0.0:
 	set(val):
+		if is_equal_approx(height_offset, val):
+			return
 		height_offset = val
 		if _has_generated_buildings():
 			generate()
@@ -135,6 +149,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Distance to skip from start of the path
 @export var offset_start: float = 0.0:
 	set(val):
+		if is_equal_approx(offset_start, val):
+			return
 		offset_start = val
 		if _has_generated_buildings():
 			generate()
@@ -142,6 +158,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Distance to skip from end of the path
 @export var offset_end: float = 0.0:
 	set(val):
+		if is_equal_approx(offset_end, val):
+			return
 		offset_end = val
 		if _has_generated_buildings():
 			generate()
@@ -151,6 +169,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Places a corner building at the end of the path
 @export var use_corner_at_end: bool = true:
 	set(val):
+		if use_corner_at_end == val:
+			return
 		use_corner_at_end = val
 		if _has_generated_buildings():
 			generate()
@@ -158,6 +178,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Places a corner building at the start of the path
 @export var use_corner_at_start: bool = false:
 	set(val):
+		if use_corner_at_start == val:
+			return
 		use_corner_at_start = val
 		if _has_generated_buildings():
 			generate()
@@ -182,6 +204,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## FIXED_SPACING: Uses a fixed distance interval.
 @export var spacing_mode: SpacingMode = SpacingMode.COLLISION_BOUNDS:
 	set(val):
+		if spacing_mode == val:
+			return
 		spacing_mode = val
 		if _has_generated_buildings():
 			generate()
@@ -189,6 +213,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Standard building unit width (used for modular slot calculations, default 4.8m)
 @export var base_building_unit_width: float = 4.8:
 	set(val):
+		if is_equal_approx(base_building_unit_width, val):
+			return
 		base_building_unit_width = maxf(val, 0.5)
 		if _has_generated_buildings():
 			generate()
@@ -196,6 +222,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Gap between adjacent buildings. Set to 0.0 for completely flush, wall-to-wall contact.
 @export var building_gap: float = 0.0:
 	set(val):
+		if is_equal_approx(building_gap, val):
+			return
 		building_gap = val
 		if _has_generated_buildings():
 			generate()
@@ -203,6 +231,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Fixed distance used when spacing_mode is set to FIXED_SPACING
 @export var fixed_spacing: float = 4.8:
 	set(val):
+		if is_equal_approx(fixed_spacing, val):
+			return
 		fixed_spacing = maxf(val, 0.5)
 		if _has_generated_buildings():
 			generate()
@@ -213,6 +243,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Note: Wide and corner buildings count as 2 buildings!
 @export var max_buildings: int = 0:
 	set(val):
+		if max_buildings == val:
+			return
 		max_buildings = maxi(val, 0)
 		if _has_generated_buildings():
 			generate()
@@ -220,6 +252,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Deterministic seed for building placement variety
 @export var seed_number: int = 12345:
 	set(val):
+		if seed_number == val:
+			return
 		seed_number = val
 		if _has_generated_buildings():
 			generate()
@@ -234,6 +268,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Prevents the exact same building variant from placing side-by-side
 @export var avoid_adjacent_duplicates: bool = true:
 	set(val):
+		if avoid_adjacent_duplicates == val:
+			return
 		avoid_adjacent_duplicates = val
 		if _has_generated_buildings():
 			generate()
@@ -243,6 +279,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## How front iron gates are assigned during generation
 @export var gate_mode: GateMode = GateMode.RANDOM_CHANCE:
 	set(val):
+		if gate_mode == val:
+			return
 		gate_mode = val
 		if is_inside_tree() and is_node_ready():
 			_apply_gate_settings_to_existing()
@@ -250,6 +288,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Probability of a front iron gate being closed (solid/visible)
 @export_range(0.0, 1.0) var gate_closed_chance: float = 0.5:
 	set(val):
+		if is_equal_approx(gate_closed_chance, val):
+			return
 		gate_closed_chance = val
 		if gate_mode == GateMode.RANDOM_CHANCE and is_inside_tree() and is_node_ready():
 			_apply_gate_settings_to_existing()
@@ -257,6 +297,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Only affect front shop doors, leaving rear / back gates intact
 @export var toggle_front_gates_only: bool = true:
 	set(val):
+		if toggle_front_gates_only == val:
+			return
 		toggle_front_gates_only = val
 		if is_inside_tree() and is_node_ready():
 			_apply_gate_settings_to_existing()
@@ -297,6 +339,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Collisions and iron gates remain fully functional in both modes!
 @export var render_mode: RenderMode = RenderMode.SCENE_INSTANCES:
 	set(val):
+		if render_mode == val:
+			return
 		render_mode = val
 		if _has_generated_buildings():
 			generate()
@@ -307,6 +351,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Culls occluded geometry behind and beside buildings with zero door clipping and maximum performance!
 @export var generate_occluders: bool = true:
 	set(val):
+		if generate_occluders == val:
+			return
 		generate_occluders = val
 		if _has_generated_buildings():
 			generate()
@@ -314,6 +360,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Generates rear back wall occluder (culls background city, buildings, and props behind Silom Road)
 @export var occlude_back_wall: bool = true:
 	set(val):
+		if occlude_back_wall == val:
+			return
 		occlude_back_wall = val
 		if _has_generated_buildings():
 			generate()
@@ -322,6 +370,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## False by default to eliminate acute-angle self-culling during fast 180° camera turns; BackWallOccluder handles 100% of street background culling.
 @export var occlude_party_walls: bool = false:
 	set(val):
+		if occlude_party_walls == val:
+			return
 		occlude_party_walls = val
 		if _has_generated_buildings():
 			generate()
@@ -329,6 +379,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Inset from side and back walls in meters (prevents seam clipping and z-fighting between adjacent buildings)
 @export var occluder_wall_inset: float = 0.05:
 	set(val):
+		if is_equal_approx(occluder_wall_inset, val):
+			return
 		occluder_wall_inset = maxf(val, 0.0)
 		if _has_generated_buildings():
 			generate()
@@ -336,6 +388,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Distance in meters the rear back wall occluder is moved forward into the building interior (default 0.35m = 35cm).
 @export var occluder_back_inset: float = 0.35:
 	set(val):
+		if is_equal_approx(occluder_back_inset, val):
+			return
 		occluder_back_inset = maxf(val, 0.0)
 		if _has_generated_buildings():
 			generate()
@@ -343,6 +397,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Distance in meters the side party wall occluders are moved inward into the building interior (default 0.25m = 25cm).
 @export var occluder_side_inset: float = 0.25:
 	set(val):
+		if is_equal_approx(occluder_side_inset, val):
+			return
 		occluder_side_inset = maxf(val, 0.0)
 		if _has_generated_buildings():
 			generate()
@@ -350,6 +406,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Inset from front facade in meters (ensures side occluders do not clip front doors, balconies, or sidewalks)
 @export var occluder_front_inset: float = 0.5:
 	set(val):
+		if is_equal_approx(occluder_front_inset, val):
+			return
 		occluder_front_inset = maxf(val, 0.0)
 		if _has_generated_buildings():
 			generate()
@@ -358,6 +416,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Prevents popping during fast 180° camera turns by expanding bounds tested by occlusion and frustum culling.
 @export var extra_cull_margin: float = 3.5:
 	set(val):
+		if is_equal_approx(extra_cull_margin, val):
+			return
 		extra_cull_margin = maxf(val, 0.0)
 		if is_inside_tree() and is_node_ready():
 			_apply_cull_margin_to_existing()
@@ -366,6 +426,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Keeps both back wall and side party wall occluders safely inside the building core without poking out.
 @export_range(0.5, 1.0, 0.01) var occluder_size_scale: float = 0.85:
 	set(val):
+		if is_equal_approx(occluder_size_scale, val):
+			return
 		occluder_size_scale = clampf(val, 0.1, 1.0)
 		if _has_generated_buildings():
 			generate()
@@ -374,6 +436,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Completely prevents near-plane clipping and screen-blanking when walking inside or near buildings.
 @export var disable_near_camera_occluders: bool = true:
 	set(val):
+		if disable_near_camera_occluders == val:
+			return
 		disable_near_camera_occluders = val
 		if not val:
 			_restore_all_occluders()
@@ -381,6 +445,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Distance in meters from the camera or player within which a building's occluders are temporarily deactivated (default 10.0m).
 @export var near_occluder_disable_distance: float = 10.0:
 	set(val):
+		if is_equal_approx(near_occluder_disable_distance, val):
+			return
 		near_occluder_disable_distance = maxf(val, 1.0)
 
 # ==================== DISTANCE DITHER FADE ====================
@@ -389,6 +455,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Distant buildings smoothly dissolve into view along the street curve without popping!
 @export var enable_distance_fade: bool = true:
 	set(val):
+		if enable_distance_fade == val:
+			return
 		enable_distance_fade = val
 		if is_inside_tree() and is_node_ready():
 			_apply_fade_settings_to_existing()
@@ -396,6 +464,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## Maximum render distance in meters. Beyond this distance, the building is completely dissolved and culled from rendering.
 @export var fade_max_distance: float = 120.0:
 	set(val):
+		if is_equal_approx(fade_max_distance, val):
+			return
 		fade_max_distance = maxf(val, 5.0)
 		if is_inside_tree() and is_node_ready():
 			_apply_fade_settings_to_existing()
@@ -404,6 +474,8 @@ var _collision_bounds_cache: Dictionary = {}
 ## For example, if max is 120m and margin is 25m, the building begins dissolving at 95m and is fully culled at 120m.
 @export var fade_transition_margin: float = 25.0:
 	set(val):
+		if is_equal_approx(fade_transition_margin, val):
+			return
 		fade_transition_margin = maxf(val, 0.0)
 		if is_inside_tree() and is_node_ready():
 			_apply_fade_settings_to_existing()
@@ -411,12 +483,18 @@ var _collision_bounds_cache: Dictionary = {}
 ## Screen-space fade mode (VISIBILITY_RANGE_FADE_SELF enables AAA sub-pixel dithering in Forward+).
 @export var fade_mode: GeometryInstance3D.VisibilityRangeFadeMode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF:
 	set(val):
+		if fade_mode == val:
+			return
 		fade_mode = val
 		if is_inside_tree() and is_node_ready():
 			_apply_fade_settings_to_existing()
 
 # ==================== BAKE ACTION ====================
 @export_group("Bake to Scene")
+## When false, generated buildings are runtime procedural children (not serialized into .tscn file, preventing editor freezing and 100MB scene bloat).
+## Set to true only if you explicitly want to save individual generated building nodes into the scene file.
+@export var persist_to_scene: bool = false
+
 ## Converts generated buildings to regular scene nodes, detaching them from PCG
 @export var bake_to_scene: bool = false:
 	set(val):
@@ -432,12 +510,18 @@ func _ready() -> void:
 	_init_default_scenes_if_needed()
 	if Engine.is_editor_hint():
 		_ensure_curve_connected()
-	set_process(true)
+		set_process(auto_update_on_curve_change)
+	else:
+		set_process(disable_near_camera_occluders and generate_occluders)
+		if not _has_generated_buildings():
+			generate()
 
 func _enter_tree() -> void:
 	if Engine.is_editor_hint():
 		_ensure_curve_connected()
-	set_process(true)
+		set_process(auto_update_on_curve_change)
+	else:
+		set_process(disable_near_camera_occluders and generate_occluders)
 
 func _exit_tree() -> void:
 	_disconnect_curve()
@@ -449,7 +533,8 @@ func _process(delta: float) -> void:
 			_needs_regenerate = false
 			if auto_update_on_curve_change and is_inside_tree():
 				generate()
-	
+		return
+
 	if disable_near_camera_occluders and generate_occluders:
 		_near_occluder_check_timer += delta
 		if _near_occluder_check_timer >= 0.05:
@@ -669,7 +754,7 @@ func _get_or_create_container() -> Node3D:
 		container = Node3D.new()
 		container.name = "GeneratedBuildings"
 		add_child(container)
-		if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+		if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
 			container.owner = get_tree().edited_scene_root
 	return container
 
@@ -686,6 +771,9 @@ func clear() -> void:
 		for child in container.get_children():
 			container.remove_child(child)
 			child.queue_free()
+		if not persist_to_scene:
+			remove_child(container)
+			container.queue_free()
 
 ## Main PCG generation algorithm
 func generate() -> void:
@@ -826,7 +914,7 @@ func _spawn_building(container: Node3D, scene: PackedScene, d: float, rng: Rando
 	instance.transform = t
 
 	container.add_child(instance)
-	if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+	if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
 		instance.owner = get_tree().edited_scene_root
 
 	# Attach or configure PCGBuildingInstance component for gate control
@@ -1146,6 +1234,11 @@ func bake() -> void:
 		return
 	
 	container.name = "Baked_Buildings_" + str(randi() % 1000)
+	if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+		var root = get_tree().edited_scene_root
+		container.owner = root
+		for child in container.find_children("*", "Node", true, false):
+			child.owner = root
 	print("BuildingPathPCG: Successfully baked buildings to node: ", container.name)
 
 ## Batches non-gate MeshInstance3Ds across all generated buildings into MultiMeshInstance3Ds.
@@ -1154,7 +1247,7 @@ func _apply_multimesh_batching(container: Node3D) -> void:
 	var mm_container: Node3D = Node3D.new()
 	mm_container.name = "MultiMeshes"
 	container.add_child(mm_container)
-	if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+	if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
 		mm_container.owner = get_tree().edited_scene_root
 
 	# Dictionary of batches:
@@ -1245,7 +1338,7 @@ func _apply_multimesh_batching(container: Node3D) -> void:
 			mmi.visibility_range_fade_mode = fade_mode
 
 		mm_container.add_child(mmi)
-		if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+		if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
 			mmi.owner = get_tree().edited_scene_root
 
 	print("BuildingPathPCG [MultiMesh]: Batched %d mesh instances into %d MultiMeshInstance3D draw calls." % [total_batched, batches.size()])

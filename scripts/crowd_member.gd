@@ -15,11 +15,15 @@ signal enemy_hit(hit_data: Dictionary)
 @export_group("Audio")
 @export var enable_audio: bool = true:
 	set(val):
+		if enable_audio == val:
+			return
 		enable_audio = val
 		if is_inside_tree() and is_node_ready():
 			_apply_audio_state()
 @export var enable_animation_sounds: bool = true:
 	set(val):
+		if enable_animation_sounds == val:
+			return
 		enable_animation_sounds = val
 		if is_inside_tree() and is_node_ready():
 			_apply_audio_state()
@@ -79,6 +83,8 @@ var _nodes_resolved: bool = false
 # Hitbox Dynamic LOD State
 @export var enable_hitbox: bool = false: ## Toggle hitbox collision. When false, disables chest/body collision shape and area.
 	set(val):
+		if enable_hitbox == val:
+			return
 		enable_hitbox = val
 		if not is_inside_tree():
 			return
@@ -107,6 +113,31 @@ var hitboxes: Node3D = null
 var _turn_tween: Tween = null
 var _pop_in_tween: Tween = null
 var is_popping_out: bool = false
+
+const HAND_BONE_NAME: String = "DEF-hand.R"
+const NPC_GUN_SCENE: PackedScene = preload("res://GunSystem/NPC_Gun.tscn")
+const WATER_BALLOON_SCENE: PackedScene = preload("res://scenes/items/water_balloon.tscn")
+
+const GUN_LOCAL_TRANSFORM: Transform3D = Transform3D(
+	Vector3(-0.52649117, 0.31084087, 0.1512172),
+	Vector3(0.23948482, -0.00089198886, 0.5168098),
+	Vector3(0.39427686, 0.41561803, -0.11198624),
+	Vector3(0.057711244, 0.10400703, 0.050934732)
+)
+
+const GUN_SPAWN_POINT_TRANSFORM: Transform3D = Transform3D(
+	Vector3(-1.0744715, 0.4887449, 0.8046468),
+	Vector3(1.1539936, -0.0033115745, 1.5429779),
+	Vector3(0.49989197, 1.7084624, -0.37020308),
+	Vector3(0.00009465, 0.24699622, 0.9487334)
+)
+
+const BALLOON_LOCAL_TRANSFORM: Transform3D = Transform3D(
+	Vector3(1.0, 0.0, 0.0),
+	Vector3(0.0, 1.0, 0.0),
+	Vector3(0.0, 0.0, 1.0),
+	Vector3(0.06317961, 0.060317278, 0.10121859)
+)
 
 func play_balloon_pop_in(delay: float = 0.0, duration: float = 0.45) -> void:
 	if _pop_in_tween and _pop_in_tween.is_valid():
@@ -284,6 +315,7 @@ func _set_entry_active(entry: Dictionary, active_collision: bool, _active_sync: 
 func _ready() -> void:
 	set_process(false)
 	set_physics_process(false)
+	_resolve_nodes()
 	if Engine.is_editor_hint():
 		if has_meta("is_crowd_preview") or (get_parent() and "preview_in_editor" in get_parent()):
 			if hitboxes and is_instance_valid(hitboxes):
@@ -296,12 +328,10 @@ func _ready() -> void:
 				for child in skeleton.get_children():
 					if child is BoneAttachment3D and child.name != "HitboxAttachRightHand":
 						child.queue_free()
-			if attached_balloon and is_instance_valid(attached_balloon):
-				attached_balloon.queue_free()
-				attached_balloon = null
+			if not is_armed:
+				_remove_hand_attachment()
 		return
 	if not _is_setup_done:
-		_resolve_nodes()
 		_optimize_skeleton_bones()
 		_setup_hit_reactions()
 		_setup_hitboxes()
@@ -331,35 +361,8 @@ func _resolve_nodes() -> void:
 		# Disable AnimationTree so we control AnimationPlayer directly via script
 		anim_tree.active = false
 
-	if not is_instance_valid(npc_gun):
-		npc_gun = find_child("NPCGun", true, false) as Node3D
-		if not npc_gun:
-			npc_gun = find_child("NPC_Gun", true, false) as Node3D
-	if is_instance_valid(npc_gun) and not is_instance_valid(gun_spawn_point):
-		if npc_gun.has_method("get_spawn_point"):
-			gun_spawn_point = npc_gun.get_spawn_point()
-		else:
-			gun_spawn_point = npc_gun.find_child("GunSpawnPoint", true, false) as Node3D
-
 	if not is_instance_valid(hitboxes):
 		hitboxes = find_child("Hitboxes", true, false) as Node3D
-
-	if not is_instance_valid(attached_balloon):
-		attached_balloon = find_child("WaterBalloon", true, false) as Node3D
-	if is_instance_valid(attached_balloon):
-		# Clear exported Node references on WaterBalloon before freeing any GPUParticles3D
-		# children; otherwise Godot's editor scene-tree walk (perform_node_renames on delete)
-		# dereferences dangling pointers and crashes the editor.
-		if "trail_particles" in attached_balloon:
-			attached_balloon.trail_particles = null
-		if "splash_particles" in attached_balloon:
-			attached_balloon.splash_particles = null
-		if not Engine.is_editor_hint():
-			# Hand-held balloon is strictly a visual prop before launch; remove its GPUParticles3D
-			# children to eliminate hundreds of idle particle systems from GPU memory.
-			for child in attached_balloon.find_children("*", "GPUParticles3D", true, false):
-				child.queue_free()
-		_set_attached_balloon_visible(false)
 
 	# Cache meshes and collision RIDs once to avoid thousands of find_children() calls during gameplay
 	cached_meshes.clear()
@@ -391,6 +394,75 @@ func _resolve_nodes() -> void:
 func _optimize_skeleton_bones() -> void:
 	# In Godot 4, disabling skeleton bones breaks MeshInstance3D Skin bindings and triggers thousands of C++ engine errors per frame.
 	return
+
+func _ensure_hand_attachment() -> BoneAttachment3D:
+	if not is_instance_valid(skeleton):
+		return null
+	var hand = skeleton.get_node_or_null("HitboxAttachRightHand") as BoneAttachment3D
+	if not hand:
+		hand = BoneAttachment3D.new()
+		hand.name = "HitboxAttachRightHand"
+		hand.bone_name = HAND_BONE_NAME
+		var b_idx = skeleton.find_bone(HAND_BONE_NAME)
+		if b_idx != -1:
+			hand.bone_idx = b_idx
+		skeleton.add_child(hand)
+	return hand
+
+func _remove_hand_attachment() -> void:
+	if is_instance_valid(skeleton):
+		var hand = skeleton.get_node_or_null("HitboxAttachRightHand")
+		if hand:
+			for child in hand.get_children():
+				child.queue_free()
+			hand.queue_free()
+	npc_gun = null
+	gun_spawn_point = null
+	attached_balloon = null
+
+func _equip_gun() -> void:
+	if is_instance_valid(npc_gun):
+		npc_gun.visible = true
+		return
+	var hand = _ensure_hand_attachment()
+	if not hand or not NPC_GUN_SCENE:
+		return
+	npc_gun = NPC_GUN_SCENE.instantiate() as Node3D
+	npc_gun.transform = GUN_LOCAL_TRANSFORM
+	hand.add_child(npc_gun)
+	
+	gun_spawn_point = npc_gun.find_child("GunSpawnPoint", true, false) as Node3D
+	if not gun_spawn_point:
+		gun_spawn_point = Node3D.new()
+		gun_spawn_point.name = "GunSpawnPoint"
+		gun_spawn_point.transform = GUN_SPAWN_POINT_TRANSFORM
+		npc_gun.add_child(gun_spawn_point)
+	npc_gun.visible = true
+
+func _unequip_gun() -> void:
+	if is_instance_valid(npc_gun):
+		npc_gun.queue_free()
+		npc_gun = null
+		gun_spawn_point = null
+	if not is_instance_valid(attached_balloon):
+		_remove_hand_attachment()
+
+func _spawn_hand_balloon() -> void:
+	if is_instance_valid(attached_balloon):
+		return
+	var hand = _ensure_hand_attachment()
+	if not hand or not WATER_BALLOON_SCENE:
+		return
+	attached_balloon = WATER_BALLOON_SCENE.instantiate() as Node3D
+	attached_balloon.transform = BALLOON_LOCAL_TRANSFORM
+	if "trail_particles" in attached_balloon:
+		attached_balloon.trail_particles = null
+	if "splash_particles" in attached_balloon:
+		attached_balloon.splash_particles = null
+	for child in attached_balloon.find_children("*", "GPUParticles3D", true, false):
+		child.queue_free()
+	hand.add_child(attached_balloon)
+	attached_balloon.visible = false
 
 func _set_attached_balloon_visible(is_vis: bool) -> void:
 	if not attached_balloon or not is_instance_valid(attached_balloon):
@@ -510,16 +582,12 @@ func setup_member(armed: bool, material: Material, config: Dictionary = {}) -> v
 
 	is_armed = armed and enable_water_gun
 	if is_armed:
-		if is_instance_valid(npc_gun):
-			npc_gun.visible = true
-		if attached_balloon and is_instance_valid(attached_balloon):
+		_equip_gun()
+		if is_instance_valid(attached_balloon):
 			attached_balloon.queue_free()
 			attached_balloon = null
 	else:
-		if npc_gun and is_instance_valid(npc_gun):
-			npc_gun.queue_free()
-			npc_gun = null
-			gun_spawn_point = null
+		_unequip_gun()
 
 	if material:
 		set_crowd_material(material)
@@ -759,6 +827,7 @@ func throw_balloon_at(target_pos: Vector3, on_balloon_release: Callable) -> void
 	# Smoothly rotate toward target
 	_rotate_smoothly_toward(target_pos)
 
+	_spawn_hand_balloon()
 	_set_attached_balloon_visible(true)
 
 	var target_anim = balloon_throw_anim_name
@@ -786,6 +855,8 @@ func throw_balloon_at(target_pos: Vector3, on_balloon_release: Callable) -> void
 		get_tree().create_timer(anim_len).timeout.connect(func():
 			if is_instance_valid(self):
 				is_performing_action = false
+				if not is_armed:
+					_remove_hand_attachment()
 				resume_base_loop()
 		)
 	else:
@@ -794,6 +865,8 @@ func throw_balloon_at(target_pos: Vector3, on_balloon_release: Callable) -> void
 		if on_balloon_release.is_valid():
 			on_balloon_release.call(self, spawn_pos, target_pos)
 		is_performing_action = false
+		if not is_armed:
+			_remove_hand_attachment()
 		resume_base_loop()
 
 func get_hit_animation_for_zone(zone: String) -> String:

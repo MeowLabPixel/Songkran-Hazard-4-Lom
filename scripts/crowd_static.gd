@@ -15,41 +15,57 @@ class MemberInstanceData:
 @export_group("Crowd Layout")
 @export var spawn_area_size: Vector3 = Vector3(24.0, 1.0, 8.0):
 	set(val):
+		if spawn_area_size == val:
+			return
 		spawn_area_size = val
 		_on_config_changed()
 
 @export_range(1, 10, 1) var row_count: int = 4:
 	set(val):
+		if row_count == val:
+			return
 		row_count = val
 		_on_config_changed()
 
 @export_range(1, 200, 1) var total_crowd_count: int = 60:
 	set(val):
+		if total_crowd_count == val:
+			return
 		total_crowd_count = val
 		_on_config_changed()
 
 @export var front_row_is_negative_z: bool = true:
 	set(val):
+		if front_row_is_negative_z == val:
+			return
 		front_row_is_negative_z = val
 		_on_config_changed()
 
 @export var disallow_jumpers_in_front_row: bool = true:
 	set(val):
+		if disallow_jumpers_in_front_row == val:
+			return
 		disallow_jumpers_in_front_row = val
 		_on_config_changed()
 
 @export_range(0.0, 180.0, 1.0) var facing_randomness_deg: float = 35.0:
 	set(val):
+		if is_equal_approx(facing_randomness_deg, val):
+			return
 		facing_randomness_deg = val
 		_on_config_changed()
 
 @export var base_facing_angle_deg: float = 0.0:
 	set(val):
+		if is_equal_approx(base_facing_angle_deg, val):
+			return
 		base_facing_angle_deg = val
 		_on_config_changed()
 
 @export var custom_seed: int = 12345:
 	set(val):
+		if custom_seed == val:
+			return
 		custom_seed = val
 		_on_config_changed()
 
@@ -61,6 +77,8 @@ class MemberInstanceData:
 @export var texture_pink: Texture2D = preload("res://scenes/Crowds/Crowd_Texture_Pink.png")
 @export var uv_scale: Vector3 = Vector3(1.3, 1.3, 1.3):
 	set(val):
+		if uv_scale == val:
+			return
 		uv_scale = val
 		if is_inside_tree() and is_node_ready():
 			_setup_materials()
@@ -68,6 +86,8 @@ class MemberInstanceData:
 
 @export_range(0.0, 1.0, 0.05) var anim_pose_percentage: float = 0.5:
 	set(val):
+		if is_equal_approx(anim_pose_percentage, val):
+			return
 		anim_pose_percentage = val
 		_on_config_changed()
 
@@ -99,6 +119,8 @@ class MemberInstanceData:
 
 @export var enable_npc_guns: bool = true:
 	set(val):
+		if enable_npc_guns == val:
+			return
 		enable_npc_guns = val
 		if is_inside_tree() and is_node_ready():
 			_baked_meshes.clear()
@@ -106,6 +128,8 @@ class MemberInstanceData:
 
 @export var npc_gun_scene: PackedScene = preload("res://GunSystem/npc_gun_static_crowd.tscn"):
 	set(val):
+		if npc_gun_scene == val:
+			return
 		npc_gun_scene = val
 		if is_inside_tree() and is_node_ready():
 			_baked_meshes.clear()
@@ -124,12 +148,21 @@ class MemberInstanceData:
 @export_group("Cheering & Animation")
 @export var enable_cheering: bool = true:
 	set(val):
+		if enable_cheering == val:
+			return
 		enable_cheering = val
 		_update_process_state()
 
 @export var preview_cheer_in_editor: bool = false:
 	set(val):
+		if preview_cheer_in_editor == val:
+			return
 		preview_cheer_in_editor = val
+		if Engine.is_editor_hint() and is_inside_tree() and is_node_ready():
+			if not preview_cheer_in_editor:
+				_cleanup_ambient_projectiles()
+			elif enable_ambient_projectiles:
+				_setup_ambient_projectiles()
 		_update_process_state()
 
 @export var cheer_speed: float = 8.0
@@ -143,6 +176,8 @@ class MemberInstanceData:
 @export_group("Ambient Projectiles")
 @export var enable_ambient_projectiles: bool = true:
 	set(val):
+		if enable_ambient_projectiles == val:
+			return
 		enable_ambient_projectiles = val
 		if is_inside_tree() and is_node_ready():
 			if not val:
@@ -163,6 +198,8 @@ class MemberInstanceData:
 @export_group("Ground & Collision Snapping")
 @export var enable_ground_snap: bool = true:
 	set(val):
+		if enable_ground_snap == val:
+			return
 		enable_ground_snap = val
 		_on_config_changed()
 
@@ -198,7 +235,7 @@ var _balloon_timer: float = 0.0
 func _enter_tree() -> void:
 	_setup_materials()
 	if Engine.is_editor_hint() and is_node_ready():
-		if enable_ambient_projectiles and not is_instance_valid(_projectiles_container):
+		if enable_ambient_projectiles and preview_cheer_in_editor and not is_instance_valid(_projectiles_container):
 			_setup_ambient_projectiles()
 		if _pose_multimeshes.is_empty():
 			_bake_and_build_crowd()
@@ -207,7 +244,8 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	_setup_materials()
 	_setup_visibility_notifier()
-	_setup_ambient_projectiles()
+	if not Engine.is_editor_hint() or preview_cheer_in_editor:
+		_setup_ambient_projectiles()
 
 	if _pose_multimeshes.is_empty():
 		_bake_and_build_crowd()
@@ -793,6 +831,8 @@ func _cleanup_ambient_projectiles() -> void:
 			child.queue_free()
 
 func _setup_ambient_projectiles() -> void:
+	if Engine.is_editor_hint() and not preview_cheer_in_editor:
+		return
 	_cleanup_ambient_projectiles()
 	if not enable_ambient_projectiles:
 		return
