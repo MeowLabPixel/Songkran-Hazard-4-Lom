@@ -143,17 +143,21 @@ func _update(_delta:float) -> void:
 
 		
 func _state_input(_event: InputEvent) -> void:
-	if Input.is_action_just_pressed("quick_turn") and not owner.is_quick_turn and owner.quick_turn_cooldown <= 0.0:
+	var can_qt = owner.can_quick_turn() if owner.has_method("can_quick_turn") else (not owner.is_quick_turn and owner.quick_turn_cooldown <= 0.0)
+	var wants_qt = owner.is_quick_turn_input_just_pressed() if owner.has_method("is_quick_turn_input_just_pressed") else Input.is_action_just_pressed("quick_turn")
+	if wants_qt and can_qt:
 		finished.emit("Quick_turn")
+		return
 	if Input.is_action_pressed("sprint") and input_dir.y < -0.1:
 		finished.emit("Sprint")
 	if Input.is_action_just_pressed("Reload") or Input.is_action_pressed("Reload"):
 		var gun = owner.gun_controller.current_gun
-		if gun and gun.is_super_active and gun.air >= gun.max_air:
+		if gun and gun.is_super_active:
 			return
 		var is_pistol = gun and (gun.gun_name == "Water pistol" or owner.gun_controller.current_gun_index == 0)
-		var is_superpump_attempt = is_pistol and gun.air >= gun.max_air
-		if Input.is_action_just_pressed("Reload") or (is_superpump_attempt and not gun.is_super_active):
+		var is_shotgun = gun and (gun.gun_name == "Water shotgun" or owner.gun_controller.current_gun_index == 1)
+		var is_superpump_attempt = (is_pistol or is_shotgun) and gun.air >= gun.max_air
+		if Input.is_action_just_pressed("Reload") or (is_pistol and is_superpump_attempt and not gun.is_super_active):
 			if not (is_superpump_attempt and owner.superpump_cooldown > 0.0):
 				get_viewport().set_input_as_handled()
 				finished.emit("Reload")
@@ -178,6 +182,8 @@ func switch_gun(num:int):
 		#one shot anim
 
 func set_gun_anim():
+	if owner.has_method("sync_gun_animation_state"):
+		owner.sync_gun_animation_state()
 	if not owner.gun_controller or not owner.gun_controller.current_gun:
 		return
 	if owner.gun_controller.current_gun.get_gun_name() == "Water pistol":

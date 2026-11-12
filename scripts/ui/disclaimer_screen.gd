@@ -726,8 +726,7 @@ func _show_difficulty_selection() -> void:
 	vbox.add_child(hbox)
 	
 	# Create the 2 custom image buttons (Casual and Expert)
-	if GameManager.expert_mode_played:
-		_create_difficulty_button(hbox, GameManager.Difficulty.CASUAL)
+	_create_difficulty_button(hbox, GameManager.Difficulty.CASUAL)
 	_create_difficulty_button(hbox, GameManager.Difficulty.EXPERT)
 	
 	# Back prompt

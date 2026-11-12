@@ -21,12 +21,13 @@ func enter() -> void:
 	
 	if _is_first_enter and enemy and enemy.is_inside_tree() and enemy.anim_tree:
 		_is_first_enter = false
-		var tree = enemy.get_tree()
-		if tree:
-			tree.process_frame.connect(func():
-				if is_instance_valid(enemy) and is_instance_valid(enemy.anim_tree):
-					enemy.anim_tree.advance(randf_range(0.0, 5.0))
-			, CONNECT_ONE_SHOT)
+		if not (enemy.has_method("has_idle_transition_node") and enemy.has_idle_transition_node()):
+			var tree = enemy.get_tree()
+			if tree:
+				tree.process_frame.connect(func():
+					if is_instance_valid(enemy) and is_instance_valid(enemy.anim_tree):
+						enemy.anim_tree.advance(randf_range(0.0, 5.0))
+				, CONNECT_ONE_SHOT)
 
 func exit() -> void:
 	pass
@@ -43,11 +44,20 @@ func physics_update(delta: float) -> void:
 	_idle_timer += delta
 	if _idle_timer >= _idle_interval:
 		_idle_timer = 0.0
-		_idle_interval = randf_range(2.0, 5.0)
-		_play_anim(enemy.anim_set.idle)
+		if enemy and enemy.has_method("has_idle_transition_node") and enemy.has_idle_transition_node():
+			_idle_interval = randf_range(8.0, 15.0)
+			if not combat_initiated and (not enemy or not enemy.has_ever_hunted):
+				enemy.update_idle_variant(true)
+		else:
+			_idle_interval = randf_range(2.0, 5.0)
+			_play_anim(enemy.anim_set.idle)
 
 func handle_hit(_hit_data: Dictionary) -> String:
 	combat_initiated = true
+	if enemy:
+		enemy.has_ever_hunted = true
+		if enemy.has_method("update_idle_variant"):
+			enemy.update_idle_variant()
 	_alert_all_zombies()
 	var zone: String = _hit_data.get("hit_zone", "body")
 	match zone:

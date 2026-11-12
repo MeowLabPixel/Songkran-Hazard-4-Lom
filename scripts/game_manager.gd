@@ -1,15 +1,36 @@
 extends Node
 
 signal game_ended
+signal phase_changed(new_phase: GamePhase)
 
 const SURVIVAL_LIMIT: float = 600.0 # 10 minutes
-var kill_limit: int = 15
+var kill_limit: int = 22
+
+enum GamePhase { FIRST_WAVE = 0, MEET_MERCHANT = 1, FINAL_WAVE = 2 }
+var game_phase: GamePhase = GamePhase.FIRST_WAVE
+var first_wave_target: int = 10
+var final_wave_target: int = 12
+var first_wave_kills: int = 0
+var final_wave_kills: int = 0
 
 enum Difficulty { EXPERT, CASUAL }
-var difficulty: Difficulty = Difficulty.EXPERT
+var difficulty: Difficulty = Difficulty.EXPERT:
+	set(val):
+		difficulty = val
+		apply_difficulty_settings()
+
+func apply_difficulty_settings() -> void:
+	if difficulty == Difficulty.CASUAL:
+		first_wave_target = 8 # 2 pre-placed + 6 spawned
+		final_wave_target = 10
+		kill_limit = 18 # (2 + 6) + 10
+	else:
+		first_wave_target = 10 # 2 pre-placed + 8 spawned
+		final_wave_target = 12
+		kill_limit = 22 # (2 + 8) + 12
 
 const SAVE_PATH = "user://game_settings.cfg"
-var expert_mode_played: bool = false
+var expert_mode_played: bool = true
 var casual_mode_new: bool = false
 var fps_cap: int = 60:
 	set = set_fps_cap
@@ -177,7 +198,7 @@ func load_settings() -> void:
 		if file:
 			var val1 = file.get_var()
 			if val1 is bool:
-				expert_mode_played = val1
+				expert_mode_played = true # Casual mode is always unlocked from the start
 			if not file.eof_reached():
 				var val2 = file.get_var()
 				if val2 is bool:
@@ -240,16 +261,18 @@ func start_game() -> void:
 	print("[GameManager] Game loop started. Survive 10 minutes or defeat %d villagers." % kill_limit)
 
 func reset_game() -> void:
+	Engine.time_scale = 1.0
 	survival_time_elapsed = 0.0
 	kill_count = 0
 	is_game_ended = false
 	is_game_active = false
 	is_timer_active = false
 	
-	if difficulty == Difficulty.CASUAL:
-		kill_limit = 10
-	else:
-		kill_limit = 15
+	apply_difficulty_settings()
+	game_phase = GamePhase.FIRST_WAVE
+	first_wave_kills = 0
+	final_wave_kills = 0
+	phase_changed.emit(game_phase)
 	
 	# Reset all performance metrics
 	game_outcome = Outcome.VICTORY
@@ -264,6 +287,21 @@ func reset_game() -> void:
 	last_kill_time = -999.0
 	total_enemies_in_level = 0
 	registered_spawners.clear()
+	
+	# Clear gameplay singletons and object pools
+	if has_node("/root/ItemManager"):
+		get_node("/root/ItemManager").reset()
+	if has_node("/root/EnemyPool"):
+		get_node("/root/EnemyPool").clear_pools()
+	ItemPickup.clear_pool()
+	if has_node("/root/EnemyRegistry"):
+		var reg = get_node("/root/EnemyRegistry")
+		if reg and "_active_enemies" in reg:
+			reg._active_enemies.clear()
+		if reg and "_combat_enemies" in reg:
+			reg._combat_enemies.clear()
+	if has_node("/root/AttackTokenManager"):
+		get_node("/root/AttackTokenManager")._clear_all_tokens()
 
 func register_spawner(spawner) -> void:
 	if not registered_spawners.has(spawner):
@@ -282,7 +320,10 @@ func _initialize_total_enemies() -> void:
 	var tree = get_tree()
 	if not tree:
 		return
-	var pre_placed = tree.get_nodes_in_group("enemies").size()
+	var pre_placed = 0
+	for enemy in tree.get_nodes_in_group("enemies"):
+		if is_instance_valid(enemy) and enemy.process_mode != Node.PROCESS_MODE_DISABLED and enemy.can_process():
+			pre_placed += 1
 	var spawner_spawn_count = 0
 	for spawner in registered_spawners:
 		if is_instance_valid(spawner):
@@ -293,12 +334,18 @@ func _initialize_total_enemies() -> void:
 func _process(delta: float) -> void:
 	_update_perf_overlay(delta)
 
+	# Auto-start game if launched directly into world scene in editor/debug mode
+	if not is_game_active and not is_game_ended:
+		var current_tree := get_tree()
+		if current_tree and current_tree.current_scene and current_tree.current_scene.scene_file_path.to_lower().contains("world"):
+			start_game()
+
 	if not is_game_active or is_game_ended:
 		return
 		
 	# Only tick time if the timer has been activated and we are in the gameplay world scene
 	var tree := get_tree()
-	if tree and tree.current_scene and is_timer_active and tree.current_scene.scene_file_path.ends_with("world.tscn"):
+	if tree and tree.current_scene and is_timer_active and tree.current_scene.scene_file_path.to_lower().contains("world"):
 		survival_time_elapsed += delta
 		if survival_time_elapsed >= SURVIVAL_LIMIT:
 			print("[GameManager] Time limit reached! Ending game.")
@@ -348,9 +395,30 @@ func register_kill(is_takedown: bool = false) -> void:
 		highest_combo = current_combo
 		
 	print("[GameManager] Villager defeated! Total kills: %d/%d (Combo: %d, Max Combo: %d)" % [kill_count, kill_limit, current_combo, highest_combo])
-	if kill_count >= kill_limit:
-		print("[GameManager] Kill threshold reached! Ending game.")
+	if game_phase == GamePhase.FIRST_WAVE:
+		first_wave_kills += 1
+		print("[GameManager] First wave kill: %d/%d" % [first_wave_kills, first_wave_target])
+		if first_wave_kills >= first_wave_target:
+			game_phase = GamePhase.MEET_MERCHANT
+			phase_changed.emit(game_phase)
+			print("[GameManager] First wave complete (%d kills)! Objective: Go meet the mysterious merchant in the alley." % first_wave_target)
+	elif game_phase == GamePhase.FINAL_WAVE:
+		final_wave_kills += 1
+		print("[GameManager] Final wave kill: %d/%d" % [final_wave_kills, final_wave_target])
+		if final_wave_kills >= final_wave_target:
+			print("[GameManager] Final kill threshold reached (%d kills)! Ending game." % final_wave_target)
+			end_game()
+
+	# Safety net: Always end the game if total kill limit is reached regardless of phase
+	if kill_count >= kill_limit and not is_game_ended:
+		print("[GameManager] Overall kill limit (%d) reached! Ending game." % kill_limit)
 		end_game()
+
+func notify_merchant_met() -> void:
+	if game_phase == GamePhase.MEET_MERCHANT or (game_phase == GamePhase.FIRST_WAVE and first_wave_kills >= first_wave_target):
+		game_phase = GamePhase.FINAL_WAVE
+		phase_changed.emit(game_phase)
+		print("[GameManager] Player met the mysterious merchant in the alley! Final phase started: %d kills target." % final_wave_target)
 
 func end_game() -> void:
 	if is_game_ended:
@@ -404,14 +472,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			toggle_perf_overlay()
 
 func restart_game_to_disclaimer() -> void:
-	print("[GameManager] Backspace pressed. Resetting game and restarting to startup main menu.")
+	print("[GameManager] Backspace pressed. Game fully reset (Difficulty: %s, Kill Limit: %d). Returning to menu." % [Difficulty.keys()[difficulty], kill_limit])
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	reset_game()
 	movement_type_selected = false
-	expert_mode_played = false
-	casual_mode_new = false
 	save_settings()
-	if has_node("/root/ItemManager"):
-		get_node("/root/ItemManager").reset()
+	if typeof(SoundManager) != TYPE_NIL and SoundManager.has_method("stop_music"):
+		SoundManager.stop_music()
 	var tree := get_tree()
 	if tree:
-		tree.change_scene_to_file("res://scenes/startup.tscn")
+		tree.call_deferred("change_scene_to_file", "res://scenes/startup.tscn")

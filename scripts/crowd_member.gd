@@ -77,6 +77,15 @@ var _is_setup_done: bool = false
 var _nodes_resolved: bool = false
 
 # Hitbox Dynamic LOD State
+@export var enable_hitbox: bool = false: ## Toggle hitbox collision. When false, disables chest/body collision shape and area.
+	set(val):
+		enable_hitbox = val
+		if not is_inside_tree():
+			return
+		if enable_hitbox and is_row_active:
+			set_hitbox_mode(HitboxMode.CHEST)
+		else:
+			set_hitbox_mode(HitboxMode.OFF)
 enum HitboxMode { OFF, CHEST, FULL }
 var _current_hitbox_mode: HitboxMode = HitboxMode.OFF
 var _cached_hitbox_areas: Array[Area3D] = []
@@ -184,7 +193,10 @@ func set_row_active(active: bool) -> void:
 					anim_player.play(anim_player.current_animation)
 			else:
 				resume_base_loop()
-		set_hitbox_mode(HitboxMode.CHEST)
+		if enable_hitbox:
+			set_hitbox_mode(HitboxMode.CHEST)
+		else:
+			set_hitbox_mode(HitboxMode.OFF)
 
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
@@ -235,10 +247,14 @@ func request_full_hitboxes() -> void:
 	ensure_chest_hitbox_active()
 
 func ensure_chest_hitbox_active() -> void:
+	if not enable_hitbox:
+		return
 	if _current_hitbox_mode == HitboxMode.OFF:
 		set_hitbox_mode(HitboxMode.CHEST)
 
 func set_hitbox_mode(mode: HitboxMode) -> void:
+	if not enable_hitbox:
+		mode = HitboxMode.OFF
 	if _current_hitbox_mode == mode:
 		return
 	_current_hitbox_mode = mode
@@ -331,10 +347,18 @@ func _resolve_nodes() -> void:
 	if not is_instance_valid(attached_balloon):
 		attached_balloon = find_child("WaterBalloon", true, false) as Node3D
 	if is_instance_valid(attached_balloon):
-		# Hand-held balloon is strictly a visual prop before launch; remove its GPUParticles3D
-		# children to eliminate hundreds of idle particle systems from GPU memory.
-		for child in attached_balloon.find_children("*", "GPUParticles3D", true, false):
-			child.queue_free()
+		# Clear exported Node references on WaterBalloon before freeing any GPUParticles3D
+		# children; otherwise Godot's editor scene-tree walk (perform_node_renames on delete)
+		# dereferences dangling pointers and crashes the editor.
+		if "trail_particles" in attached_balloon:
+			attached_balloon.trail_particles = null
+		if "splash_particles" in attached_balloon:
+			attached_balloon.splash_particles = null
+		if not Engine.is_editor_hint():
+			# Hand-held balloon is strictly a visual prop before launch; remove its GPUParticles3D
+			# children to eliminate hundreds of idle particle systems from GPU memory.
+			for child in attached_balloon.find_children("*", "GPUParticles3D", true, false):
+				child.queue_free()
 		_set_attached_balloon_visible(false)
 
 	# Cache meshes and collision RIDs once to avoid thousands of find_children() calls during gameplay
@@ -469,7 +493,7 @@ func _setup_hitboxes() -> void:
 		_set_entry_active(entry, false, false)
 	_current_hitbox_mode = HitboxMode.OFF
 
-	if is_row_active:
+	if is_row_active and enable_hitbox:
 		set_hitbox_mode(HitboxMode.CHEST)
 
 func setup_member(armed: bool, material: Material, config: Dictionary = {}) -> void:
@@ -790,7 +814,7 @@ func get_hit_animation_for_zone(zone: String) -> String:
 			return "HIT Body"
 
 func take_hit(hit_data: Dictionary) -> void:
-	if not enable_hit_reaction:
+	if not enable_hitbox or not enable_hit_reaction:
 		return
 
 	# Hit reactions only work when all crowd rows are present

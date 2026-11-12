@@ -38,6 +38,23 @@ func initialize(starting_state_name: String) -> void:
 
 ## Transition to a new state by name. Safe to call from within a state.
 func transition_to(new_state_name: String, force_reenter: bool = false) -> void:
+	var enemy_node = get_parent()
+	if enemy_node and enemy_node is EnemyBase and enemy_node.current_hp <= 0:
+		if new_state_name != "StateDefeated":
+			var is_launching = false
+			if new_state_name in ["StateKnockdown", "StateTakedownable"]:
+				is_launching = true
+			elif current_state and current_state.name == "StateKnockdown":
+				var kd = current_state as StateKnockdown
+				if kd and kd._phase == StateKnockdown.Phase.ACT3:
+					is_launching = true
+			elif current_state and current_state.name == "StateTakedownable":
+				var td = current_state as StateTakedownable
+				if td and td.takedown_triggered:
+					is_launching = true
+			if not is_launching:
+				enemy_node._trigger_defeat()
+				return
 	if not _states.has(new_state_name):
 		push_error("EnemyStateMachine: unknown state '%s'" % new_state_name)
 		return
@@ -79,6 +96,21 @@ func is_grabbing_player() -> bool:
 	if current_state and current_state.name == "StateAttack":
 		var sa = current_state as StateAttack
 		if sa and sa._phase in [StateAttack.Phase.GRAB_REACHING, StateAttack.Phase.GRAB_HOLDING, StateAttack.Phase.GRAB_RESOLVING]:
+			return true
+	var players = enemy.get_tree().get_nodes_in_group("player")
+	for p in players:
+		if is_instance_valid(p) and "is_grab" in p and p.is_grab:
+			if "_last_grabber" in p and p._last_grabber == enemy:
+				return true
+	return false
+
+func is_holding_player() -> bool:
+	var enemy = get_parent()
+	if not enemy or not is_instance_valid(enemy):
+		return false
+	if current_state and current_state.name == "StateAttack":
+		var sa = current_state as StateAttack
+		if sa and sa._phase in [StateAttack.Phase.GRAB_HOLDING, StateAttack.Phase.GRAB_RESOLVING]:
 			return true
 	var players = enemy.get_tree().get_nodes_in_group("player")
 	for p in players:
@@ -132,18 +164,50 @@ func handle_hit(hit_data: Dictionary) -> void:
 				if td:
 					td.trigger_takedown()
 					return
-			elif _states.has("StateTakedownable"):
-				var td = _states["StateTakedownable"] as StateTakedownable
+			elif _states.has("StateKnockdown"):
+				var kd = _states["StateKnockdown"] as StateKnockdown
+				if kd:
+					kd.knockdown_mode = "NORMAL"
+					kd.stun_type = hit_data.get("hit_zone", "head")
+					kd.skip_act3 = false
+					transition_to("StateKnockdown")
+					return
+	elif hit_type == "shotgun_takedown":
+		if is_holding_player():
+			return
+		# If already knocked down, or anticipation active, do not let multi-pellets interfere
+		if current_state.name == "StateKnockdown":
+			return
+		if current_state.name == "StateTakedownable":
+			var td = current_state as StateTakedownable
+			if td and td._in_anticipation_phase:
+				return
+
+		if not current_state.name in ["StateKnockdown", "StateGetUp", "StateDefeated"]:
+			var zone = hit_data.get("hit_zone", "head")
+			var mapped_stun_type = "head"
+			if zone in ["left_foot", "left_leg"]:
+				mapped_stun_type = "left_foot"
+			elif zone in ["right_foot", "right_leg"]:
+				mapped_stun_type = "right_foot"
+			else:
+				mapped_stun_type = "head"
+
+			if current_state.name == "StateTakedownable":
+				var td = current_state as StateTakedownable
 				if td:
-					td.stun_type = hit_data.get("hit_zone", "head")
-					transition_to("StateTakedownable")
+					td.stun_type = mapped_stun_type
 					td.trigger_takedown()
 					return
 			elif _states.has("StateKnockdown"):
-				_states["StateKnockdown"].knockdown_mode = "NORMAL"
-				_states["StateKnockdown"].stun_type = hit_data.get("hit_zone", "head")
+				var kd = _states["StateKnockdown"] as StateKnockdown
+				kd.knockdown_mode = "NORMAL"
+				kd.stun_type = mapped_stun_type
+				if hit_data.has("hit_direction"):
+					kd.push_direction = hit_data.get("hit_direction")
 				transition_to("StateKnockdown")
 				return
+		return
 
 
 	var next := current_state.handle_hit(hit_data)

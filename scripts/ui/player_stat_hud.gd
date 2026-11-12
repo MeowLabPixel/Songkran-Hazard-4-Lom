@@ -40,6 +40,7 @@ extends CanvasLayer
 @export var grab_qte: GrabQteHud
 @export var reload_qte: ReloadQteHud
 @export var takedown_prompt_label: Label
+var interaction_point_hud: InteractionPointHUD = null
 
 @export_group("Editor Previews")
 @export var preview_reload_qte: bool = false:
@@ -353,6 +354,16 @@ func _ready() -> void:
 			grab_qte._setup_editor_preview()
 	if takedown_prompt_label:
 		takedown_prompt_label.visible = preview_takedown_prompt if Engine.is_editor_hint() else false
+
+	if not Engine.is_editor_hint():
+		if not interaction_point_hud or not is_instance_valid(interaction_point_hud):
+			var hud_script = preload("res://scripts/ui/interaction_point_hud.gd")
+			interaction_point_hud = hud_script.new()
+			interaction_point_hud.name = "InteractionPointHUD"
+			if hud_root:
+				hud_root.add_child(interaction_point_hud)
+			else:
+				add_child(interaction_point_hud)
 
 
 func _process(delta: float) -> void:
@@ -1215,10 +1226,14 @@ func on_qte_prompt_miss() -> void:
 func on_qte_reload_ended(is_perfect: bool, final_air: float) -> void:
 	if air_bar and is_instance_valid(air_bar):
 		_last_air_val = final_air
+		var qte_node: ReloadQteHud = reload_qte if (reload_qte and is_instance_valid(reload_qte)) else (get_tree().get_first_node_in_group("reload_qte_hud") as ReloadQteHud if get_tree() else null)
+		var was_failed: bool = qte_node.failed if qte_node else true
 		if is_perfect:
 			air_bar.trigger_qte_perfect_flash()
 		elif final_air >= air_bar.max_value - 0.1:
 			air_bar.trigger_qte_full_air_flash()
+		elif not was_failed:
+			air_bar.trigger_reload_pulse()
 		else:
 			air_bar.trigger_qte_fail_reaction()
 
@@ -1302,9 +1317,24 @@ func _update_counters() -> void:
 		lang = str(gm.selected_language)
 
 	if kill_label and gm:
-		var kills: int = int(gm.get("kill_count")) if "kill_count" in gm else 0
-		var limit: int = int(gm.get("kill_limit")) if "kill_limit" in gm else 0
-		kill_label.text = ("กำจัด: %d/%d" if lang == "th" else "Kills: %d/%d") % [kills, limit]
+		var phase: int = int(gm.get("game_phase")) if "game_phase" in gm else 0
+		match phase:
+			0: # FIRST_WAVE
+				var kills: int = int(gm.get("first_wave_kills")) if "first_wave_kills" in gm else int(gm.get("kill_count"))
+				var limit: int = int(gm.get("first_wave_target")) if "first_wave_target" in gm else (8 if gm.get("difficulty") == 1 else 10)
+				kill_label.text = ("กำจัด: %d/%d" if lang == "th" else "Kills: %d/%d") % [kills, limit]
+				kill_label.add_theme_font_size_override("font_size", 28)
+				kill_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+			1: # MEET_MERCHANT
+				kill_label.text = "ไปพบพ่อค้าลึกลับ\nในตรอก" if lang == "th" else "Go meet the\nmysterious merchant\nin the alley"
+				kill_label.add_theme_font_size_override("font_size", 14)
+				kill_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			2: # FINAL_WAVE
+				var kills: int = int(gm.get("final_wave_kills")) if "final_wave_kills" in gm else 0
+				var limit: int = int(gm.get("final_wave_target")) if "final_wave_target" in gm else (10 if gm.get("difficulty") == 1 else 12)
+				kill_label.text = ("กำจัดรอบสุดท้าย:\n%d/%d" if lang == "th" else "Final Kills:\n%d/%d") % [kills, limit]
+				kill_label.add_theme_font_size_override("font_size", 20)
+				kill_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	if time_label and gm:
 		var elapsed: float = float(gm.get("survival_time_elapsed")) if "survival_time_elapsed" in gm else 0.0

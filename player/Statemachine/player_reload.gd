@@ -18,6 +18,18 @@ var _is_superpump_active: bool = false
 @export var qte_show_progress_bar: bool = false
 @export var superpump_hold_duration: float = 0.6
 @export var fail_ends_reload: bool = true
+
+@export_group("Shotgun Reload Customization")
+@export var shotgun_hold_duration: float = 0.7
+@export var shotgun_qte_window: float = 0.2
+@export var shotgun_normal_air_gain: float = 30.0
+@export var shotgun_qte_air_gain: float = 40.0
+
+func _is_pistol(gun) -> bool:
+	return gun != null and (gun.gun_name == "Water pistol" or (owner.gun_controller and owner.gun_controller.current_gun_index == 0))
+
+func _is_shotgun(gun) -> bool:
+	return gun != null and (gun.gun_name == "Water shotgun" or (owner.gun_controller and owner.gun_controller.current_gun_index == 1))
  
 func _enter() -> void:
 	_exited = false
@@ -41,17 +53,9 @@ func _enter() -> void:
 
 	var gun = owner.gun_controller.current_gun
 	if gun.is_super_active:
-		if gun.air >= gun.max_air:
-			finished.emit("Idle")
-			return
-		gun.is_super_active = false
-		gun.super_timer = 0.0
-		gun.on_super_end()
-		if typeof(SoundManager) != TYPE_NIL:
-			SoundManager.play_2d("Superpump_Duration_End")
-		if gun.air > gun.max_air:
-			gun.air = gun.max_air
-	if gun and (gun.gun_name == "Water pistol" or owner.gun_controller.current_gun_index == 0):
+		finished.emit("Idle")
+		return
+	if _is_pistol(gun):
 		# Start QTE reload hud for pistol using pre-existing UI node
 		var hud_node = get_tree().get_first_node_in_group("reload_qte_hud") as ReloadQteHud
 		if hud_node:
@@ -104,6 +108,49 @@ func _enter() -> void:
 					sub_pb.start("Reload")
 				else:
 					sub_pb.travel("Reload")
+	elif _is_shotgun(gun):
+		# Start Hold-Release QTE reload hud for shotgun
+		var hud_node = get_tree().get_first_node_in_group("reload_qte_hud") as ReloadQteHud
+		if hud_node:
+			qte_hud = hud_node
+			qte_hud.shotgun_hold_duration = shotgun_hold_duration
+			qte_hud.shotgun_qte_window = shotgun_qte_window
+			qte_hud.shotgun_normal_air_gain = shotgun_normal_air_gain
+			qte_hud.shotgun_qte_air_gain = shotgun_qte_air_gain
+			qte_hud.superpump_required_hold = superpump_hold_duration
+			qte_hud.show_progress_bar = qte_show_progress_bar
+			
+			if not qte_hud.qte_hit.is_connected(_on_qte_hit):
+				qte_hud.qte_hit.connect(_on_qte_hit)
+			if not qte_hud.finished.is_connected(_on_reload_finished):
+				qte_hud.finished.connect(_on_reload_finished)
+			if not qte_hud.cancelled.is_connected(_on_reload_cancelled):
+				qte_hud.cancelled.connect(_on_reload_cancelled)
+			if qte_hud.has_signal("superpump_started") and not qte_hud.superpump_started.is_connected(_on_superpump_started):
+				qte_hud.superpump_started.connect(_on_superpump_started)
+			if qte_hud.has_signal("superpump_completed") and not qte_hud.superpump_completed.is_connected(_on_superpump_completed):
+				qte_hud.superpump_completed.connect(_on_superpump_completed)
+				
+			qte_hud.start_shotgun(gun.air, gun.max_air)
+		
+		# Travel to main Reload state with smooth crossfade
+		var main_pb = owner.anim.get(owner.anim_playback)
+		if main_pb:
+			main_pb.travel("Reload")
+		
+		owner.anim.set("parameters/Main/Reload/Reload_Shotgun/TimeScale/scale", 1.0)
+		owner.anim.set("parameters/Main/Reload/SuperPump_Shotgun/TimeScale/scale", 0.8)
+		
+		_is_superpump_active = (gun.air >= gun.max_air)
+		var target_shotgun_reload = "SuperPump_Shotgun" if _is_superpump_active else "Reload_Shotgun"
+		var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
+		if sub_pb:
+			sub_pb.start(target_shotgun_reload)
+		
+		if owner.anim:
+			owner.anim.advance(0.0)
+			if sub_pb:
+				sub_pb.start(target_shotgun_reload)
 	else:
 		reloading()
 
@@ -146,10 +193,19 @@ func _update(_delta: float) -> void:
 	if _pump_cooldown_timer > 0.0:
 		_pump_cooldown_timer -= _delta
 		
+	var current_gun = owner.gun_controller.current_gun if owner.gun_controller else null
+	if _is_shotgun(current_gun) and owner.anim:
+		var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
+		if sub_pb:
+			var target_node = "SuperPump_Shotgun" if _is_superpump_active else "Reload_Shotgun"
+			var cur_node = String(sub_pb.get_current_node())
+			if cur_node != target_node and cur_node != "End":
+				sub_pb.start(target_node)
+		
 	# QoL: Aim cancels reload (unless blocked by setting and within 0.3s guard)
 	if Input.is_action_just_pressed("aim"):
-		var is_pistol_qte = is_instance_valid(qte_hud) and qte_hud.mode == "qte"
-		if is_pistol_qte:
+		var is_active_qte = is_instance_valid(qte_hud) and (qte_hud.mode == "qte" or qte_hud.mode == "shotgun_qte")
+		if is_active_qte:
 			if can_cancel_qte_via_aim and _time_in_state >= 0.3:
 				owner.is_aimming = true
 				finished.emit("Aim")
@@ -172,16 +228,22 @@ func _update(_delta: float) -> void:
 	var has_new_movement_input = just_up or just_down or just_left or just_right
 	
 	if has_new_movement_input:
-		var is_pistol_qte = is_instance_valid(qte_hud) and qte_hud.mode == "qte"
-		if is_pistol_qte and can_cancel_qte_via_movement and _time_in_state >= 0.3:
+		var is_active_qte = is_instance_valid(qte_hud) and (qte_hud.mode == "qte" or qte_hud.mode == "shotgun_qte")
+		if is_active_qte and can_cancel_qte_via_movement and _time_in_state >= 0.3:
 			finished.emit("Run")
 			return
 			
-	# Gradually fill gun air for water pistol based on HUD progress
-	if is_instance_valid(qte_hud) and qte_hud.mode == "qte":
+	# Gradually fill gun air for water pistol and shotgun based on HUD progress
+	if is_instance_valid(qte_hud) and (qte_hud.mode == "qte" or qte_hud.mode == "shotgun_qte"):
 		var gun = owner.gun_controller.current_gun
 		if gun:
-			gun.air = clampf(qte_hud.start_air + (qte_hud.max_air - qte_hud.start_air) * qte_hud.reload_progress, 0.0, gun.max_air)
+			if qte_hud.mode == "qte":
+				gun.air = clampf(qte_hud.start_air + (qte_hud.max_air - qte_hud.start_air) * qte_hud.reload_progress, 0.0, gun.max_air)
+			elif qte_hud.mode == "shotgun_qte":
+				if qte_hud.resolved:
+					gun.air = qte_hud.resolved_air
+				else:
+					gun.air = clampf(qte_hud.start_air + qte_hud.shotgun_normal_air_gain * qte_hud.reload_progress, 0.0, gun.max_air)
 			
 		# If movement is allowed, process movement input and apply velocity
 		if not block_movement_during_qte:
@@ -208,7 +270,14 @@ func _update(_delta: float) -> void:
 
 func _state_input(_event: InputEvent) -> void:
 	var gun = owner.gun_controller.current_gun
-	if gun and (gun.gun_name == "Water pistol" or owner.gun_controller.current_gun_index == 0):
+	if _is_shotgun(gun):
+		if is_instance_valid(qte_hud) and qte_hud.resolved and Input.is_action_just_pressed("Reload"):
+			gun.air = qte_hud.resolved_air
+			if not (gun.is_super_active and gun.air >= gun.max_air):
+				get_viewport().set_input_as_handled()
+				_enter()
+		return
+	if _is_pistol(gun):
 		# Let the QTE HUD handle input for the pistol
 		return
 		
@@ -279,7 +348,10 @@ func _on_qte_hit() -> void:
 		# Play standard pump SFX on hit (air is refilled gradually in _update)
 		SoundManager.play_2d("watergun_pistol_reload")
 		
-	# Travel to Reload_Quick in animation tree
+	if _is_shotgun(gun):
+		return
+		
+	# Travel to Reload_Quick in animation tree (pistol only)
 	var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
 	if sub_pb:
 		sub_pb.travel("Reload_Quick")
@@ -288,7 +360,15 @@ func _on_superpump_started() -> void:
 	if _exited:
 		return
 	_is_superpump_active = true
+	var gun = owner.gun_controller.current_gun if owner.gun_controller else null
 	var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
+	if _is_shotgun(gun):
+		if sub_pb:
+			if sub_pb.get_current_node() == "End" or sub_pb.get_current_node() == "":
+				sub_pb.start("SuperPump_Shotgun")
+			else:
+				sub_pb.travel("SuperPump_Shotgun")
+		return
 	if sub_pb:
 		if sub_pb.get_current_node() == "End" or sub_pb.get_current_node() == "":
 			sub_pb.start("SuperPump")
@@ -303,11 +383,22 @@ func _on_superpump_completed() -> void:
 		return
 	var gun = owner.gun_controller.current_gun if owner.gun_controller else null
 	if gun:
-		gun.air = 120.0
-		gun.is_super_ready = false
-		gun.is_super_active = true
-		gun.super_timer = 5.0
+		if _is_shotgun(gun):
+			gun.air = gun.max_air
+			gun.is_super_ready = false
+			gun.is_super_active = true
+			gun.super_timer = 30.0
+		else:
+			gun.air = 120.0
+			gun.is_super_ready = false
+			gun.is_super_active = true
+			gun.super_timer = 5.0
 	if is_instance_valid(owner) and is_instance_valid(owner.anim):
+		if _is_shotgun(gun):
+			var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
+			if sub_pb and sub_pb.get_current_node() != "SuperPump_Shotgun":
+				sub_pb.start("SuperPump_Shotgun")
+			return
 		var sub_pb = owner.anim.get("parameters/Main/Reload/playback")
 		if sub_pb and sub_pb.get_current_node() != "SuperPump":
 			sub_pb.travel("SuperPump")
@@ -324,12 +415,18 @@ func _on_reload_finished(final_air: float, super_activated: bool) -> void:
 		
 	var gun = owner.gun_controller.current_gun
 	if gun:
-		gun.air = final_air
-		if super_activated:
+		if _is_shotgun(gun) and super_activated:
+			gun.air = gun.max_air
 			gun.is_super_ready = false
 			gun.is_super_active = true
-			if gun.super_timer <= 0.0:
-				gun.super_timer = 5.0
+			gun.super_timer = 30.0
+		else:
+			gun.air = final_air
+			if super_activated:
+				gun.is_super_ready = false
+				gun.is_super_active = true
+				if gun.super_timer <= 0.0:
+					gun.super_timer = 5.0
 			
 	# Cleanup HUD reference
 	_disconnect_qte_signals()

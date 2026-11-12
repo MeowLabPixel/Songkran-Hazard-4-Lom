@@ -11,6 +11,8 @@ extends Resource
 @export var price: int = 50
 @export var model_scene: PackedScene = null
 @export var gun_index: int = 1
+@export var heal_amount: int = 0
+@export var is_consumable: bool = false
 
 @export_group("Bucket 3D Placement (Fallback if not pre-placed in Shop_Bucket)")
 @export var bucket_position: Vector3 = Vector3(0.061352, 0.507422, -0.068138)

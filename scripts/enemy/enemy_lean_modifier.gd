@@ -20,6 +20,14 @@ var target_impact_sway_z: float = 0.0
 var impact_decay_rate: float = 0.5 # Slower decay rate (lasts ~0.8s to 1.0s) for high impact visibility
 var last_sway_dir: float = 0.0 # Track direction of last shot's sway (alternating left/right)
 
+func reset() -> void:
+	current_tilt_x = 0.0
+	current_tilt_z = 0.0
+	sway_time = 0.0
+	impact_sway_z = 0.0
+	target_impact_sway_z = 0.0
+	last_sway_dir = 0.0
+
 func trigger_impact_sway(is_takedown: bool) -> void:
 	if is_takedown:
 		# Takedown: strictly sway to the left (negative roll), halved to 7.5 degrees

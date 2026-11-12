@@ -426,6 +426,9 @@ func _find_enemy_from_node(node: Node) -> EnemyBase:
 
 func _exit() -> void:
 	_has_valid_prev_ray = false
+	if is_instance_valid(owner) and "takedown_target" in owner and is_instance_valid(owner.takedown_target):
+		if "is_targeted_for_takedown" in owner.takedown_target:
+			owner.takedown_target.is_targeted_for_takedown = false
 	# Ensure hit stop tween is killed and engine time scale is restored
 	_reset_hit_stop()
 	

@@ -63,6 +63,10 @@ var air: float = 0.0
 
 # Interval
 var shoot_timer: float = 0.0
+@export var aim_exit_lock_duration: float = -1.0
+
+func get_aim_exit_lock_duration() -> float:
+	return aim_exit_lock_duration if aim_exit_lock_duration >= 0.0 else shoot_interval
 
 # Super shot
 var is_super_ready: bool = false
@@ -74,9 +78,14 @@ var super_timer: float = 0.0
 @export var min_spread: float = 0.5
 @export var max_spread: float = 8.0
 var current_spread: float = 0.0
+var is_partial_air_shot: bool = false
+var air_at_shot: float = 0.0
+var is_firing: bool = false
 
 # Object Pooling & Exclude Cache
 var _shot_vfx_pool: Array[Node] = []
+var _muzzle_vfx_pool: Array[Node] = []
+var _hit_vfx_pool: Array[Node] = []
 var _cached_player_rids: Array = []
 var _cached_player_node: Node = null
 
@@ -142,7 +151,7 @@ func get_air_consumption() -> float:
 
 func can_shoot() -> bool:
 	var has_water = water_tank.current_water >= water_consumption if water_tank else false
-	var has_air = air >= get_air_consumption()
+	var has_air = air > 0.0
 	return shoot_timer <= 0.0 and has_water and has_air
 
 func play_shoot_sound(shoot_pos: Vector3) -> void:
@@ -194,20 +203,43 @@ func shoot():
 
 	# Play watergun shoot sounds
 	var shoot_pos = spawn_point.global_position if spawn_point else global_position
-	play_shoot_sound(shoot_pos)
 
-	# Consume resources normally (super pump unlimited air/water time removed)
+	# Consume resources normally
 	if water_tank:
 		water_tank.current_water -= water_consumption
 		water_tank.current_water = max(water_tank.current_water, 0.0)
 	
-	air -= get_air_consumption()
-	air = max(air, 0.0)
-	if is_super_active and air <= 0.0:
-		is_super_active = false
-		super_timer = 0.0
-		on_super_end()
-		SoundManager.play_2d("Superpump_Duration_End")
+	air_at_shot = air
+	# Shotgun super pump is a charge shot whose 50 air was already paid upfront
+	if not (self is ShotgunWaterGun and is_super_active):
+		var needed_air = get_air_consumption()
+		is_partial_air_shot = (air > 0.0 and air < needed_air)
+		air -= needed_air
+		air = max(air, 0.0)
+		if is_super_active and air <= 0.0:
+			is_super_active = false
+			super_timer = 0.0
+			on_super_end()
+			SoundManager.play_2d("Superpump_Duration_End")
+
+	apply_shot_feedback(shoot_pos)
+
+	is_firing = true
+	fire_projectiles()
+	is_firing = false
+	shoot_timer = shoot_interval
+
+func get_effective_air_pct() -> float:
+	if max_air <= 0.0:
+		return 0.0
+	if is_firing or shoot_timer > 0.0 or is_super_active:
+		return air_at_shot / max_air
+	return air / max_air
+
+func apply_shot_feedback(shoot_pos: Vector3 = Vector3.ZERO) -> void:
+	if shoot_pos == Vector3.ZERO:
+		shoot_pos = spawn_point.global_position if spawn_point else global_position
+	play_shoot_sound(shoot_pos)
 
 	# Apply procedural arm recoil kick (independent from camera recoil)
 	var gm = get_tree().root.get_node_or_null("GameManager") if get_tree() and get_tree().root.has_node("GameManager") else null
@@ -236,8 +268,33 @@ func shoot():
 		if ch.has_method("trigger_shot_kick"):
 			ch.trigger_shot_kick(crosshair_shot_kick)
 
-	fire_projectiles()
-	shoot_timer = shoot_interval
+	# Trigger muzzle flash once per shot/burst
+	trigger_muzzle_vfx()
+
+func trigger_muzzle_vfx() -> void:
+	if muzzle_vfx_scene and spawn_point:
+		var muzzle_vfx: Node3D = _get_pooled_muzzle_vfx()
+		if muzzle_vfx:
+			muzzle_vfx.visible = true
+			muzzle_vfx.global_transform = spawn_point.global_transform
+			muzzle_vfx.position += spawn_point.global_transform.basis * muzzle_offset
+			muzzle_vfx.scale = muzzle_scale
+			
+			_trigger_vfx_node(muzzle_vfx, muzzle_animation_name)
+			
+			var tree := get_tree()
+			if tree:
+				tree.create_timer(1.2).timeout.connect(func():
+					if is_instance_valid(muzzle_vfx):
+						muzzle_vfx.visible = false
+				)
+
+func trigger_player_shoot_animation() -> void:
+	var p = _get_player_ref()
+	if p and "anim" in p and p.anim:
+		p.anim.set("parameters/Main/Aim/BlendTree/OneShot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
+		if p.has_method("notify_shot_fired"):
+			p.notify_shot_fired()
 
 func fire_projectiles():
 	fire_pellet()
@@ -248,21 +305,30 @@ func _add_collision_objects_recursive(node: Node, exclude_array: Array):
 	for child in node.get_children():
 		_add_collision_objects_recursive(child, exclude_array)
 
-func fire_pellet():
+func fire_pellet(custom_spread: float = -1.0, custom_damage: float = -1.0, is_center: bool = false):
 	var tree := get_tree()
 	if not tree:
 		return
 	var player = tree.get_first_node_in_group("player")
-	var is_focused = player and ("focus_progress" in player) and player.focus_progress >= 1.0
+	var is_focused = player and (("focus_progress" in player and player.focus_progress >= 1.0) or ("focus_at_shot" in player and player.focus_at_shot >= 1.0))
 	
+	var effective_spread = custom_spread if custom_spread >= 0.0 else current_spread
 	var horizontal_spread: float = 0.0
 	var vertical_spread: float = 0.0
-	if not is_focused and current_spread > 0.0:
-		horizontal_spread = deg_to_rad(randf_range(-current_spread, current_spread))
-		vertical_spread = deg_to_rad(randf_range(-current_spread, current_spread))
-	elif is_focused and (self is ShotgunWaterGun) and current_spread > 0.0:
-		horizontal_spread = deg_to_rad(randf_range(-current_spread, current_spread))
-		vertical_spread = deg_to_rad(randf_range(-current_spread, current_spread))
+	if custom_spread >= 0.0:
+		if custom_spread > 0.0:
+			horizontal_spread = deg_to_rad(randf_range(-custom_spread, custom_spread))
+			vertical_spread = deg_to_rad(randf_range(-custom_spread, custom_spread))
+	elif self is ShotgunWaterGun:
+		var sg = self as ShotgunWaterGun
+		var active_spread = maxf(effective_spread, min_spread)
+		if active_spread > 0.0:
+			var v_mult = sg.vertical_spread_multiplier if "vertical_spread_multiplier" in sg else 0.25
+			horizontal_spread = deg_to_rad(randf_range(-active_spread, active_spread))
+			vertical_spread = deg_to_rad(randf_range(-active_spread * v_mult, active_spread * v_mult))
+	elif not is_focused and effective_spread > 0.0:
+		horizontal_spread = deg_to_rad(randf_range(-effective_spread, effective_spread))
+		vertical_spread = deg_to_rad(randf_range(-effective_spread, effective_spread))
 	
 	var pc = _get_player_camera()
 	var cam_basis = pc.get_forward_aim_basis() if (pc and pc.has_method("get_forward_aim_basis")) else (camera.global_transform.basis if camera else global_transform.basis)
@@ -333,29 +399,11 @@ func fire_pellet():
 	if result:
 		end_pos = result.position
 		# Apply damage to any enemy hit by the raycast
-		var hit_info = _apply_damage_to_result(result)
+		var hit_info = _apply_damage_to_result(result, custom_damage, is_center)
 		is_crit = hit_info.get("is_crit", false)
 		is_weakpoint = hit_info.get("is_weakpoint", false)
 		# Play watergun hit SFX
 		play_hit_sound(result)
-
-	# Muzzle Flash
-	if muzzle_vfx_scene and spawn_point:
-		var muzzle_vfx: Node3D = muzzle_vfx_scene.instantiate()
-		if tree.current_scene:
-			tree.current_scene.add_child(muzzle_vfx)
-			muzzle_vfx.global_transform = spawn_point.global_transform
-			muzzle_vfx.position += spawn_point.global_transform.basis * muzzle_offset
-			muzzle_vfx.scale = muzzle_scale
-			
-			_trigger_vfx_node(muzzle_vfx, muzzle_animation_name)
-			
-			tree.create_timer(1.2).timeout.connect(func():
-				if is_instance_valid(muzzle_vfx):
-					muzzle_vfx.queue_free()
-			)
-		else:
-			muzzle_vfx.queue_free()
 
 	if shot_vfx_scene:
 		var shot_vfx = _get_pooled_shot_vfx()
@@ -365,10 +413,9 @@ func fire_pellet():
 	_draw_debug_raycast(start_pos, end_pos, result.size() > 0)
 
 	if result and hit_vfx_scene:
-		var hit_vfx: Node3D = hit_vfx_scene.instantiate()
-		if tree.current_scene:
-			tree.current_scene.add_child(hit_vfx)
-			
+		var hit_vfx: Node3D = _get_pooled_hit_vfx()
+		if hit_vfx:
+			hit_vfx.visible = true
 			# Position and Align with Normal
 			var normal = result.normal
 			if normal.length_squared() < 0.01:
@@ -388,10 +435,8 @@ func fire_pellet():
 			
 			tree.create_timer(3.0).timeout.connect(func():
 				if is_instance_valid(hit_vfx):
-					hit_vfx.queue_free()
+					hit_vfx.visible = false
 			)
-		else:
-			hit_vfx.queue_free()
 
 func _trigger_vfx_node(vfx_node: Node, anim_name: String = "", is_crit: bool = false, is_weakpoint: bool = false) -> void:
 	if not vfx_node:
@@ -499,19 +544,61 @@ func _trigger_vfx_node(vfx_node: Node, anim_name: String = "", is_crit: bool = f
 func update_accuracy():
 	pass
 
-func _apply_damage_to_result(result: Dictionary) -> Dictionary:
+func _apply_damage_to_result(result: Dictionary, custom_damage: float = -1.0, is_center: bool = false) -> Dictionary:
 	var result_data = { "is_crit": false, "is_weakpoint": false }
 	var collider = result.get("collider")
 	if collider == null:
 		return result_data
 
-	var final_damage = damage
+	var head_mult: float = 1.2
+	var body_mult: float = 1.0
+	if self is ShotgunWaterGun:
+		var sg = self as ShotgunWaterGun
+		if is_center:
+			head_mult = sg.center_pellet_head_multiplier
+			body_mult = sg.center_pellet_body_multiplier
+		else:
+			head_mult = sg.outer_pellet_head_multiplier
+			body_mult = sg.outer_pellet_body_multiplier
+
+	var final_damage = custom_damage if custom_damage >= 0.0 else damage
+	if is_partial_air_shot:
+		final_damage *= 0.75
 	if get_tree().root.has_node("GameManager") and GameManager.difficulty == GameManager.Difficulty.CASUAL:
 		final_damage = final_damage * 1.25
 	var tree := get_tree()
 	var player = tree.get_first_node_in_group("player") if tree else null
 	if player and player.has_method("get_damage_multiplier"):
 		final_damage = final_damage * player.get_damage_multiplier()
+
+	# Apply distance damage falloff for shotgun
+	if self is ShotgunWaterGun:
+		var sg = self as ShotgunWaterGun
+		var ref_pos = spawn_point.global_position if spawn_point else global_position
+		var shot_dist = ref_pos.distance_to(result.position)
+		if shot_dist > sg.falloff_start_dist:
+			var t = clampf((shot_dist - sg.falloff_start_dist) / maxf(sg.falloff_end_dist - sg.falloff_start_dist, 0.1), 0.0, 1.0)
+			final_damage *= lerpf(1.0, sg.min_falloff_multiplier, t)
+
+	# Determine shotgun close-range takedown parameters
+	var is_shotgun_close = false
+	var hit_dir_2d = Vector3.ZERO
+	if self is ShotgunWaterGun and is_instance_valid(player):
+		var sg = self as ShotgunWaterGun
+		var eff_range = sg.get_effective_takedown_range(player)
+		var p_pos = player.global_position
+		p_pos.y = 0.0
+		var h_pos = result.position
+		h_pos.y = 0.0
+		var pc = _get_player_camera()
+		var cam_pos = pc.global_position if pc else p_pos
+		cam_pos.y = 0.0
+		var dist_to_hit = minf(p_pos.distance_to(h_pos), cam_pos.distance_to(h_pos))
+		if dist_to_hit <= eff_range:
+			is_shotgun_close = true
+		hit_dir_2d = (result.position - player.global_position)
+		hit_dir_2d.y = 0.0
+		hit_dir_2d = hit_dir_2d.normalized() if hit_dir_2d.length_squared() > 0.001 else -global_transform.basis.z
 
 	# ✅ Case 1: Hit an Area3D (hitbox)
 	if collider is Area3D and not collider.is_in_group("player_hitbox"):
@@ -538,14 +625,35 @@ func _apply_damage_to_result(result: Dictionary) -> Dictionary:
 					was_already_dead = true
 
 				var effective_zone = hitbox_zone.zone_name
-				if player and "aim_target_enemy" in player and player.aim_target_enemy == target and "aim_target_zone" in player and player.aim_target_zone != "":
+				if not (self is ShotgunWaterGun) and player and "aim_target_enemy" in player and player.aim_target_enemy == target and "aim_target_zone" in player and player.aim_target_zone != "":
 					if effective_zone in ["body", "", "chest", "waist", "pelvis"]:
 						effective_zone = player.aim_target_zone
+
+				var target_in_range = is_shotgun_close
+				if self is ShotgunWaterGun and is_instance_valid(player) and not target_in_range:
+					var t_pos = target.global_position if "global_position" in target else result.position
+					t_pos.y = 0.0
+					var p_pos = player.global_position
+					p_pos.y = 0.0
+					var pc = _get_player_camera()
+					var cam_pos = pc.global_position if pc else p_pos
+					cam_pos.y = 0.0
+					var dist_to_target = minf(p_pos.distance_to(t_pos), cam_pos.distance_to(t_pos))
+					if dist_to_target <= (self as ShotgunWaterGun).get_effective_takedown_range(player):
+						target_in_range = true
+
+				var hit_type = "shotgun_takedown" if target_in_range else ""
 
 				target.take_hit({
 					"damage": final_damage,
 					"hit_zone": effective_zone,
-					"position": result.position
+					"hit_type": hit_type,
+					"hit_direction": hit_dir_2d,
+					"position": result.position,
+					"source": player,
+					"head_multiplier": head_mult,
+					"body_multiplier": body_mult,
+					"is_center_pellet": is_center
 				})
 				
 				# Only trigger crit on the hit that delivered the lethal blow
@@ -605,13 +713,34 @@ func _apply_damage_to_result(result: Dictionary) -> Dictionary:
 			else:
 				fallback_zone = "body"
 
+		var node_in_range = is_shotgun_close
+		if self is ShotgunWaterGun and is_instance_valid(player) and not node_in_range:
+			var n_pos = node.global_position if "global_position" in node else result.position
+			n_pos.y = 0.0
+			var p_pos = player.global_position
+			p_pos.y = 0.0
+			var pc = _get_player_camera()
+			var cam_pos = pc.global_position if pc else p_pos
+			cam_pos.y = 0.0
+			var dist_to_node = minf(p_pos.distance_to(n_pos), cam_pos.distance_to(n_pos))
+			if dist_to_node <= (self as ShotgunWaterGun).get_effective_takedown_range(player):
+				node_in_range = true
+
+		var fallback_hit_type = "shotgun_takedown" if node_in_range else ""
+
 		if node.has_method("request_full_hitboxes"):
 			node.request_full_hitboxes()
 
 		node.take_hit({
 			"damage": final_damage,
 			"hit_zone": fallback_zone,
-			"position": result.position
+			"hit_type": fallback_hit_type,
+			"hit_direction": hit_dir_2d,
+			"position": result.position,
+			"source": player,
+			"head_multiplier": head_mult,
+			"body_multiplier": body_mult,
+			"is_center_pellet": is_center
 		})
 		if not was_already_dead and ("last_hit_was_lethal" in node and node.last_hit_was_lethal):
 			result_data["is_crit"] = true
@@ -622,6 +751,7 @@ func _apply_damage_to_result(result: Dictionary) -> Dictionary:
 func pump_air():
 	if is_super_active:
 		return
+	is_partial_air_shot = false
 
 	var _old_air = air
 	pump_air_gain = max_air / 5.0 # 5 pumps must fill to 100% air
@@ -644,10 +774,16 @@ func pump_air():
 		# Already at or above max_air, pumping goes toward super_threshold
 		air += pump_air_gain
 		if air >= super_threshold:
-			air = super_threshold
-			is_super_ready = false
-			is_super_active = true
-			super_timer = 5.0 # Super pump last for 5.0 sec
+			if self is ShotgunWaterGun:
+				air = max_air
+				is_super_ready = false
+				is_super_active = true
+				super_timer = 30.0 # Charge shot stays ready until fired
+			else:
+				air = super_threshold
+				is_super_ready = false
+				is_super_active = true
+				super_timer = 5.0 # Super pump last for 5.0 sec
 
 	update_accuracy()
 
@@ -798,6 +934,50 @@ func _get_pooled_shot_vfx() -> Node:
 		if tree and tree.current_scene:
 			tree.current_scene.add_child(vfx)
 			_shot_vfx_pool.append(vfx)
+			return vfx
+		else:
+			vfx.queue_free()
+	return null
+
+func _get_pooled_muzzle_vfx() -> Node3D:
+	var i = _muzzle_vfx_pool.size() - 1
+	while i >= 0:
+		if not is_instance_valid(_muzzle_vfx_pool[i]):
+			_muzzle_vfx_pool.remove_at(i)
+		i -= 1
+
+	for vfx in _muzzle_vfx_pool:
+		if is_instance_valid(vfx) and not vfx.visible:
+			return vfx as Node3D
+			
+	if muzzle_vfx_scene:
+		var vfx = muzzle_vfx_scene.instantiate() as Node3D
+		var tree := get_tree()
+		if tree and tree.current_scene:
+			tree.current_scene.add_child(vfx)
+			_muzzle_vfx_pool.append(vfx)
+			return vfx
+		else:
+			vfx.queue_free()
+	return null
+
+func _get_pooled_hit_vfx() -> Node3D:
+	var i = _hit_vfx_pool.size() - 1
+	while i >= 0:
+		if not is_instance_valid(_hit_vfx_pool[i]):
+			_hit_vfx_pool.remove_at(i)
+		i -= 1
+
+	for vfx in _hit_vfx_pool:
+		if is_instance_valid(vfx) and not vfx.visible:
+			return vfx as Node3D
+			
+	if hit_vfx_scene:
+		var vfx = hit_vfx_scene.instantiate() as Node3D
+		var tree := get_tree()
+		if tree and tree.current_scene:
+			tree.current_scene.add_child(vfx)
+			_hit_vfx_pool.append(vfx)
 			return vfx
 		else:
 			vfx.queue_free()

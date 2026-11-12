@@ -15,12 +15,16 @@ var stats_grid: GridContainer
 var grade_lbl: Label
 var badges_container: VBoxContainer
 var buttons_container: HBoxContainer
-var badge_list_parent: HBoxContainer
+var badge_list_parent: HFlowContainer
 
 # Values retrieved from GameManager
 var is_victory: bool = false
+var is_expert: bool = true
+var difficulty_str: String = "EXPERT"
 var time_remaining_val: float = 0.0
+var time_elapsed_val: float = 0.0
 var kill_count_val: int = 0
+var target_kills: int = 25
 var kill_percent_val: float = 0.0
 var takedown_count_val: int = 0
 var damage_taken_val: float = 0.0
@@ -45,8 +49,12 @@ func _ready() -> void:
 		var gm = get_tree().root.get_node("GameManager")
 		lang = gm.selected_language
 		is_victory = (gm.game_outcome == gm.Outcome.VICTORY)
-		time_remaining_val = max(0.0, gm.SURVIVAL_LIMIT - gm.survival_time_elapsed)
+		is_expert = (gm.difficulty == gm.Difficulty.EXPERT)
+		difficulty_str = "EXPERT" if is_expert else "CASUAL"
+		time_elapsed_val = gm.survival_time_elapsed
+		time_remaining_val = max(0.0, gm.SURVIVAL_LIMIT - time_elapsed_val)
 		kill_count_val = gm.kill_count
+		target_kills = gm.kill_limit if gm.kill_limit > 0 else (22 if is_expert else 18)
 		takedown_count_val = gm.takedown_count
 		damage_taken_val = gm.player_damage_taken
 		water_consumed_val = gm.water_consumed
@@ -59,21 +67,26 @@ func _ready() -> void:
 		else:
 			accuracy_val = 1.0
 			
-		if total_enemies > 0:
-			kill_percent_val = float(kill_count_val) / float(total_enemies)
+		# Objective-based kill percentage (against the target requirement: 18 Casual, 22 Expert)
+		if target_kills > 0:
+			kill_percent_val = clampf(float(kill_count_val) / float(target_kills), 0.0, 1.0)
 		else:
 			kill_percent_val = 1.0
 	else:
 		# Sandbox/fallback values for debug
 		is_victory = true
-		time_remaining_val = 325.4
-		kill_count_val = 12
-		kill_percent_val = 0.8
-		takedown_count_val = 4
+		is_expert = true
+		difficulty_str = "EXPERT"
+		time_elapsed_val = 145.0
+		time_remaining_val = 455.0
+		kill_count_val = 22
+		target_kills = 22
+		kill_percent_val = 1.0
+		takedown_count_val = 3
 		damage_taken_val = 20.0
 		accuracy_val = 0.75
 		highest_combo_val = 5
-		total_enemies = 15
+		total_enemies = 22
 	
 	# Calculate score, grade and badges
 	_calculate_results()
@@ -85,39 +98,98 @@ func _ready() -> void:
 	_animate_sequence()
 
 func _calculate_results() -> void:
-	# Calculate weighted score:
-	# Mission Success: 35%
-	# Time Remaining: 20%
-	# Damage Taken: 15%
-	# Kill Count/Percentage: 15%
-	# Takedowns: 10%
-	# Accuracy: 5%
+	# Weighted scoring suited for current game difficulty (Casual: 18 kills, Expert: 22 kills):
+	# Mission Outcome: 30 pts
+	# Clear / Survival Time: 20 pts (Par Time Model)
+	# Kill Objective: 20 pts
+	# Damage Taken: 15 pts (Scaled with grace threshold)
+	# Takedowns: 10 pts
+	# Water Gun Accuracy: 5 pts
+	# Combo & Expert Bonus: up to +6 bonus pts (Clamped to 100 max)
 	final_score = 0.0
 	
-	# 1. Mission Success (35 points)
+	# 1. Mission Outcome (30 points)
 	if is_victory:
-		final_score += 35.0
+		final_score += 30.0
+	else:
+		# Partial points for objective progression before defeat
+		final_score += 15.0 * kill_percent_val
 		
-	# 2. Time Remaining (20 points)
-	# Max time remaining is SURVIVAL_LIMIT (600.0s). If Victory, scale points.
+	# 2. Time Score (20 points max) - Par Time Model
 	if is_victory:
-		final_score += 20.0 * (time_remaining_val / 600.0)
+		if is_expert:
+			# Expert benchmarks (22 kills): under 2:45 (165s) = full 20 pts, under 3:45 = 17-20 pts
+			if time_elapsed_val <= 165.0:
+				final_score += 20.0
+			elif time_elapsed_val <= 225.0:
+				final_score += 17.0 + 3.0 * (1.0 - (time_elapsed_val - 165.0) / 60.0)
+			elif time_elapsed_val <= 315.0:
+				final_score += 13.0 + 4.0 * (1.0 - (time_elapsed_val - 225.0) / 90.0)
+			else:
+				var t_factor = maxf(0.0, 1.0 - (time_elapsed_val - 315.0) / 285.0)
+				final_score += 10.0 + 3.0 * t_factor
+		else:
+			# Casual benchmarks (18 kills): under 3:00 (180s) = full 20 pts, under 4:00 = 17-20 pts
+			if time_elapsed_val <= 180.0:
+				final_score += 20.0
+			elif time_elapsed_val <= 240.0:
+				final_score += 17.0 + 3.0 * (1.0 - (time_elapsed_val - 180.0) / 60.0)
+			elif time_elapsed_val <= 330.0:
+				final_score += 13.0 + 4.0 * (1.0 - (time_elapsed_val - 240.0) / 90.0)
+			else:
+				var t_factor = maxf(0.0, 1.0 - (time_elapsed_val - 330.0) / 270.0)
+				final_score += 10.0 + 3.0 * t_factor
+	else:
+		# On defeat, survival time grants up to 8 points
+		final_score += minf(8.0, 8.0 * (time_elapsed_val / 300.0))
 		
-	# 3. Damage Taken (15 points)
-	# Caps penalty at MaxHP (150)
-	var damage_factor = max(0.0, 1.0 - (damage_taken_val / 150.0))
-	final_score += 15.0 * damage_factor
+	# 3. Kills Score (20 points max)
+	# Full points for achieving the victory kill objective
+	final_score += 20.0 * kill_percent_val
 	
-	# 4. Kills (15 points)
-	final_score += 15.0 * kill_percent_val
+	# 4. Damage Taken (15 points max)
+	# Max player HP: 150 (Expert), 210 (Casual)
+	var max_player_hp = 150.0 if is_expert else 210.0
+	if damage_taken_val <= 30.0:
+		# Minor scrapes / near flawless
+		final_score += 15.0 - (damage_taken_val / 30.0) * 1.5
+	elif damage_taken_val <= 90.0:
+		# Moderate combat damage
+		var d_ratio = (damage_taken_val - 30.0) / 60.0
+		final_score += 13.5 - (d_ratio * 5.0)
+	else:
+		# Heavy damage
+		var d_ratio = minf(1.0, (damage_taken_val - 90.0) / (max_player_hp - 90.0))
+		final_score += maxf(2.0, 8.5 - (d_ratio * 6.5))
 	
-	# 5. Takedowns (10 points)
-	# Target of 5 takedowns for full points
-	var takedown_factor = min(1.0, float(takedown_count_val) / 5.0)
+	# 5. Takedowns (10 points max)
+	# Target of 2 takedowns for Casual, 3 for Expert
+	var takedown_target = 3.0 if is_expert else 2.0
+	var takedown_factor = minf(1.0, float(takedown_count_val) / takedown_target)
 	final_score += 10.0 * takedown_factor
 	
-	# 6. Accuracy (5 points)
-	final_score += 5.0 * accuracy_val
+	# 6. Water Gun Accuracy (5 points max)
+	# 65%+ accuracy yields full points for water gun spread/spray
+	if accuracy_val >= 0.65:
+		final_score += 5.0
+	elif accuracy_val >= 0.45:
+		final_score += 3.5 + 1.5 * ((accuracy_val - 0.45) / 0.20)
+	else:
+		final_score += 3.5 * (accuracy_val / 0.45)
+		
+	# 7. Bonus Points: Combos & Expert Difficulty Recognition
+	# Highest Combo Streak reward
+	if highest_combo_val >= 5:
+		final_score += 3.0
+	elif highest_combo_val >= 3:
+		final_score += 1.5
+		
+	# Expert Mode Completion Bonus (acknowledging harsher enemy aggression and lower player HP)
+	if is_expert and is_victory:
+		final_score += 3.0
+		
+	# Clamp total score
+	final_score = clampf(final_score, 0.0, 100.0)
 	
 	# Convert score to grade
 	if final_score >= 95.0:
@@ -134,59 +206,64 @@ func _calculate_results() -> void:
 		final_grade = "B"
 	elif final_score >= 65.0:
 		final_grade = "C+"
-	elif final_score >= 60.0:
+	elif final_score >= 55.0:
 		final_grade = "C"
-	elif final_score >= 50.0:
+	elif final_score >= 45.0:
 		final_grade = "D+"
-	elif final_score >= 40.0:
+	elif final_score >= 35.0:
 		final_grade = "D"
 	else:
 		final_grade = "D-"
 		
-	# Capping grade at C if the player lost
+	# Capping grade at C+ if the player lost
 	if not is_victory:
-		var higher_than_c = ["S+", "S", "A+", "A", "B+", "B", "C+"]
-		if final_grade in higher_than_c:
-			final_grade = "C"
+		var higher_than_c_plus = ["S+", "S", "A+", "A", "B+", "B"]
+		if final_grade in higher_than_c_plus:
+			final_grade = "C+"
 			
 	# Determine earned achievement badges
-	# Speed Demon
-	if is_victory and time_remaining_val > 300.0:
+	# Speed Demon: Cleared under 2:45 minutes (Expert) or 3.0 minutes (Casual)
+	var speed_limit = 165.0 if is_expert else 180.0
+	var speed_text_en = "Cleared in under 2:45 minutes" if is_expert else "Cleared in under 3 minutes"
+	var speed_text_th = "ผ่านด่านโดยใช้เวลาน้อยกว่า 2 นาที 45 วินาที" if is_expert else "ผ่านด่านโดยใช้เวลาน้อยกว่า 3 นาที"
+	if is_victory and time_elapsed_val <= speed_limit:
 		earned_badges.append({
 			"name_en": "Speed Demon",
 			"name_th": "ความเร็วปีศาจ",
-			"desc_en": "Finished with > 5 mins remaining",
-			"desc_th": "ผ่านด่านโดยเหลือเวลามากกว่า 5 นาที"
+			"desc_en": speed_text_en,
+			"desc_th": speed_text_th
 		})
 	
-	# Water Saver
-	if is_victory and water_consumed_val < 40.0:
+	# Water Saver: Realistic threshold (165 for Expert, 140 for Casual)
+	var water_limit = 165.0 if is_expert else 140.0
+	if is_victory and water_consumed_val <= water_limit:
 		earned_badges.append({
 			"name_en": "Water Saver",
 			"name_th": "ประหยัดน้ำ",
-			"desc_en": "Consumed less than 40 water",
-			"desc_th": "ใช้น้ำไปน้อยกว่า 40 หน่วย"
+			"desc_en": "Used <= %d water (%d used)" % [int(water_limit), int(water_consumed_val)],
+			"desc_th": "ใช้น้ำไปไม่เกิน %d หน่วย (ใช้ไป %d)" % [int(water_limit), int(water_consumed_val)]
 		})
 		
-	# Sharpshooter
-	if accuracy_val >= 0.80 and is_victory:
+	# Sharpshooter: 70%+ accuracy with water guns
+	if accuracy_val >= 0.70 and is_victory:
 		earned_badges.append({
 			"name_en": "Sharpshooter",
 			"name_th": "มือปืนสุดแม่น",
-			"desc_en": "Achieved >= 80% accuracy",
-			"desc_th": "ยิงปืนแม่นยำมากกว่า 80%"
+			"desc_en": "Achieved >= 70% accuracy",
+			"desc_th": "ยิงปืนแม่นยำ 70% ขึ้นไป"
 		})
 		
-	# Executioner
-	if takedown_count_val >= 5:
+	# Executioner: 3 or more takedowns for Expert, 2 or more for Casual
+	var req_takedowns = 3 if is_expert else 2
+	if takedown_count_val >= req_takedowns:
 		earned_badges.append({
 			"name_en": "Executioner",
 			"name_th": "เพชฌฆาต",
-			"desc_en": "Performed 5 or more takedowns",
-			"desc_th": "จัดการซอมบี้สงกรานต์ด้วยท่าจู่โจมพิเศษ 5 ครั้งขึ้นไป"
+			"desc_en": "Performed %d or more takedowns" % req_takedowns,
+			"desc_th": "จัดการซอมบี้สงกรานต์ด้วยท่าจู่โจมพิเศษ %d ครั้งขึ้นไป" % req_takedowns
 		})
 		
-	# Untouchable
+	# Untouchable: 0 damage taken
 	if damage_taken_val == 0.0 and is_victory:
 		earned_badges.append({
 			"name_en": "Untouchable",
@@ -195,7 +272,7 @@ func _calculate_results() -> void:
 			"desc_th": "ผ่านด่านโดยไม่ได้รับความเสียหายเลย"
 		})
 		
-	# Guardian
+	# Guardian: Protected Anchalee with minimal damage
 	if anchalee_damage_val <= 10.0 and is_victory:
 		earned_badges.append({
 			"name_en": "Guardian",
@@ -204,13 +281,22 @@ func _calculate_results() -> void:
 			"desc_th": "ปกป้องอัญชลีโดยเธอแทบไม่ได้รับบาดเจ็บ"
 		})
 		
-	# Crowd Cleaner
-	if is_victory and kill_count_val >= total_enemies:
+	# Crowd Cleaner: Cleared the full mission quota (18 for Casual, 22 for Expert)
+	if is_victory and kill_count_val >= target_kills:
 		earned_badges.append({
 			"name_en": "Crowd Cleaner",
 			"name_th": "นักกวาดล้าง",
-			"desc_en": "Defeated every single zombie",
-			"desc_th": "เอาชนะซอมบี้สงกรานต์ทุกตัวในฉาก"
+			"desc_en": "Eliminated all required zombies (%d kills)" % target_kills,
+			"desc_th": "เอาชนะซอมบี้สงกรานต์ครบตามเป้าหมาย (%d ตัว)" % target_kills
+		})
+
+	# Combo Master: Defeat combo streak >= 5
+	if highest_combo_val >= 5:
+		earned_badges.append({
+			"name_en": "Combo Master",
+			"name_th": "จอมคอมโบ",
+			"desc_en": "Achieved a defeat combo of 5 or more",
+			"desc_th": "จัดการซอมบี้ต่อเนื่อง 5 ตัวขึ้นไป"
 		})
 
 func _build_ui() -> void:
@@ -310,6 +396,46 @@ func _build_ui() -> void:
 		subtitle_lbl.add_theme_color_override("font_color", Color(0.9, 0.5, 0.5))
 		
 	title_vbox.add_child(subtitle_lbl)
+
+	# Difficulty Mode Pill Badge
+	var diff_center = CenterContainer.new()
+	var diff_badge = PanelContainer.new()
+	var diff_style = StyleBoxFlat.new()
+	if is_expert:
+		diff_style.bg_color = Color(0.85, 0.25, 0.15, 0.25)
+		diff_style.border_color = Color(1.0, 0.45, 0.2, 0.8)
+	else:
+		diff_style.bg_color = Color(0.15, 0.65, 0.75, 0.25)
+		diff_style.border_color = Color(0.3, 0.85, 0.95, 0.8)
+	diff_style.border_width_left = 1
+	diff_style.border_width_top = 1
+	diff_style.border_width_right = 1
+	diff_style.border_width_bottom = 1
+	diff_style.corner_radius_top_left = 6
+	diff_style.corner_radius_top_right = 6
+	diff_style.corner_radius_bottom_left = 6
+	diff_style.corner_radius_bottom_right = 6
+	diff_badge.add_theme_stylebox_override("panel", diff_style)
+	
+	var diff_margin = MarginContainer.new()
+	diff_margin.add_theme_constant_override("margin_left", 14)
+	diff_margin.add_theme_constant_override("margin_right", 14)
+	diff_margin.add_theme_constant_override("margin_top", 4)
+	diff_margin.add_theme_constant_override("margin_bottom", 4)
+	diff_badge.add_child(diff_margin)
+	
+	var diff_lbl = Label.new()
+	diff_lbl.add_theme_font_override("font", font_bold)
+	diff_lbl.add_theme_font_size_override("font_size", 14)
+	if is_expert:
+		diff_lbl.text = "MODE: EXPERT" if lang != "th" else "ระดับความยาก: ผู้เชี่ยวชาญ (EXPERT)"
+		diff_lbl.add_theme_color_override("font_color", Color(1.0, 0.65, 0.3))
+	else:
+		diff_lbl.text = "MODE: CASUAL" if lang != "th" else "ระดับความยาก: แคชชวล (CASUAL)"
+		diff_lbl.add_theme_color_override("font_color", Color(0.4, 0.95, 0.95))
+	diff_margin.add_child(diff_lbl)
+	diff_center.add_child(diff_badge)
+	title_vbox.add_child(diff_center)
 	
 	# CONTENT HBOX (Split Left/Right)
 	var content_hbox = HBoxContainer.new()
@@ -372,17 +498,23 @@ func _build_ui() -> void:
 	left_vbox.add_child(stats_grid)
 	
 	# Populate Stats List
-	var time_formatted = "%02d:%02d" % [int(time_remaining_val) / 60, int(time_remaining_val) % 60]
-	var kills_formatted = "%d / %d" % [kill_count_val, total_enemies]
+	var clear_time_formatted = "%02d:%02d" % [int(time_elapsed_val) / 60, int(time_elapsed_val) % 60]
+	var time_remaining_formatted = "%02d:%02d" % [int(time_remaining_val) / 60, int(time_remaining_val) % 60]
+	var kills_formatted = "%d / %d" % [kill_count_val, target_kills]
 	var kill_pct_formatted = "%d%%" % int(kill_percent_val * 100.0)
 	var accuracy_formatted = "%d%%" % int(accuracy_val * 100.0)
 	
-	_add_stat_row("Time Remaining" if lang != "th" else "เวลาที่เหลือ", time_formatted)
+	if is_victory:
+		_add_stat_row("Clear Time" if lang != "th" else "เวลาที่ใช้จบภารกิจ", clear_time_formatted)
+	else:
+		_add_stat_row("Survival Time" if lang != "th" else "เวลาที่เอาชีวิตรอดได้", clear_time_formatted)
+	_add_stat_row("Time Remaining" if lang != "th" else "เวลาที่เหลือ", time_remaining_formatted)
 	_add_stat_row("Songkarner Defeated" if lang != "th" else "ซอมบี้สงกรานต์ที่ถูกปราบ", kills_formatted + " (" + kill_pct_formatted + ")")
 	_add_stat_row("Takedowns Executed" if lang != "th" else "ท่าพิเศษที่ใช้ (Takedown)", str(takedown_count_val))
 	_add_stat_row("Player Damage Taken" if lang != "th" else "ความเสียหายที่ผู้เล่นได้รับ", "%d HP" % int(damage_taken_val))
 	_add_stat_row("Water Gun Accuracy" if lang != "th" else "ความแม่นยำปืนฉีดน้ำ", accuracy_formatted)
 	_add_stat_row("Highest Defeat Combo" if lang != "th" else "การกำจัดคอมโบสูงสุด", str(highest_combo_val) + " Kills")
+	_add_stat_row("Water Consumed" if lang != "th" else "น้ำที่ใช้ไปทั้งหมด", "%d units" % int(water_consumed_val))
 	
 	# RIGHT PANEL: Grade and Badges
 	var right_panel = PanelContainer.new()
@@ -426,7 +558,7 @@ func _build_ui() -> void:
 	# Massive Grade Label
 	grade_lbl = Label.new()
 	grade_lbl.add_theme_font_override("font", font_lazy_dog)
-	grade_lbl.add_theme_font_size_override("font_size", 120)
+	grade_lbl.add_theme_font_size_override("font_size", 100)
 	grade_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	grade_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	grade_lbl.text = "-"
@@ -441,19 +573,22 @@ func _build_ui() -> void:
 	
 	# BADGES SECTION
 	badges_container = VBoxContainer.new()
-	badges_container.add_theme_constant_override("separation", 10)
+	badges_container.add_theme_constant_override("separation", 6)
 	right_vbox.add_child(badges_container)
 	
 	var badges_header = Label.new()
 	badges_header.text = "ACHIEVEMENT BADGES" if lang != "th" else "ตราความสำเร็จ"
 	badges_header.add_theme_font_override("font", font_bold)
-	badges_header.add_theme_font_size_override("font_size", 18)
+	badges_header.add_theme_font_size_override("font_size", 16)
 	badges_header.add_theme_color_override("font_color", Color(0.7, 0.7, 0.8))
 	badges_container.add_child(badges_header)
 	
-	badge_list_parent = HBoxContainer.new()
-	badge_list_parent.add_theme_constant_override("separation", 10)
-	badge_list_parent.alignment = HBoxContainer.ALIGNMENT_CENTER
+	badge_list_parent = HFlowContainer.new()
+	badge_list_parent.alignment = FlowContainer.ALIGNMENT_CENTER
+	badge_list_parent.last_wrap_alignment = FlowContainer.LAST_WRAP_ALIGNMENT_CENTER
+	badge_list_parent.add_theme_constant_override("h_separation", 8)
+	badge_list_parent.add_theme_constant_override("v_separation", 6)
+	badge_list_parent.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	badges_container.add_child(badge_list_parent)
 	
 	# Create placeholders for earned badges
@@ -468,6 +603,7 @@ func _build_ui() -> void:
 		for b in earned_badges:
 			var badge_panel = PanelContainer.new()
 			badge_panel.modulate.a = 0.0 # initially hidden for sequental fade-in
+			badge_panel.custom_minimum_size = Vector2(108, 48)
 			
 			var badge_bg = StyleBoxFlat.new()
 			badge_bg.bg_color = Color(0.12, 0.12, 0.18, 0.8)
@@ -476,37 +612,44 @@ func _build_ui() -> void:
 			badge_bg.border_width_right = 1
 			badge_bg.border_width_bottom = 1
 			badge_bg.border_color = Color(1.0, 0.85, 0.3, 0.3)
-			badge_bg.corner_radius_top_left = 8
-			badge_bg.corner_radius_top_right = 8
-			badge_bg.corner_radius_bottom_left = 8
-			badge_bg.corner_radius_bottom_right = 8
+			badge_bg.corner_radius_top_left = 6
+			badge_bg.corner_radius_top_right = 6
+			badge_bg.corner_radius_bottom_left = 6
+			badge_bg.corner_radius_bottom_right = 6
 			badge_panel.add_theme_stylebox_override("panel", badge_bg)
 			
+			var badge_name = b.name_en if lang != "th" else b.name_th
+			var badge_description = b.desc_en if lang != "th" else b.desc_th
+			badge_panel.tooltip_text = "%s\n%s" % [badge_name, badge_description]
+			
 			var badge_margin = MarginContainer.new()
-			badge_margin.add_theme_constant_override("margin_left", 12)
-			badge_margin.add_theme_constant_override("margin_right", 12)
-			badge_margin.add_theme_constant_override("margin_top", 8)
-			badge_margin.add_theme_constant_override("margin_bottom", 8)
+			badge_margin.add_theme_constant_override("margin_left", 6)
+			badge_margin.add_theme_constant_override("margin_right", 6)
+			badge_margin.add_theme_constant_override("margin_top", 4)
+			badge_margin.add_theme_constant_override("margin_bottom", 4)
 			badge_panel.add_child(badge_margin)
 			
 			var badge_vbox = VBoxContainer.new()
 			badge_vbox.alignment = VBoxContainer.ALIGNMENT_CENTER
+			badge_vbox.add_theme_constant_override("separation", 2)
 			badge_margin.add_child(badge_vbox)
 			
 			var b_title = Label.new()
-			b_title.text = b.name_en if lang != "th" else b.name_th
+			b_title.text = badge_name
 			b_title.add_theme_font_override("font", font_bold)
-			b_title.add_theme_font_size_override("font_size", 14)
+			b_title.add_theme_font_size_override("font_size", 11)
 			b_title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3)) # gold title
 			b_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			b_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			badge_vbox.add_child(b_title)
 			
 			var b_desc = Label.new()
-			b_desc.text = b.desc_en if lang != "th" else b.desc_th
+			b_desc.text = badge_description
 			b_desc.add_theme_font_override("font", font_regular)
-			b_desc.add_theme_font_size_override("font_size", 10)
-			b_desc.add_theme_color_override("font_color", Color(0.6, 0.6, 0.7))
+			b_desc.add_theme_font_size_override("font_size", 8)
+			b_desc.add_theme_color_override("font_color", Color(0.65, 0.65, 0.75))
 			b_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			b_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			badge_vbox.add_child(b_desc)
 			
 			badge_list_parent.add_child(badge_panel)
@@ -670,18 +813,20 @@ func _animate_sequence() -> void:
 
 func _on_retry_pressed() -> void:
 	SoundManager.play_2d("Confirm_UI")
+	if typeof(SoundManager) != TYPE_NIL and SoundManager.has_method("stop_music"):
+		SoundManager.stop_music()
 	if get_tree().root.has_node("GameManager"):
 		get_tree().root.get_node("GameManager").reset_game()
 	get_tree().change_scene_to_file("res://scenes/loading_screen.tscn")
 
 func _on_mode_pressed() -> void:
 	SoundManager.play_2d("Confirm_UI")
+	if typeof(SoundManager) != TYPE_NIL and SoundManager.has_method("stop_music"):
+		SoundManager.stop_music()
 	if get_tree().root.has_node("GameManager"):
 		var gm = get_tree().root.get_node("GameManager")
 		gm.reset_game()
 		gm.movement_type_selected = false
-		if gm.has_node("/root/ItemManager"):
-			gm.get_node("/root/ItemManager").reset()
 	get_tree().change_scene_to_file("res://scenes/disclaimer.tscn")
 
 func _on_menu_pressed() -> void:

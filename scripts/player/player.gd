@@ -79,6 +79,7 @@ var HP = MaxHP
 var is_in_shop: bool = false
 var takedown_target: Node = null
 var takedown_prompt_label: Label = null
+var nearby_merchant: Node = null
 var hit_damage_already_applied: bool = false
 var pending_die_after_hit: bool = false
 var Hit_info = {
@@ -109,6 +110,7 @@ var is_aimming:bool = false
 var aim_speed_multiplier: float = 1.0
 var target_aim_speed_multiplier: float = 1.0
 var focus_progress: float = 0.0
+var focus_at_shot: float = 0.0
 var aim_blocked_until_release: bool = false
 var is_reload:bool = false
 var superpump_cooldown: float = 0.0
@@ -391,6 +393,9 @@ func _ready() -> void:
 	
 	pickup_detect.area_entered.connect(pickup_detect_area)
 
+	if not gun_controller:
+		gun_controller = find_child("GunController", true, false) as GunController
+
 	# Cache all player collision object RIDs so raycasts exclude them with zero runtime overhead
 	_player_collision_rids.clear()
 	_player_collision_rids.append(get_rid())
@@ -409,7 +414,7 @@ func _ready() -> void:
 		if get_tree().root.has_node("GameManager"):
 			lang = GameManager.selected_language
 		if lang == "th":
-			takedown_prompt_label.text = "กด E เพื่อปะแป้ง"
+			takedown_prompt_label.text = "กด E ปะแป้ง"
 		else:
 			takedown_prompt_label.text = "[E] Takedown"
 		takedown_prompt_label.visible = false
@@ -469,10 +474,15 @@ func _ready() -> void:
 	if rig:
 		rig.rotation = Vector3.ZERO
 	_setup_idle_turn_blending()
+	if gun_controller:
+		gun_controller.gun_switched.connect(_on_gun_switched)
+		if gun_controller.current_gun:
+			_on_gun_switched(gun_controller.current_gun, gun_controller.current_gun_index)
 		
 var current_aim_influence: float = 0.25
 
 func _process(delta: float) -> void:
+	sync_gun_animation_state()
 	if is_in_shop:
 		is_aimming = false
 		if cross_hair:
@@ -1148,23 +1158,35 @@ func update_crosshair_accuracy(delta: float) -> void:
 	# Update gun current_spread based on focus progress
 	if gun_controller and gun_controller.current_gun:
 		var gun = gun_controller.current_gun
-		if focus_progress >= 1.0:
-			gun.current_spread = 0.0
+		var is_shotgun = (gun is ShotgunWaterGun or gun.get_gun_name() == "Water shotgun")
+		if is_shotgun:
+			var min_sp = gun.max_spread * 0.75
+			gun.current_spread = lerp(gun.max_spread, min_sp, focus_progress)
 		else:
-			gun.current_spread = lerp(gun.max_spread, gun.min_spread, focus_progress)
+			if focus_progress >= 1.0:
+				gun.current_spread = 0.0
+			else:
+				gun.current_spread = lerp(gun.max_spread, gun.min_spread, focus_progress)
 
 func get_damage_multiplier() -> float:
 	var mult = 1.0
 	
 	# 1. Focus bonus (50% increase)
-	if focus_progress >= 1.0:
+	var eff_focus = focus_progress
+	if gun_controller and gun_controller.current_gun and (gun_controller.current_gun.is_firing or gun_controller.current_gun.shoot_timer > 0.0):
+		eff_focus = maxf(focus_progress, focus_at_shot)
+	if eff_focus >= 1.0:
 		mult *= 1.5
 		
-	# 2. Air-based reduction: discrete -10% for air < 50%, -15% for air <= 30%
+	# 2. Air-based modifier:
+	# Full air amplifier (+15% damage bonus when air >= 100% or super pump active)
+	# Low air reduction: discrete -10% for air < 50%, -15% for air <= 30%
 	if gun_controller and gun_controller.current_gun:
 		var gun = gun_controller.current_gun
-		var air_pct = gun.air / gun.max_air
-		if air_pct < 0.5:
+		var air_pct = gun.get_effective_air_pct() if gun.has_method("get_effective_air_pct") else (gun.air / gun.max_air)
+		if air_pct >= 1.0 or gun.is_super_active:
+			mult *= 1.15
+		elif air_pct < 0.5:
 			var reduction = 0.15 if air_pct <= 0.3 else 0.10
 			mult *= (1.0 - reduction)
 			
@@ -1172,6 +1194,7 @@ func get_damage_multiplier() -> float:
 
 func notify_shot_fired() -> void:
 	# Reset focus on shooting
+	focus_at_shot = focus_progress
 	focus_progress = 0.0
 	snap_to_aim_instant()
 
@@ -1222,6 +1245,22 @@ func is_aim_transition_complete() -> bool:
 				return false
 	target_aim_speed_multiplier = 1.0
 	return true
+
+func can_quick_turn() -> bool:
+	return not is_quick_turn and quick_turn_cooldown <= 0.0
+
+func is_quick_turn_input_just_pressed() -> bool:
+	if Input.is_action_just_pressed("quick_turn"):
+		return true
+	
+	var is_back_held: bool = Input.is_action_pressed("ui_down") or Input.is_action_pressed("move_back")
+	var is_sprint_just: bool = Input.is_action_just_pressed("sprint")
+	
+	# Only trigger when holding Walk Back and pressing Shift
+	if is_sprint_just and is_back_held:
+		return true
+		
+	return false
 
 func spawn_damage_popup(text_content: String, color: Color) -> void:
 	if not cross_hair:
@@ -1522,33 +1561,35 @@ func check_if_near_stun():
 	is_near_stunt = false
 	near_enemy_list.clear()
 	
-	if not stun_detect:
-		if takedown_prompt_label:
-			takedown_prompt_label.visible = false
-		return
-		
-	var areas := stun_detect.get_overlapping_areas()
-	for a in areas:
-		if not a:
-			continue
-		var body = _find_enemy_from_area(a)
-		if body is EnemyBase and not body.is_defeated:
-			if not near_enemy_list.has(body):
-				near_enemy_list.append(body)
-				
-	var valid_list = []
-	for i in near_enemy_list:
-		if is_instance_valid(i) and not i.is_queued_for_deletion():
-			valid_list.append(i)
-			if i.has_method("is_takedownable") and i.is_takedownable():
-				is_near_stunt = true
-	near_enemy_list = valid_list
+	if stun_detect:
+		var areas := stun_detect.get_overlapping_areas()
+		for a in areas:
+			if not a:
+				continue
+			var body = _find_enemy_from_area(a)
+			if body is EnemyBase and not body.is_defeated:
+				if not near_enemy_list.has(body):
+					near_enemy_list.append(body)
+					
+		var valid_list = []
+		for i in near_enemy_list:
+			if is_instance_valid(i) and not i.is_queued_for_deletion():
+				valid_list.append(i)
+				if i.has_method("is_takedownable") and i.is_takedownable():
+					is_near_stunt = true
+		near_enemy_list = valid_list
+	
+	var is_near_merchant: bool = is_instance_valid(nearby_merchant) and not is_in_shop
 	
 	var sm_player = get_node_or_null("Statemachine")
 	if sm_player and sm_player.current_state and sm_player.current_state.name in ["Takedown", "Grab", "Get_hit", "Die"]:
 		is_near_stunt = false
+		is_near_merchant = false
+	if HP <= 0:
+		is_near_stunt = false
+		is_near_merchant = false
 	
-	var should_show_prompt = is_near_stunt
+	var should_show_prompt = is_near_stunt or is_near_merchant
 	if get_tree().root.has_node("GameManager"):
 		var gm = get_tree().root.get_node("GameManager")
 		if not (gm.show_takedown_prompt and gm.show_gameplay_ui):
@@ -1562,7 +1603,29 @@ func check_if_near_stun():
 			takedown_prompt_label = find_child("TakedownPrompt", true, false) as Label
 
 	if takedown_prompt_label:
-		takedown_prompt_label.visible = should_show_prompt
+		if should_show_prompt:
+			var lang = "en"
+			if get_tree().root.has_node("GameManager"):
+				lang = GameManager.selected_language
+			
+			if is_near_stunt and is_near_merchant:
+				if lang == "th":
+					takedown_prompt_label.text = "กด E ปะแป้ง\nกด F คุย"
+				else:
+					takedown_prompt_label.text = "[E] Takedown\n[F] Talk"
+			elif is_near_merchant:
+				if lang == "th":
+					takedown_prompt_label.text = "กด F คุย"
+				else:
+					takedown_prompt_label.text = "[F] Talk"
+			else:
+				if lang == "th":
+					takedown_prompt_label.text = "กด E ปะแป้ง"
+				else:
+					takedown_prompt_label.text = "[E] Takedown"
+			takedown_prompt_label.visible = true
+		else:
+			takedown_prompt_label.visible = false
 
 func aim_bone_on(value):
 	aim_bone.active = value
@@ -1727,6 +1790,8 @@ func attempt_takedown() -> bool:
 				
 	if best_enemy:
 		takedown_target = best_enemy
+		if "is_targeted_for_takedown" in best_enemy:
+			best_enemy.is_targeted_for_takedown = true
 		return true
 		
 	return false
@@ -1766,6 +1831,9 @@ func _setup_idle_turn_blending() -> void:
 	var qt_sm = main_state.get_node("QT") as AnimationNodeStateMachine
 	if qt_sm:
 		_apply_blend_trees_to_sm(qt_sm, true)
+
+	sync_gun_animation_state()
+	anim.advance(0.0)
 
 
 func _apply_blend_trees_to_sm(sm: AnimationNodeStateMachine, is_qt: bool = false) -> void:
@@ -1867,7 +1935,12 @@ func _apply_blend_trees_to_sm(sm: AnimationNodeStateMachine, is_qt: bool = false
 		
 		var shot_upper_blend_node = AnimationNodeBlend2.new()
 		shot_upper_blend_node.filter_enabled = true
-		for bone in upper_body_bones:
+		var shot_upper_body_bones = [
+			"DEF-spine", "DEF-spine.001", "DEF-spine.002", "DEF-spine.003", "DEF-spine.004", "DEF-spine.005", "DEF-spine.006",
+			"MCH-spine", "MCH-torso.parent",
+			"chest", "spine_fk", "torso"
+		]
+		for bone in shot_upper_body_bones:
 			shot_upper_blend_node.set_filter_path(NodePath("rig/Skeleton3D:" + bone), true)
 		shot_blend_tree.add_node("UpperBlend", shot_upper_blend_node)
 		
@@ -1885,8 +1958,9 @@ func _apply_blend_trees_to_sm(sm: AnimationNodeStateMachine, is_qt: bool = false
 		shot_blend_tree.connect_node("Blend2", 1, "TimeScale")
 		shot_blend_tree.connect_node("output", 0, "Blend2")
 	
-	sm.remove_node("Shot")
-	sm.add_node("Shot", shot_blend_tree)
+	var shot_node_name = "Shot" if is_qt else "Shotgun"
+	sm.remove_node(shot_node_name)
+	sm.add_node(shot_node_name, shot_blend_tree)
 
 	# 3. Recreate transitions
 	var t_start_pis = AnimationNodeStateMachineTransition.new()
@@ -1897,15 +1971,15 @@ func _apply_blend_trees_to_sm(sm: AnimationNodeStateMachine, is_qt: bool = false
 	var t_start_shot = AnimationNodeStateMachineTransition.new()
 	t_start_shot.advance_mode = AnimationNodeStateMachineTransition.ADVANCE_MODE_AUTO
 	t_start_shot.advance_condition = "shot"
-	sm.add_transition("Start", "Shot", t_start_shot)
+	sm.add_transition("Start", shot_node_name, t_start_shot)
 	
 	var t_pis_shot = AnimationNodeStateMachineTransition.new()
 	t_pis_shot.xfade_time = 0.2
-	sm.add_transition("Pis", "Shot", t_pis_shot)
+	sm.add_transition("Pis", shot_node_name, t_pis_shot)
 	
 	var t_shot_pis = AnimationNodeStateMachineTransition.new()
 	t_shot_pis.xfade_time = 0.2
-	sm.add_transition("Shot", "Pis", t_shot_pis)
+	sm.add_transition(shot_node_name, "Pis", t_shot_pis)
 
 	var t_pis_end = AnimationNodeStateMachineTransition.new()
 	t_pis_end.xfade_time = 0.2
@@ -1913,7 +1987,29 @@ func _apply_blend_trees_to_sm(sm: AnimationNodeStateMachine, is_qt: bool = false
 	
 	var t_shot_end = AnimationNodeStateMachineTransition.new()
 	t_shot_end.xfade_time = 0.2
-	sm.add_transition("Shot", "End", t_shot_end)
+	sm.add_transition(shot_node_name, "End", t_shot_end)
+
+	if not is_qt and sm.has_node("Rifle"):
+		var t_start_rifle = AnimationNodeStateMachineTransition.new()
+		t_start_rifle.advance_mode = AnimationNodeStateMachineTransition.ADVANCE_MODE_AUTO
+		t_start_rifle.advance_condition = "rifle"
+		sm.add_transition("Start", "Rifle", t_start_rifle)
+
+		var t_pis_rifle = AnimationNodeStateMachineTransition.new()
+		t_pis_rifle.xfade_time = 0.2
+		sm.add_transition("Pis", "Rifle", t_pis_rifle)
+
+		var t_rifle_pis = AnimationNodeStateMachineTransition.new()
+		t_rifle_pis.xfade_time = 0.2
+		sm.add_transition("Rifle", "Pis", t_rifle_pis)
+
+		var t_rifle_shot = AnimationNodeStateMachineTransition.new()
+		t_rifle_shot.xfade_time = 0.2
+		sm.add_transition("Rifle", shot_node_name, t_rifle_shot)
+		
+		var t_shot_rifle = AnimationNodeStateMachineTransition.new()
+		t_shot_rifle.xfade_time = 0.2
+		sm.add_transition(shot_node_name, "Rifle", t_shot_rifle)
 func _update_idle_turn_blend(delta: float) -> void:
 	if not anim:
 		return
@@ -2094,12 +2190,12 @@ func _update_idle_turn_blend(delta: float) -> void:
 		anim.set("parameters/Main/Idle/Pis/Blend2/blend_amount", new_blend)
 		anim.set("parameters/Main/Idle/Pis/TimeScale/scale", target_scale)
 		
-	var current_blend_shot = anim.get("parameters/Main/Idle/Shot/Blend2/blend_amount")
+	var current_blend_shot = anim.get("parameters/Main/Idle/Shotgun/Blend2/blend_amount")
 	var new_blend_shot = 0.0
 	if current_blend_shot != null:
 		new_blend_shot = lerp(current_blend_shot, target_blend, delta * idle_lerp_speed)
-		anim.set("parameters/Main/Idle/Shot/Blend2/blend_amount", new_blend_shot)
-		anim.set("parameters/Main/Idle/Shot/TimeScale/scale", target_scale)
+		anim.set("parameters/Main/Idle/Shotgun/Blend2/blend_amount", new_blend_shot)
+		anim.set("parameters/Main/Idle/Shotgun/TimeScale/scale", target_scale)
 
 	# Smoothly update the blend amount in the AnimationTree for QT
 	var qt_lerp_speed = 8.0 if current_state_name == "Quick_turn" else 25.0
@@ -2126,7 +2222,7 @@ func _update_idle_turn_blend(delta: float) -> void:
 	if _is_turning and target_scale != 0.0:
 		var seek_paths = [
 			"parameters/Main/Idle/Pis/TimeSeek/seek_request",
-			"parameters/Main/Idle/Shot/TimeSeek/seek_request",
+			"parameters/Main/Idle/Shotgun/TimeSeek/seek_request",
 			"parameters/Main/QT/Pis/TimeSeek/seek_request",
 			"parameters/Main/QT/Shot/TimeSeek/seek_request"
 		]
@@ -2172,10 +2268,81 @@ func _trigger_turn_seek() -> void:
 	_pending_stop_footstep = false
 	var paths = [
 		"parameters/Main/Idle/Pis/TimeSeek/seek_request",
-		"parameters/Main/Idle/Shot/TimeSeek/seek_request",
+		"parameters/Main/Idle/Shotgun/TimeSeek/seek_request",
 		"parameters/Main/QT/Pis/TimeSeek/seek_request",
 		"parameters/Main/QT/Shot/TimeSeek/seek_request"
 	]
 	for path in paths:
 		if anim.get(path) != null:
 			anim.set(path, 0.53)
+
+
+func _on_gun_switched(_gun: Gun = null, _index: int = 0) -> void:
+	sync_gun_animation_state()
+
+
+func sync_gun_animation_state() -> void:
+	if not anim or not gun_controller or not gun_controller.current_gun:
+		return
+	var gun = gun_controller.current_gun
+	var gun_name = gun.get_gun_name()
+	var is_pis = (gun_name == "Water pistol")
+	var is_shot = (gun_name == "Water shotgun")
+	var is_rifle = (gun_name == "Water sniper")
+	
+	# Idle conditions & playback
+	anim.set("parameters/Main/Idle/conditions/pis", is_pis)
+	anim.set("parameters/Main/Idle/conditions/shot", is_shot)
+	anim.set("parameters/Main/Idle/conditions/rifle", is_rifle)
+			
+	# Run conditions & playback
+	anim.set("parameters/Main/Run/conditions/pis", is_pis)
+	anim.set("parameters/Main/Run/conditions/shot", not is_pis)
+			
+	# QT conditions
+	anim.set("parameters/Main/QT/conditions/pis", is_pis)
+	anim.set("parameters/Main/QT/conditions/shot", not is_pis)
+	
+	# Aim transition
+	var aim_req = "pis" if is_pis else ("shot" if is_shot else "rifle")
+	anim.set("parameters/Main/Aim/BlendTree/Transition/current_state", aim_req)
+	anim.set("parameters/Main/Aim/BlendTree/Transition/transition_request", aim_req)
+	
+	# Verify active sub-state machine matches equipped weapon
+	var main_pb = anim.get("parameters/Main/playback")
+	if not main_pb:
+		return
+		
+	var cur_main = String(main_pb.get_current_node())
+	match cur_main:
+		"Idle":
+			var idle_pb = anim.get("parameters/Main/Idle/playback")
+			if idle_pb:
+				var target_idle = "Pis" if is_pis else ("Shotgun" if is_shot else "Rifle")
+				var cur_idle = String(idle_pb.get_current_node())
+				if cur_idle != target_idle and cur_idle != "":
+					idle_pb.travel(target_idle)
+		"Run":
+			var run_pb = anim.get("parameters/Main/Run/playback")
+			if run_pb:
+				var target_run = "Pis" if is_pis else "Shot"
+				var cur_run = String(run_pb.get_current_node())
+				if cur_run != target_run and cur_run != "":
+					run_pb.travel(target_run)
+		"QT":
+			var qt_pb = anim.get("parameters/Main/QT/playback")
+			if qt_pb:
+				var target_qt = "Pis" if is_pis else "Shot"
+				var cur_qt = String(qt_pb.get_current_node())
+				if cur_qt != target_qt and cur_qt != "":
+					qt_pb.travel(target_qt)
+		"Reload":
+			if is_shot:
+				var reload_pb = anim.get("parameters/Main/Reload/playback")
+				if reload_pb:
+					var cur_rel = String(reload_pb.get_current_node())
+					if cur_rel == "Reload" or cur_rel == "Start":
+						var reload_state = get_node_or_null("Statemachine/Reload")
+						var is_super = reload_state and "_is_superpump_active" in reload_state and reload_state._is_superpump_active
+						var target_rel = "SuperPump_Shotgun" if is_super else "Reload_Shotgun"
+						reload_pb.start(target_rel)

@@ -42,6 +42,8 @@ var _timer: float = 0.0
 var _anim_duration: float = 0.0
 var _pushed_enemies: Array[Node] = []
 var _act3_timer: float = 0.0
+var _act3_has_started_flying: bool = false
+var _act3_failsafe_timer: float = 0.0
 var _travelled_to_getup_end: bool = false
 var _default_act3_timescales: Dictionary = {}
 
@@ -98,6 +100,8 @@ func enter() -> void:
 	_phase = Phase.ACT3
 	_pushed_enemies.clear()
 	_act3_timer = 0.0
+	_act3_has_started_flying = false
+	_act3_failsafe_timer = 0.0
 	_travelled_to_getup_end = false
 	_cache_default_act3_timescales()
 	if enemy:
@@ -218,6 +222,7 @@ func enter() -> void:
 			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Swing_shot", true)
 	else:
 		# Normal
+		skip_act3 = false
 		if enemy and enemy.anim_tree:
 			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Special", false)
 			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Special_2", false)
@@ -250,6 +255,9 @@ func enter() -> void:
 		enemy.anim_tree.advance(start_offset)
 		
 func _start_act4() -> void:
+	if enemy and (enemy.is_takedown_defeat or enemy.current_hp <= 0):
+		enemy._trigger_defeat()
+		return
 	_phase = Phase.ACT4
 	_timer = 0.0
 	var loop_anim: String = enemy.anim_set.takedown_idle(knockdown_type)
@@ -311,6 +319,8 @@ func _start_act5() -> void:
 		_anim_duration = 1.0
 
 func exit() -> void:
+	if enemy and (enemy.is_takedown_defeat or enemy.current_hp <= 0):
+		enemy._trigger_defeat()
 	if enemy and enemy.anim_tree:
 		enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Special", false)
 		enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Special_2", false)
@@ -336,6 +346,7 @@ func physics_update(delta: float) -> void:
 
 	match _phase:
 		Phase.ACT3:
+			_act3_failsafe_timer += delta
 			var is_flying_node = current_node in [
 				"Hit Leg act 3-take down for head",
 				"Hit Leg act 3 (Take_down)",
@@ -345,6 +356,7 @@ func physics_update(delta: float) -> void:
 				"HIT RightLeg act 3-take down Special_R"
 			]
 			if is_flying_node:
+				_act3_has_started_flying = true
 				_act3_timer += delta
 				if enemy:
 					var duration = _get_act3_anim_duration(current_node)
@@ -441,22 +453,26 @@ func physics_update(delta: float) -> void:
 					
 			# Wait for AnimationTree to automatically transition to Act 4
 			# Since we queued travel() for Head, it will take the user's crossfade arrow to Head Act 4!
-			if current_node == act4_anim:
-				if enemy and enemy.is_takedown_defeat:
+			var act3_dur = _get_act3_anim_duration(current_node)
+			var can_exit_act3 = (_act3_has_started_flying and _act3_timer >= 0.25) or (_act3_failsafe_timer >= 2.0)
+			if can_exit_act3 and (current_node == act4_anim or _act3_timer >= act3_dur or _act3_failsafe_timer >= 2.0):
+				if enemy and (enemy.is_takedown_defeat or enemy.current_hp <= 0):
 					enemy._trigger_defeat()
 					return
-				_phase = Phase.ACT4
-				_timer = 0.0
-				if enemy:
-					enemy.velocity = Vector3.ZERO
-					enemy.move_and_slide()
+				_start_act4()
 				
 		Phase.ACT4:
+			if enemy and (enemy.is_takedown_defeat or enemy.current_hp <= 0):
+				enemy._trigger_defeat()
+				return
 			_timer += delta
 			if _timer >= knockdown_duration:
 				_start_act5()
 				
 		Phase.ACT5:
+			if enemy and (enemy.is_takedown_defeat or enemy.current_hp <= 0):
+				enemy._trigger_defeat()
+				return
 			_timer += delta
 			if _timer >= 0.4 and not _travelled_to_getup_end:
 				_travelled_to_getup_end = true
@@ -472,6 +488,9 @@ func physics_update(delta: float) -> void:
 							child_pb.travel(getup_anim)
 
 			if _timer >= 0.5:
+				if enemy and (enemy.is_takedown_defeat or enemy.current_hp <= 0):
+					enemy._trigger_defeat()
+					return
 				var hunt = state_machine._states.get("StateHunt")
 				if hunt:
 					var remain = max(_anim_duration - 0.5, 0.5)

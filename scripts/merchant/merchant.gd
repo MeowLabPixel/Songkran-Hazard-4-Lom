@@ -20,6 +20,7 @@ class_name Merchant
 @export var return_speed: float = 3.0 ## Smooth return speed when relaxing back to forward gaze
 
 signal enemy_hit(hit_data: Dictionary)
+signal shop_exited
 
 @export_group("Skeleton & Bone Configuration")
 @export var head_bone_name: String = "DEF-spine.006" ## Deform head bone (Head, Ear, Mask, Straw Hat)
@@ -78,8 +79,12 @@ var current_influence: float = 0.0
 var current_player: CharacterBody3D = null
 var is_in_interaction: bool = false
 var current_voice_player: AudioStreamPlayer3D = null
+var has_shopped_or_talked: bool = false
+var _shop_exit_triggered: bool = false
+@export var shop_exit_distance: float = 2.0
 
 func _ready() -> void:
+	add_to_group("merchant")
 	_setup_head_lookat_ik()
 	_setup_hit_reaction_modifier()
 	_setup_fabric_hitboxes()
@@ -107,6 +112,7 @@ func _setup_shop_bucket() -> void:
 
 func _process(delta: float) -> void:
 	_update_player_stun_interaction()
+	_check_player_shop_physical_exit()
 
 	if not enable_head_look:
 		if head_lookat:
@@ -442,6 +448,7 @@ func exit_interaction(on_camera_exited: Callable = Callable()) -> void:
 
 	current_player = null
 	is_in_interaction = false
+	print("[Merchant] Interaction exited. Player still near merchant in shop.")
 
 func is_customer_present() -> bool:
 	return is_in_interaction and is_instance_valid(current_player)
@@ -453,12 +460,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not _is_player_stun_overlapping(nearby_player):
 		return
 
+	if nearby_player:
+		var sm_player = nearby_player.get_node_or_null("Statemachine")
+		if sm_player and sm_player.get("current_state") and sm_player.current_state.name in ["Takedown", "Grab", "Get_hit", "Die"]:
+			return
+
+	var is_f_pressed = false
 	if event is InputEventKey and event.pressed and not event.is_echo():
-		if event.keycode == KEY_E:
-			if nearby_player:
-				open_shop_menu(nearby_player)
-				get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("takedown"):
+		if event.keycode == KEY_F or event.physical_keycode == KEY_F:
+			is_f_pressed = true
+	if not is_f_pressed and event.is_action_pressed("Pickup"):
+		is_f_pressed = true
+
+	if is_f_pressed:
 		if nearby_player:
 			open_shop_menu(nearby_player)
 			get_viewport().set_input_as_handled()
@@ -466,6 +480,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func open_shop_menu(player: CharacterBody3D) -> void:
 	if not _is_player_stun_overlapping(player):
 		return
+	if "nearby_merchant" in player and player.nearby_merchant == self:
+		player.nearby_merchant = null
 
 	if not shop_menu or not is_instance_valid(shop_menu):
 		if shop_menu_scene:
@@ -479,8 +495,37 @@ func open_shop_menu(player: CharacterBody3D) -> void:
 	shop_menu.open_shop(player, self)
 
 func _on_shop_closed() -> void:
+	has_shopped_or_talked = true
 	if is_player_in_range and _is_player_stun_overlapping(nearby_player):
+		if nearby_player and "nearby_merchant" in nearby_player:
+			nearby_player.nearby_merchant = self
 		_set_prompt_visible(true)
+	print("[Merchant] Shop buy menu closed. Waiting for player to physically exit shop (>= %.1fm)." % shop_exit_distance)
+
+func _check_player_shop_physical_exit() -> void:
+	if not has_shopped_or_talked or _shop_exit_triggered or is_in_interaction:
+		return
+	
+	var player = _find_player()
+	if not player or not is_instance_valid(player):
+		return
+		
+	var interact_pos = _get_interaction_point()
+	var player_pos = player.global_position
+	# Measure 2D horizontal distance (XZ plane)
+	var dist = Vector2(interact_pos.x, interact_pos.z).distance_to(Vector2(player_pos.x, player_pos.z))
+	
+	if dist >= shop_exit_distance:
+		_shop_exit_triggered = true
+		print("[Merchant] Player physically exited the merchant shop (distance: %.2fm >= %.2fm)! Starting Wave 2." % [dist, shop_exit_distance])
+		play_merchant_voice("Exit_Shop")
+		shop_exited.emit()
+		if typeof(GameManager) != TYPE_NIL and GameManager.has_method("notify_merchant_met"):
+			GameManager.notify_merchant_met()
+
+func _exit_tree() -> void:
+	if nearby_player and is_instance_valid(nearby_player) and "nearby_merchant" in nearby_player and nearby_player.nearby_merchant == self:
+		nearby_player.nearby_merchant = null
 
 func stop_merchant_voice() -> void:
 	if current_voice_player and is_instance_valid(current_voice_player):
@@ -560,6 +605,8 @@ func _update_player_stun_interaction() -> void:
 	if is_in_interaction:
 		if is_player_in_range:
 			is_player_in_range = false
+			if nearby_player and "nearby_merchant" in nearby_player and nearby_player.nearby_merchant == self:
+				nearby_player.nearby_merchant = null
 			_set_prompt_visible(false)
 		return
 
@@ -570,9 +617,13 @@ func _update_player_stun_interaction() -> void:
 		if not is_player_in_range or nearby_player != player:
 			nearby_player = player
 			is_player_in_range = true
+			if nearby_player and "nearby_merchant" in nearby_player:
+				nearby_player.nearby_merchant = self
 			_set_prompt_visible(true)
 	else:
 		if is_player_in_range or nearby_player != null:
+			if nearby_player and "nearby_merchant" in nearby_player and nearby_player.nearby_merchant == self:
+				nearby_player.nearby_merchant = null
 			nearby_player = null
 			is_player_in_range = false
 			_set_prompt_visible(false)
@@ -595,6 +646,8 @@ func _setup_shop_trigger() -> void:
 	# Configure collision layer for player stun detection (Layer 14: 8192)
 	shop_trigger_area.collision_layer = 8192
 	shop_trigger_area.collision_mask = 0
+	if not shop_trigger_area.is_in_group("bullet_ignore"):
+		shop_trigger_area.add_to_group("bullet_ignore")
 		
 	_setup_prompt_ui()
 
@@ -655,17 +708,9 @@ func _setup_prompt_ui() -> void:
 	
 	_prompt_ui.visible = false
 
-func _set_prompt_visible(vis: bool) -> void:
+func _set_prompt_visible(_vis: bool) -> void:
 	if _prompt_ui and is_instance_valid(_prompt_ui):
-		if vis and _prompt_label:
-			var lang = "en"
-			if get_tree().root.has_node("GameManager"):
-				lang = GameManager.selected_language
-			if lang == "th":
-				_prompt_label.text = "[E] ร้านค้าปืนฉีดน้ำ"
-			else:
-				_prompt_label.text = "[E] Open Shop"
-		_prompt_ui.visible = vis
+		_prompt_ui.visible = false
 
 func _on_shop_body_entered(_body: Node3D) -> void:
 	pass

@@ -62,13 +62,18 @@ func _play_anim(anim_name: String, sub_machine: String = "") -> void:
 			else:
 				root_playback.travel(anim_name)
 				
-			if anim_name == enemy.anim_set.idle and enemy.next_idle_offset >= 0.0:
-				var offset = enemy.next_idle_offset
-				enemy.next_idle_offset = -1.0
-				enemy.get_tree().process_frame.connect(func():
-					if is_instance_valid(enemy) and is_instance_valid(enemy.anim_tree):
-						enemy.anim_tree.advance(offset)
-				, CONNECT_ONE_SHOT)
+			if anim_name == enemy.anim_set.idle:
+				if enemy.has_method("update_idle_variant"):
+					enemy.update_idle_variant()
+				if enemy.has_method("has_idle_transition_node") and enemy.has_idle_transition_node():
+					enemy.next_idle_offset = -1.0 # Suppress legacy single-timeline offset jump for transition nodes
+				elif enemy.next_idle_offset >= 0.0:
+					var offset = enemy.next_idle_offset
+					enemy.next_idle_offset = -1.0
+					enemy.get_tree().process_frame.connect(func():
+						if is_instance_valid(enemy) and is_instance_valid(enemy.anim_tree):
+							enemy.anim_tree.advance(offset)
+					, CONNECT_ONE_SHOT)
 			return
 			
 	if not enemy.anim_player:
@@ -141,13 +146,18 @@ func _force_anim_ext(anim_name: String, sub_machine: String = "", custom_speed: 
 				else:
 					root_playback.travel(anim_name)
 				
-			if anim_name == enemy.anim_set.idle and enemy.next_idle_offset >= 0.0:
-				var offset = enemy.next_idle_offset
-				enemy.next_idle_offset = -1.0
-				enemy.get_tree().process_frame.connect(func():
-					if is_instance_valid(enemy) and is_instance_valid(enemy.anim_tree):
-						enemy.anim_tree.advance(offset)
-				, CONNECT_ONE_SHOT)
+			if anim_name == enemy.anim_set.idle:
+				if enemy.has_method("update_idle_variant"):
+					enemy.update_idle_variant()
+				if enemy.has_method("has_idle_transition_node") and enemy.has_idle_transition_node():
+					enemy.next_idle_offset = -1.0 # Suppress legacy single-timeline offset jump for transition nodes
+				elif enemy.next_idle_offset >= 0.0:
+					var offset = enemy.next_idle_offset
+					enemy.next_idle_offset = -1.0
+					enemy.get_tree().process_frame.connect(func():
+						if is_instance_valid(enemy) and is_instance_valid(enemy.anim_tree):
+							enemy.anim_tree.advance(offset)
+					, CONNECT_ONE_SHOT)
 			return
 			
 	if not enemy.anim_player:

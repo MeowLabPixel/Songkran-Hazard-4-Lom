@@ -1,6 +1,8 @@
 extends Node3D
 class_name GunController
 
+signal gun_switched(new_gun: Gun, gun_index: int)
+
 @export var pistol_gun: Gun
 @export var shotgun_gun: Gun
 @export var sniper_gun: Gun
@@ -11,7 +13,7 @@ class_name GunController
 @export var current_water: float = 200.0
 
 var guns: Array[Gun] = []
-var unlocked_guns: Array[bool] = [true, false, false] # Pistol unlocked by default, Shotgun/Sniper locked
+var unlocked_guns: Array[bool] = [true, true, false] # Pistol unlocked by default, Shotgun/Sniper locked
 var current_gun_index: int = 0
 var current_gun: Gun
 
@@ -48,6 +50,8 @@ func switch_gun(index: int) -> void:
 	for i in range(guns.size()):
 		if guns[i]:
 			guns[i].visible = i == current_gun_index
+
+	gun_switched.emit(current_gun, current_gun_index)
 
 func next_gun() -> void:
 	var next_index := (current_gun_index + 1) % guns.size()

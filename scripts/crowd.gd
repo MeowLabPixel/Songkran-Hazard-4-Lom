@@ -284,6 +284,10 @@ enum CrowdRow { FRONT = 0, MIDDLE = 1, BACK = 2 }
 @export var balloon_damage: float = 0.0
 
 @export_group("Hit Reactions")
+@export var enable_hitbox: bool = false: ## Master toggle for crowd hitboxes. When false, completely disables all hitbox collisions across crowd members.
+	set(val):
+		enable_hitbox = val
+		_update_hitbox_state()
 @export var enable_hit_reaction: bool = true
 @export var enable_hit_animation: bool = false
 @export var enable_hit_from_player: bool = true
@@ -473,7 +477,8 @@ func _enter_tree() -> void:
 		_setup_materials()
 
 func _exit_tree() -> void:
-	pass
+	_setting_change_pending = false
+	_is_validating_physics = false
 
 func _on_setting_changed() -> void:
 	if not Engine.is_editor_hint() or not is_inside_tree() or not is_node_ready():
@@ -501,6 +506,17 @@ func _update_audio_settings() -> void:
 				member.enable_audio = enable_audio
 			if "enable_animation_sounds" in member:
 				member.enable_animation_sounds = enable_animation_sounds
+
+func _update_hitbox_state() -> void:
+	for member in active_members:
+		if is_instance_valid(member):
+			if "enable_hitbox" in member:
+				member.enable_hitbox = enable_hitbox
+			if member.has_method("set_hitbox_mode"):
+				if enable_hitbox and member.is_row_active:
+					member.set_hitbox_mode(CrowdMember.HitboxMode.CHEST)
+				else:
+					member.set_hitbox_mode(CrowdMember.HitboxMode.OFF)
 
 func _silence_audio_nodes(node: Node) -> void:
 	if not node or not is_instance_valid(node):
@@ -1550,6 +1566,7 @@ func _validate_and_snap_members() -> void:
 
 func _get_member_config() -> Dictionary:
 	return {
+		"enable_hitbox": enable_hitbox,
 		"enable_dance_animation": enable_dance_animation,
 		"enable_water_gun": enable_water_gun_spawn,
 		"enable_hit_reaction": enable_hit_reaction,
@@ -1850,7 +1867,7 @@ func _trigger_random_shot() -> void:
 	if _candidate_targets.is_empty():
 		return
 	var target = _candidate_targets.pick_random()
-	if target.has_method("ensure_chest_hitbox_active"):
+	if enable_hitbox and target.has_method("ensure_chest_hitbox_active"):
 		target.ensure_chest_hitbox_active()
 
 	var target_aim = target.global_position + Vector3(
@@ -2017,7 +2034,7 @@ func _on_water_gun_fired(shooter: Node3D, muzzle_pos: Vector3, target_pos: Vecto
 		SoundManager.play_3d("watergun_pistol_shoot", muzzle_pos, 0.0, -1.0, randf_range(0.92, 1.08))
 
 	# 5. Crowd-on-crowd hit reaction
-	if enable_hit_from_crowd:
+	if enable_hitbox and enable_hit_from_crowd:
 		for member in active_members:
 			if member != shooter and member.global_position.distance_to(actual_hit_pos) <= 1.5:
 				var hit_dir = (actual_hit_pos - muzzle_pos).normalized()

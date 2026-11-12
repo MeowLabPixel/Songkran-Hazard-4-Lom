@@ -125,9 +125,12 @@ func _exit() -> void:
 
 
 func _state_input(_event: InputEvent) -> void:
-	if Input.is_action_just_pressed("quick_turn") and not owner.is_quick_turn and owner.quick_turn_cooldown <= 0.0:
+	var can_qt = owner.can_quick_turn() if owner.has_method("can_quick_turn") else (not owner.is_quick_turn and owner.quick_turn_cooldown <= 0.0)
+	var wants_qt = owner.is_quick_turn_input_just_pressed() if owner.has_method("is_quick_turn_input_just_pressed") else Input.is_action_just_pressed("quick_turn")
+	if wants_qt and can_qt:
 		if shot_exit_lock_timer <= 0.0 and not is_shot_queued and not is_waiting_quick_shot_delay:
 			finished.emit("Quick_turn")
+			return
 	if Input.is_action_just_released("aim") :
 		if shot_exit_lock_timer <= 0.0 and not is_shot_queued and not is_waiting_quick_shot_delay:
 			owner.is_aimming = false
@@ -135,10 +138,11 @@ func _state_input(_event: InputEvent) -> void:
 	if Input.is_action_just_pressed("Reload") :
 		if shot_exit_lock_timer <= 0.0 and not is_shot_queued and not is_waiting_quick_shot_delay:
 			var gun = owner.gun_controller.current_gun
-			if gun and gun.is_super_active and gun.air >= gun.max_air:
+			if gun and gun.is_super_active:
 				return
 			var is_pistol = gun and (gun.gun_name == "Water pistol" or owner.gun_controller.current_gun_index == 0)
-			var is_superpump_attempt = is_pistol and gun.air >= gun.max_air
+			var is_shotgun = gun and (gun.gun_name == "Water shotgun" or owner.gun_controller.current_gun_index == 1)
+			var is_superpump_attempt = (is_pistol or is_shotgun) and gun.air >= gun.max_air
 			if not (is_superpump_attempt and owner.superpump_cooldown > 0.0):
 				get_viewport().set_input_as_handled()
 				finished.emit("Reload")
@@ -184,13 +188,12 @@ func _trigger_shot() -> void:
 	
 	# Trigger the shot recoil animation
 	owner.anim.set("parameters/Main/Aim/BlendTree/OneShot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
-	owner.notify_shot_fired()
-	
 	# Fire the projectile, VFX, and sound
 	gun.shoot()
+	owner.notify_shot_fired()
 	
 	# Lock aim exit until 100% of the shot animation has finished
-	var shot_dur = gun.shoot_interval if gun else 0.3
+	var shot_dur = gun.get_aim_exit_lock_duration() if (gun and gun.has_method("get_aim_exit_lock_duration")) else (gun.shoot_interval if gun else 0.3)
 	shot_exit_lock_timer = shot_dur
 	
 	_is_firing_shot = false
@@ -202,6 +205,8 @@ func switch_gun(num:int):
 		set_gun_aim_anim()
 
 func set_gun_aim_anim():
+	if owner.has_method("sync_gun_animation_state"):
+		owner.sync_gun_animation_state()
 	if not owner.gun_controller or not owner.gun_controller.current_gun or not owner.anim:
 		return
 	var gun_name = owner.gun_controller.current_gun.get_gun_name()

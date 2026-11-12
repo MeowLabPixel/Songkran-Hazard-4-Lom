@@ -125,6 +125,14 @@ func _ready() -> void:
 		call_deferred("_setup_attachments", skeleton)
 	reset_flipflop()
 
+func reset() -> void:
+	_active_reactions.clear()
+	_active_juice_reactions.clear()
+	reset_flipflop()
+	var skeleton = get_skeleton()
+	if skeleton:
+		skeleton.clear_bones_global_pose_override()
+
 func reset_flipflop() -> void:
 	var skeleton = get_skeleton()
 	if _slid_flipflop != "" and skeleton:

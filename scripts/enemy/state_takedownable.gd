@@ -95,6 +95,9 @@ func exit() -> void:
 		enemy.reset_getup_conditions()
 
 func physics_update(delta: float) -> void:
+	if enemy and enemy.current_hp <= 0 and not takedown_triggered:
+		enemy._trigger_defeat()
+		return
 	if takedown_triggered:
 		if _in_anticipation_phase:
 			_anticipation_timer += delta
@@ -163,8 +166,9 @@ func physics_update(delta: float) -> void:
 				enemy.anim_tree.set("parameters/hit/Getup_End/conditions/act2_skip", true)
 		_act2_timer += delta
 
+		var is_targeted = (enemy and "is_targeted_for_takedown" in enemy and enemy.is_targeted_for_takedown)
 		var is_exiting_act2 = (current_node == "End" or "act 3" in current_node.to_lower() or "act3" in current_node.to_lower())
-		if get_elapsed_time() >= get_stun_duration() or is_exiting_act2:
+		if not is_targeted and (get_elapsed_time() >= get_stun_duration() or is_exiting_act2):
 			var hunt = state_machine._states.get("StateHunt")
 			if hunt:
 				hunt.trigger_stun_recovery = true
@@ -242,6 +246,7 @@ func trigger_takedown() -> void:
 	if knockdown:
 		knockdown.knockdown_mode = "NORMAL"
 		knockdown.stun_type = stun_type
+		knockdown.skip_act3 = false
 
 
 	if enable_takedown_anticipation and enemy:

@@ -35,8 +35,13 @@ func enter() -> void:
 func exit() -> void:
 	if enemy:
 		enemy.reset_getup_conditions()
+		if enemy.current_hp <= 0 or enemy.is_takedown_defeat:
+			enemy._trigger_defeat()
 
 func physics_update(delta: float) -> void:
+	if enemy and (enemy.current_hp <= 0 or enemy.is_takedown_defeat):
+		enemy._trigger_defeat()
+		return
 	_timer += delta
 	if enemy and enemy.has_meta("getup_elapsed_time"):
 		var elapsed = enemy.get_meta("getup_elapsed_time") + delta
@@ -56,6 +61,9 @@ func physics_update(delta: float) -> void:
 					child_pb.travel(getup_anim)
 
 	if _timer >= 0.5:
+		if enemy and (enemy.current_hp <= 0 or enemy.is_takedown_defeat):
+			enemy._trigger_defeat()
+			return
 		var hunt = state_machine._states.get("StateHunt")
 		if hunt:
 			var remain = max(getup_duration - 0.5, 0.5)

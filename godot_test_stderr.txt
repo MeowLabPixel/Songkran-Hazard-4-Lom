@@ -1,0 +1,36 @@
+SCRIPT ERROR: Compile Error: Identifier not found: ItemManager
+   at: GDScript::reload (res://scripts/ui/merchant_shop_menu.gd:307)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://tests/verify_merchant_exit.gd:13)
+ERROR: Failed to load script "res://scripts/ui/merchant_shop_menu.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://tests/verify_merchant_exit.gd:13)
+SCRIPT ERROR: Compile Error: Identifier not found: SoundManager
+   at: GDScript::reload (res://GunSystem/Script/ShotgunWaterGun.gd:43)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://tests/verify_merchant_exit.gd:13)
+ERROR: Failed to load script "res://GunSystem/Script/ShotgunWaterGun.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://tests/verify_merchant_exit.gd:13)
+SCRIPT ERROR: Compile Error: Identifier not found: SoundManager
+   at: GDScript::reload (res://GunSystem/Script/SniperWaterGun.gd:16)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://tests/verify_merchant_exit.gd:13)
+ERROR: Failed to load script "res://GunSystem/Script/SniperWaterGun.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://tests/verify_merchant_exit.gd:13)
+SCRIPT ERROR: Compile Error: Identifier not found: GameManager
+   at: GDScript::reload (res://scripts/merchant/merchant.gd:523)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://tests/verify_merchant_exit.gd:13)
+ERROR: Failed to load script "res://scripts/merchant/merchant.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://tests/verify_merchant_exit.gd:13)
+SCRIPT ERROR: Invalid access to property or key 'shop_exit_distance' on a base object of type 'Node3D'.
+   at: _init (res://tests/verify_merchant_exit.gd:16)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://tests/verify_merchant_exit.gd:16)

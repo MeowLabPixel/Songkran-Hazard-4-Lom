@@ -2,8 +2,9 @@
 
 [ext_resource type="Script" uid="uid://dy1eg8j8nbca8" path="res://GunSystem/Script/ShotgunWaterGun.gd" id="1_5wfdp"]
 [ext_resource type="PackedScene" uid="uid://bljas2yeqo4rd" path="res://GunSystem/Scene/WaterLineVFX/WaterLine.tscn" id="2_mygp3"]
-[ext_resource type="PackedScene" uid="uid://gjs0wjhh5kp8" path="res://GunSystem/Scene/WaterLineVFX/WaterMuzzle.tscn" id="3_u3y21"]
+[ext_resource type="PackedScene" uid="uid://biyrwoh08cdgw" path="res://Jomp_Folder/VFX_Water/VFX2/vfx_water_splatter.tscn" id="3_mygp3"]
 [ext_resource type="Texture2D" uid="uid://db2pkqmf0ltqe" path="res://Water Gun Shotty/ShotGunfix_openPBR_shader1_Base_color.png" id="4_laa6l"]
+[ext_resource type="PackedScene" uid="uid://bla6gg2pxqtg4" path="res://GunSystem/Scene/WaterLineVFX/water_muzzle_Shotgun.tscn" id="4_mygp3"]
 [ext_resource type="Material" uid="uid://dypclgi7i7ecp" path="res://Water Gun Shotty/Cell_Shotgun.tres" id="5_jr3r0"]
 [ext_resource type="Material" uid="uid://2d51ux46uptw" path="res://Water Gun Shotty/Cell_Bottle_Shotgun.tres" id="6_d62nj"]
 
@@ -287,13 +288,12 @@ blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_hk2nh")
 
 [node name="Shotgun" type="Node3D" unique_id=560072649 node_paths=PackedStringArray("spawn_point")]
-visible = false
 script = ExtResource("1_5wfdp")
 gun_name = "Water shotgun"
 spawn_point = NodePath("ShotGunfix/SpawnPoint")
 shot_vfx_scene = ExtResource("2_mygp3")
-hit_vfx_scene = ExtResource("3_u3y21")
-muzzle_vfx_scene = ExtResource("3_u3y21")
+hit_vfx_scene = ExtResource("3_mygp3")
+muzzle_vfx_scene = ExtResource("4_mygp3")
 muzzle_scale = Vector3(0.2, 0.2, 0.2)
 impact_scale = Vector3(0.4, 0.4, 0.4)
 muzzle_animation_name = "Muzzle"
@@ -343,4 +343,4 @@ mesh = SubResource("ArrayMesh_rk267")
 surface_material_override/0 = ExtResource("5_jr3r0")
 
 [node name="SpawnPoint" type="Node3D" parent="ShotGunfix" unique_id=2122415460]
-transform = Transform3D(-0.8, 0, 1.9079806e-08, 0, 0.8, 0, -1.9079806e-08, 0, -0.8, 0.0036200222, 0.15057194, 0.8411219)
+transform = Transform3D(-0.8, 0, 1.9079806e-08, 0, 0.8, 0, -1.9079806e-08, 0, -0.8, 0.0036200196, 0.17602351, 0.955366)

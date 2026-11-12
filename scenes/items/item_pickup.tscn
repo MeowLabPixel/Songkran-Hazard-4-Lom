@@ -1,8 +1,31 @@
 [gd_scene format=3 uid="uid://wst0d3ylafwt"]
 
 [ext_resource type="Script" uid="uid://d6i4dyn6401q" path="res://scripts/items/item_pickup.gd" id="1_72j5x"]
+[ext_resource type="Shader" uid="uid://c81jqj82ngr5r" path="res://shaders/zelda_highlight_rays.gdshader" id="2_nc1ct"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_72j5x"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_4haoh"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_momc2"]
+render_priority = 0
+shader = ExtResource("2_nc1ct")
+shader_parameter/beam_color = Color(1, 0.9532526, 0.39999998, 1)
+shader_parameter/vertical_speed = 0.0
+shader_parameter/reverse_direction = true
+shader_parameter/rotation_speed = 0.1
+shader_parameter/density = 7.000000285
+shader_parameter/ray_sharpness = 0.45
+shader_parameter/fade_towards_top = true
+shader_parameter/fade_power = 1.5
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_4haoh")
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_ntd1s"]
+top_radius = 0.16
+bottom_radius = 0.12
+height = 0.51171875
+cap_top = false
+cap_bottom = false
 
 [node name="ItemPickup" type="Area3D" unique_id=1955694054]
 collision_layer = 1024
@@ -13,3 +36,9 @@ script = ExtResource("1_72j5x")
 shape = SubResource("SphereShape3D_72j5x")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1245871321]
+
+[node name="RayMesh" type="MeshInstance3D" parent="." unique_id=529198382]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.23085937, 0)
+material_override = SubResource("ShaderMaterial_momc2")
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_ntd1s")

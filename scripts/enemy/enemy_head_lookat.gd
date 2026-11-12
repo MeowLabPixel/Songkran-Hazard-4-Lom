@@ -82,6 +82,10 @@ func _process_modification() -> void:
 	pose.basis = local_rot_basis * pose.basis
 	skeleton.set_bone_pose(head_idx, pose)
 
+func reset() -> void:
+	current_yaw = 0.0
+	current_pitch = 0.0
+
 func _relax_head() -> void:
 	current_yaw = lerp_angle(current_yaw, 0.0, 0.016 * tracking_speed)
 	current_pitch = lerp_angle(current_pitch, 0.0, 0.016 * tracking_speed)

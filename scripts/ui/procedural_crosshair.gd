@@ -11,6 +11,7 @@ extends Control
 @export var default_color: Color = Color(1.0, 1.0, 1.0, 0.75)
 @export var focused_color: Color = Color(1.0, 0.8, 0.1, 0.95)
 @export var enable_center_dot: bool = false
+@export_range(40.0, 140.0, 5.0) var shotgun_bracket_span_degrees: float = 70.0
 
 @export_group("Air Gauge Settings")
 @export var gauge_on_left: bool = true
@@ -70,8 +71,11 @@ func trigger_shot_kick(amount: float = 9.0) -> void:
 	var is_recoil_enabled = enable_crosshair_recoil and (not gm or not ("enable_crosshair_recoil" in gm) or gm.enable_crosshair_recoil)
 	
 	if is_recoil_enabled:
-		visual_r = minf(visual_r + amount, max_reticle_radius * 1.6)
-		crosshair_shot_offset += Vector2(randf_range(-crosshair_shot_kick_upward * 0.5, crosshair_shot_kick_upward * 0.5), -crosshair_shot_kick_upward)
+		var mult = amount / 9.0
+		visual_r = minf(visual_r + amount, max_reticle_radius * 3.5)
+		var kick_vec = Vector2(randf_range(-crosshair_shot_kick_upward * 0.35, crosshair_shot_kick_upward * 0.35), -crosshair_shot_kick_upward) * mult
+		crosshair_shot_offset += kick_vec
+		sway_offset.y -= crosshair_shot_kick_upward * mult * 0.35
 		shot_recoil_timer = crosshair_shot_recoil_duration
 
 func get_player() -> Node:
@@ -108,7 +112,15 @@ func _process(delta: float) -> void:
 		var p = get_player()
 		if p:
 			var focus_prog: float = p.get("focus_progress") if "focus_progress" in p else 0.0
-			var target_r = lerp(max_reticle_radius, min_reticle_radius, focus_prog)
+			var is_shotgun = false
+			if p.get("gun_controller") and p.gun_controller.current_gun:
+				var g = p.gun_controller.current_gun
+				if g is ShotgunWaterGun or (g.has_method("get_gun_name") and g.get_gun_name() == "Water shotgun"):
+					is_shotgun = true
+			
+			var effective_max_r = max_reticle_radius * 1.3 if is_shotgun else max_reticle_radius
+			var effective_min_r = effective_max_r * 0.75 if is_shotgun else min_reticle_radius
+			var target_r = lerp(effective_max_r, effective_min_r, focus_prog)
 			
 			var lerp_speed = shrink_speed if target_r < visual_r else expand_speed
 			visual_r = lerpf(visual_r, target_r, delta * lerp_speed)
@@ -188,15 +200,50 @@ func _draw() -> void:
 		
 	var center = (size / 2.0) + sway_offset
 	
-	# Draw reticle lines
-	# Top
-	draw_reticle_line(center + Vector2(0, -visual_r - reticle_line_length), center + Vector2(0, -visual_r), line_color)
-	# Bottom
-	draw_reticle_line(center + Vector2(0, visual_r), center + Vector2(0, visual_r + reticle_line_length), line_color)
-	# Left
-	draw_reticle_line(center + Vector2(-visual_r - reticle_line_length, 0), center + Vector2(-visual_r, 0), line_color)
-	# Right
-	draw_reticle_line(center + Vector2(visual_r, 0), center + Vector2(visual_r + reticle_line_length, 0), line_color)
+	var is_shotgun = false
+	if p.get("gun_controller") and p.gun_controller.current_gun:
+		var g = p.gun_controller.current_gun
+		if g is ShotgunWaterGun or (g.has_method("get_gun_name") and g.get_gun_name() == "Water shotgun"):
+			is_shotgun = true
+
+	if is_shotgun:
+		# Draw shotgun 2 side curved brackets with thick shadow outline, end caps, and colored core
+		var half_span: float = deg_to_rad(shotgun_bracket_span_degrees * 0.5)
+		var outline_col = Color(0, 0, 0, 0.8)
+		var cap_r_out = reticle_outline_thickness * 0.5
+		var cap_r_core = reticle_line_thickness * 0.5
+
+		# 1. Right bracket: centered at 0 radians (facing right)
+		draw_arc(center, visual_r, -half_span, half_span, 32, outline_col, reticle_outline_thickness, true)
+		draw_arc(center, visual_r, -half_span, half_span, 32, line_color, reticle_line_thickness, true)
+		# Right bracket caps
+		var r_p1 = center + Vector2(cos(-half_span), sin(-half_span)) * visual_r
+		var r_p2 = center + Vector2(cos(half_span), sin(half_span)) * visual_r
+		draw_circle(r_p1, cap_r_out, outline_col)
+		draw_circle(r_p2, cap_r_out, outline_col)
+		draw_circle(r_p1, cap_r_core, line_color)
+		draw_circle(r_p2, cap_r_core, line_color)
+
+		# 2. Left bracket: centered at PI radians (facing left)
+		draw_arc(center, visual_r, PI - half_span, PI + half_span, 32, outline_col, reticle_outline_thickness, true)
+		draw_arc(center, visual_r, PI - half_span, PI + half_span, 32, line_color, reticle_line_thickness, true)
+		# Left bracket caps
+		var l_p1 = center + Vector2(cos(PI - half_span), sin(PI - half_span)) * visual_r
+		var l_p2 = center + Vector2(cos(PI + half_span), sin(PI + half_span)) * visual_r
+		draw_circle(l_p1, cap_r_out, outline_col)
+		draw_circle(l_p2, cap_r_out, outline_col)
+		draw_circle(l_p1, cap_r_core, line_color)
+		draw_circle(l_p2, cap_r_core, line_color)
+	else:
+		# Draw reticle lines
+		# Top
+		draw_reticle_line(center + Vector2(0, -visual_r - reticle_line_length), center + Vector2(0, -visual_r), line_color)
+		# Bottom
+		draw_reticle_line(center + Vector2(0, visual_r), center + Vector2(0, visual_r + reticle_line_length), line_color)
+		# Left
+		draw_reticle_line(center + Vector2(-visual_r - reticle_line_length, 0), center + Vector2(-visual_r, 0), line_color)
+		# Right
+		draw_reticle_line(center + Vector2(visual_r, 0), center + Vector2(visual_r + reticle_line_length, 0), line_color)
 	
 	# Draw center dot
 	if enable_center_dot:

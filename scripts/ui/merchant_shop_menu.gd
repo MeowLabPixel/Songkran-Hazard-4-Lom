@@ -24,8 +24,10 @@ enum ShopState {
 }
 
 @export_group("Pricing & Economy")
-@export var shotgun_cost: int = 50
-@export var auto_equip_on_purchase: bool = true
+@export var shotgun_cost: int = 25
+@export var regular_towel_cost: int = 10
+@export var absorbent_towel_cost: int = 25
+@export var auto_equip_on_purchase: bool = false
 @export var shop_items: Array[ShopItemData] = []
 
 @export_group("Shop Bucket Layout - Selection Menu")
@@ -750,6 +752,26 @@ func _ensure_default_shop_items() -> void:
 	item_sniper.bucket_scale = Vector3(0.45, 0.45, 0.45)
 	shop_items.append(item_sniper)
 
+	var item_reg_towel := ShopItemData.new()
+	item_reg_towel.item_name = "Regular Towel"
+	item_reg_towel.item_stats = "Dries off water | Restores +75 HP"
+	item_reg_towel.price = regular_towel_cost
+	item_reg_towel.heal_amount = 75
+	item_reg_towel.is_consumable = true
+	item_reg_towel.gun_index = -1
+	item_reg_towel.model_scene = null
+	shop_items.append(item_reg_towel)
+
+	var item_abs_towel := ShopItemData.new()
+	item_abs_towel.item_name = "Absorbent Towel"
+	item_abs_towel.item_stats = "Super-drying microfiber | Restores FULL HP"
+	item_abs_towel.price = absorbent_towel_cost
+	item_abs_towel.heal_amount = -1
+	item_abs_towel.is_consumable = true
+	item_abs_towel.gun_index = -1
+	item_abs_towel.model_scene = null
+	shop_items.append(item_abs_towel)
+
 func _get_shop_item(index: int) -> ShopItemData:
 	_ensure_default_shop_items()
 	if index >= 0 and index < shop_items.size():
@@ -758,22 +780,50 @@ func _get_shop_item(index: int) -> ShopItemData:
 		return shop_items[0]
 	return null
 
+func _get_gun_controller() -> GunController:
+	if _player:
+		var gc = _player.get("gun_controller")
+		if gc is GunController:
+			return gc
+		var node = _player.find_child("GunController", true, false)
+		if node is GunController:
+			return node
+	var tree := get_tree()
+	if tree:
+		var tree_player = tree.get_first_node_in_group("player")
+		if tree_player:
+			var gc = tree_player.get("gun_controller")
+			if gc is GunController:
+				return gc
+			var node = tree_player.find_child("GunController", true, false)
+			if node is GunController:
+				return node
+	return null
+
 func _is_item_unlocked(index: int, item: ShopItemData) -> bool:
 	if not item:
 		return false
-	if _player:
-		var gc: GunController = _player.get("gun_controller") as GunController
-		if gc and item.gun_index >= 0 and item.gun_index < gc.unlocked_guns.size():
-			return gc.unlocked_guns[item.gun_index]
+	if item.is_consumable or item.heal_amount != 0:
+		return false
+	var gc: GunController = _get_gun_controller()
+	var g_idx = item.gun_index
+	if g_idx < 0 and ("shotgun" in item.item_name.to_lower() or "splash" in item.item_name.to_lower()):
+		g_idx = 1
+	if gc and g_idx >= 0 and g_idx < gc.unlocked_guns.size():
+		return gc.unlocked_guns[g_idx]
 	return _purchased_custom_items.get(index, false) == true
 
 func _is_item_equipped(index: int, item: ShopItemData) -> bool:
+	if not item or item.is_consumable or item.heal_amount != 0:
+		return false
 	if not _is_item_unlocked(index, item):
 		return false
-	if _player and item:
-		var gc: GunController = _player.get("gun_controller") as GunController
-		if gc and item.gun_index >= 0 and item.gun_index < gc.unlocked_guns.size():
-			return gc.current_gun_index == item.gun_index
+	var gc: GunController = _get_gun_controller()
+	var g_idx = item.gun_index if item else -1
+	if g_idx < 0 and item and ("shotgun" in item.item_name.to_lower() or "splash" in item.item_name.to_lower()):
+		g_idx = 1
+	if gc and g_idx >= 0 and g_idx < gc.unlocked_guns.size():
+		return gc.current_gun_index == g_idx
 	return _equipped_custom_item_index == index
 
 func _on_item_row_hovered(index: int) -> void:
@@ -795,6 +845,17 @@ func _on_item_row_clicked(index: int) -> void:
 	if not item:
 		return
 
+	# Consumable healing item handling
+	if item.is_consumable or item.heal_amount != 0:
+		if _player and "HP" in _player and "MaxHP" in _player:
+			if _player.HP >= _player.MaxHP:
+				_set_status("HP IS ALREADY FULL!", COLOR_MINT_GREEN)
+				_play_sfx("Hover_Ui")
+				return
+		_try_play_select_voice(true)
+		_switch_state(ShopState.CONFIRM)
+		return
+
 	var is_unlocked: bool = _is_item_unlocked(index, item)
 	var is_equipped: bool = _is_item_equipped(index, item)
 
@@ -803,13 +864,14 @@ func _on_item_row_clicked(index: int) -> void:
 		_play_sfx("Hover_Ui")
 		return
 	elif is_unlocked:
-		if _player:
-			var gc: GunController = _player.get("gun_controller") as GunController
-			if gc and item.gun_index >= 0 and item.gun_index < gc.unlocked_guns.size():
-				gc.switch_gun(item.gun_index)
-				_player.set("curr_gun_index", item.gun_index)
-			else:
-				_equipped_custom_item_index = index
+		var gc: GunController = _get_gun_controller()
+		var g_idx: int = item.gun_index
+		if g_idx < 0 and ("shotgun" in item.item_name.to_lower() or "splash" in item.item_name.to_lower()):
+			g_idx = 1
+		if gc and g_idx >= 0 and g_idx < gc.unlocked_guns.size():
+			gc.switch_gun(g_idx)
+			if _player:
+				_player.set("curr_gun_index", g_idx)
 		else:
 			_equipped_custom_item_index = index
 		weapon_equipped.emit(item.item_name)
@@ -845,13 +907,15 @@ func _update_confirm_dialog() -> void:
 func _update_confirm_preview_model(item: ShopItemData) -> void:
 	if not confirm_shotgun_pivot or not is_instance_valid(confirm_shotgun_pivot):
 		return
-	if not item or not item.model_scene:
-		return
 
 	# Immediately remove old preview children before freeing so they don't linger
 	for child in confirm_shotgun_pivot.get_children():
 		confirm_shotgun_pivot.remove_child(child)
 		child.queue_free()
+
+	if not item or not item.model_scene:
+		confirm_shotgun_pivot.visible = false
+		return
 
 	var model_inst = item.model_scene.instantiate() as Node3D
 	if model_inst:
@@ -900,13 +964,35 @@ func _on_confirm_buy_pressed() -> void:
 			_switch_state(ShopState.BUY)
 			return
 
+	# Consumable healing item purchase
+	if item.is_consumable or item.heal_amount != 0:
+		if _player and _player.has_method("Heal"):
+			if item.heal_amount == -1:
+				var max_hp = _player.get("MaxHP") if "MaxHP" in _player else 150
+				_player.Heal(max_hp)
+				_set_status("PURCHASED %s! HP FULLY RESTORED!" % item.item_name.to_upper(), COLOR_MINT_GREEN)
+			else:
+				_player.Heal(item.heal_amount)
+				_set_status("PURCHASED %s! RESTORED +%d HP!" % [item.item_name.to_upper(), item.heal_amount], COLOR_MINT_GREEN)
+		_play_sfx("Superpump_Ready_FullAir")
+		play_voice("Buy_Success")
+		weapon_purchased.emit(item.item_name, item_price)
+		_switch_state(ShopState.BUY)
+		return
+
 	# Unlock weapon in GunController (or custom item registry)
-	var gc: GunController = _player.get("gun_controller") as GunController if _player else null
-	if gc and item.gun_index >= 0 and item.gun_index < gc.unlocked_guns.size():
-		gc.unlock_gun(item.gun_index)
+	var gc: GunController = _get_gun_controller()
+	var g_idx: int = item.gun_index
+	if g_idx < 0 and ("shotgun" in item.item_name.to_lower() or "splash" in item.item_name.to_lower()):
+		g_idx = 1
+	if gc and g_idx >= 0 and g_idx < gc.unlocked_guns.size():
+		gc.unlock_gun(g_idx)
+		gc.unlocked_guns[g_idx] = true
+		print("[MerchantShop] Gun unlocked at index %d! GunController.unlocked_guns: %s" % [g_idx, str(gc.unlocked_guns)])
 		if auto_equip_on_purchase:
-			gc.switch_gun(item.gun_index)
-			_player.set("curr_gun_index", item.gun_index)
+			gc.switch_gun(g_idx)
+			if _player:
+				_player.set("curr_gun_index", g_idx)
 	else:
 		_purchased_custom_items[_selected_item_index] = true
 		if auto_equip_on_purchase:

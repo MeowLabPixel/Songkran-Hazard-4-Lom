@@ -8,6 +8,7 @@ func _enter() -> void:
 	print(name)
 	blend_reversal_timer = 0.0
 	owner.aim_bone_on(true)
+	set_gun_anim()
 	owner.anim.get(owner.anim_playback).travel("Run")	
 	owner.anim.set("parameters/Main/Run/Pis/TimeScale/scale", 1.0)
 	owner.anim.set("parameters/Main/Run/Shot/TimeScale/scale", 1.0)
@@ -73,12 +74,17 @@ func _exit() -> void:
 	
 	
 func _state_input(event: InputEvent) -> void:
-	if Input.is_action_just_pressed("quick_turn") and not owner.is_quick_turn and owner.quick_turn_cooldown <= 0.0:
+	var can_qt = owner.can_quick_turn() if owner.has_method("can_quick_turn") else (not owner.is_quick_turn and owner.quick_turn_cooldown <= 0.0)
+	var wants_qt = owner.is_quick_turn_input_just_pressed() if owner.has_method("is_quick_turn_input_just_pressed") else Input.is_action_just_pressed("quick_turn")
+	if wants_qt and can_qt:
 		finished.emit("Quick_turn")
+		return
 	if Input.is_action_just_released("sprint"):
 		finished.emit("Run")
-	if Input.is_action_pressed("Reload") :
-		finished.emit("Reload")
+	if Input.is_action_just_pressed("Reload"):
+		var gun = owner.gun_controller.current_gun if owner.gun_controller else null
+		if not (gun and gun.is_super_active and gun.air >= gun.max_air):
+			finished.emit("Reload")
 	if Input.is_action_pressed("Gun1"):
 		switch_gun(0)
 	if Input.is_action_pressed("Gun2"):
@@ -103,6 +109,8 @@ func switch_gun(num:int):
 
 		#one shot anim
 func set_gun_anim():
+	if owner.has_method("sync_gun_animation_state"):
+		owner.sync_gun_animation_state()
 	if not owner.gun_controller or not owner.gun_controller.current_gun:
 		return
 	if owner.gun_controller.current_gun.get_gun_name() == "Water pistol":

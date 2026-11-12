@@ -7,12 +7,23 @@ signal health_changed(current_hp: float, max_hp: float)
 signal enemy_defeated()
 signal enemy_hit(hit_data: Dictionary)
 
+# ─── Preloaded Resources ───────────────────────────────────────────────────
+const HITBOX_SCALE_FIX_SCRIPT = preload("res://scripts/enemy/hitbox_scale_fix.gd")
+const POWDER_PREP_SCENE = preload("res://Jomp_Folder/VFX_Water/VFX2/powder_attack_prep.tscn")
+const TAKEDOWN_AURA_SHADER = preload("res://shaders/takedown_aura.gdshader")
+
+# ─── Pooling & Lifecycle ───────────────────────────────────────────────────
+var _life_id: int = 0
+
 # ─── HP ────────────────────────────────────────────────────────────────────
 var MAX_HP: float = 25.0
 var current_hp: float = MAX_HP
 var _second_chance_used: bool = false
 var is_defeated: bool = false
 var is_takedown_defeat: bool = false
+var is_targeted_for_takedown: bool = false
+var _takedown_defeat_failsafe_timer: float = 0.0
+var _kill_registered: bool = false
 var last_hit_zone: String = "body"
 var attack_blocked: bool = false  # Set true to prevent this zombie from entering attack state
 var last_attack_time: float = -100.0
@@ -41,6 +52,16 @@ var next_idle_offset: float = -1.0
 var guaranteed_grab_next_attack: bool = false
 var selected_attack_type: String = ""
 var last_normal_attack: String = ""
+
+# ─── Idle Transition Configuration (MMeleeZom) ──────────────────────────
+const PARAM_IDLE_TRANSITION_REQ := "parameters/Zombie Idle/Transition/transition_request"
+const DANCE_VARIANTS: Array[String] = ["Idle_dance1", "Idle_dance2", "Idle_dance3", "Idle_dance4"]
+const COMBAT_IDLE: String = "Idle_combat"
+
+var has_ever_hunted: bool = false
+var _current_idle_variant: String = ""
+var _assigned_dance: String = ""
+var _has_idle_transition_cached: Variant = null
 
 var current_target: Node3D = null
 var target_update_timer: float = 0.0
@@ -183,9 +204,11 @@ func _ready() -> void:
 	custom_pitch_scale = PITCH_INCREMENTS.pick_random()
 	
 	add_to_group("enemies")
+	EnemyRegistry.register_enemy(self)
 	MAX_HP = float(randi_range(8, 11))
 	current_hp = MAX_HP
 	is_takedown_defeat = false
+	is_targeted_for_takedown = false
 	if not anim_set:
 		anim_set = ZombieAnimSet.new()
 		push_warning("[EnemyBase] anim_set not assigned in Inspector — using defaults")
@@ -300,7 +323,7 @@ func _ready() -> void:
 		add_child(debug_label)
 	
 	# Attach scale fix programmatically to GrabHitbox nodes to prevent Jolt Physics warnings
-	var scale_fix_script = load("res://scripts/enemy/hitbox_scale_fix.gd")
+	var scale_fix_script = HITBOX_SCALE_FIX_SCRIPT
 	for path in [
 		"ZombieModel/rig_002/GeneralSkeleton/HitboxAttachChest/GrabHitbox",
 		"ZombieModel/rig/GeneralSkeleton/HitboxAttachChest/GrabHitbox",
@@ -340,8 +363,28 @@ func _disable_attack_hitboxes() -> void:
 func take_hit(hit_data: Dictionary) -> void:
 	last_hit_was_lethal = false
 	last_hit_entered_act1 = false
-	if is_defeated or is_takedown_defeat:
+	if is_defeated:
 		return
+	has_ever_hunted = true
+	update_idle_variant()
+	if is_takedown_defeat:
+		var is_actively_launching = false
+		if state_machine and state_machine.current_state:
+			var curr_name = state_machine.current_state.name
+			if curr_name == "StateKnockdown":
+				var kd = state_machine.current_state as StateKnockdown
+				if kd and kd._phase == StateKnockdown.Phase.ACT3:
+					is_actively_launching = true
+			elif curr_name == "StateTakedownable":
+				var td = state_machine.current_state as StateTakedownable
+				if td and td.takedown_triggered:
+					is_actively_launching = true
+		if is_actively_launching and _takedown_defeat_failsafe_timer < 2.5:
+			return
+		else:
+			# Stale takedown defeat: resolve defeat immediately
+			_trigger_defeat()
+			return
 		
 	var time_now = Time.get_ticks_msec() / 1000.0
 	var hit_type_check: String = hit_data.get("hit_type", "")
@@ -367,7 +410,7 @@ func take_hit(hit_data: Dictionary) -> void:
 		])
 	
 	# Trigger procedural hit impact sway
-	var is_takedown = (hit_data.get("hit_type") == "takedown_splash" or 
+	var is_takedown = (hit_data.get("hit_type") in ["takedown", "takedown_splash", "shotgun_takedown"] or 
 					   (state_machine and state_machine.current_state and state_machine.current_state.name == "StateTakedownable"))
 	trigger_impact_sway(is_takedown)
 
@@ -422,9 +465,17 @@ func take_hit(hit_data: Dictionary) -> void:
 	# Apply zone multiplier only for gunshots
 	if hit_type != "takedown" and hit_type != "takedown_splash" and hit_type != "push":
 		if zone == "head":
-			dmg *= 1.2
+			var head_mult = float(hit_data.get("head_multiplier", 1.2))
+			dmg *= head_mult
 		else:
-			dmg *= 1.0
+			var body_mult = float(hit_data.get("body_multiplier", 1.0))
+			dmg *= body_mult
+
+	# Casual Mode Tuning: 50% increased damage dealt to enemies
+	if get_tree().root.has_node("GameManager"):
+		var gm = get_tree().root.get_node("GameManager")
+		if gm.difficulty == gm.Difficulty.CASUAL:
+			dmg *= 1.5
 
 	var new_hp: float = current_hp - dmg
 
@@ -440,14 +491,40 @@ func take_hit(hit_data: Dictionary) -> void:
 
 	if current_hp <= 0:
 		last_hit_was_lethal = true
-		var playing_special_takedown = false
-		if state_machine and state_machine.current_state:
+
+		# Pop +1 kill UI and register kill immediately upon hitting 0 HP
+		if not _kill_registered:
+			_kill_registered = true
+			var death_life = _life_id
+			var is_tk = hit_type in ["takedown", "takedown_splash", "shotgun_takedown"]
+			var spawn_pos = _get_zone_bone_position(last_hit_zone)
+			call_deferred("_trigger_kill_ui", spawn_pos, is_tk, death_life)
+
+		var will_launch = false
+		if hit_type in ["takedown", "takedown_splash", "shotgun_takedown"]:
+			will_launch = true
+		elif state_machine and state_machine.current_state:
 			var curr = state_machine.current_state
-			if curr.name == "StateKnockdown" and curr.has_method("is_playing_special_act3") and curr.is_playing_special_act3():
-				playing_special_takedown = true
+			if curr.name == "StateKnockdown":
+				var kd = curr as StateKnockdown
+				if kd and kd._phase == StateKnockdown.Phase.ACT3:
+					will_launch = true
+			elif curr.name == "StateTakedownable":
+				var td = curr as StateTakedownable
+				if td and td.takedown_triggered:
+					will_launch = true
 				
-		if hit_type == "takedown" or hit_type == "takedown_splash" or playing_special_takedown:
+		if will_launch:
 			is_takedown_defeat = true
+			if state_machine and state_machine.current_state:
+				var curr_name = state_machine.current_state.name
+				if curr_name != "StateKnockdown" and curr_name != "StateTakedownable":
+					var kd = state_machine._states.get("StateKnockdown") as StateKnockdown
+					if kd:
+						kd.knockdown_mode = "NORMAL"
+						kd.stun_type = hit_data.get("hit_zone", "head")
+						kd.skip_act3 = false
+						state_machine.transition_to("StateKnockdown")
 		else:
 			_trigger_defeat()
 
@@ -456,31 +533,57 @@ func _on_second_chance_triggered() -> void:
 		print("[EnemyBase] Second chance triggered!")
 
 func _trigger_defeat() -> void:
+	if is_defeated:
+		return
 	is_defeated = true
+	is_takedown_defeat = false
+	_takedown_defeat_failsafe_timer = 0.0
+	last_hit_was_lethal = true
 	custom_pitch_scale = 1.0
 	state_machine.transition_to("StateDefeated")
 	enemy_defeated.emit()
+	EnemyRegistry.notify_enemy_defeated(self)
 	
 	var is_game_over = false
 	if get_tree().root.has_node("GameManager"):
 		is_game_over = get_tree().root.get_node("GameManager").is_game_ended
 		
 	if not is_game_over:
-		_spawn_drops()
-		_check_stop_combat_music()
-		if is_inside_tree():
-			var ui = get_tree().get_first_node_in_group("player_ui")
+		# Time-slice drops and kill UI to prevent 1-frame spikes on defeat
+		var death_life = _life_id
+		var drop_pos = global_position
+		call_deferred("_spawn_drops_at", drop_pos, death_life)
+		
+		if not _kill_registered:
+			_kill_registered = true
 			var spawn_pos = _get_zone_bone_position(last_hit_zone)
-			if ui:
-				if ui.has_method("spawn_kill_projectile"):
-					ui.spawn_kill_projectile(spawn_pos)
-			if get_tree().root.has_node("GameManager"):
-				get_tree().root.get_node("GameManager").register_kill(is_takedown_defeat)
+			call_deferred("_trigger_kill_ui", spawn_pos, is_takedown_defeat, death_life)
 	else:
 		_check_stop_combat_music()
 
-# --- Animation Event Hooks ---
-# Call these from AnimationPlayer Method Tracks on the root node
+func _spawn_drops_at(pos: Vector3, expected_life: int) -> void:
+	if expected_life != _life_id or not is_inside_tree():
+		return
+	var parent: Node = get_tree().current_scene
+	for entry in drop_table:
+		var item_type: String = entry.get("item_type", "coin")
+		var value: int = entry.get("value", 1)
+		var count: int = randi_range(entry.get("count_min", 1), entry.get("count_max", 1))
+		for i in count:
+			ItemPickup.instantiate_drop(parent, pos, item_type, value)
+
+	# Randomly drop a bottle (30% chance)
+	if randf() < 0.30:
+		ItemPickup.instantiate_drop(parent, pos, "bottle", 1)
+
+func _trigger_kill_ui(spawn_pos: Vector3, is_takedown: bool, expected_life: int) -> void:
+	if expected_life != _life_id or not is_inside_tree():
+		return
+	var ui = get_tree().get_first_node_in_group("player_ui")
+	if ui and ui.has_method("spawn_kill_projectile"):
+		ui.spawn_kill_projectile(spawn_pos)
+	if get_tree().root.has_node("GameManager"):
+		get_tree().root.get_node("GameManager").register_kill(is_takedown)
 
 func open_hitboxes() -> void:
 	if state_machine.has_method("open_hitboxes"):
@@ -491,17 +594,7 @@ func close_hitboxes() -> void:
 		state_machine.close_hitboxes()
 
 func _spawn_drops() -> void:
-	var parent: Node = get_tree().current_scene
-	for entry in drop_table:
-		var item_type: String = entry.get("item_type", "coin")
-		var value: int = entry.get("value", 1)
-		var count: int = randi_range(entry.get("count_min", 1), entry.get("count_max", 1))
-		for i in count:
-			ItemPickup.instantiate_drop(parent, global_position, item_type, value)
-
-	# Randomly drop a bottle (30% chance)
-	if randf() < 0.30:
-		ItemPickup.instantiate_drop(parent, global_position, "bottle", 1)
+	_spawn_drops_at(global_position, _life_id)
 
 func is_takedownable() -> bool:
 	if is_defeated:
@@ -534,7 +627,65 @@ func reset_getup_conditions() -> void:
 			if show_debug_label:
 				print("[EnemyBase debug] Resetting parameter: %s to %s" % [param, anim_tree.get(param)])
 
+func has_idle_transition_node() -> bool:
+	if _has_idle_transition_cached != null:
+		return _has_idle_transition_cached
+	if not anim_tree:
+		anim_tree = get_node_or_null("ZombieModel/AnimationTree") as AnimationTree
+		if not anim_tree:
+			anim_tree = get_node_or_null("AnimationTree") as AnimationTree
+	if not anim_tree:
+		_has_idle_transition_cached = false
+		return false
+	_has_idle_transition_cached = (PARAM_IDLE_TRANSITION_REQ in anim_tree)
+	return _has_idle_transition_cached
+
+func update_idle_variant(force_repick: bool = false) -> void:
+	if not has_idle_transition_node():
+		return
+	if is_defeated:
+		return
+	
+	var player = EnemyRegistry.get_player()
+	var player_dead: bool = (player != null and player.has_method("is_dead") and player.is_dead())
+	
+	var target_variant: String = ""
+	if player_dead:
+		# Rule 3: Celebrate dance when player is defeated
+		if _current_idle_variant == "" or _current_idle_variant == COMBAT_IDLE or force_repick:
+			target_variant = _get_or_pick_dance(force_repick)
+		else:
+			target_variant = _current_idle_variant
+	elif has_ever_hunted or EnemyRegistry.is_in_combat(self):
+		# Rule 2: In-combat / already hunted -> Idle_combat
+		target_variant = COMBAT_IDLE
+	else:
+		# Rule 1: Before ever hunting / pre-combat -> Pick random dance
+		target_variant = _get_or_pick_dance(force_repick)
+	
+	if target_variant != "" and (target_variant != _current_idle_variant or force_repick):
+		_current_idle_variant = target_variant
+		anim_tree.set(PARAM_IDLE_TRANSITION_REQ, target_variant)
+		if show_debug_label:
+			print("[%s] Transitioned idle to: %s" % [name, target_variant])
+
+func _get_or_pick_dance(force_new: bool = false) -> String:
+	if force_new or _assigned_dance == "":
+		var candidates = DANCE_VARIANTS.filter(func(d): return d != _assigned_dance)
+		if candidates.size() > 0:
+			_assigned_dance = candidates.pick_random()
+		else:
+			_assigned_dance = DANCE_VARIANTS.pick_random()
+	return _assigned_dance
+
 func _on_state_changed(old_state: String, new_state: String) -> void:
+	if new_state in ["StateHunt", "StateAttack", "StateStun", "StateKnockdown", "StateHitPush", "StateTakedownable", "StateGetUp"]:
+		has_ever_hunted = true
+		EnemyRegistry.set_in_combat(self, true)
+		update_idle_variant()
+	elif new_state in ["StateIdle", "StateDefeated"]:
+		EnemyRegistry.set_in_combat(self, false)
+
 	if show_debug_label:
 		print("[EnemyBase] State: %s → %s  |  HP: %d/%d" % [old_state, new_state, current_hp, MAX_HP])
 	if debug_label:
@@ -568,32 +719,24 @@ func _update_aura_overlays(delta: float) -> void:
 	_right_hand_aura_alpha = move_toward(_right_hand_aura_alpha, target_right, delta * _aura_fade_speed)
 	
 	# 3. Create materials on demand
-	var shader = null
+	var shader = TAKEDOWN_AURA_SHADER
 	if _takedown_aura_alpha > 0.0 and not _takedown_aura_material:
-		shader = load("res://shaders/takedown_aura.gdshader")
-		if shader:
-			_takedown_aura_material = ShaderMaterial.new()
-			_takedown_aura_material.shader = shader
-			_takedown_aura_material.set_shader_parameter("pink_color", Color(1.0, 1.0, 1.0, 1.0))
-			_takedown_aura_material.set_shader_parameter("blue_color", Color(0.8, 0.85, 0.95, 1.0))
-			# Make it a little bit smaller (user requested)
-			_takedown_aura_material.set_shader_parameter("aura_scale", 0.025)
+		_takedown_aura_material = ShaderMaterial.new()
+		_takedown_aura_material.shader = shader
+		_takedown_aura_material.set_shader_parameter("pink_color", Color(1.0, 1.0, 1.0, 1.0))
+		_takedown_aura_material.set_shader_parameter("blue_color", Color(0.8, 0.85, 0.95, 1.0))
+		# Make it a little bit smaller (user requested)
+		_takedown_aura_material.set_shader_parameter("aura_scale", 0.025)
 	if _left_hand_aura_alpha > 0.0 and not _left_hand_aura_material:
-		if not shader:
-			shader = load("res://shaders/takedown_aura.gdshader")
-		if shader:
-			_left_hand_aura_material = ShaderMaterial.new()
-			_left_hand_aura_material.shader = shader
-			_left_hand_aura_material.set_shader_parameter("pink_color", Color(1.0, 0.07, 0.57, 1.0))
-			_left_hand_aura_material.set_shader_parameter("blue_color", Color(0.0, 0.75, 1.0, 1.0))
+		_left_hand_aura_material = ShaderMaterial.new()
+		_left_hand_aura_material.shader = shader
+		_left_hand_aura_material.set_shader_parameter("pink_color", Color(1.0, 0.07, 0.57, 1.0))
+		_left_hand_aura_material.set_shader_parameter("blue_color", Color(0.0, 0.75, 1.0, 1.0))
 	if _right_hand_aura_alpha > 0.0 and not _right_hand_aura_material:
-		if not shader:
-			shader = load("res://shaders/takedown_aura.gdshader")
-		if shader:
-			_right_hand_aura_material = ShaderMaterial.new()
-			_right_hand_aura_material.shader = shader
-			_right_hand_aura_material.set_shader_parameter("pink_color", Color(1.0, 0.07, 0.57, 1.0))
-			_right_hand_aura_material.set_shader_parameter("blue_color", Color(0.0, 0.75, 1.0, 1.0))
+		_right_hand_aura_material = ShaderMaterial.new()
+		_right_hand_aura_material.shader = shader
+		_right_hand_aura_material.set_shader_parameter("pink_color", Color(1.0, 0.07, 0.57, 1.0))
+		_right_hand_aura_material.set_shader_parameter("blue_color", Color(0.0, 0.75, 1.0, 1.0))
 			
 	# Update Shader uniform alpha values
 	if _takedown_aura_material:
@@ -657,7 +800,7 @@ func _is_right_hand_mesh(mesh: MeshInstance3D) -> bool:
 	return "right_hand" in name_lower or "right_ hand" in name_lower
 
 func _setup_attack_prep_vfx() -> void:
-	var prep_scene = load("res://Jomp_Folder/VFX_Water/VFX2/powder_attack_prep.tscn") as PackedScene
+	var prep_scene = POWDER_PREP_SCENE
 	if not prep_scene:
 		return
 		
@@ -825,6 +968,12 @@ func _on_nav_velocity_computed(safe_velocity: Vector3) -> void:
 
 # ─── Procedural Animation ──────────────────────────────────────────────────
 func _physics_process(delta: float) -> void:
+	if is_takedown_defeat and not is_defeated:
+		_takedown_defeat_failsafe_timer += delta
+		if _takedown_defeat_failsafe_timer >= 3.0:
+			_takedown_defeat_failsafe_timer = 0.0
+			_trigger_defeat()
+
 	_update_act3_mesh_juice(delta)
 	_update_aura_overlays(delta)
 	_update_attack_prep_vfx()
@@ -962,40 +1111,127 @@ func get_current_target() -> Node3D:
 	return current_target
 
 func _update_target() -> void:
-	var player = null
-	var players = get_tree().get_nodes_in_group("player")
-	if players.size() > 0:
-		player = players[0]
-		
+	var player = EnemyRegistry.get_player()
 	if player == null or player.HP <= 0:
 		current_target = null
 		return
-		
 	current_target = player
 
 func _exit_tree() -> void:
+	EnemyRegistry.unregister_enemy(self)
 	_check_stop_combat_music()
 
 func _check_stop_combat_music() -> void:
-	if not is_inside_tree():
-		return
-	var tree = get_tree()
-	if not tree or not is_instance_valid(tree) or not tree.current_scene:
-		return
-	var any_in_combat = false
-	var enemies = tree.get_nodes_in_group("enemies")
-	for other in enemies:
-		if is_instance_valid(other) and other != self and not other.is_defeated and other.is_inside_tree():
-			var sm = other.get_node_or_null("EnemyStateMachine")
-			if sm and sm.current_state:
-				var state_name = sm.current_state.name
-				if state_name != "StateIdle" and state_name != "StateDefeated":
-					any_in_combat = true
-					break
-	if not any_in_combat:
-		SoundManager.play_music_non_combat()
+	if not EnemyRegistry.is_any_in_combat():
+		if SoundManager:
+			SoundManager.play_music_non_combat()
 		if show_debug_label:
 			print("No enemies left in combat. Transitioning to non-combat music.")
+
+func reset_for_spawn() -> void:
+	_life_id += 1
+	MAX_HP = float(randi_range(8, 11))
+	current_hp = MAX_HP
+	is_defeated = false
+	is_takedown_defeat = false
+	_takedown_defeat_failsafe_timer = 0.0
+	_kill_registered = false
+	_second_chance_used = false
+	last_hit_zone = "body"
+	attack_blocked = false
+	last_attack_time = -100.0
+	_last_voice_gethit_time = -100.0
+	_last_takedown_hit_time = -100.0
+	next_idle_offset = -1.0
+	has_ever_hunted = false
+	_current_idle_variant = ""
+	_assigned_dance = ""
+	guaranteed_grab_next_attack = false
+	selected_attack_type = ""
+	last_normal_attack = ""
+	current_target = null
+	target_update_timer = 0.0
+	last_y_rotation = 0.0
+	_smoothed_turn_speed = 0.0
+	_smoothed_angular_velocity = 0.0
+	_takedown_aura_alpha = 0.0
+	_left_hand_aura_alpha = 0.0
+	_right_hand_aura_alpha = 0.0
+	current_attack_type = ""
+	last_hit_entered_act1 = false
+	last_hit_was_lethal = false
+	_last_norm_pos = -1.0
+	_last_step_time = 0
+	
+	const PITCH_INCREMENTS = [1.0, 1.05, 1.10, 1.15]
+	custom_pitch_scale = PITCH_INCREMENTS.pick_random()
+
+	# Kill any model juice shake
+	if _model_juice_tween and _model_juice_tween.is_valid():
+		_model_juice_tween.kill()
+	var model = get_node_or_null("ZombieModel")
+	if model and _has_stored_model_baseline:
+		model.position = _model_original_pos
+		model.scale = _model_original_scale
+
+	# Reset meshes transparency and overlays
+	for mesh in _enemy_meshes:
+		if is_instance_valid(mesh):
+			mesh.transparency = 0.0
+			mesh.material_overlay = null
+
+	# Reset attack prep particles
+	_set_particle_tree_emitting(_prep_particle_left, false)
+	_set_particle_tree_emitting(_prep_particle_right, false)
+
+	# Reset collision
+	collision_layer = 0
+	set_collision_layer_value(3, true)
+	set_collision_mask_value(3, true)
+	set_collision_mask_value(2, true)
+	set_collision_mask_value(5, true)
+	set_collision_mask_value(1, true)
+	velocity = Vector3.ZERO
+
+	# Reset nav agent
+	var nav = get_node_or_null("NavigationAgent3D") as NavigationAgent3D
+	if nav:
+		nav.avoidance_enabled = true
+		nav.set_velocity(Vector3.ZERO)
+
+	# Reset bone modifiers
+	var skel = _find_skeleton(self)
+	if skel:
+		for child in skel.get_children():
+			if child.has_method("reset"):
+				child.reset()
+
+	# Reset face controller
+	if face_controller and face_controller.has_method("reset"):
+		face_controller.reset()
+
+	# Reset AnimationTree runtime conditions (never touches .tres)
+	if anim_tree:
+		anim_tree.set("parameters/conditions/defeated", false)
+		reset_getup_conditions()
+
+	# Reset state machine to StateIdle
+	if state_machine:
+		state_machine.initialize("StateIdle")
+
+	_disable_attack_hitboxes()
+	EnemyRegistry.register_enemy(self)
+
+func deactivate_for_pool() -> void:
+	EnemyRegistry.unregister_enemy(self)
+	# Release any attack token held
+	var token_mgr = get_node_or_null("/root/AttackTokenManager")
+	if token_mgr and token_mgr.has_method("release_token"):
+		token_mgr.release_token(self)
+	_set_particle_tree_emitting(_prep_particle_left, false)
+	_set_particle_tree_emitting(_prep_particle_right, false)
+	if _model_juice_tween and _model_juice_tween.is_valid():
+		_model_juice_tween.kill()
 
 
 func step_1() -> void:

@@ -137,6 +137,8 @@ func enter() -> void:
 		_stun_recovery_timer = stun_recovery_pause * 0.5
 		if enemy:
 			enemy.attack_blocked = true
+			if enemy.has_method("update_idle_variant"):
+				enemy.update_idle_variant()
 		# Don't force-play idle here — let the AnimationTree's own
 		# blend transitions (hit_stun → End → hit → End) handle the smooth exit.
 		# The recovery pause timer keeps the zombie still while the blend plays.
@@ -637,6 +639,9 @@ func physics_update(_delta: float) -> void:
 
 func _play_anim(anim_name: String, sub_machine: String = "") -> void:
 	if not enemy or not enemy.anim_tree: return
+	
+	if anim_name == enemy.anim_set.idle and enemy.has_method("update_idle_variant"):
+		enemy.update_idle_variant()
 	
 	var pb = enemy.anim_tree.get("parameters/playback")
 	if pb and pb.get_current_node() == anim_name:

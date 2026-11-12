@@ -57,7 +57,7 @@ func _exit() -> void:
 			owner.anim.set("parameters/Main/Idle/Pis/Blend2/blend_amount", c_blend_qt)
 		var c_blend_qt_shot = owner.anim.get("parameters/Main/QT/Shot/Blend2/blend_amount")
 		if c_blend_qt_shot != null:
-			owner.anim.set("parameters/Main/Idle/Shot/Blend2/blend_amount", c_blend_qt_shot)
+			owner.anim.set("parameters/Main/Idle/Shotgun/Blend2/blend_amount", c_blend_qt_shot)
 			
 		owner.anim.set("parameters/Main/Run/Pis/BlendSpace2D/blend_position", Vector2.ZERO)
 		owner.anim.set("parameters/Main/Run/Shot/BlendSpace2D/blend_position", Vector2.ZERO)
@@ -133,6 +133,8 @@ func switch_gun(num:int):
 		set_gun_anim()
 
 func set_gun_anim():
+	if owner.has_method("sync_gun_animation_state"):
+		owner.sync_gun_animation_state()
 	if not owner.gun_controller or not owner.gun_controller.current_gun:
 		return
 	if owner.gun_controller.current_gun.get_gun_name() == "Water pistol":

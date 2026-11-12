@@ -29,6 +29,7 @@ var _superpump_hold_confirm_timer: float = 0.0
 var _superpump_gauge_completed: bool = false
 var _last_qte_hit_time: float = -1.0
 var _finish_tween: Tween = null
+var _run_id: int = 0
 
 # QTE variables
 @export var num_prompts: int = 4
@@ -49,6 +50,16 @@ var elapsed_time: float = 0.0
 # Superpump hold variables
 var superpump_hold_time: float = 0.0
 @export var superpump_required_hold: float = 0.6
+
+# Shotgun hold-release QTE variables
+var shotgun_hold_time: float = 0.0
+var _shotgun_qte_hit: bool = false
+var _is_shotgun_superpump: bool = false
+var resolved_air: float = 0.0
+@export var shotgun_hold_duration: float = 0.7
+@export var shotgun_qte_window: float = 0.2
+@export var shotgun_normal_air_gain: float = 30.0
+@export var shotgun_qte_air_gain: float = 40.0
 
 func get_superpump_progress() -> float:
 	if mode == "superpump" and superpump_required_hold > 0.0:
@@ -348,6 +359,7 @@ func setup() -> void:
 # ---------- Activation & Lifecycle ----------
 
 func start(p_current_air: float = 0.0, p_max_air: float = 100.0) -> void:
+	_run_id += 1
 	if _finish_tween and _finish_tween.is_valid():
 		_finish_tween.kill()
 		_finish_tween = null
@@ -416,6 +428,77 @@ func start(p_current_air: float = 0.0, p_max_air: float = 100.0) -> void:
 	set_process(true)
 	set_process_input(true)
 
+func start_shotgun(p_current_air: float = 0.0, p_max_air: float = 100.0) -> void:
+	_run_id += 1
+	if _finish_tween and _finish_tween.is_valid():
+		_finish_tween.kill()
+		_finish_tween = null
+	_is_resolving_qte = false
+	_superpump_hold_confirm_timer = 0.0
+	start_air = p_current_air
+	max_air = p_max_air
+	resolved_air = start_air
+	elapsed_time = 0.0
+	actual_time = 0.0
+	current_progress = 0.0
+	reload_progress = 0.0
+	prompts.clear()
+	progress_segments.clear()
+	superpump_hold_time = 0.0
+	_superpump_gauge_completed = false
+	shotgun_hold_time = 0.0
+	_shotgun_qte_hit = false
+	_last_qte_hit_time = -1.0
+	resolved = false
+	failed = false
+
+	_wire_nodes()
+
+	if start_air >= max_air:
+		mode = "superpump"
+		_is_shotgun_superpump = true
+	else:
+		mode = "shotgun_qte"
+		_is_shotgun_superpump = false
+
+	# Reset visual elements
+	if container:
+		container.scale = Vector2.ONE
+		container.modulate.a = 1.0
+	if background_dim:
+		background_dim.color = dim_color
+	if center_circle:
+		center_circle.position = Vector2(101, 101)
+		_apply_center_circle_style()
+
+	var lang = "en"
+	if get_tree() and get_tree().root.has_node("GameManager"):
+		lang = GameManager.selected_language
+
+	if prompt_label:
+		prompt_label.scale = Vector2.ONE
+		prompt_label.text = ""
+		if mode == "shotgun_qte":
+			prompt_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+		else:
+			prompt_label.add_theme_color_override("font_color", Color(1.0, 0.5, 0.1))
+
+	if instruction_label:
+		if mode == "shotgun_qte":
+			instruction_label.text = "กด [R] ค้างแล้วปล่อยในโซน" if lang == "th" else "HOLD & RELEASE [R] IN ZONE"
+		else:
+			instruction_label.text = "กด [R] ค้างเพื่อปั๊มน้ำเพิ่มแรงดัน" if lang == "th" else "HOLD [R] TO SUPERPUMP"
+
+	if gauge:
+		gauge.queue_redraw()
+
+	var should_show := true
+	if get_tree() and get_tree().root.has_node("GameManager"):
+		should_show = GameManager.show_reload_qte and GameManager.show_gameplay_ui
+	visible = should_show
+	set_process(true)
+	set_process_input(true)
+
 func _setup_qte_parameters() -> void:
 	duration = 2.0
 	actual_time = 0.0
@@ -459,6 +542,7 @@ func _setup_qte_parameters() -> void:
 		})
 
 func cancel() -> void:
+	_run_id += 1
 	if _finish_tween and _finish_tween.is_valid():
 		_finish_tween.kill()
 		_finish_tween = null
@@ -545,8 +629,59 @@ func _process(delta: float) -> void:
 	
 	if mode == "qte":
 		_process_qte(delta)
+	elif mode == "shotgun_qte":
+		_process_shotgun_qte(delta)
 	else:
 		_process_superpump(delta)
+
+func _process_shotgun_qte(delta: float) -> void:
+	var total_dur: float = maxf(0.01, shotgun_hold_duration)
+	var window_dur: float = clampf(shotgun_qte_window, 0.01, total_dur)
+	var qte_start_time: float = total_dur - window_dur
+	
+	if _is_reload_pressed():
+		shotgun_hold_time += delta
+		current_progress = clampf(shotgun_hold_time / total_dur, 0.0, 1.0)
+		reload_progress = current_progress
+		
+		if shotgun_hold_time >= qte_start_time and shotgun_hold_time < total_dur:
+			if center_circle:
+				center_circle.position = Vector2(101, 101) + Vector2(randf_range(-1.5, 1.5), randf_range(-1.5, 1.5))
+			if prompt_label:
+				var lang = "en"
+				if get_tree() and get_tree().root.has_node("GameManager"):
+					lang = GameManager.selected_language
+				prompt_label.text = "ปล่อย [R]!" if lang == "th" else "RELEASE [R]!"
+				prompt_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5))
+		
+		if shotgun_hold_time >= total_dur:
+			current_progress = 1.0
+			reload_progress = 1.0
+			_shotgun_qte_hit = false
+			failed = false
+			_resolve(true)
+	else:
+		# Player released R
+		if shotgun_hold_time >= qte_start_time and shotgun_hold_time <= total_dur:
+			_shotgun_qte_hit = true
+			failed = false
+			qte_hit.emit()
+			get_tree().call_group("player_ui", "on_qte_prompt_hit")
+			_flash_center_success()
+			if container:
+				var pop_tween = create_tween()
+				container.scale = Vector2(1.12, 1.12)
+				pop_tween.tween_property(container, "scale", Vector2.ONE, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			_resolve(true)
+		else:
+			_shotgun_qte_hit = false
+			failed = true
+			_flash_center_failure()
+			get_tree().call_group("player_ui", "on_qte_prompt_miss")
+			_resolve(false)
+			
+	if gauge:
+		gauge.queue_redraw()
 
 func _process_qte_resolution_hold(delta: float) -> void:
 	if _is_reload_pressed():
@@ -796,6 +931,56 @@ func _draw_gauge() -> void:
 				gauge.draw_line(Vector2(line_left, line_y), Vector2(fill_x, line_y), line_color, progress_bar_thickness, true)
 				gauge.draw_circle(Vector2(fill_x, line_y), 4.5, needle_color)
 
+	elif mode == "shotgun_qte":
+		var total_dur: float = maxf(0.01, shotgun_hold_duration)
+		var window_dur: float = clampf(shotgun_qte_window, 0.01, total_dur)
+		var qte_start_ratio: float = clampf((total_dur - window_dur) / total_dur, 0.0, 1.0)
+		var hold_ratio: float = clampf(current_progress, 0.0, 1.0)
+
+		# Draw held progress arc on outer ring
+		if hold_ratio > 0.0:
+			var fill_arc_color = Color(0.25, 0.78, 1.0, 0.65)
+			if resolved:
+				if failed:
+					fill_arc_color = prompt_miss_color if prompt_miss_color != null else Color(0.8, 0.2, 0.2, 0.7)
+				elif _shotgun_qte_hit:
+					fill_arc_color = prompt_hit_color if prompt_hit_color != null else Color(0.2, 0.9, 0.4, 0.9)
+			gauge.draw_arc(center, radius, -PI/2, -PI/2 + hold_ratio * 2*PI, 48, fill_arc_color, thickness, true)
+
+		# Draw the 0.2s QTE release target zone at the end of the 0.7s hold
+		var zone_start_ang = -PI/2 + qte_start_ratio * 2*PI
+		var zone_end_ang = -PI/2 + 2*PI
+		var zone_color = prompt_active_color if prompt_active_color != null else Color(0.2, 0.7, 0.9, 0.85)
+		if resolved:
+			if _shotgun_qte_hit:
+				zone_color = prompt_hit_color if prompt_hit_color != null else Color(0.2, 0.9, 0.4, 0.95)
+			elif failed:
+				zone_color = prompt_miss_color if prompt_miss_color != null else Color(0.8, 0.2, 0.2, 0.55)
+		elif hold_ratio >= qte_start_ratio:
+			zone_color = Color(0.25, 1.0, 0.55, 0.95)
+		gauge.draw_arc(center, radius, zone_start_ang, zone_end_ang, 24, zone_color, thickness + 2.0, true)
+
+		# Draw needle
+		var needle_angle = -PI/2 + hold_ratio * 2*PI
+		var dir = Vector2(cos(needle_angle), sin(needle_angle))
+		var needle_start = center + dir * (radius - needle_extension)
+		var needle_end = center + dir * (radius + needle_extension)
+		gauge.draw_line(needle_start, needle_end, needle_color if needle_color != null else Color.WHITE, needle_width, true)
+		gauge.draw_circle(needle_end, needle_tip_size, needle_color if needle_color != null else Color.WHITE)
+
+		# Draw inner fill circle
+		if not show_progress_bar:
+			var max_radius = inner_fill_max_radius
+			if resolved:
+				if failed:
+					gauge.draw_circle(center, max_radius, inner_fill_failed_color if inner_fill_failed_color != null else Color.RED)
+				elif _shotgun_qte_hit:
+					gauge.draw_circle(center, max_radius, inner_fill_perfect_color if inner_fill_perfect_color != null else Color.GREEN)
+				else:
+					gauge.draw_circle(center, max_radius * reload_progress, inner_fill_color if inner_fill_color != null else Color.CYAN)
+			else:
+				gauge.draw_circle(center, max_radius * reload_progress, inner_fill_color if inner_fill_color != null else Color.CYAN)
+
 	elif mode == "superpump":
 		var hold_ratio = clampf(superpump_hold_time / superpump_required_hold, 0.0, 1.0)
 		if hold_ratio > 0.0:
@@ -846,6 +1031,7 @@ func _resolve(success: bool) -> void:
 	if Engine.is_editor_hint() or resolved:
 		return
 	resolved = true
+	var my_run_id: int = _run_id
 	
 	if mode == "qte":
 		var current_air_at_resolve = clampf(start_air + (max_air - start_air) * reload_progress, 0.0, max_air)
@@ -935,6 +1121,67 @@ func _resolve(success: bool) -> void:
 		visible = false
 		finished.emit(final_air, false)
 		
+	elif mode == "shotgun_qte":
+		set_process(false)
+		set_process_input(false)
+		
+		var final_air: float = start_air
+		if failed:
+			final_air = start_air
+		elif _shotgun_qte_hit:
+			final_air = minf(start_air + shotgun_qte_air_gain, max_air)
+		else:
+			final_air = minf(start_air + shotgun_normal_air_gain, max_air)
+		resolved_air = final_air
+		
+		if gauge:
+			gauge.queue_redraw()
+			
+		var lang = "en"
+		if get_tree() and get_tree().root.has_node("GameManager"):
+			lang = GameManager.selected_language
+			
+		if prompt_label:
+			if failed:
+				prompt_label.text = ""
+				prompt_label.add_theme_color_override("font_color", Color(0.8, 0.2, 0.2))
+			elif _shotgun_qte_hit:
+				prompt_label.text = "จังหวะสมบูรณ์แบบ! +40" if lang == "th" else "PERFECT QTE! +40"
+				prompt_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.5))
+				if final_air >= max_air:
+					SoundManager.play_2d("Superpump_Ready_FullAir")
+				else:
+					SoundManager.play_2d("watergun_pistol_reload")
+			else:
+				prompt_label.text = "รีโหลดสำเร็จ +30" if lang == "th" else "RELOAD +30"
+				prompt_label.add_theme_color_override("font_color", Color(0.2, 0.9, 0.5))
+				if final_air >= max_air:
+					SoundManager.play_2d("Superpump_Ready_FullAir")
+				else:
+					SoundManager.play_2d("watergun_pistol_reload")
+					
+		get_tree().call_group("player_ui", "on_qte_reload_ended", _shotgun_qte_hit, final_air)
+		
+		if prompt_label and not failed:
+			prompt_label.scale = Vector2.ZERO
+			create_tween().tween_property(prompt_label, "scale", Vector2.ONE, 0.15).set_trans(Tween.TRANS_BACK)
+			
+		await get_tree().create_timer(0.15).timeout
+		if my_run_id != _run_id or not visible or not is_inside_tree():
+			return
+			
+		if container and background_dim:
+			_finish_tween = create_tween().set_parallel(true)
+			_finish_tween.tween_property(container, "scale", Vector2(1.15, 1.15), 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			_finish_tween.tween_property(container, "modulate:a", 0.0, 0.15)
+			_finish_tween.tween_property(background_dim, "color:a", 0.0, 0.15)
+			await _finish_tween.finished
+			if my_run_id != _run_id or not visible or not is_inside_tree():
+				return
+				
+		visible = false
+		finished.emit(final_air, false)
+
 	elif mode == "superpump":
 		set_process(false)
 		set_process_input(false)
@@ -965,7 +1212,8 @@ func _resolve(success: bool) -> void:
 					return
 			
 			visible = false
-			finished.emit(120.0, true) # 120.0 is the super_threshold
+			var super_final_air = max_air if _is_shotgun_superpump else 120.0
+			finished.emit(super_final_air, true)
 		else:
 			if container and background_dim:
 				_finish_tween = create_tween().set_parallel(true)

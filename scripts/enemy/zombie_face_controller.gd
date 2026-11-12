@@ -325,6 +325,17 @@ func _apply_uv_offsets() -> void:
 
 # --- Public API Functions ---
 
+func reset() -> void:
+	is_hit_reaction = false
+	hurt_linger_timer = 0.0
+	current_eye_state = ZombieEyeState.DEFAULT
+	_breath_time = 0.0
+	_vocal_boost_timer = 0.0
+	_vocal_boost_multiplier = 1.0
+	_speech_hold_timer = 0.0
+	_audio_peak_db = -80.0
+	_apply_uv_offsets()
+
 func notify_hit(duration: float = 1.0) -> void:
 	hurt_linger_timer = max(hurt_linger_timer, duration)
 

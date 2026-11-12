@@ -14,10 +14,13 @@ var _was_aiming: bool      = false
 var _walking: bool         = false   # true once the dead intro anim finishes
 var _fading: bool          = false
 var _defeat_timer: float   = 0.0
+var _startup_duration: float = 1.0
+var _startup_timer: float = 0.0
 var _override_meshes: Array[MeshInstance3D] = []
 var _hiding_spot: Vector3 = Vector3.ZERO
 var _use_hiding: bool = false
 var _last_steer_side: float = 0.0
+var _stuck_timer: float = 0.0
 var _pushed_enemies_in_walk: Array[Node] = []
 
 var nav_agent: NavigationAgent3D:
@@ -29,6 +32,10 @@ func enter() -> void:
 	_walking         = false
 	_fading          = false
 	_defeat_timer    = 0.0
+	_startup_timer   = 0.0
+	_startup_duration = 1.0
+	_stuck_timer     = 0.0
+	_last_steer_side = 0.0
 	_use_hiding      = false
 	_hiding_spot     = Vector3.ZERO
 	_override_meshes.clear()
@@ -43,13 +50,24 @@ func enter() -> void:
 		if nav_agent:
 			nav_agent.avoidance_enabled = false
 		
-	print("[StateDefeated] Enemy defeated!")
+		# Compute startup animation duration to prevent premature walking
+		if enemy.anim_player and enemy.anim_player.has_animation(enemy.anim_set.dead):
+			var base_len = enemy.anim_player.get_animation(enemy.anim_set.dead).length
+			var ts: float = 1.0
+			if enemy.anim_tree:
+				var ts_val = enemy.anim_tree.get("parameters/defeated/" + enemy.anim_set.dead + "/TimeScale/scale")
+				if typeof(ts_val) in [TYPE_FLOAT, TYPE_INT] and float(ts_val) > 0.0:
+					ts = float(ts_val)
+			_startup_duration = base_len / ts
+		
+	if enemy and enemy.show_debug_label:
+		print("[StateDefeated] Enemy defeated! Startup dur: ", _startup_duration)
 	
 	# Trigger transition to the defeated state machine in AnimationTree
 	if enemy and enemy.anim_tree:
 		enemy.anim_tree.set("parameters/conditions/defeated", true)
 		
-	_play_anim(enemy.anim_set.dead, "defeated")
+	_force_anim_instant(enemy.anim_set.dead, "defeated")
 
 func exit() -> void:
 	if enemy and enemy.anim_tree:
@@ -61,7 +79,10 @@ func physics_update(_delta: float) -> void:
 		return
 
 	if not _walking:
+		_startup_timer += _delta
 		if not enemy.is_on_floor():
+			enemy.velocity.x = 0.0
+			enemy.velocity.z = 0.0
 			enemy.velocity.y -= 9.8 * _delta
 			enemy.move_and_slide()
 		else:
@@ -71,7 +92,11 @@ func physics_update(_delta: float) -> void:
 			var pb = enemy.anim_tree.get("parameters/defeated/playback")
 			if pb:
 				var current = String(pb.get_current_node())
-				if current == enemy.anim_set.dead_walk or "walk" in current.to_lower():
+				var is_dead_walk = (current == enemy.anim_set.dead_walk)
+				# Require startup animation to finish playing before starting walk navigation:
+				# Either node transitioned cleanly to dead_walk AND at least 0.3s passed,
+				# OR the full startup duration has elapsed.
+				if (is_dead_walk and _startup_timer >= 0.3) or (_startup_timer >= _startup_duration):
 					_walking = true
 					_defeat_timer = 0.0
 					
@@ -147,8 +172,16 @@ func physics_update(_delta: float) -> void:
 				var step_rad = deg_to_rad(30.0)
 				target_y = round(target_y / step_rad) * step_rad
 
-				var rot_weight = 6.0
 				var actual_speed = enemy.get_real_velocity().slide(Vector3.UP).length()
+				if actual_speed < 0.15:
+					_stuck_timer += _delta
+					if _stuck_timer >= 0.4:
+						_stuck_timer = 0.0
+						_last_steer_side = -_last_steer_side if _last_steer_side != 0.0 else (1.0 if randf() < 0.5 else -1.0)
+				else:
+					_stuck_timer = 0.0
+
+				var rot_weight = 6.0
 				if actual_speed < move_speed * 0.5:
 					var block_factor = 1.0 - (actual_speed / (move_speed * 0.5))
 					rot_weight = lerpf(6.0, 12.0, block_factor)
@@ -194,21 +227,66 @@ func physics_update(_delta: float) -> void:
 			enemy.velocity = Vector3.ZERO
 			return
 
-		var flee_dir: Vector3 = -to_player.normalized()
-		var target_vel = flee_dir * move_speed
+		var raw_flee_dir: Vector3 = -to_player.normalized()
+		var move_dir = _get_avoidance_direction(raw_flee_dir)
+
+		# Add separation force & push active zombies away within 0.8m
+		var separation_force = Vector3.ZERO
+		var close_count = 0
+		for other in enemy.get_tree().get_nodes_in_group("enemies"):
+			if other == enemy or not is_instance_valid(other) or other.is_defeated:
+				continue
+			var dist = enemy.global_position.distance_to(other.global_position)
+			if dist < 0.8 and dist > 0.01:
+				var push = (enemy.global_position - other.global_position).normalized()
+				var strength = (0.8 - dist) / 0.8
+				separation_force += push * strength
+				close_count += 1
+				if not other in _pushed_enemies_in_walk:
+					_pushed_enemies_in_walk.append(other)
+					var push_dir = (other.global_position - enemy.global_position).normalized()
+					push_dir.y = 0.0
+					push_dir = push_dir.normalized()
+					other.take_hit({
+						"damage": 0,
+						"hit_type": "push",
+						"hit_direction": push_dir,
+						"source": enemy
+					})
+		if raw_flee_dir.length() > 0.01 and close_count > 0:
+			move_dir = (move_dir + separation_force * 0.8).normalized()
+			move_dir.y = 0.0
+
+		var actual_speed = enemy.get_real_velocity().slide(Vector3.UP).length()
+		if actual_speed < 0.15:
+			_stuck_timer += _delta
+			if _stuck_timer >= 0.4:
+				_stuck_timer = 0.0
+				_last_steer_side = -_last_steer_side if _last_steer_side != 0.0 else (1.0 if randf() < 0.5 else -1.0)
+		else:
+			_stuck_timer = 0.0
+
+		if move_dir.length() > 0.01:
+			var target_y = atan2(-move_dir.x, -move_dir.z)
+			var step_rad = deg_to_rad(30.0)
+			target_y = round(target_y / step_rad) * step_rad
+
+			var rot_weight = 6.0
+			if actual_speed < move_speed * 0.5:
+				var block_factor = 1.0 - (actual_speed / (move_speed * 0.5))
+				rot_weight = lerpf(6.0, 12.0, block_factor)
+
+			enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, rot_weight * _delta)
+
+		var forward_dir = -enemy.global_transform.basis.z.normalized()
+		var target_vel = forward_dir * move_speed
 		if not enemy.is_on_floor():
 			target_vel.y = enemy.velocity.y - 9.8 * _delta
 		else:
 			target_vel.y = -0.1
-		
+
 		enemy.velocity = target_vel
 		enemy.move_and_slide()
-		
-		if flee_dir.length() > 0.01:
-			var target_y = atan2(-flee_dir.x, -flee_dir.z)
-			var step_rad = deg_to_rad(30.0)
-			target_y = round(target_y / step_rad) * step_rad
-			enemy.rotation.y = lerp_angle(enemy.rotation.y, target_y, 6.0 * _delta)
 
 func handle_hit(_hit_data: Dictionary) -> String:
 	return ""
@@ -286,36 +364,26 @@ func _fade_out_and_hide() -> void:
 	if not enemy:
 		return
 		
-	# Find all MeshInstance3Ds under the enemy
 	var meshes: Array[MeshInstance3D] = []
-	var stack = [enemy]
-	while stack.size() > 0:
-		var curr = stack.pop_back()
-		if curr is MeshInstance3D:
-			meshes.append(curr)
-		for child in curr.get_children():
-			stack.append(child)
-			
-	# Duplicate materials and enable transparency override
-	var materials: Array[BaseMaterial3D] = []
+	if "_enemy_meshes" in enemy and not enemy._enemy_meshes.is_empty():
+		meshes = enemy._enemy_meshes
+	else:
+		var stack = [enemy]
+		while stack.size() > 0:
+			var curr = stack.pop_back()
+			if curr is MeshInstance3D:
+				meshes.append(curr)
+			for child in curr.get_children():
+				stack.append(child)
+				
 	_override_meshes = meshes
-	for mesh in meshes:
-		if mesh.mesh:
-			for i in mesh.mesh.get_surface_count():
-				var mat = mesh.get_active_material(i)
-				if mat is BaseMaterial3D:
-					var dup_mat = mat.duplicate() as BaseMaterial3D
-					dup_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-					mesh.set_surface_override_material(i, dup_mat)
-					materials.append(dup_mat)
-					
-	# Create a tween to fade out the alpha first
-	var tween = enemy.create_tween()
 	
-	# 1. Fade all materials in parallel
+	# Tween mesh transparency directly (ZERO material duplication, zero shader compile stalls)
+	var tween = enemy.create_tween()
 	tween.set_parallel(true)
-	for mat in materials:
-		tween.tween_property(mat, "albedo_color:a", 0.0, fade_duration).set_trans(Tween.TRANS_LINEAR)
+	for mesh in meshes:
+		if is_instance_valid(mesh):
+			tween.tween_property(mesh, "transparency", 1.0, fade_duration).set_trans(Tween.TRANS_LINEAR)
 		
 	# 2. Once fully transparent, start sinking
 	tween.set_parallel(false)
@@ -326,20 +394,21 @@ func _fade_out_and_hide() -> void:
 	var target_y = enemy.global_position.y - sink_depth
 	tween.tween_property(enemy, "global_position:y", target_y, sink_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	
-	# 3. After sinking, hide the enemy, restore default materials, and free node
+	# 3. After sinking, hide the enemy, restore transparency, and release to pool (or free)
 	tween.tween_callback(func():
 		if is_instance_valid(enemy):
 			enemy.hide()
 			_restore_materials()
-			enemy.queue_free()
+			if EnemyPool.is_pooled(enemy):
+				EnemyPool.release(enemy)
+			else:
+				enemy.queue_free()
 	)
 
 func _restore_materials() -> void:
-	# Clear override materials so mesh uses default materials next time it is re-spawned
 	for mesh in _override_meshes:
-		if is_instance_valid(mesh) and mesh.mesh:
-			for i in mesh.mesh.get_surface_count():
-				mesh.set_surface_override_material(i, null)
+		if is_instance_valid(mesh):
+			mesh.transparency = 0.0
 	_override_meshes.clear()
 
 func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
@@ -347,17 +416,33 @@ func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 		return base_dir
 		
 	var space_state = enemy.get_world_3d().direct_space_state
-	var start = enemy.global_position + Vector3(0, 1.0, 0) # Cast at chest height
+	var start = enemy.global_position + Vector3(0, 0.8, 0) # Cast at chest/center height
 	
+	# Wall normal from physics body contact if already touching a wall
+	var wall_contact_normal = Vector3.ZERO
+	if enemy.is_on_wall():
+		wall_contact_normal = enemy.get_wall_normal()
+		wall_contact_normal.y = 0.0
+		if wall_contact_normal.length() > 0.01:
+			wall_contact_normal = wall_contact_normal.normalized()
+			
 	# Helper to check if a specific direction is blocked by wall or other zombies
 	var is_blocked = func(dir: Vector3) -> bool:
-		# 1. Physics raycast check (environment/static obstacles)
-		var end = start + dir * 1.5
-		var query = PhysicsRayQueryParameters3D.create(start, end)
-		query.exclude = [enemy.get_rid()]
-		var result = space_state.intersect_ray(query)
-		if not result.is_empty():
+		# If touching a wall, reject directions pushing back into the wall
+		if wall_contact_normal != Vector3.ZERO and dir.dot(wall_contact_normal) < 0.05:
 			return true
+
+		# 1. Physics raycast check (environment/static obstacles on Layer 1) across 3 probes (Center, Left shoulder, Right shoulder)
+		var side_offset = dir.cross(Vector3.UP).normalized() * 0.28
+		for offset in [Vector3.ZERO, -side_offset, side_offset]:
+			var p_start = start + offset
+			var p_end = p_start + dir * 1.5
+			var query = PhysicsRayQueryParameters3D.create(p_start, p_end)
+			query.collision_mask = 1 # Environment / Static World only (Layer 1)
+			query.exclude = [enemy.get_rid()]
+			var result = space_state.intersect_ray(query)
+			if not result.is_empty():
+				return true
 			
 		# 2. Check for other zombies blocking in that direction
 		for other in enemy.get_tree().get_nodes_in_group("enemies"):
@@ -370,19 +455,40 @@ func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 					return true
 		return false
 
+	# If touching a wall and pushing into it, deflect base_dir along wall plane
+	var effective_base_dir = base_dir
+	if wall_contact_normal != Vector3.ZERO and base_dir.dot(wall_contact_normal) < 0.0:
+		var slide_dir = base_dir.slide(wall_contact_normal)
+		slide_dir.y = 0.0
+		if slide_dir.length() > 0.01:
+			effective_base_dir = slide_dir.normalized()
+
 	# If the direct path is not blocked, proceed straight
-	if not is_blocked.call(base_dir):
-		return base_dir
+	if not is_blocked.call(effective_base_dir):
+		return effective_base_dir
 		
-	# Check if environment wall blocked base_dir
+	# Check if environment wall blocked base_dir across the 3 probes
 	var env_hit_pos: Vector3 = Vector3.ZERO
-	var env_hit_normal: Vector3 = Vector3.ZERO
-	var env_query = PhysicsRayQueryParameters3D.create(start, start + base_dir * 1.5)
-	env_query.exclude = [enemy.get_rid()]
-	var env_result = space_state.intersect_ray(env_query)
-	if not env_result.is_empty():
-		env_hit_pos = env_result.position
-		env_hit_normal = env_result.normal
+	var env_hit_normal: Vector3 = wall_contact_normal
+	var hit_side: float = 0.0 # -1.0 = left shoulder hit, 1.0 = right shoulder hit
+	var min_env_dist = 999.0
+	var side_offset = effective_base_dir.cross(Vector3.UP).normalized() * 0.28
+	
+	for side_mult in [0.0, -1.0, 1.0]:
+		var offset = side_offset * side_mult
+		var p_start = start + offset
+		var p_end = p_start + effective_base_dir * 1.5
+		var env_query = PhysicsRayQueryParameters3D.create(p_start, p_end)
+		env_query.collision_mask = 1 # Layer 1 only
+		env_query.exclude = [enemy.get_rid()]
+		var env_result = space_state.intersect_ray(env_query)
+		if not env_result.is_empty():
+			var dist = p_start.distance_to(env_result.position)
+			if dist < min_env_dist:
+				min_env_dist = dist
+				env_hit_pos = env_result.position
+				env_hit_normal = env_result.normal
+				hit_side = side_mult
 		
 	# Find closest blocking zombie to decide which way to turn first
 	var min_dist = 999.0
@@ -393,18 +499,18 @@ func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 		var dist = enemy.global_position.distance_to(other.global_position)
 		if dist < 1.5:
 			var to_other = (other.global_position - enemy.global_position).normalized()
-			if base_dir.dot(to_other) > 0.5:
+			if effective_base_dir.dot(to_other) > 0.5:
 				if dist < min_dist:
 					min_dist = dist
 					closest_other = other
 					
 	var zombie_dist = min_dist
-	var env_dist = start.distance_to(env_hit_pos) if env_hit_pos != Vector3.ZERO else 999.0
+	var env_dist = min_env_dist if env_hit_pos != Vector3.ZERO else (0.1 if wall_contact_normal != Vector3.ZERO else 999.0)
 
 	var steer_left_first = true
 	if closest_other and zombie_dist <= env_dist:
 		var to_other = (closest_other.global_position - enemy.global_position).normalized()
-		var cross = base_dir.cross(to_other)
+		var cross = effective_base_dir.cross(to_other)
 		if abs(cross.y) < 0.1:
 			if _last_steer_side != 0.0:
 				steer_left_first = (_last_steer_side > 0.0)
@@ -418,33 +524,42 @@ func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 			else:
 				steer_left_first = true # Steer left first away from zombie on right
 				_last_steer_side = 1.0
-	elif env_hit_pos != Vector3.ZERO:
-		var to_wall = (env_hit_pos - start)
-		to_wall.y = 0.0
-		if to_wall.length() > 0.01:
-			to_wall = to_wall.normalized()
-			var cross = base_dir.cross(to_wall)
-			if abs(cross.y) < 0.1 and env_hit_normal != Vector3.ZERO:
-				var cross_norm = base_dir.cross(env_hit_normal)
-				if cross_norm.y > 0:
-					steer_left_first = false # Wall normal leans right, steer right
-					_last_steer_side = -1.0
-				elif cross_norm.y < 0:
-					steer_left_first = true # Wall normal leans left, steer left
-					_last_steer_side = 1.0
-				else:
-					if _last_steer_side != 0.0:
-						steer_left_first = (_last_steer_side > 0.0)
-					else:
-						steer_left_first = true
+	elif env_hit_pos != Vector3.ZERO or env_hit_normal != Vector3.ZERO:
+		if hit_side < 0.0:
+			# Left shoulder hit wall corner -> steer right first
+			steer_left_first = false
+			_last_steer_side = -1.0
+		elif hit_side > 0.0:
+			# Right shoulder hit wall corner -> steer left first
+			steer_left_first = true
+			_last_steer_side = 1.0
+		else:
+			var to_wall = (env_hit_pos - start) if env_hit_pos != Vector3.ZERO else -env_hit_normal
+			to_wall.y = 0.0
+			if to_wall.length() > 0.01:
+				to_wall = to_wall.normalized()
+				var cross = effective_base_dir.cross(to_wall)
+				if abs(cross.y) < 0.1 and env_hit_normal != Vector3.ZERO:
+					var cross_norm = effective_base_dir.cross(env_hit_normal)
+					if cross_norm.y > 0:
+						steer_left_first = false # Wall normal leans right, steer right
+						_last_steer_side = -1.0
+					elif cross_norm.y < 0:
+						steer_left_first = true # Wall normal leans left, steer left
 						_last_steer_side = 1.0
-			else:
-				if cross.y > 0:
-					steer_left_first = false # Wall hit is on the left, steer right away from it
-					_last_steer_side = -1.0
+					else:
+						if _last_steer_side != 0.0:
+							steer_left_first = (_last_steer_side > 0.0)
+						else:
+							steer_left_first = true
+							_last_steer_side = 1.0
 				else:
-					steer_left_first = true # Wall hit is on the right, steer left away from it
-					_last_steer_side = 1.0
+					if cross.y > 0:
+						steer_left_first = false # Wall hit is on the left, steer right away from it
+						_last_steer_side = -1.0
+					else:
+						steer_left_first = true # Wall hit is on the right, steer left away from it
+						_last_steer_side = 1.0
 	else:
 		_last_steer_side = 0.0
 
@@ -454,9 +569,9 @@ func _get_avoidance_direction(base_dir: Vector3) -> Vector3:
 		
 	for angle in angles:
 		var rad = deg_to_rad(angle)
-		var rotated_dir = base_dir.rotated(Vector3.UP, rad).normalized()
+		var rotated_dir = effective_base_dir.rotated(Vector3.UP, rad).normalized()
 		if not is_blocked.call(rotated_dir):
 			return rotated_dir
 			
-	# If everything is blocked, fallback to base direction
-	return base_dir
+	# If everything is blocked, fallback to effective base direction
+	return effective_base_dir

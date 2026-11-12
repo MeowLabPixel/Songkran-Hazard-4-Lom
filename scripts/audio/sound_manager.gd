@@ -123,7 +123,10 @@ func _physics_process(_delta: float) -> void:
 
 
 func _initialize_spatial_player(p: AudioStreamPlayer3D, source) -> void:
-	add_child(p)
+	if p.get_parent() != self:
+		if p.get_parent() != null:
+			p.get_parent().remove_child(p)
+		add_child(p)
 	if source is Node3D:
 		p.global_position = source.global_position
 		p.set_meta("follow_target", source)
@@ -274,6 +277,33 @@ func _setup_audio_buses() -> void:
 						dist.drive = 0.5
 						AudioServer.add_bus_effect(sub_idx, dist)
 
+var _spatial_player_pool: Array[AudioStreamPlayer3D] = []
+
+func _get_or_create_spatial_player() -> AudioStreamPlayer3D:
+	while not _spatial_player_pool.is_empty():
+		var p = _spatial_player_pool.pop_back()
+		if is_instance_valid(p):
+			p.stop()
+			p.stream = null
+			for conn in p.finished.get_connections():
+				p.finished.disconnect(conn.callable)
+			return p
+	var new_p = AudioStreamPlayer3D.new()
+	add_child(new_p)
+	return new_p
+
+func _recycle_spatial_player(p: AudioStreamPlayer3D) -> void:
+	if is_instance_valid(p):
+		p.stop()
+		p.stream = null
+		if p.has_meta("follow_target"):
+			p.remove_meta("follow_target")
+		if _all_spatial_players.has(p):
+			_all_spatial_players.erase(p)
+		for conn in p.finished.get_connections():
+			p.finished.disconnect(conn.callable)
+		_spatial_player_pool.append(p)
+
 # Helper to check polyphony (max_instances) and prune old players
 func _check_polyphony(event: SoundEvent) -> bool:
 	if event.max_instances <= 0:
@@ -281,7 +311,7 @@ func _check_polyphony(event: SoundEvent) -> bool:
 		
 	var instances: Array = _active_instances.get(event.name, [])
 	
-	# Prune any instances that have been freed
+	# Prune any instances that have been freed or finished
 	var active = []
 	for inst in instances:
 		if is_instance_valid(inst) and inst.is_inside_tree() and inst.playing:
@@ -289,19 +319,22 @@ func _check_polyphony(event: SoundEvent) -> bool:
 	_active_instances[event.name] = active
 	
 	if active.size() >= event.max_instances:
-		# Stop and free the oldest instance to make room
+		# Recycle the oldest instance to make room
 		var oldest = active.pop_front()
 		if is_instance_valid(oldest):
-			oldest.stop()
-			oldest.queue_free()
+			_recycle_spatial_player(oldest)
 			
 	return true
 
 # Clean up player nodes when finished
 func _on_player_finished(player: Node, event: SoundEvent, parallel_player: Node = null) -> void:
-	if is_instance_valid(player):
+	if is_instance_valid(player) and player is AudioStreamPlayer3D:
+		_recycle_spatial_player(player)
+	elif is_instance_valid(player):
 		player.queue_free()
-	if is_instance_valid(parallel_player):
+	if is_instance_valid(parallel_player) and parallel_player is AudioStreamPlayer3D:
+		_recycle_spatial_player(parallel_player)
+	elif is_instance_valid(parallel_player):
 		parallel_player.queue_free()
 
 # Immediately stops all active zombie voiceline instances attached to a specific source object
@@ -313,8 +346,7 @@ func stop_voicelines_for_source(source) -> void:
 			if p.has_meta("follow_target") and p.get_meta("follow_target") == source:
 				var ev_name = p.get_meta("event_name") if p.has_meta("event_name") else ""
 				if ev_name.begins_with("vo_zombie_"):
-					p.stop()
-					p.queue_free()
+					_recycle_spatial_player(p)
 
 func _should_block_voiceline(event_name: String, source = null) -> bool:
 	# Only apply to zombie and Anchalee voicelines (excluding breathing sounds)
@@ -481,8 +513,8 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 		push_warning("[SoundManager] SoundEvent '%s' has no streams/regions configured." % event_name)
 		return null
 		
-	# Create primary AudioStreamPlayer3D
-	var player = AudioStreamPlayer3D.new()
+	# Create/acquire primary AudioStreamPlayer3D from pool
+	var player = _get_or_create_spatial_player()
 	player.set_meta("event_name", event_name)
 	_all_spatial_players.append(player)
 	
@@ -540,7 +572,7 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 		var has_parallel = (alternative and event.alternative_parallel_regions.size() > idx) or (not alternative and event.parallel_regions.size() > idx)
 		if has_parallel:
 			var preg = event.alternative_parallel_regions[idx] if alternative else event.parallel_regions[idx]
-			parallel_player = AudioStreamPlayer3D.new()
+			parallel_player = _get_or_create_spatial_player()
 			parallel_player.set_meta("event_name", event_name)
 			_all_spatial_players.append(parallel_player)
 			parallel_player.bus = target_bus
@@ -582,7 +614,7 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 			has_parallel = (alternative and event.alternative_parallel_streams.size() > idx) or (not alternative and event.parallel_streams.size() > idx)
 
 		if has_parallel:
-			parallel_player = AudioStreamPlayer3D.new()
+			parallel_player = _get_or_create_spatial_player()
 			parallel_player.set_meta("event_name", event_name)
 			_all_spatial_players.append(parallel_player)
 			parallel_player.bus = target_bus
@@ -663,7 +695,10 @@ func stop(event_name: String) -> void:
 	for inst in instances:
 		if is_instance_valid(inst) and inst.playing:
 			inst.stop()
-			inst.queue_free()
+			if inst is AudioStreamPlayer3D:
+				_recycle_spatial_player(inst)
+			else:
+				inst.queue_free()
 	_active_instances[event_name] = []
 
 func _disable_all_muffle() -> void:

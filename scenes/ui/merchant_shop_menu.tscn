@@ -762,6 +762,7 @@ theme_override_font_sizes/font_size = 16
 horizontal_alignment = 1
 
 [node name="StateRoot_Confirm" type="Control" parent="." unique_id=1187374616]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -860,7 +861,7 @@ screen_space_aa = 2
 scaling_3d_scale = 2.0
 canvas_item_default_texture_filter = 2
 size = Vector2i(811, 300)
-render_target_update_mode = 4
+render_target_update_mode = 0
 
 [node name="Camera3D" type="Camera3D" parent="StateRoot_Confirm/ConfirmCard/Margin/ConfirmVBox/WeaponPreviewFrame/TurntableSVC/TurntableViewport" unique_id=675593891]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.8583747)

@@ -1,6 +1,8 @@
 class_name StateAttack
 extends EnemyState
 
+const GRAB_QTE_HUD_SCRIPT = preload("res://scripts/ui/grab_qte_hud.gd")
+
 @export var grab_chance: float      = 0.25
 @export var grab_damage: int        = 30
 @export var attack_damage: int      = 30
@@ -297,8 +299,7 @@ func _start_grab_hold() -> void:
 			_qte_hud.caught.connect(_on_qte_caught)
 		_qte_hud.start_qte(qte_duration, qte_shakes_needed)
 	else:
-		var hud_script = load("res://scripts/ui/grab_qte_hud.gd")
-		_qte_hud = hud_script.new(qte_duration, qte_shakes_needed)
+		_qte_hud = GRAB_QTE_HUD_SCRIPT.new(qte_duration, qte_shakes_needed)
 		_qte_hud.escaped.connect(_on_qte_escaped)
 		_qte_hud.caught.connect(_on_qte_caught)
 		enemy.get_tree().root.add_child(_qte_hud)
@@ -695,7 +696,7 @@ func _hand_touches_player() -> bool:
 func _deal_damage(entity: Node3D, amount: int, source: String, custom_hit_pos: Vector3 = Vector3.ZERO) -> void:
 	if not entity:
 		return
-	if entity.is_in_group("player") and entity.has_method("is_invulnerable") and entity.is_invulnerable():
+	if source != "grab" and entity.is_in_group("player") and entity.has_method("is_invulnerable") and entity.is_invulnerable():
 		return
 	if entity.has_method("take_damage"):
 		if entity.is_in_group("Anchalee"):

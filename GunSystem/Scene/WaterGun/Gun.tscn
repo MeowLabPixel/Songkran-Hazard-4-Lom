@@ -12,6 +12,7 @@ shotgun_gun = NodePath("Shotgun")
 sniper_gun = NodePath("Sniper")
 
 [node name="Pistol" parent="." unique_id=1408591882 instance=ExtResource("2_2q741")]
+visible = false
 
 [node name="Shotgun" parent="." unique_id=560072649 instance=ExtResource("3_gnye6")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.26879883, 0)
