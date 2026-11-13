@@ -1,5 +1,5 @@
 @tool
-extends RefCounted
+extends "res://addons/godot_ai/handlers/command_handler.gd"
 
 const ErrorCodes := preload("res://addons/godot_ai/utils/error_codes.gd")
 
@@ -29,7 +29,7 @@ func control_draw_recipe(params: Dictionary) -> Dictionary:
 	if typeof(ops_raw) != TYPE_ARRAY:
 		return ErrorCodes.make(ErrorCodes.WRONG_TYPE, "ops must be an Array")
 
-	var _resolved := McpNodeValidator.resolve_or_error(path, "path")
+	var _resolved := McpNodeValidator.resolve_or_error(path, "path", "", true)
 	if _resolved.has("error"):
 		return _resolved
 	var node: Node = _resolved.node

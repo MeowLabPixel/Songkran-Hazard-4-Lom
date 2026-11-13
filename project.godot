@@ -30,9 +30,9 @@ ItemManager="*res://scripts/items/item_manager.gd"
 AttackTokenManager="*res://scripts/enemy/attack_token_manager.gd"
 GameManager="*res://scripts/game_manager.gd"
 SoundManager="*res://scripts/audio/sound_manager.tscn"
-_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 EnemyRegistry="*res://scripts/enemy/enemy_registry.gd"
 EnemyPool="*res://scripts/enemy/enemy_pool.gd"
+_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 
 [debug]
 

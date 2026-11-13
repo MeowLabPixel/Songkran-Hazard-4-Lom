@@ -15,6 +15,7 @@ extends Node3D
 		_update_gates()
 
 ## Toggles back / service iron gates if present.
+## (Note: in BATCH_COMBINED_MESH mode, back gates are permanently baked into the combined mesh to save draw calls).
 @export var back_iron_gate_closed: bool = true:
 	set(value):
 		back_iron_gate_closed = value
@@ -29,21 +30,43 @@ func set_front_gate(closed: bool) -> void:
 func set_back_gate(closed: bool) -> void:
 	back_iron_gate_closed = closed
 
-func _is_gate_node(node: Node) -> bool:
+static func is_gate_node(node: Node) -> bool:
+	if not node:
+		return false
 	var n: String = node.name.to_lower()
 	return n.contains("irongate") or n.contains("iron_gate") or n.contains("panelgate")
 
-func _is_back_gate(node: Node) -> bool:
+static func is_back_gate(node: Node) -> bool:
+	if not node:
+		return false
 	var n: String = node.name.to_lower()
 	return n.contains("back") or n.contains("rear")
+
+static func is_front_gate(node: Node) -> bool:
+	return is_gate_node(node) and not is_back_gate(node)
+
+## Checks if node itself or any of its ancestors up to root is a gate
+static func find_ancestor_gate(node: Node, root: Node) -> Node:
+	var curr: Node = node
+	while curr and curr != root:
+		if is_gate_node(curr):
+			return curr
+		curr = curr.get_parent()
+	return null
+
+func _is_gate_node(node: Node) -> bool:
+	return is_gate_node(node)
+
+func _is_back_gate(node: Node) -> bool:
+	return is_back_gate(node)
 
 func _update_gates() -> void:
 	_apply_to_node_recursive(self)
 
 func _apply_to_node_recursive(node: Node) -> void:
 	for child in node.get_children():
-		if _is_gate_node(child):
-			var is_back: bool = _is_back_gate(child)
+		if is_gate_node(child):
+			var is_back: bool = is_back_gate(child)
 			var is_closed: bool = back_iron_gate_closed if is_back else front_iron_gate_closed
 			_set_gate_active(child, is_closed)
 		else:
@@ -71,7 +94,7 @@ func has_front_gate() -> bool:
 
 func _check_has_front_gate(node: Node) -> bool:
 	for child in node.get_children():
-		if _is_gate_node(child) and not _is_back_gate(child):
+		if is_front_gate(child):
 			return true
 		if _check_has_front_gate(child):
 			return true

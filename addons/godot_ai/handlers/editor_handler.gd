@@ -1,13 +1,13 @@
 @tool
-extends RefCounted
+extends "res://addons/godot_ai/handlers/command_handler.gd"
 
 const ErrorCodes := preload("res://addons/godot_ai/utils/error_codes.gd")
 const Telemetry := preload("res://addons/godot_ai/telemetry.gd")
+const PluginReload := preload("res://addons/godot_ai/utils/plugin_reload.gd")
 const VisionRoutingScript := preload("res://addons/godot_ai/vision_routing.gd")
+const MAX_CINEMATIC_DIMENSION := 4096
 
 ## Handles editor state, selection, log, screenshot, and performance commands.
-
-const UpdateMixedState := preload("res://addons/godot_ai/utils/update_mixed_state.gd")
 
 var _log_buffer: McpLogBuffer
 var _connection: McpConnection
@@ -49,14 +49,6 @@ func get_editor_state(_params: Dictionary) -> Dictionary:
 		"helper_live": bool(game_status.get("helper_live", false)),
 		"session_active": bool(game_status.get("session_active", false)),
 	}
-	## Half-installed addon tree from a failed self-update rollback. When
-	## non-empty, the agent / dock paint the operator-facing recovery copy
-	## from `update_mixed_state.gd::diagnose`. Field omitted when the
-	## addons tree is clean so editor_state's normal payload stays small.
-	## See issue #354 / audit-v2 #10.
-	var mixed_state := UpdateMixedState.diagnose()
-	if not mixed_state.is_empty():
-		data["mixed_state"] = mixed_state
 	return {"data": data}
 
 
@@ -223,8 +215,8 @@ func _format_editor_error_summary(entry: Dictionary) -> String:
 func _get_editor_logs(count: int, offset: int, include_details: bool, has_since_cursor: bool = false, since_cursor: int = 0) -> Dictionary:
 	## Editor-process script errors (parse errors, @tool runtime errors,
 	## EditorPlugin errors, push_error/push_warning). Captured by
-	## editor_logger.gd via OS.add_logger and gated on Godot 4.5+; on older
-	## engines the buffer can be null. Godot also sends GDScript reload
+	## editor_logger.gd via OS.add_logger on every v4-supported engine. During
+	## partial initialization the buffer can still be null. Godot also sends GDScript reload
 	## warnings/errors straight to the Debugger dock's Errors tab; those do
 	## not flow through OS.add_logger, so merge the visible tree rows here.
 	if has_since_cursor:
@@ -434,6 +426,9 @@ func take_screenshot(params: Dictionary) -> Dictionary:
 
 
 func _take_screenshot_impl(params: Dictionary) -> Dictionary:
+	var output_error := _screenshot_output_error(params)
+	if not output_error.is_empty():
+		return output_error
 	var source: String = params.get("source", "viewport")
 	var max_resolution: int = params.get("max_resolution", 0)
 	var view_target: String = params.get("view_target", "")
@@ -483,7 +478,7 @@ func _take_screenshot_impl(params: Dictionary) -> Dictionary:
 			_debugger_plugin.request_game_screenshot(request_id, max_resolution, _connection)
 			return McpDispatcher.DEFERRED_RESPONSE
 		"cinematic":
-			return _take_cinematic_screenshot(max_resolution)
+			return _take_cinematic_screenshot(max_resolution, params)
 		"viewport_2d":
 			viewport = EditorInterface.get_editor_viewport_2d()
 			if viewport == null:
@@ -509,7 +504,7 @@ func _take_screenshot_impl(params: Dictionary) -> Dictionary:
 					"viewport_2d",
 					"Captured an empty image from the 2D viewport. The 2D viewport produced no output — typically headless mode or the 2D viewport has not drawn a frame yet."
 				)
-			return _finalize_image(image_2d, "viewport_2d", max_resolution)
+			return _finalize_image(image_2d, "viewport_2d", max_resolution, viewport.use_hdr_2d)
 		_:
 			return ErrorCodes.make(ErrorCodes.VALUE_OUT_OF_RANGE, "Invalid source '%s' — use 'viewport', 'viewport_2d', 'cinematic', or 'game'" % source)
 
@@ -566,7 +561,8 @@ func _take_screenshot_impl(params: Dictionary) -> Dictionary:
 		## --- Coverage path: multi-angle sweep ---
 		if coverage:
 			var images: Array[Dictionary] = []
-			for preset in _compute_coverage_angles(combined_aabb):
+			var angles := _compute_coverage_angles(combined_aabb)
+			for preset in angles:
 				if preset.get("ortho", false):
 					## Orthographic top-down view
 					var ortho_size := combined_aabb.size.length() * 1.8
@@ -585,7 +581,7 @@ func _take_screenshot_impl(params: Dictionary) -> Dictionary:
 				RenderingServer.force_draw(false)
 				var img: Image = viewport.get_texture().get_image()
 				if img != null and not img.is_empty():
-					var entry := _finalize_image(img, "viewport", max_resolution)
+					var entry := _finalize_image(img, "viewport", max_resolution, false, McpScreenshotEncode.MAX_PNG_BYTES / angles.size())
 					entry.data["label"] = preset.label
 					entry.data["elevation"] = preset.elevation
 					entry.data["azimuth"] = preset.azimuth
@@ -678,7 +674,39 @@ func _take_screenshot_impl(params: Dictionary) -> Dictionary:
 ## game. Mirrors Godot's "Cinematic Preview" display mode but via a
 ## throwaway SubViewport, so the output has no editor gizmos, selection
 ## outlines, or grid lines.
-func _take_cinematic_screenshot(max_resolution: int) -> Dictionary:
+static func _screenshot_output_error(params: Dictionary) -> Dictionary:
+	var sized := params.has("width") or params.has("height")
+	var save_to: Variant = params.get("save_to", "")
+	if not save_to is String:
+		return ErrorCodes.make(ErrorCodes.WRONG_TYPE, "save_to must be a res:// PNG path string")
+	if (sized or not save_to.is_empty()) and params.get("source", "viewport") != "cinematic":
+		return ErrorCodes.make(ErrorCodes.VALUE_OUT_OF_RANGE, "width, height and save_to are supported only for source='cinematic'")
+	if sized:
+		for key in ["width", "height"]:
+			if not params.has(key):
+				return ErrorCodes.make(ErrorCodes.MISSING_REQUIRED_PARAM, "Cinematic width and height must be supplied together; missing %s" % key)
+			var value: Variant = params[key]
+			if not (value is int or value is float):
+				return ErrorCodes.make(ErrorCodes.WRONG_TYPE, "%s must be a whole number from 1 to %d" % [key, MAX_CINEMATIC_DIMENSION])
+			if not is_finite(float(value)) or value < 1 or value > MAX_CINEMATIC_DIMENSION or float(value) != floorf(float(value)):
+				return ErrorCodes.make(ErrorCodes.VALUE_OUT_OF_RANGE, "%s must be a whole number from 1 to %d" % [key, MAX_CINEMATIC_DIMENSION])
+	if not params.get("overwrite", false) is bool or not params.get("include_image", true) is bool:
+		return ErrorCodes.make(ErrorCodes.WRONG_TYPE, "overwrite and include_image must be booleans")
+	if save_to.is_empty():
+		if params.get("overwrite", false):
+			return ErrorCodes.make(ErrorCodes.VALUE_OUT_OF_RANGE, "overwrite requires save_to")
+		return {}
+	var path_error: Variant = McpPathValidator.path_error(save_to, "save_to", true)
+	if path_error != null:
+		return path_error
+	if save_to.get_extension().to_lower() != "png":
+		return ErrorCodes.make(ErrorCodes.VALUE_OUT_OF_RANGE, "save_to must end in .png")
+	if FileAccess.file_exists(save_to) and not params.get("overwrite", false):
+		return ErrorCodes.make(ErrorCodes.INVALID_PARAMS, "Screenshot already exists at %s; pass overwrite=true to replace it" % save_to)
+	return {}
+
+
+func _take_cinematic_screenshot(max_resolution: int, params: Dictionary = {}) -> Dictionary:
 	var _scene_check := McpNodeValidator.require_scene_or_error()
 	if _scene_check.has("error"):
 		return _scene_check
@@ -699,6 +727,8 @@ func _take_cinematic_screenshot(max_resolution: int) -> Dictionary:
 		var vs := edit_vp.get_visible_rect().size
 		if vs.x >= 1.0 and vs.y >= 1.0:
 			render_size = Vector2i(int(vs.x), int(vs.y))
+	if params.has("width"):
+		render_size = Vector2i(int(params.width), int(params.height))
 
 	var sub_vp := SubViewport.new()
 	sub_vp.size = render_size
@@ -712,6 +742,9 @@ func _take_cinematic_screenshot(max_resolution: int) -> Dictionary:
 	cam.far = scene_camera.far
 	cam.projection = scene_camera.projection
 	cam.size = scene_camera.size
+	cam.frustum_offset = scene_camera.frustum_offset
+	cam.h_offset = scene_camera.h_offset
+	cam.v_offset = scene_camera.v_offset
 	cam.keep_aspect = scene_camera.keep_aspect
 	cam.cull_mask = scene_camera.cull_mask
 	cam.environment = scene_camera.environment
@@ -742,8 +775,56 @@ func _take_cinematic_screenshot(max_resolution: int) -> Dictionary:
 			"Cinematic render produced an empty image. The SubViewport returned no texture — typically headless mode (force_draw has no rendered output) or the scene's Camera3D is positioned so nothing visible is in frame."
 		)
 
-	var result := _finalize_image(image, "cinematic", max_resolution)
-	result.data["camera_path"] = McpScenePath.from_node(scene_camera, scene_root)
+	var result := _finalize_cinematic_image(image, max_resolution, params)
+	if result.has("data"):
+		result.data["camera_path"] = McpScenePath.from_node(scene_camera, scene_root)
+	return result
+
+
+func _finalize_cinematic_image(image: Image, max_resolution: int, params: Dictionary) -> Dictionary:
+	var saved: Dictionary = {}
+	var save_to: String = params.get("save_to", "")
+	if not save_to.is_empty():
+		var output_error := _screenshot_output_error(params)
+		if not output_error.is_empty():
+			return output_error
+		var directory := save_to.get_base_dir()
+		var mkdir_err := DirAccess.make_dir_recursive_absolute(directory)
+		if mkdir_err != OK:
+			return ErrorCodes.make(ErrorCodes.INTERNAL_ERROR, "Cannot create screenshot directory %s: %s" % [directory, error_string(mkdir_err)])
+		var temporary := save_to + ".godot-ai-%d.tmp" % Time.get_ticks_usec()
+		if FileAccess.file_exists(temporary):
+			return ErrorCodes.make(ErrorCodes.INTERNAL_ERROR, "Screenshot staging path already exists: %s" % temporary)
+		var write_err := image.save_png(temporary)
+		if write_err != OK:
+			if FileAccess.file_exists(temporary):
+				DirAccess.remove_absolute(temporary)
+			return ErrorCodes.make(ErrorCodes.INTERNAL_ERROR, "Cannot save screenshot to %s: %s" % [save_to, error_string(write_err)])
+		var file := FileAccess.open(temporary, FileAccess.READ)
+		if file == null:
+			var read_err := FileAccess.get_open_error()
+			DirAccess.remove_absolute(temporary)
+			return ErrorCodes.make(ErrorCodes.INTERNAL_ERROR, "Cannot read staged screenshot size; destination is unchanged: %s" % error_string(read_err))
+		var byte_count := file.get_length()
+		file.close()
+		var publication := McpResourceIO._replace_staged_file(temporary, save_to, OS.get_name() == "Windows" and FileAccess.file_exists(save_to))
+		if publication.has("error"):
+			return publication
+		saved = {"saved_path": save_to, "saved_width": image.get_width(), "saved_height": image.get_height(), "saved_bytes": byte_count, "undoable": false, "reason": "PNG file writes cannot be undone via editor undo"}
+		saved.merge(publication)
+		var filesystem := EditorInterface.get_resource_filesystem()
+		if filesystem != null:
+			filesystem.update_file(save_to)
+	var result: Dictionary
+	if not save_to.is_empty() and not params.get("include_image", true):
+		result = {"data": {"source": "cinematic", "width": image.get_width(), "height": image.get_height(), "original_width": image.get_width(), "original_height": image.get_height(), "format": "png"}}
+	else:
+		result = _finalize_image(image, "cinematic", max_resolution)
+	if not saved.is_empty() and (result.has("error") or result.get("data", {}).get("image_base64", "").is_empty()) and params.get("include_image", true):
+		var preview_error: Dictionary = result.get("error", {"code": ErrorCodes.INTERNAL_ERROR, "message": "Inline PNG encoding failed; the full render was saved"})
+		result = {"data": {"source": "cinematic", "width": saved.saved_width, "height": saved.saved_height, "original_width": saved.saved_width, "original_height": saved.saved_height, "format": "png", "preview_error": preview_error}}
+	if result.has("data"):
+		result.data.merge(saved)
 	return result
 
 
@@ -857,9 +938,9 @@ func _find_current_camera_3d(root: Node) -> Camera3D:
 	return first
 
 
-func _finalize_image(image: Image, source: String, max_resolution: int) -> Dictionary:
+func _finalize_image(image: Image, source: String, max_resolution: int, use_hdr_2d := false, max_png_bytes: int = McpScreenshotEncode.MAX_PNG_BYTES) -> Dictionary:
 	## Shared with the game-process copy in runtime/game_helper.gd (#716).
-	var encoded := McpScreenshotEncode.downscale_and_encode(image, max_resolution)
+	var encoded := McpScreenshotEncode.downscale_and_encode(image, max_resolution, use_hdr_2d, max_png_bytes)
 	return {
 		"data": {
 			"source": source,
@@ -873,25 +954,29 @@ func _finalize_image(image: Image, source: String, max_resolution: int) -> Dicti
 	}
 
 
-## Recursively compute the visual bounding box of a Node3D and its children.
+## Prefer geometry bounds over light ranges and helper/effect volumes.
 func _get_visual_aabb(node: Node3D) -> AABB:
-	var aabb := AABB()
-	var found := false
-	if node is VisualInstance3D:
-		aabb = node.global_transform * node.get_aabb()
-		found = true
-	for child in node.get_children():
-		if child is Node3D:
-			var child_aabb := _get_visual_aabb(child)
-			if child_aabb.size != Vector3.ZERO:
-				if found:
-					aabb = aabb.merge(child_aabb)
+	var geometry_bounds: Variant = null
+	var visual_bounds: Variant = null
+	var pending: Array[Node3D] = [node]
+	while not pending.is_empty():
+		var current: Node3D = pending.pop_back()
+		if current is VisualInstance3D and current.is_visible_in_tree():
+			var local_bounds: AABB = current.get_aabb()
+			if local_bounds.size != Vector3.ZERO:
+				var bounds: AABB = current.global_transform * local_bounds
+				if current is GeometryInstance3D and not (current is GPUParticles3D or current is CPUParticles3D):
+					geometry_bounds = bounds if geometry_bounds == null else geometry_bounds.merge(bounds)
 				else:
-					aabb = child_aabb
-					found = true
-	if not found:
-		aabb = AABB(node.global_position - Vector3(0.5, 0.5, 0.5), Vector3(1, 1, 1))
-	return aabb
+					visual_bounds = bounds if visual_bounds == null else visual_bounds.merge(bounds)
+		for child in current.get_children():
+			if child is Node3D:
+				pending.append(child)
+	if geometry_bounds != null:
+		return geometry_bounds
+	if visual_bounds != null:
+		return visual_bounds
+	return AABB(node.global_position - Vector3(0.5, 0.5, 0.5), Vector3.ONE)
 
 
 ## Calculate a camera Transform3D that frames the given AABB nicely.
@@ -957,12 +1042,15 @@ func _clear_debugger_error_trees() -> int:
 
 
 func reload_plugin(_params: Dictionary) -> Dictionary:
+	var work := PluginReload.reserve_reload()
+	if work == 0:
+		return ErrorCodes.make(ErrorCodes.EDITOR_NOT_READY, "A plugin reload is already pending.")
 	_log_buffer.log("reload_plugin requested, reloading next frame")
 	## Persist a pending plugin_reload telemetry event *before* the
 	## disable kills the live WebSocket. The re-enabled plugin's
 	## _enter_tree flushes via `_telemetry.flush_pending_plugin_reload()`.
 	Telemetry.record_pending_plugin_reload("mcp_tool")
-	_do_reload_plugin.call_deferred()
+	_do_reload_plugin.call_deferred(work)
 	return {"data": {"status": "reloading", "message": "Plugin reload initiated"}}
 
 
@@ -972,20 +1060,12 @@ func reload_plugin(_params: Dictionary) -> Dictionary:
 ## fail with "Could not find type X" when new class_name scripts are on disk
 ## but not yet registered, leaving the plugin disabled with no recovery path
 ## short of killing the editor. See issue #83.
-# `static` is load-bearing: the deferred coroutine captures no `self`, so
-# it survives even if the EditorHandler RefCounted is freed mid-await —
-# which is exactly what reload does to this handler's owner. An instance
-# coroutine here resumes on a freed object under reload churn.
-static func _do_reload_plugin() -> void:
-	var fs := EditorInterface.get_resource_filesystem()
-	fs.scan()
-	var tree := Engine.get_main_loop() as SceneTree
-	# Cap the wait so a long scan (huge project) doesn't hang reload.
-	var deadline_ms := Time.get_ticks_msec() + 5000
-	while fs.is_scanning() and Time.get_ticks_msec() < deadline_ms:
-		await tree.process_frame
-	EditorInterface.set_plugin_enabled("res://addons/godot_ai/plugin.cfg", false)
-	EditorInterface.set_plugin_enabled("res://addons/godot_ai/plugin.cfg", true)
+# The deferred entry captures no handler. The helper owns the bounded native
+# signal handoff: is_scanning() can become false before resource reloads and
+# filesystem_changed run on the main thread. No suspended GDScript frame may
+# span a scan which can recompile that very frame's script.
+static func _do_reload_plugin(work: int = 0) -> void:
+	PluginReload.reload_after_scan(work)
 
 
 func quit_editor(_params: Dictionary) -> Dictionary:
@@ -1016,6 +1096,29 @@ func game_eval(params: Dictionary) -> Dictionary:
 			"Missing request_id — cannot correlate deferred response")
 
 	_debugger_plugin.request_game_eval(code, request_id, _connection)
+	return McpDispatcher.DEFERRED_RESPONSE
+
+
+func game_debug_control(params: Dictionary) -> Dictionary:
+	var action := str(params.get("action", ""))
+	if action not in ["suspend", "resume", "next_frame", "debug_status"]:
+		return ErrorCodes.make(
+			ErrorCodes.VALUE_OUT_OF_RANGE,
+			"Invalid game debug action '%s' — use suspend, resume, next_frame, or debug_status" % action,
+		)
+	if _debugger_plugin == null or _connection == null:
+		return ErrorCodes.make(ErrorCodes.INTERNAL_ERROR,
+			"Debugger bridge unavailable — plugin may not be fully initialised")
+	if not EditorInterface.is_playing_scene():
+		return ErrorCodes.make_not_ready(
+			ErrorCodes.SUB_EDITOR_GAME_NOT_RUNNING,
+			"Game is not running — start the project first", false,
+			"Start the game with project_run (or wait for the user to run it), then retry.")
+	var request_id := str(params.get("_request_id", ""))
+	if request_id.is_empty():
+		return ErrorCodes.make(ErrorCodes.INTERNAL_ERROR,
+			"Missing internal _request_id — cannot correlate deferred response")
+	_debugger_plugin.request_game_debug_control(action, request_id, _connection)
 	return McpDispatcher.DEFERRED_RESPONSE
 
 

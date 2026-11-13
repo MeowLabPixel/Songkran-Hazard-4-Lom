@@ -283,6 +283,7 @@ func _get_or_create_spatial_player() -> AudioStreamPlayer3D:
 	while not _spatial_player_pool.is_empty():
 		var p = _spatial_player_pool.pop_back()
 		if is_instance_valid(p):
+			p.stream_paused = false
 			p.stop()
 			p.stream = null
 			for conn in p.finished.get_connections():
@@ -294,6 +295,7 @@ func _get_or_create_spatial_player() -> AudioStreamPlayer3D:
 
 func _recycle_spatial_player(p: AudioStreamPlayer3D) -> void:
 	if is_instance_valid(p):
+		p.stream_paused = false
 		p.stop()
 		p.stream = null
 		if p.has_meta("follow_target"):
@@ -676,9 +678,9 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 			elif target_fc.has_method("trigger_vocal_boost"):
 				target_fc.trigger_vocal_boost(dur, 5.0)
 
-	# Apply duration limit / automatic cleanup
+	# Apply duration limit / automatic cleanup (respects SceneTree pause)
 	if final_duration > 0.0:
-		var timer = get_tree().create_timer(final_duration)
+		var timer = get_tree().create_timer(final_duration, false)
 		timer.timeout.connect(func(): _on_player_finished(player, event, parallel_player))
 	else:
 		player.finished.connect(func(): _on_player_finished(player, event, parallel_player))
@@ -688,6 +690,39 @@ func play_3d(event_name: String, source = null, start_offset: float = 0.0, durat
 		play_3d(event.next_event_name, source, start_offset, duration, pitch_multiplier, alternative)
 		
 	return player
+
+func set_gameplay_paused(paused: bool) -> void:
+	# Pause or resume all active 3D spatial audio streams
+	for p in _all_spatial_players:
+		if is_instance_valid(p):
+			p.stream_paused = paused
+
+	# Pause or resume active non-UI 2D audio streams
+	for ev_name in _active_instances:
+		var ev: SoundEvent = _events.get(ev_name)
+		if ev and ev.category == "UI":
+			continue
+		var list: Array = _active_instances[ev_name]
+		for inst in list:
+			if is_instance_valid(inst) and inst is AudioStreamPlayer2D:
+				inst.stream_paused = paused
+
+	# Gently muffle/unmuffle background Music bus while paused
+	var music_bus_idx := AudioServer.get_bus_index("Music")
+	if music_bus_idx != -1 and enable_muffle:
+		var lpf: AudioEffectLowPassFilter = null
+		for i in range(AudioServer.get_bus_effect_count(music_bus_idx)):
+			var eff = AudioServer.get_bus_effect(music_bus_idx, i)
+			if eff is AudioEffectLowPassFilter:
+				lpf = eff
+				break
+		if lpf:
+			if _muffle_tweens.has("Music") and _muffle_tweens["Music"] and _muffle_tweens["Music"].is_valid():
+				_muffle_tweens["Music"].kill()
+			var tw := create_tween()
+			_muffle_tweens["Music"] = tw
+			var target_hz := 900.0 if paused else 20000.0
+			tw.tween_property(lpf, "cutoff_hz", target_hz, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 # Stops all instances of a specific sound event name
 func stop(event_name: String) -> void:

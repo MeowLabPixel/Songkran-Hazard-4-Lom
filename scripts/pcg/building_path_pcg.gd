@@ -19,8 +19,10 @@ enum GateMode {
 }
 
 enum RenderMode {
-	SCENE_INSTANCES, ## Regular individual scene instances (standard node workflow)
-	MULTIMESH,       ## Batched rendering using MultiMeshInstance3D for visual meshes (massive draw-call reduction, collisions & iron gates preserved)
+	SCENE_INSTANCES,     ## Regular individual scene instances (standard node workflow)
+	MULTIMESH,           ## Batched rendering using MultiMeshInstance3D for visual meshes (massive draw-call reduction, collisions & iron gates preserved)
+	BATCH_COMBINED_MESH, ## 1 combined mesh + 1 trimesh collision per building (optimal for runtime: 2 draw calls/bldg, full culling, front gates interactive)
+	BATCH_WHOLE_PATH,    ## 1 single combined mesh + 1 trimesh for the ENTIRE road (optimal for editor: 1 node, zero scene-tree lag, max editor FPS)
 }
 
 const DEFAULT_POOL_PATHS: Array[String] = [
@@ -74,6 +76,14 @@ const KNOWN_SCENE_WIDTHS: Dictionary = {
 	"4_storey_wide_conner_building_right": 9.6,
 	"4_storey_wide_conner_building_Left": 9.6,
 }
+
+class BatchTemplate:
+	var mesh: ArrayMesh
+	var shape: ConcavePolygonShape3D
+	var front_gates: Array[Dictionary] = [] # Array of { "node": Node3D, "transform": Transform3D }
+
+# Static cache for batched building templates (shared across all PCG paths)
+static var _batch_cache: Dictionary = {}
 
 # Cache for calculated collision boundaries per scene resource path
 var _collision_bounds_cache: Dictionary = {}
@@ -333,16 +343,74 @@ var _collision_bounds_cache: Dictionary = {}
 
 # ==================== PERFORMANCE / RENDERING ====================
 @export_group("Performance & Rendering")
-## Rendering mode:
-## SCENE_INSTANCES: Standard individual Node3D scenes (higher draw calls, standard inspector editing).
-## MULTIMESH: Batches all shared visual building meshes into MultiMeshInstance3D nodes for maximum performance.
-## Collisions and iron gates remain fully functional in both modes!
-@export var render_mode: RenderMode = RenderMode.SCENE_INSTANCES:
+## Mode used while editing in the Godot Editor viewport.
+## Default: BATCH_WHOLE_PATH (gives maximum editor responsiveness & zero node clutter).
+@export var editor_render_mode: RenderMode = RenderMode.BATCH_WHOLE_PATH:
 	set(val):
-		if render_mode == val:
+		if editor_render_mode == val:
 			return
-		render_mode = val
-		if _has_generated_buildings():
+		editor_render_mode = val
+		if Engine.is_editor_hint() and _has_generated_buildings():
+			generate()
+
+## Mode used when the game is running (runtime).
+## Default: BATCH_COMBINED_MESH (gives full frustum culling, occlusion culling, and per-building dither fade).
+@export var runtime_render_mode: RenderMode = RenderMode.BATCH_COMBINED_MESH:
+	set(val):
+		if runtime_render_mode == val:
+			return
+		runtime_render_mode = val
+		if not Engine.is_editor_hint() and is_inside_tree() and _has_generated_buildings():
+			generate()
+
+## Non-exported compatibility property for script access and legacy scene loading.
+## Note: Does NOT overwrite runtime_render_mode so that loading scenes doesn't clobber runtime settings!
+var render_mode: RenderMode:
+	get:
+		return get_effective_render_mode()
+	set(val):
+		editor_render_mode = val
+		if Engine.is_editor_hint() and _has_generated_buildings():
+			generate()
+
+## Sets both editor and runtime render modes simultaneously
+func set_both_render_modes(mode: RenderMode) -> void:
+	editor_render_mode = mode
+	runtime_render_mode = mode
+	if _has_generated_buildings():
+		generate()
+
+# ==================== BATCHING OPTIONS ====================
+@export_group("Batching Options")
+## When batching, preserves the FRONT iron gate as a dynamic interactive node so it can open/close.
+## The BACK gate is permanently baked into the combined mesh to save draw calls.
+@export var batch_preserve_front_gate: bool = true:
+	set(val):
+		if batch_preserve_front_gate == val:
+			return
+		batch_preserve_front_gate = val
+		_clear_batch_cache()
+		if (get_effective_render_mode() == RenderMode.BATCH_COMBINED_MESH or get_effective_render_mode() == RenderMode.BATCH_WHOLE_PATH) and _has_generated_buildings():
+			generate()
+
+## Click to clear cached building templates (useful after editing a building .tscn file)
+@export var clear_batch_cache: bool = false:
+	set(val):
+		if val:
+			_clear_batch_cache()
+
+## Click to immediately switch editor mode to BATCH_COMBINED_MESH (per-building) and re-generate
+@export var batch_buildings_now: bool = false:
+	set(val):
+		if val and is_inside_tree() and is_node_ready():
+			editor_render_mode = RenderMode.BATCH_COMBINED_MESH
+			generate()
+
+## Click to immediately switch editor mode to BATCH_WHOLE_PATH (1 mesh for whole road) and re-generate
+@export var batch_whole_path_now: bool = false:
+	set(val):
+		if val and is_inside_tree() and is_node_ready():
+			editor_render_mode = RenderMode.BATCH_WHOLE_PATH
 			generate()
 
 # ==================== OCCLUSION CULLING ====================
@@ -462,7 +530,7 @@ var _collision_bounds_cache: Dictionary = {}
 			_apply_fade_settings_to_existing()
 
 ## Maximum render distance in meters. Beyond this distance, the building is completely dissolved and culled from rendering.
-@export var fade_max_distance: float = 120.0:
+@export var fade_max_distance: float = 200.0:
 	set(val):
 		if is_equal_approx(fade_max_distance, val):
 			return
@@ -506,14 +574,45 @@ var _connected_curve: Curve3D = null
 var _needs_regenerate: bool = false
 var _near_occluder_check_timer: float = 0.0
 
+## Returns active render mode based on whether running in Editor or Runtime
+func get_effective_render_mode() -> RenderMode:
+	if Engine.is_editor_hint():
+		return editor_render_mode
+	return runtime_render_mode
+
+## Detects the render mode currently present inside the GeneratedBuildings container
+func _get_container_render_mode(container: Node3D) -> int:
+	if not container or container.get_child_count() == 0:
+		return -1
+	if container.has_node("CombinedPathMesh"):
+		return RenderMode.BATCH_WHOLE_PATH
+	if container.has_node("MultiMeshes"):
+		return RenderMode.MULTIMESH
+	for child in container.get_children():
+		if child is Node3D and child.has_node("CombinedMesh"):
+			return RenderMode.BATCH_COMBINED_MESH
+	return RenderMode.SCENE_INSTANCES
+
 func _ready() -> void:
 	_init_default_scenes_if_needed()
 	if Engine.is_editor_hint():
 		_ensure_curve_connected()
 		set_process(auto_update_on_curve_change)
+		var container: Node3D = get_node_or_null("GeneratedBuildings") as Node3D
+		if container and _has_generated_buildings():
+			var curr_mode: int = _get_container_render_mode(container)
+			if curr_mode != editor_render_mode and auto_update_on_curve_change:
+				generate()
 	else:
 		set_process(disable_near_camera_occluders and generate_occluders)
-		if not _has_generated_buildings():
+		var needs_gen: bool = not _has_generated_buildings()
+		if not needs_gen:
+			var container: Node3D = get_node_or_null("GeneratedBuildings") as Node3D
+			if container:
+				var curr_mode: int = _get_container_render_mode(container)
+				if curr_mode != runtime_render_mode:
+					needs_gen = true
+		if needs_gen:
 			generate()
 
 func _enter_tree() -> void:
@@ -771,9 +870,7 @@ func clear() -> void:
 		for child in container.get_children():
 			container.remove_child(child)
 			child.queue_free()
-		if not persist_to_scene:
-			remove_child(container)
-			container.queue_free()
+
 
 ## Main PCG generation algorithm
 func generate() -> void:
@@ -818,13 +915,19 @@ func generate() -> void:
 	var max_dist: float = total_len - offset_end
 	var reserved_for_end: float = (end_w + building_gap) if use_corner_at_end else 0.0
 
+	var placements: Array[Dictionary] = []
 	var placed_count: int = 0
 
 	# 1. Start corner building
 	if use_corner_at_start and start_corner_scene_active:
 		if cursor + start_w <= max_dist:
 			var place_d: float = _calculate_placement_distance(cursor, start_bounds)
-			_spawn_building(container, start_corner_scene_active, place_d, rng, "StartCorner")
+			placements.append({
+				"scene": start_corner_scene_active,
+				"distance": place_d,
+				"prefix": "StartCorner",
+				"index": placed_count
+			})
 			cursor += start_w + building_gap
 			placed_count += 2 # Corner building counts as 2 buildings
 
@@ -863,7 +966,12 @@ func generate() -> void:
 			break
 
 		var place_d: float = _calculate_placement_distance(cursor, b_info)
-		_spawn_building(container, scene_to_place, place_d, rng, "Building")
+		placements.append({
+			"scene": scene_to_place,
+			"distance": place_d,
+			"prefix": "Building",
+			"index": placed_count
+		})
 		cursor += b_width + building_gap
 		placed_count += b_slots # Wide counts as 2, standard counts as 1
 
@@ -871,11 +979,24 @@ func generate() -> void:
 	if use_corner_at_end and end_corner_scene_active:
 		if (max_buildings == 0) or (placed_count + 2 <= max_buildings):
 			var place_d: float = _calculate_placement_distance(cursor, end_bounds)
-			_spawn_building(container, end_corner_scene_active, place_d, rng, "EndCorner")
+			placements.append({
+				"scene": end_corner_scene_active,
+				"distance": place_d,
+				"prefix": "EndCorner",
+				"index": placed_count
+			})
 
-	# 4. MultiMesh batching optimization (draw-call reduction)
-	if render_mode == RenderMode.MULTIMESH:
-		_apply_multimesh_batching(container)
+	# 4. Spawn based on effective render mode
+	var eff_mode: RenderMode = get_effective_render_mode()
+	if eff_mode == RenderMode.BATCH_WHOLE_PATH:
+		_generate_whole_path_batch(container, placements, rng)
+	else:
+		for item in placements:
+			_spawn_building_auto(container, item["scene"], item["distance"], rng, item["prefix"])
+
+		# MultiMesh batching optimization (draw-call reduction)
+		if eff_mode == RenderMode.MULTIMESH:
+			_apply_multimesh_batching(container)
 
 ## Calculates origin position so building's collision boundary starts precisely at cursor
 func _calculate_placement_distance(cursor_pos: float, bounds: Dictionary) -> float:
@@ -899,6 +1020,555 @@ func _calculate_placement_distance(cursor_pos: float, bounds: Dictionary) -> flo
 			return cursor_pos + (slot_w * 0.5)
 	
 	return cursor_pos + (col_width * 0.5)
+
+## Clears cached building batch templates (shared across paths)
+func _clear_batch_cache() -> void:
+	for key in _batch_cache:
+		var tmpl: BatchTemplate = _batch_cache[key]
+		if tmpl and tmpl.front_gates:
+			for entry in tmpl.front_gates:
+				if entry and entry.has("node") and is_instance_valid(entry["node"]):
+					(entry["node"] as Node3D).queue_free()
+	_batch_cache.clear()
+	print("BuildingPathPCG: Batch template cache cleared.")
+
+## Gets or generates an optimized single-mesh template for a given building scene
+func _get_or_build_template(scene: PackedScene) -> BatchTemplate:
+	if scene == null:
+		return null
+	
+	var path: String = scene.resource_path
+	var cache_key: String = "%s_pfg_%s" % [path, str(batch_preserve_front_gate)]
+	if _batch_cache.has(cache_key):
+		return _batch_cache[cache_key]
+	
+	var inst: Node3D = scene.instantiate() as Node3D
+	if not inst:
+		return null
+	
+	var template: BatchTemplate = BatchTemplate.new()
+	
+	# 1. Identify and extract front gates if preserving them
+	var front_gate_roots: Array[Node] = []
+	if batch_preserve_front_gate:
+		var all_nodes: Array[Node] = inst.find_children("*", "", true, false)
+		for node in all_nodes:
+			if PCG_BUILDING_INSTANCE_SCRIPT.is_front_gate(node):
+				var is_sub_gate: bool = false
+				for fg in front_gate_roots:
+					if fg.is_ancestor_of(node):
+						is_sub_gate = true
+						break
+				if not is_sub_gate:
+					front_gate_roots.append(node)
+		
+		for fg_root in front_gate_roots:
+			var gate_xform: Transform3D = (fg_root as Node3D).transform
+			var p: Node = fg_root.get_parent()
+			while p and p != inst:
+				if p is Node3D:
+					gate_xform = (p as Node3D).transform * gate_xform
+				p = p.get_parent()
+			
+			var copy: Node3D = fg_root.duplicate() as Node3D
+			template.front_gates.append({
+				"node": copy,
+				"transform": gate_xform
+			})
+	
+	# 2. Gather visible meshes (excluding preserved front gates; back gates are baked)
+	var material_buckets: Dictionary = {}
+	var mesh_nodes: Array[Node] = inst.find_children("*", "MeshInstance3D", true, false)
+	
+	for m_node in mesh_nodes:
+		var mi: MeshInstance3D = m_node as MeshInstance3D
+		if not mi or mi.mesh == null:
+			continue
+		
+		if not _is_visible_in_hierarchy(mi, inst):
+			continue
+		
+		var is_front_gate_mesh: bool = false
+		for fg in front_gate_roots:
+			if fg == mi or fg.is_ancestor_of(mi):
+				is_front_gate_mesh = true
+				break
+		if is_front_gate_mesh:
+			continue
+		
+		# Relative transform to inst
+		var rel_xform: Transform3D = mi.transform
+		var p: Node = mi.get_parent()
+		while p and p != inst:
+			if p is Node3D:
+				rel_xform = (p as Node3D).transform * rel_xform
+			p = p.get_parent()
+		
+		var basis: Basis = rel_xform.basis
+		var is_flipped: bool = basis.determinant() < 0.0
+		# Correct normal matrix: inverse-transpose of basis (prevents normal distortion from non-uniform scale)
+		var normal_mat: Basis = basis.inverse().transposed()
+		
+		var m: Mesh = mi.mesh
+		var surf_count: int = m.get_surface_count()
+		for s in range(surf_count):
+			var mat: Material = mi.get_active_material(s)
+			var mat_key: Variant = mat if mat != null else "default_mat"
+			if not material_buckets.has(mat_key):
+				material_buckets[mat_key] = {
+					"material": mat,
+					"vertices": PackedVector3Array(),
+					"normals": PackedVector3Array(),
+					"tangents": PackedFloat32Array(),
+					"uvs": PackedVector2Array(),
+					"uv2s": PackedVector2Array(),
+					"colors": PackedColorArray(),
+					"indices": PackedInt32Array()
+				}
+			
+			var bucket: Dictionary = material_buckets[mat_key]
+			var arrays: Array = m.surface_get_arrays(s)
+			if arrays.is_empty():
+				continue
+			
+			# Vertices
+			var in_verts = arrays[Mesh.ARRAY_VERTEX]
+			if in_verts == null or not (in_verts is PackedVector3Array):
+				continue
+			var vert_count: int = in_verts.size()
+			if vert_count == 0:
+				continue
+			
+			var vertex_offset: int = bucket["vertices"].size()
+			var out_v: PackedVector3Array = bucket["vertices"]
+			for v in in_verts:
+				out_v.append(rel_xform * v)
+			
+			# Normals
+			var in_normals = arrays[Mesh.ARRAY_NORMAL]
+			if in_normals != null and (in_normals is PackedVector3Array) and in_normals.size() == vert_count:
+				var out_n: PackedVector3Array = bucket["normals"]
+				for n in in_normals:
+					out_n.append((normal_mat * n).normalized())
+			
+			# Tangents
+			var in_tangents = arrays[Mesh.ARRAY_TANGENT]
+			if in_tangents != null and (in_tangents is PackedFloat32Array) and in_tangents.size() == vert_count * 4:
+				var out_t: PackedFloat32Array = bucket["tangents"]
+				for i in range(vert_count):
+					var idx: int = i * 4
+					var t: Vector3 = Vector3(in_tangents[idx], in_tangents[idx + 1], in_tangents[idx + 2])
+					var w: float = in_tangents[idx + 3]
+					var trans_t: Vector3 = (normal_mat * t).normalized()
+					if is_flipped:
+						w = -w
+					out_t.append(trans_t.x)
+					out_t.append(trans_t.y)
+					out_t.append(trans_t.z)
+					out_t.append(w)
+			
+			# UVs
+			var in_uvs = arrays[Mesh.ARRAY_TEX_UV]
+			if in_uvs != null and (in_uvs is PackedVector2Array) and in_uvs.size() == vert_count:
+				bucket["uvs"].append_array(in_uvs)
+			
+			# UV2s
+			var in_uv2s = arrays[Mesh.ARRAY_TEX_UV2]
+			if in_uv2s != null and (in_uv2s is PackedVector2Array) and in_uv2s.size() == vert_count:
+				bucket["uv2s"].append_array(in_uv2s)
+			
+			# Colors
+			var in_colors = arrays[Mesh.ARRAY_COLOR]
+			if in_colors != null and (in_colors is PackedColorArray) and in_colors.size() == vert_count:
+				bucket["colors"].append_array(in_colors)
+			
+			# Indices (handles winding flip for negative determinant)
+			var in_indices = arrays[Mesh.ARRAY_INDEX]
+			var out_idx: PackedInt32Array = bucket["indices"]
+			if in_indices != null and (in_indices is PackedInt32Array) and in_indices.size() > 0:
+				if is_flipped:
+					for i in range(0, in_indices.size(), 3):
+						out_idx.append(in_indices[i] + vertex_offset)
+						out_idx.append(in_indices[i + 2] + vertex_offset)
+						out_idx.append(in_indices[i + 1] + vertex_offset)
+				else:
+					for idx in in_indices:
+						out_idx.append(idx + vertex_offset)
+			else:
+				if is_flipped:
+					for i in range(0, vert_count, 3):
+						out_idx.append(vertex_offset + i)
+						out_idx.append(vertex_offset + i + 2)
+						out_idx.append(vertex_offset + i + 1)
+				else:
+					for i in range(vert_count):
+						out_idx.append(vertex_offset + i)
+	
+	# 3. Create combined ArrayMesh
+	var combined_mesh: ArrayMesh = ArrayMesh.new()
+	for mat_key in material_buckets:
+		var bucket: Dictionary = material_buckets[mat_key]
+		var b_verts: PackedVector3Array = bucket["vertices"]
+		if b_verts.is_empty():
+			continue
+		
+		var surf_arrays: Array = []
+		surf_arrays.resize(Mesh.ARRAY_MAX)
+		surf_arrays[Mesh.ARRAY_VERTEX] = b_verts
+		if not bucket["normals"].is_empty():
+			surf_arrays[Mesh.ARRAY_NORMAL] = bucket["normals"]
+		if not bucket["tangents"].is_empty():
+			surf_arrays[Mesh.ARRAY_TANGENT] = bucket["tangents"]
+		if not bucket["uvs"].is_empty():
+			surf_arrays[Mesh.ARRAY_TEX_UV] = bucket["uvs"]
+		if not bucket["uv2s"].is_empty():
+			surf_arrays[Mesh.ARRAY_TEX_UV2] = bucket["uv2s"]
+		if not bucket["colors"].is_empty():
+			surf_arrays[Mesh.ARRAY_COLOR] = bucket["colors"]
+		if not bucket["indices"].is_empty():
+			surf_arrays[Mesh.ARRAY_INDEX] = bucket["indices"]
+		
+		var s_idx: int = combined_mesh.get_surface_count()
+		combined_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, surf_arrays)
+		if bucket["material"] != null:
+			combined_mesh.surface_set_material(s_idx, bucket["material"])
+	
+	template.mesh = combined_mesh
+	
+	# 4. Generate Trimesh Shape
+	if combined_mesh.get_surface_count() > 0:
+		template.shape = combined_mesh.create_trimesh_shape()
+	
+	inst.free()
+	
+	_batch_cache[cache_key] = template
+	print("BuildingPathPCG [Batch]: Built template for %s (%d surfaces, %d front gates)" % [
+		path.get_file(), combined_mesh.get_surface_count(), template.front_gates.size()
+	])
+	return template
+
+## Spawns building using appropriate mode
+func _spawn_building_auto(container: Node3D, scene: PackedScene, d: float, rng: RandomNumberGenerator, prefix: String) -> Node3D:
+	var eff_mode: RenderMode = get_effective_render_mode()
+	if eff_mode == RenderMode.BATCH_COMBINED_MESH:
+		return _spawn_batched_building(container, scene, d, rng, prefix)
+	return _spawn_building(container, scene, d, rng, prefix)
+
+## Spawns an ultra-lightweight batched building (1 combined mesh + 1 trimesh collision + optional front gate)
+func _spawn_batched_building(container: Node3D, scene: PackedScene, d: float, rng: RandomNumberGenerator, prefix: String) -> Node3D:
+	var template: BatchTemplate = _get_or_build_template(scene)
+	if not template or not template.mesh:
+		return null
+	
+	var building_node: Node3D = Node3D.new()
+	var count: int = container.get_child_count()
+	building_node.name = "%s_%02d_%s" % [prefix, count, scene.resource_path.get_file().get_basename()]
+	
+	var t: Transform3D = _compute_transform_at_distance(d)
+	building_node.transform = t
+	
+	container.add_child(building_node)
+	if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+		building_node.owner = get_tree().edited_scene_root
+	
+	# Attach PCGBuildingInstance component for gate control
+	building_node.set_script(PCG_BUILDING_INSTANCE_SCRIPT)
+	var building_ctrl: PCGBuildingInstance = building_node as PCGBuildingInstance
+	
+	# 1. Combined visual MeshInstance3D
+	var combined_mi: MeshInstance3D = MeshInstance3D.new()
+	combined_mi.name = "CombinedMesh"
+	combined_mi.mesh = template.mesh
+	combined_mi.extra_cull_margin = extra_cull_margin
+	if enable_distance_fade:
+		combined_mi.visibility_range_end = fade_max_distance
+		combined_mi.visibility_range_end_margin = fade_transition_margin
+		combined_mi.visibility_range_fade_mode = fade_mode
+	building_node.add_child(combined_mi)
+	if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+		combined_mi.owner = get_tree().edited_scene_root
+	
+	# 2. StaticBody3D with Trimesh Collision
+	if template.shape:
+		var sb: StaticBody3D = StaticBody3D.new()
+		sb.name = "StaticBody3D"
+		var cs: CollisionShape3D = CollisionShape3D.new()
+		cs.name = "CombinedCollisionShape"
+		cs.shape = template.shape
+		sb.add_child(cs)
+		building_node.add_child(sb)
+		if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+			sb.owner = get_tree().edited_scene_root
+			cs.owner = get_tree().edited_scene_root
+	
+	# 3. Preserved Front Gate(s)
+	if batch_preserve_front_gate and not template.front_gates.is_empty():
+		for entry in template.front_gates:
+			var gate_orig: Node3D = entry["node"] as Node3D
+			if is_instance_valid(gate_orig):
+				var gate_copy: Node3D = gate_orig.duplicate() as Node3D
+				building_node.add_child(gate_copy)
+				gate_copy.transform = entry["transform"]
+				if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+					_safe_set_owner_recursive(gate_copy, get_tree().edited_scene_root)
+	
+	# Apply distance dither fade & extra cull margin across all visual meshes (CombinedMesh + Front Gates)
+	_apply_distance_fade_to_building(building_node)
+	
+	# 4. Apply gate open/closed settings
+	if building_ctrl:
+		var is_closed: bool = true
+		match gate_mode:
+			GateMode.RANDOM_CHANCE:
+				is_closed = rng.randf() < gate_closed_chance
+			GateMode.ALL_CLOSED:
+				is_closed = true
+			GateMode.ALL_OPEN:
+				is_closed = false
+			GateMode.ORIGINAL_DEFAULT:
+				is_closed = true
+		building_ctrl.front_iron_gate_closed = is_closed
+		building_ctrl._update_gates()
+	
+	# 5. Occlusion Culling (QuadOccluders)
+	if generate_occluders:
+		_generate_building_occluders(building_node, scene, prefix)
+	
+	return building_node
+
+## Generates the entire path as 1 single combined mesh + 1 trimesh collision (optimal for editor responsiveness)
+func _generate_whole_path_batch(container: Node3D, placements: Array[Dictionary], rng: RandomNumberGenerator) -> void:
+	if placements.is_empty():
+		return
+
+	var path_material_buckets: Dictionary = {}
+	var front_gates_container: Node3D = null
+	if batch_preserve_front_gate:
+		front_gates_container = Node3D.new()
+		front_gates_container.name = "FrontGates"
+		container.add_child(front_gates_container)
+		if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+			front_gates_container.owner = get_tree().edited_scene_root
+
+	var occluders_container: Node3D = null
+	if generate_occluders:
+		occluders_container = Node3D.new()
+		occluders_container.name = "Occluders"
+		container.add_child(occluders_container)
+		if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+			occluders_container.owner = get_tree().edited_scene_root
+
+	for item in placements:
+		var scene: PackedScene = item["scene"]
+		var d: float = item["distance"]
+		var idx: int = item["index"]
+		var prefix: String = item["prefix"]
+		var T: Transform3D = _compute_transform_at_distance(d)
+
+		var template: BatchTemplate = _get_or_build_template(scene)
+		if not template or not template.mesh:
+			continue
+
+		var basis: Basis = T.basis
+		var is_flipped: bool = basis.determinant() < 0.0
+		var normal_mat: Basis = basis.inverse().transposed()
+
+		# 1. Accumulate pre-merged variant surfaces into path buckets
+		var m: ArrayMesh = template.mesh
+		for s in range(m.get_surface_count()):
+			var mat: Material = m.surface_get_material(s)
+			var mat_key: Variant = mat if mat != null else "default_mat"
+			if not path_material_buckets.has(mat_key):
+				path_material_buckets[mat_key] = {
+					"material": mat,
+					"vertices": PackedVector3Array(),
+					"normals": PackedVector3Array(),
+					"tangents": PackedFloat32Array(),
+					"uvs": PackedVector2Array(),
+					"uv2s": PackedVector2Array(),
+					"colors": PackedColorArray(),
+					"indices": PackedInt32Array()
+				}
+
+			var bucket: Dictionary = path_material_buckets[mat_key]
+			var arrays: Array = m.surface_get_arrays(s)
+			if arrays.is_empty():
+				continue
+
+			var in_verts = arrays[Mesh.ARRAY_VERTEX]
+			if in_verts == null or not (in_verts is PackedVector3Array):
+				continue
+			var vert_count: int = in_verts.size()
+			if vert_count == 0:
+				continue
+
+			var vertex_offset: int = bucket["vertices"].size()
+			var out_v: PackedVector3Array = bucket["vertices"]
+			for v in in_verts:
+				out_v.append(T * v)
+
+			var in_normals = arrays[Mesh.ARRAY_NORMAL]
+			if in_normals != null and (in_normals is PackedVector3Array) and in_normals.size() == vert_count:
+				var out_n: PackedVector3Array = bucket["normals"]
+				for n in in_normals:
+					out_n.append((normal_mat * n).normalized())
+
+			var in_tangents = arrays[Mesh.ARRAY_TANGENT]
+			if in_tangents != null and (in_tangents is PackedFloat32Array) and in_tangents.size() == vert_count * 4:
+				var out_t: PackedFloat32Array = bucket["tangents"]
+				for i in range(vert_count):
+					var t_idx: int = i * 4
+					var t_vec: Vector3 = Vector3(in_tangents[t_idx], in_tangents[t_idx + 1], in_tangents[t_idx + 2])
+					var w: float = in_tangents[t_idx + 3]
+					var trans_t: Vector3 = (normal_mat * t_vec).normalized()
+					if is_flipped:
+						w = -w
+					out_t.append(trans_t.x)
+					out_t.append(trans_t.y)
+					out_t.append(trans_t.z)
+					out_t.append(w)
+
+			var in_uvs = arrays[Mesh.ARRAY_TEX_UV]
+			if in_uvs != null and (in_uvs is PackedVector2Array) and in_uvs.size() == vert_count:
+				bucket["uvs"].append_array(in_uvs)
+
+			var in_uv2s = arrays[Mesh.ARRAY_TEX_UV2]
+			if in_uv2s != null and (in_uv2s is PackedVector2Array) and in_uv2s.size() == vert_count:
+				bucket["uv2s"].append_array(in_uv2s)
+
+			var in_colors = arrays[Mesh.ARRAY_COLOR]
+			if in_colors != null and (in_colors is PackedColorArray) and in_colors.size() == vert_count:
+				bucket["colors"].append_array(in_colors)
+
+			var in_indices = arrays[Mesh.ARRAY_INDEX]
+			var out_idx: PackedInt32Array = bucket["indices"]
+			if in_indices != null and (in_indices is PackedInt32Array) and in_indices.size() > 0:
+				if is_flipped:
+					for i in range(0, in_indices.size(), 3):
+						out_idx.append(in_indices[i] + vertex_offset)
+						out_idx.append(in_indices[i + 2] + vertex_offset)
+						out_idx.append(in_indices[i + 1] + vertex_offset)
+				else:
+					for index_val in in_indices:
+						out_idx.append(index_val + vertex_offset)
+			else:
+				if is_flipped:
+					for i in range(0, vert_count, 3):
+						out_idx.append(vertex_offset + i)
+						out_idx.append(vertex_offset + i + 2)
+						out_idx.append(vertex_offset + i + 1)
+				else:
+					for i in range(vert_count):
+						out_idx.append(vertex_offset + i)
+
+		# 2. Preserved Front Gate(s)
+		if batch_preserve_front_gate and front_gates_container and not template.front_gates.is_empty():
+			var gate_ctrl: Node3D = Node3D.new()
+			gate_ctrl.name = "GateCtrl_%02d_%s" % [idx, scene.resource_path.get_file().get_basename()]
+			gate_ctrl.transform = T
+			gate_ctrl.set_script(PCG_BUILDING_INSTANCE_SCRIPT)
+			front_gates_container.add_child(gate_ctrl)
+			if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+				gate_ctrl.owner = get_tree().edited_scene_root
+
+			for g_entry in template.front_gates:
+				var gate_orig: Node3D = g_entry["node"] as Node3D
+				if is_instance_valid(gate_orig):
+					var gate_copy: Node3D = gate_orig.duplicate() as Node3D
+					gate_ctrl.add_child(gate_copy)
+					gate_copy.transform = g_entry["transform"]
+					if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+						_safe_set_owner_recursive(gate_copy, get_tree().edited_scene_root)
+
+			var is_closed: bool = true
+			match gate_mode:
+				GateMode.RANDOM_CHANCE:
+					is_closed = rng.randf() < gate_closed_chance
+				GateMode.ALL_CLOSED:
+					is_closed = true
+				GateMode.ALL_OPEN:
+					is_closed = false
+				GateMode.ORIGINAL_DEFAULT:
+					is_closed = true
+			
+			var ctrl_inst = gate_ctrl as PCGBuildingInstance
+			if ctrl_inst:
+				ctrl_inst.front_iron_gate_closed = is_closed
+				ctrl_inst._update_gates()
+			_apply_distance_fade_to_building(gate_ctrl)
+
+		# 3. Procedural Occluders
+		if generate_occluders and occluders_container:
+			var dummy_bldg: Node3D = Node3D.new()
+			dummy_bldg.transform = T
+			_generate_building_occluders(dummy_bldg, scene, prefix)
+			var occ_node: Node = dummy_bldg.get_node_or_null("Occluders")
+			if occ_node:
+				dummy_bldg.remove_child(occ_node)
+				occluders_container.add_child(occ_node)
+				occ_node.transform = T
+				if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+					_safe_set_owner_recursive(occ_node, get_tree().edited_scene_root)
+			dummy_bldg.free()
+
+	# 4. Commit to 1 single CombinedPathMesh
+	var combined_path_mesh: ArrayMesh = ArrayMesh.new()
+	for mat_key in path_material_buckets:
+		var bucket: Dictionary = path_material_buckets[mat_key]
+		var b_verts: PackedVector3Array = bucket["vertices"]
+		if b_verts.is_empty():
+			continue
+
+		var surf_arrays: Array = []
+		surf_arrays.resize(Mesh.ARRAY_MAX)
+		surf_arrays[Mesh.ARRAY_VERTEX] = b_verts
+		if not bucket["normals"].is_empty():
+			surf_arrays[Mesh.ARRAY_NORMAL] = bucket["normals"]
+		if not bucket["tangents"].is_empty():
+			surf_arrays[Mesh.ARRAY_TANGENT] = bucket["tangents"]
+		if not bucket["uvs"].is_empty():
+			surf_arrays[Mesh.ARRAY_TEX_UV] = bucket["uvs"]
+		if not bucket["uv2s"].is_empty():
+			surf_arrays[Mesh.ARRAY_TEX_UV2] = bucket["uv2s"]
+		if not bucket["colors"].is_empty():
+			surf_arrays[Mesh.ARRAY_COLOR] = bucket["colors"]
+		if not bucket["indices"].is_empty():
+			surf_arrays[Mesh.ARRAY_INDEX] = bucket["indices"]
+
+		var s_idx: int = combined_path_mesh.get_surface_count()
+		combined_path_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, surf_arrays)
+		if bucket["material"] != null:
+			combined_path_mesh.surface_set_material(s_idx, bucket["material"])
+
+	var path_mi: MeshInstance3D = MeshInstance3D.new()
+	path_mi.name = "CombinedPathMesh"
+	path_mi.mesh = combined_path_mesh
+	path_mi.extra_cull_margin = extra_cull_margin
+	if enable_distance_fade:
+		path_mi.visibility_range_end = fade_max_distance
+		path_mi.visibility_range_end_margin = fade_transition_margin
+		path_mi.visibility_range_fade_mode = fade_mode
+	container.add_child(path_mi)
+	if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+		path_mi.owner = get_tree().edited_scene_root
+
+	# 5. Generate 1 path-wide Trimesh collision
+	if combined_path_mesh.get_surface_count() > 0:
+		var trimesh_shape: ConcavePolygonShape3D = combined_path_mesh.create_trimesh_shape()
+		var sb: StaticBody3D = StaticBody3D.new()
+		sb.name = "StaticBody3D"
+		var cs: CollisionShape3D = CollisionShape3D.new()
+		cs.name = "CombinedPathCollision"
+		cs.shape = trimesh_shape
+		sb.add_child(cs)
+		container.add_child(sb)
+		if persist_to_scene and Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
+			sb.owner = get_tree().edited_scene_root
+			cs.owner = get_tree().edited_scene_root
+
+	print("BuildingPathPCG [WholePath]: Merged %d buildings into 1 mesh (%d surfaces) for %s" % [
+		placements.size(), combined_path_mesh.get_surface_count(), name
+	])
 
 ## Spawns a single building at curve distance d
 func _spawn_building(container: Node3D, scene: PackedScene, d: float, rng: RandomNumberGenerator, prefix: String) -> Node3D:
@@ -1054,7 +1724,7 @@ func _update_near_occluders() -> void:
 			continue
 		
 		var b_node: Node3D = child as Node3D
-		var occ_group: Node = b_node.get_node_or_null("Occluders")
+		var occ_group: Node = child if child.name == "Occluders" else b_node.get_node_or_null("Occluders")
 		if not occ_group:
 			continue
 
@@ -1082,7 +1752,7 @@ func _restore_all_occluders() -> void:
 	for child in container.get_children():
 		if child.name == "MultiMeshes" or not (child is Node3D):
 			continue
-		var occ_group: Node = (child as Node3D).get_node_or_null("Occluders")
+		var occ_group: Node = child if child.name == "Occluders" else (child as Node3D).get_node_or_null("Occluders")
 		if occ_group:
 			for occ in occ_group.get_children():
 				if occ is OccluderInstance3D:
@@ -1139,36 +1809,53 @@ func _apply_gate_settings_to_existing() -> void:
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = seed_number + 999
 	
+	var controllers: Array[Node] = []
 	for child in container.get_children():
 		if child.name == "MultiMeshes":
 			continue
-		var ctrl: Node = null
-		if child.get_script() == PCG_BUILDING_INSTANCE_SCRIPT:
-			ctrl = child
-		elif child.has_node("PCGBuildingInstance"):
-			ctrl = child.get_node("PCGBuildingInstance")
+		if child.name == "FrontGates":
+			for fg in child.get_children():
+				if fg.get_script() == PCG_BUILDING_INSTANCE_SCRIPT or fg is PCGBuildingInstance:
+					controllers.append(fg)
+				elif fg.has_node("PCGBuildingInstance"):
+					controllers.append(fg.get_node("PCGBuildingInstance"))
+			continue
 		
-		if ctrl:
-			var is_closed: bool = true
-			match gate_mode:
-				GateMode.RANDOM_CHANCE:
-					is_closed = rng.randf() < gate_closed_chance
-				GateMode.ALL_CLOSED:
-					is_closed = true
-				GateMode.ALL_OPEN:
-					is_closed = false
-				GateMode.ORIGINAL_DEFAULT:
-					is_closed = true
-			
-			ctrl.front_iron_gate_closed = is_closed
+		if child.get_script() == PCG_BUILDING_INSTANCE_SCRIPT or child is PCGBuildingInstance:
+			controllers.append(child)
+		elif child.has_node("PCGBuildingInstance"):
+			controllers.append(child.get_node("PCGBuildingInstance"))
+	
+	for ctrl in controllers:
+		var is_closed: bool = true
+		match gate_mode:
+			GateMode.RANDOM_CHANCE:
+				is_closed = rng.randf() < gate_closed_chance
+			GateMode.ALL_CLOSED:
+				is_closed = true
+			GateMode.ALL_OPEN:
+				is_closed = false
+			GateMode.ORIGINAL_DEFAULT:
+				is_closed = true
+		
+		var b_ctrl = ctrl as PCGBuildingInstance
+		if b_ctrl:
+			b_ctrl.front_iron_gate_closed = is_closed
 			if not toggle_front_gates_only:
-				ctrl.back_iron_gate_closed = is_closed
+				b_ctrl.back_iron_gate_closed = is_closed
 
 ## Applies distance dither fade settings to all MeshInstance3Ds within a building
 func _apply_distance_fade_to_building(node: Node3D) -> void:
 	var dist: float = fade_max_distance if enable_distance_fade else 0.0
 	var margin: float = fade_transition_margin if enable_distance_fade else 0.0
 	var mode: GeometryInstance3D.VisibilityRangeFadeMode = fade_mode if enable_distance_fade else GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+
+	if node is MeshInstance3D:
+		var self_mi: MeshInstance3D = node as MeshInstance3D
+		self_mi.visibility_range_end = dist
+		self_mi.visibility_range_end_margin = margin
+		self_mi.visibility_range_fade_mode = mode
+		self_mi.extra_cull_margin = extra_cull_margin
 
 	var meshes: Array[Node] = node.find_children("*", "MeshInstance3D", true, false)
 	for m in meshes:
@@ -1195,6 +1882,8 @@ func _apply_cull_margin_to_existing() -> void:
 			continue
 
 		if child is Node3D:
+			if child is MeshInstance3D:
+				(child as MeshInstance3D).extra_cull_margin = extra_cull_margin
 			var meshes: Array[Node] = (child as Node3D).find_children("*", "MeshInstance3D", true, false)
 			for m in meshes:
 				var mi: MeshInstance3D = m as MeshInstance3D
@@ -1236,10 +1925,19 @@ func bake() -> void:
 	container.name = "Baked_Buildings_" + str(randi() % 1000)
 	if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
 		var root = get_tree().edited_scene_root
-		container.owner = root
-		for child in container.find_children("*", "Node", true, false):
-			child.owner = root
+		_safe_set_owner_recursive(container, root)
 	print("BuildingPathPCG: Successfully baked buildings to node: ", container.name)
+
+## Safely sets owner on node and its children, respecting nested instanced sub-scenes
+func _safe_set_owner_recursive(node: Node, root: Node) -> void:
+	if node != root and node.owner == null:
+		node.owner = root
+	for child in node.get_children():
+		if not child.scene_file_path.is_empty():
+			if child.owner == null:
+				child.owner = root
+		else:
+			_safe_set_owner_recursive(child, root)
 
 ## Batches non-gate MeshInstance3Ds across all generated buildings into MultiMeshInstance3Ds.
 ## Physics collisions and interactive IronGate doors remain fully intact and operational!
@@ -1275,11 +1973,11 @@ func _apply_multimesh_batching(container: Node3D) -> void:
 				continue
 			
 			var mesh_res: Mesh = mi.mesh
-			var mat: Material = mi.material_override
-			if mat == null and mi.get_surface_override_material_count() > 0:
-				mat = mi.get_surface_override_material(0)
+			var mat: Material = mi.get_active_material(0)
 			
-			var key: String = "%d_%d" % [mesh_res.get_instance_id(), (mat.get_instance_id() if mat != null else 0)]
+			var m_id: String = mesh_res.resource_path if not mesh_res.resource_path.is_empty() else (mesh_res.resource_name if not mesh_res.resource_name.is_empty() else str(mesh_res.get_instance_id()))
+			var mat_id: String = mat.resource_path if (mat and not mat.resource_path.is_empty()) else str(mat.get_instance_id() if mat != null else 0)
+			var key: String = "%s_%s" % [m_id, mat_id]
 			if not batches.has(key):
 				batches[key] = {
 					"mesh": mesh_res,
@@ -1347,8 +2045,7 @@ func _apply_multimesh_batching(container: Node3D) -> void:
 func _is_part_of_gate(node: Node, building_root: Node) -> bool:
 	var curr: Node = node
 	while curr and curr != building_root:
-		var n: String = curr.name.to_lower()
-		if n.contains("irongate") or n.contains("iron_gate") or n.contains("panelgate") or n.contains("gate"):
+		if PCG_BUILDING_INSTANCE_SCRIPT.is_gate_node(curr):
 			return true
 		curr = curr.get_parent()
 	return false

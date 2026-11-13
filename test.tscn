@@ -1,0 +1,72 @@
+[gd_scene format=3 uid="uid://b3vhs5fqe7glr"]
+
+[ext_resource type="Script" uid="uid://bbp0hlmv8bh6m" path="res://scripts/pcg/building_path_pcg.gd" id="1_a6gra"]
+[ext_resource type="PackedScene" uid="uid://cdcqgpy0lhh6i" path="res://map/Store_Building/4_storey_wide_conner_building_Left.tscn" id="2_dwqlq"]
+[ext_resource type="PackedScene" uid="uid://bd2oflwhwii4e" path="res://map/Store_Building/4_storey_wide_conner_building_right.tscn" id="3_15c7i"]
+[ext_resource type="PackedScene" uid="uid://dqqndhcvw68wn" path="res://map/Store_Building/4_storey_v_1_Big_balcony.tscn" id="4_xpeyw"]
+[ext_resource type="PackedScene" uid="uid://bl6jn6ov7cs8c" path="res://map/Store_Building/4_storey_v_2_Small_Balcony.tscn" id="5_dpmuy"]
+[ext_resource type="PackedScene" uid="uid://chvkp8ixr7h6n" path="res://map/Store_Building/4_storey_v_3_Small_Balcony.tscn" id="6_yww54"]
+[ext_resource type="PackedScene" uid="uid://bytbhnlxu7qyb" path="res://map/Store_Building/4_storey_v_4_Small_Balcony.tscn" id="7_j75vh"]
+[ext_resource type="PackedScene" uid="uid://16fv0np0gyyq" path="res://map/Store_Building/4_storey_v_5_non_balcony.tscn" id="8_rrpoi"]
+[ext_resource type="PackedScene" uid="uid://b211w3odg7dht" path="res://map/Store_Building/4_storey_v_6_Big_balcony.tscn" id="9_34fux"]
+[ext_resource type="PackedScene" uid="uid://d2vv64e0c6ml6" path="res://map/Store_Building/4_storey_v_7_Big_balcony.tscn" id="10_ppv7d"]
+[ext_resource type="PackedScene" uid="uid://n6gos63ylf4g" path="res://map/Store_Building/4_storey_v_8_Big_balcony.tscn.tscn" id="11_naet1"]
+[ext_resource type="PackedScene" uid="uid://d2jop8ybw66sk" path="res://map/Store_Building/4_storey_v_9_small_balcony.tscn" id="12_6qlrc"]
+[ext_resource type="PackedScene" uid="uid://p4lt5wtms8ka" path="res://map/Store_Building/4_storey_v_10_mixed.tscn" id="13_shobf"]
+[ext_resource type="PackedScene" uid="uid://br1h6e5hlasja" path="res://map/Store_Building/4_storey_v_11_mixed.tscn" id="14_lb1cv"]
+[ext_resource type="PackedScene" uid="uid://b8qbfic33wbin" path="res://map/Store_Building/4_storey_wide.tscn" id="15_2h37t"]
+[ext_resource type="PackedScene" uid="uid://bmmww8r8sdllp" path="res://map/Store_Building/4_storey_wide_2.tscn" id="16_adp8l"]
+[ext_resource type="PackedScene" uid="uid://bjc35fgn0sosg" path="res://map/Store_Building/4_storey_wide_3.tscn" id="17_dvnpp"]
+[ext_resource type="PackedScene" uid="uid://hr8esemg861v" path="res://map/Store_Building/3_storey_1.tscn" id="18_ffwl0"]
+[ext_resource type="PackedScene" uid="uid://dx604c7s67sju" path="res://map/Store_Building/3_storey_v_2.tscn" id="19_yg34o"]
+[ext_resource type="PackedScene" uid="uid://dfep75kwmo5h1" path="res://map/Store_Building/3_storey_v_3.tscn" id="20_21gct"]
+[ext_resource type="PackedScene" uid="uid://c0k0w528snfqb" path="res://map/Store_Building/3_storey_v_4.tscn" id="21_svjfs"]
+[ext_resource type="PackedScene" uid="uid://yj1f0ff31egk" path="res://map/Store_Building/3_storey_v_5.tscn" id="22_1f472"]
+[ext_resource type="PackedScene" uid="uid://c7c2ublcdgwo4" path="res://map/Store_Building/3_storey_v_6.tscn" id="23_2kuyq"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_a6gra"]
+sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+
+[sub_resource type="Sky" id="Sky_dwqlq"]
+sky_material = SubResource("ProceduralSkyMaterial_a6gra")
+
+[sub_resource type="Environment" id="Environment_15c7i"]
+background_mode = 2
+sky = SubResource("Sky_dwqlq")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="Curve3D" id="Curve3D_a6gra"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 587.76, 0, 0),
+"tilts": PackedFloat32Array(0, 0)
+}
+point_count = 2
+
+[node name="Node3D" type="Node3D" unique_id=1927100137]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=231743709]
+environment = SubResource("Environment_15c7i")
+
+[node name="nope" type="Node3D" parent="." unique_id=479429131]
+
+[node name="BuildingPathPCG" type="Path3D" parent="." unique_id=304685302]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 0)
+curve = SubResource("Curve3D_a6gra")
+script = ExtResource("1_a6gra")
+corner_end_scene = ExtResource("2_dwqlq")
+corner_end_scene_flipped = ExtResource("3_15c7i")
+corner_start_scene = ExtResource("3_15c7i")
+corner_start_scene_flipped = ExtResource("2_dwqlq")
+seed_number = 71174
+building_pool = Array[PackedScene]([ExtResource("4_xpeyw"), ExtResource("5_dpmuy"), ExtResource("6_yww54"), ExtResource("7_j75vh"), ExtResource("8_rrpoi"), ExtResource("9_34fux"), ExtResource("10_ppv7d"), ExtResource("11_naet1"), ExtResource("12_6qlrc"), ExtResource("13_shobf"), ExtResource("14_lb1cv"), ExtResource("15_2h37t"), ExtResource("16_adp8l"), ExtResource("17_dvnpp"), ExtResource("18_ffwl0"), ExtResource("19_yg34o"), ExtResource("20_21gct"), ExtResource("21_svjfs"), ExtResource("22_1f472"), ExtResource("23_2kuyq")])
+render_mode = 2
+clear_batch_cache = false
+batch_buildings_now = false
+fade_max_distance = 120.0
+metadata/_custom_type_script = "uid://bbp0hlmv8bh6m"
+metadata/_edit_pinned_properties_ = [&"batch_buildings_now", &"clear_batch_cache"]
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=308965462]
+transform = Transform3D(0.7071067, 0, -0.7071068, 0, 1, 0, 0.7071068, 0, 0.7071067, 2.1213198, 4, 31.393398)

@@ -822,11 +822,6 @@ func _process(delta: float) -> void:
 func _input(event: InputEvent)-> void:
 	if is_death_camera_active or is_shop_camera_active:
 		return
-	if event.is_action_pressed("ui_cancel"):
-		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
-			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-		else:
-			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		
 	if event is InputEventMouseMotion:
 		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED and not (character and character.get("is_in_shop")):

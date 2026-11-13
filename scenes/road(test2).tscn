@@ -1186,13 +1186,6 @@ row_count = 10
 total_crowd_count = 200
 vfx_front_row_count = 1
 
-[node name="CrowdStatic8" parent="Crowd_Folder_BIG" unique_id=1958650864 instance=ExtResource("21_q262c")]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 265.88318)
-spawn_area_size = Vector3(30, 1, 41.02)
-row_count = 10
-total_crowd_count = 200
-vfx_front_row_count = 1
-
 [node name="CrowdStatic9" parent="Crowd_Folder_BIG" unique_id=135864567 instance=ExtResource("21_q262c")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 52.668633)
 spawn_area_size = Vector3(30, 1, 41.02)
@@ -1202,6 +1195,7 @@ vfx_front_row_count = 1
 
 [node name="Crowd_Dance5" parent="Crowd_Folder_BIG" unique_id=1028372517 instance=ExtResource("20_ebwpk")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.64673066, 0.04, 116.522675)
+preview_in_editor = false
 spawn_area_size = Vector3(8, 0.5, 5)
 crowd_density = 0.5
 max_crowd_members = 25
@@ -1401,6 +1395,7 @@ saved_crowd_data = Array[Dictionary]([{
 
 [node name="Crowd_Dance3" parent="Crowd_Folder_BIG" unique_id=129938477 instance=ExtResource("20_ebwpk")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -41.44429, 0.04, 165.32442)
+preview_in_editor = false
 spawn_area_size = Vector3(8, 0.5, 5)
 crowd_density = 0.5
 max_crowd_members = 10

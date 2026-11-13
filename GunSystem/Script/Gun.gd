@@ -306,9 +306,14 @@ func _add_collision_objects_recursive(node: Node, exclude_array: Array):
 		_add_collision_objects_recursive(child, exclude_array)
 
 func fire_pellet(custom_spread: float = -1.0, custom_damage: float = -1.0, is_center: bool = false):
+	var cast_data := _cast_pellet_ray(custom_spread)
+	if not cast_data.is_empty():
+		_resolve_pellet_hit(cast_data, custom_damage, is_center, 1)
+
+func _cast_pellet_ray(custom_spread: float = -1.0) -> Dictionary:
 	var tree := get_tree()
 	if not tree:
-		return
+		return {}
 	var player = tree.get_first_node_in_group("player")
 	var is_focused = player and (("focus_progress" in player and player.focus_progress >= 1.0) or ("focus_at_shot" in player and player.focus_at_shot >= 1.0))
 	
@@ -390,16 +395,27 @@ func fire_pellet(custom_spread: float = -1.0, custom_damage: float = -1.0, is_ce
 	query.exclude = exclude_nodes
 	
 	var result: Dictionary = space_state.intersect_ray(query)
-	
 	var start_pos: Vector3 = spawn_point.global_transform.origin if spawn_point else ray_origin
-	var end_pos: Vector3 = to
+	return {
+		"result": result,
+		"start_pos": start_pos,
+		"to": to,
+	}
+
+func _resolve_pellet_hit(cast_data: Dictionary, custom_damage: float = -1.0, is_center: bool = false, blast_pellet_count: int = 1) -> void:
+	var tree := get_tree()
+	if not tree:
+		return
+	var result: Dictionary = cast_data.get("result", {})
+	var start_pos: Vector3 = cast_data.get("start_pos", Vector3.ZERO)
+	var end_pos: Vector3 = cast_data.get("to", Vector3.ZERO)
 	
 	var is_crit: bool = false
 	var is_weakpoint: bool = false
 	if result:
 		end_pos = result.position
 		# Apply damage to any enemy hit by the raycast
-		var hit_info = _apply_damage_to_result(result, custom_damage, is_center)
+		var hit_info = _apply_damage_to_result(result, custom_damage, is_center, blast_pellet_count)
 		is_crit = hit_info.get("is_crit", false)
 		is_weakpoint = hit_info.get("is_weakpoint", false)
 		# Play watergun hit SFX
@@ -544,7 +560,48 @@ func _trigger_vfx_node(vfx_node: Node, anim_name: String = "", is_crit: bool = f
 func update_accuracy():
 	pass
 
-func _apply_damage_to_result(result: Dictionary, custom_damage: float = -1.0, is_center: bool = false) -> Dictionary:
+func _get_raycast_target(result: Dictionary) -> Node:
+	var collider = result.get("collider")
+	if collider == null:
+		return null
+	if collider is Area3D and not collider.is_in_group("player_hitbox"):
+		var hitbox_zone: HitboxZone = collider.get_node_or_null("HitboxZone")
+		if not hitbox_zone:
+			hitbox_zone = collider.find_child("HitboxZone", true, false) as HitboxZone
+		if hitbox_zone:
+			return hitbox_zone.get_target() if hitbox_zone.has_method("get_target") else (hitbox_zone._enemy if hitbox_zone._enemy else (hitbox_zone.get("_anchalee") if hitbox_zone.get("_anchalee") else hitbox_zone.get("_merchant")))
+	var node = collider
+	while node and not node.has_method("take_hit"):
+		node = node.get_parent()
+	if node and (node is Merchant or ("Merchant" in node.name) or node.is_in_group("requires_hitbox")):
+		return null
+	return node
+
+func _resolve_shotgun_hit_type(player: Node, target: Node, hit_pos: Vector3, blast_pellet_count: int) -> String:
+	if not (self is ShotgunWaterGun) or not is_instance_valid(player):
+		return ""
+	var sg = self as ShotgunWaterGun
+	var p_pos = player.global_position
+	p_pos.y = 0.0
+	var pc = _get_player_camera()
+	var cam_pos = pc.global_position if pc else p_pos
+	cam_pos.y = 0.0
+	var h_pos = hit_pos
+	h_pos.y = 0.0
+	var min_dist = minf(p_pos.distance_to(h_pos), cam_pos.distance_to(h_pos))
+	if is_instance_valid(target) and "global_position" in target:
+		var t_pos = target.global_position
+		t_pos.y = 0.0
+		min_dist = minf(min_dist, minf(p_pos.distance_to(t_pos), cam_pos.distance_to(t_pos)))
+	var eff_range = sg.get_effective_takedown_range(player)
+	if min_dist <= eff_range:
+		return "shotgun_takedown"
+	if blast_pellet_count >= sg.special_knockdown_min_pellets:
+		if sg.special_knockdown_max_range <= 0.0 or min_dist <= sg.special_knockdown_max_range:
+			return "shotgun_special_takedown"
+	return ""
+
+func _apply_damage_to_result(result: Dictionary, custom_damage: float = -1.0, is_center: bool = false, blast_pellet_count: int = 1) -> Dictionary:
 	var result_data = { "is_crit": false, "is_weakpoint": false }
 	var collider = result.get("collider")
 	if collider == null:
@@ -580,22 +637,9 @@ func _apply_damage_to_result(result: Dictionary, custom_damage: float = -1.0, is
 			var t = clampf((shot_dist - sg.falloff_start_dist) / maxf(sg.falloff_end_dist - sg.falloff_start_dist, 0.1), 0.0, 1.0)
 			final_damage *= lerpf(1.0, sg.min_falloff_multiplier, t)
 
-	# Determine shotgun close-range takedown parameters
-	var is_shotgun_close = false
+	# Determine hit direction for shotgun knockback
 	var hit_dir_2d = Vector3.ZERO
 	if self is ShotgunWaterGun and is_instance_valid(player):
-		var sg = self as ShotgunWaterGun
-		var eff_range = sg.get_effective_takedown_range(player)
-		var p_pos = player.global_position
-		p_pos.y = 0.0
-		var h_pos = result.position
-		h_pos.y = 0.0
-		var pc = _get_player_camera()
-		var cam_pos = pc.global_position if pc else p_pos
-		cam_pos.y = 0.0
-		var dist_to_hit = minf(p_pos.distance_to(h_pos), cam_pos.distance_to(h_pos))
-		if dist_to_hit <= eff_range:
-			is_shotgun_close = true
 		hit_dir_2d = (result.position - player.global_position)
 		hit_dir_2d.y = 0.0
 		hit_dir_2d = hit_dir_2d.normalized() if hit_dir_2d.length_squared() > 0.001 else -global_transform.basis.z
@@ -629,20 +673,7 @@ func _apply_damage_to_result(result: Dictionary, custom_damage: float = -1.0, is
 					if effective_zone in ["body", "", "chest", "waist", "pelvis"]:
 						effective_zone = player.aim_target_zone
 
-				var target_in_range = is_shotgun_close
-				if self is ShotgunWaterGun and is_instance_valid(player) and not target_in_range:
-					var t_pos = target.global_position if "global_position" in target else result.position
-					t_pos.y = 0.0
-					var p_pos = player.global_position
-					p_pos.y = 0.0
-					var pc = _get_player_camera()
-					var cam_pos = pc.global_position if pc else p_pos
-					cam_pos.y = 0.0
-					var dist_to_target = minf(p_pos.distance_to(t_pos), cam_pos.distance_to(t_pos))
-					if dist_to_target <= (self as ShotgunWaterGun).get_effective_takedown_range(player):
-						target_in_range = true
-
-				var hit_type = "shotgun_takedown" if target_in_range else ""
+				var hit_type = _resolve_shotgun_hit_type(player, target, result.position, blast_pellet_count)
 
 				target.take_hit({
 					"damage": final_damage,
@@ -713,20 +744,7 @@ func _apply_damage_to_result(result: Dictionary, custom_damage: float = -1.0, is
 			else:
 				fallback_zone = "body"
 
-		var node_in_range = is_shotgun_close
-		if self is ShotgunWaterGun and is_instance_valid(player) and not node_in_range:
-			var n_pos = node.global_position if "global_position" in node else result.position
-			n_pos.y = 0.0
-			var p_pos = player.global_position
-			p_pos.y = 0.0
-			var pc = _get_player_camera()
-			var cam_pos = pc.global_position if pc else p_pos
-			cam_pos.y = 0.0
-			var dist_to_node = minf(p_pos.distance_to(n_pos), cam_pos.distance_to(n_pos))
-			if dist_to_node <= (self as ShotgunWaterGun).get_effective_takedown_range(player):
-				node_in_range = true
-
-		var fallback_hit_type = "shotgun_takedown" if node_in_range else ""
+		var fallback_hit_type = _resolve_shotgun_hit_type(player, node, result.position, blast_pellet_count)
 
 		if node.has_method("request_full_hitboxes"):
 			node.request_full_hitboxes()

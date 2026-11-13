@@ -85,6 +85,8 @@ var _eval_token_counter: int = 0
 ## _handle_take_screenshot (running inside that capture) detects the freeze
 ## synchronously. -1 until the first tick.
 var _last_loop_tick_msec: int = -1
+var _mcp_runtime_process_ticks: int = 0
+var _last_debug_status_reply: Dictionary = {}
 ## Rendering-freeze beacon for the Windows-minimize state (#794 smoke, 1b):
 ## the frames_drawn value last observed in _process, and when it last
 ## advanced. -1 until the first observed advance, so a booting or
@@ -97,6 +99,9 @@ var _last_frames_advance_msec: int = -1
 ## reply reports whether the _process beacon is actually advancing rather
 ## than merely proving that the capture was registered once.
 var _last_eval_liveness_reply: Dictionary = {}
+var _last_input_msec := -1
+var _last_input_report_msec := -1
+const MCP_INJECTED_INPUT := &"godot_ai_injected"
 
 
 func _ready() -> void:
@@ -114,6 +119,7 @@ func _ready() -> void:
 	## fallback (#777). A paused game still iterates its loop and renders, and
 	## must not be misread as frozen.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_last_input_msec = Time.get_ticks_msec()
 	## register_message_capture is safe to call before the debugger
 	## handshake completes; the capture sits until a message arrives.
 	EngineDebugger.register_message_capture(CAPTURE_PREFIX, _on_debug_message)
@@ -134,11 +140,29 @@ func _ready() -> void:
 		EngineDebugger.send_message("mcp:hello", [])
 
 
+func _input(event: InputEvent) -> void:
+	if not event.has_meta(MCP_INJECTED_INPUT):
+		_last_input_msec = Time.get_ticks_msec()
+
+
+func _parse_mcp_input(event: InputEvent) -> void:
+	event.set_meta(MCP_INJECTED_INPUT, true)
+	Input.parse_input_event(event)
+
+
+func _input_age_msec(now_msec: int) -> int:
+	return maxi(0, now_msec - _last_input_msec)
+
+
 func _process(_delta: float) -> void:
+	_mcp_runtime_process_ticks += 1
 	## #777: liveness beacon for _handle_take_screenshot's stalled-loop check.
 	## Recorded before the early returns below so the signal stays truthful
 	## even when the logger or debugger channel is unavailable.
 	_last_loop_tick_msec = Time.get_ticks_msec()
+	if not Engine.is_editor_hint() and EngineDebugger.is_active() and _last_loop_tick_msec - _last_input_report_msec >= 1000:
+		EngineDebugger.send_message("mcp:input_activity", [_input_age_msec(_last_loop_tick_msec)])
+		_last_input_report_msec = _last_loop_tick_msec
 	## Rendering beacon: on Windows a minimized game keeps ticking _process
 	## while presentation stops, so frames_drawn stagnation — not loop
 	## silence — is the observable freeze signal there (#794 smoke, 1b).
@@ -153,8 +177,13 @@ func _process(_delta: float) -> void:
 	## through the debugger packet path in a single tick. Surplus stays in
 	## `_pending_outbound` and bleeds out across subsequent frames.
 	if not _logger_attached or _logger == null:
+		_pending_outbound.clear()
 		return
 	if not EngineDebugger.is_active():
+		## No remote can consume these lines. Drop current and already-drained
+		## batches so a detached/headless run cannot retain logs indefinitely (#1123).
+		_logger.clear()
+		_pending_outbound.clear()
 		return
 	if _pending_outbound.is_empty():
 		if not _logger.has_pending():
@@ -188,6 +217,9 @@ func _on_debug_message(message: String, data: Array) -> bool:
 		"eval_liveness":
 			_reply_eval_liveness(data)
 			return true
+		"debug_status":
+			_reply_debug_status(data)
+			return true
 		"eval":
 			_handle_eval(data)
 			return true
@@ -209,6 +241,35 @@ func _reply_eval_liveness(data: Array) -> void:
 	_last_eval_liveness_reply = {"request_id": request_id, "loop_live": loop_live}
 	if EngineDebugger.is_active():
 		EngineDebugger.send_message("mcp:eval_liveness_response", [request_id, loop_live])
+
+
+func _debug_status_snapshot() -> Dictionary:
+	var inside_tree := is_inside_tree()
+	var tree := get_tree() if inside_tree else null
+	return {
+		"probe_version": 1,
+		"helper_found": true,
+		## GameHelper is PROCESS_MODE_ALWAYS, so pause does not stop it; native
+		## SceneTree suspension does. This exposes Godot's debugger-owned suspend
+		## bit through Node::can_process() without conflating it with pause/time scale.
+		"suspended": inside_tree and not can_process(),
+		"loop_live": not _main_loop_appears_stalled(),
+		"loop_tick_msec": _last_loop_tick_msec,
+		"process_ticks": _mcp_runtime_process_ticks,
+		"tree_paused": tree.paused if tree != null else false,
+		"frames_drawn": Engine.get_frames_drawn(),
+		"process_frames": Engine.get_process_frames(),
+		"physics_frames": Engine.get_physics_frames(),
+		"time_scale": Engine.time_scale,
+	}
+
+
+func _reply_debug_status(data: Array) -> void:
+	var request_id: String = data[0] if data.size() > 0 else ""
+	var state := _debug_status_snapshot()
+	_last_debug_status_reply = {"request_id": request_id, "state": state.duplicate(true)}
+	if EngineDebugger.is_active():
+		EngineDebugger.send_message("mcp:debug_status_response", [request_id, state])
 
 
 func _handle_take_screenshot(data: Array) -> void:
@@ -308,7 +369,7 @@ func _capture_and_reply(
 		_reply_error(request_id, "Captured an empty image from game viewport")
 		return
 
-	var encoded: Dictionary = ScreenshotEncode.downscale_and_encode(image, max_resolution)
+	var encoded: Dictionary = ScreenshotEncode.downscale_and_encode(image, max_resolution, viewport.use_hdr_2d)
 	var frames_drawn := Engine.get_frames_drawn()
 	var stale := frames_drawn <= frames_at_request
 
@@ -623,38 +684,82 @@ func _game_input_key(params: Dictionary) -> Dictionary:
 	ev.physical_keycode = keycode
 	ev.pressed = bool(params.get("pressed", true))
 	ev.echo = bool(params.get("echo", false))
-	Input.parse_input_event(ev)
+	_parse_mcp_input(ev)
 	return {"sent": true, "key": key_name, "pressed": ev.pressed}
 
 
+const MOUSE_BUTTONS := {
+	"left": MOUSE_BUTTON_LEFT,
+	"right": MOUSE_BUTTON_RIGHT,
+	"middle": MOUSE_BUTTON_MIDDLE,
+	"wheel_up": MOUSE_BUTTON_WHEEL_UP,
+	"wheel_down": MOUSE_BUTTON_WHEEL_DOWN,
+}
+## Buttons that stay held between events. A wheel step is an impulse with no
+## held state, so it never joins the held set or a motion mask.
+const HELD_MOUSE_BUTTONS: Array[String] = ["left", "right", "middle"]
+
+## Buttons held through input_mouse button events. Motion carries them as its
+## button_mask, as a physical drag does: GUI drag-and-drop and _gui_input
+## handlers read the mask from the motion event itself, not from Input.
+var _mouse_button_mask := 0
+var _last_mouse_position: Variant = null
+
+
 func _game_input_mouse(params: Dictionary) -> Dictionary:
+	var built := _build_mouse_event(params)
+	if built.has("input"):
+		_parse_mcp_input(built.input)
+	return built.reply
+
+
+## Build the event input_mouse sends and update the held-button and last
+## position state; returns {input: InputEvent, reply} or {reply} on error.
+## Split from sending so editor tests can check events without injecting them.
+func _build_mouse_event(params: Dictionary) -> Dictionary:
 	var event := str(params.get("event", "button"))
 	var pos_result := _resolve_mouse_position(params.get("position"))
 	if pos_result.has("error"):
-		return {"sent": false, "event": event, "error": pos_result.error}
+		return {"reply": {"sent": false, "event": event, "error": pos_result.error}}
 	var pos: Vector2 = pos_result.position
 	match event:
 		"motion":
+			var mask_result := _resolve_button_mask(params.get("buttons"))
+			if mask_result.has("error"):
+				return {"reply": {"sent": false, "event": event, "error": mask_result.error}}
 			var motion := InputEventMouseMotion.new()
 			motion.position = pos
 			motion.global_position = pos
-			Input.parse_input_event(motion)
-			return {"sent": true, "event": "motion", "position": _variant_to_json(pos)}
+			motion.relative = pos - _last_mouse_position if _last_mouse_position != null else Vector2.ZERO
+			motion.button_mask = mask_result.mask
+			_last_mouse_position = pos
+			return {"input": motion, "reply": {
+				"sent": true,
+				"event": "motion",
+				"position": _variant_to_json(pos),
+				"buttons": _mouse_mask_names(motion.button_mask),
+			}}
 		"button":
 			var button_event := InputEventMouseButton.new()
 			button_event.position = pos
 			button_event.global_position = pos
 			button_event.button_index = _mouse_button_index(str(params.get("button", "left")))
 			button_event.pressed = bool(params.get("pressed", true))
-			Input.parse_input_event(button_event)
-			return {
+			var bit := 1 << (button_event.button_index - 1)
+			var event_mask := _mouse_button_mask | bit if button_event.pressed else _mouse_button_mask & ~bit
+			button_event.button_mask = event_mask
+			if button_event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT, MOUSE_BUTTON_MIDDLE]:
+				_mouse_button_mask = event_mask
+			_last_mouse_position = pos
+			return {"input": button_event, "reply": {
 				"sent": true,
 				"event": "button",
 				"button": params.get("button", "left"),
 				"pressed": button_event.pressed,
 				"position": _variant_to_json(pos),
-			}
-	return {"sent": false, "error": "Invalid mouse event: %s" % event}
+				"buttons": _mouse_mask_names(_mouse_button_mask),
+			}}
+	return {"reply": {"sent": false, "error": "Invalid mouse event: %s" % event}}
 
 
 func _game_input_gamepad(params: Dictionary) -> Dictionary:
@@ -666,14 +771,14 @@ func _game_input_gamepad(params: Dictionary) -> Dictionary:
 			button.device = device
 			button.button_index = int(params.get("index", 0))
 			button.pressed = bool(params.get("pressed", true))
-			Input.parse_input_event(button)
+			_parse_mcp_input(button)
 			return {"sent": true, "control": "button", "device": device, "index": button.button_index, "pressed": button.pressed}
 		"axis":
 			var axis := InputEventJoypadMotion.new()
 			axis.device = device
 			axis.axis = int(params.get("index", 0))
 			axis.axis_value = float(params.get("value", 0.0))
-			Input.parse_input_event(axis)
+			_parse_mcp_input(axis)
 			return {"sent": true, "control": "axis", "device": device, "index": axis.axis, "value": axis.axis_value}
 	return {"sent": false, "error": "Invalid gamepad control: %s" % control}
 
@@ -932,16 +1037,31 @@ func _is_number(v: Variant) -> bool:
 
 
 func _mouse_button_index(name: String) -> int:
-	match name:
-		"right":
-			return MOUSE_BUTTON_RIGHT
-		"middle":
-			return MOUSE_BUTTON_MIDDLE
-		"wheel_up":
-			return MOUSE_BUTTON_WHEEL_UP
-		"wheel_down":
-			return MOUSE_BUTTON_WHEEL_DOWN
-	return MOUSE_BUTTON_LEFT
+	return MOUSE_BUTTONS.get(name, MOUSE_BUTTON_LEFT)
+
+
+## Resolve the motion `buttons` param. Absent (null) uses the buttons held
+## through earlier input_mouse button events; a list of button names replaces
+## them for this event. Unknown names are rejected rather than ignored.
+func _resolve_button_mask(value: Variant) -> Dictionary:
+	if value == null:
+		return {"mask": _mouse_button_mask}
+	if not value is Array:
+		return {"error": "buttons must be a list of button names (got %s)" % type_string(typeof(value))}
+	var mask := 0
+	for name: Variant in value:
+		if str(name) not in HELD_MOUSE_BUTTONS:
+			return {"error": "Unknown mouse button in buttons: %s (expected one of %s)" % [str(name), str(HELD_MOUSE_BUTTONS)]}
+		mask |= 1 << (int(MOUSE_BUTTONS[str(name)]) - 1)
+	return {"mask": mask}
+
+
+func _mouse_mask_names(mask: int) -> Array[String]:
+	var names: Array[String] = []
+	for name: String in HELD_MOUSE_BUTTONS:
+		if mask & (1 << (int(MOUSE_BUTTONS[name]) - 1)):
+			names.append(name)
+	return names
 
 
 ## --- game_eval: execute arbitrary GDScript in the running game ---
@@ -989,13 +1109,7 @@ func _handle_eval(data: Array) -> void:
 	_eval_token_counter += 1
 	var token := str(_eval_token_counter)
 	var run_fn := "_mcp_run_%s" % token
-	var script_source := (
-		"extends Node\n"
-		+ "func execute():\n"
-		+ "\treturn await %s()\n\n" % run_fn
-		+ "func %s():\n" % run_fn
-		+ _indent_eval_code(code)
-	)
+	var script_source := _build_eval_script_source(run_fn, code)
 
 	## Snapshot the logger's script-error seq BEFORE running so we only attribute
 	## errors raised by this eval. In a debug build a parse error aborts reload()
@@ -1192,7 +1306,23 @@ func _handle_eval_check(data: Array) -> void:
 	_try_report_eval_runtime_error(request_id)
 
 
-func _indent_eval_code(code: String) -> String:
+## `execute()` always returns, so it carries a return type. The inner function
+## holds caller code that need not return on every path; a declared return type
+## there makes Godot reject it with "Not all code paths return a value". It
+## stays untyped and suppresses `untyped_declaration` on its own declaration
+## instead (#1119). The annotation shares the `func` line so the line numbers
+## reported for caller code do not move.
+static func _build_eval_script_source(run_fn: String, code: String) -> String:
+	return (
+		"extends Node\n"
+		+ "func execute() -> Variant:\n"
+		+ "\treturn await %s()\n\n" % run_fn
+		+ "@warning_ignore(\"untyped_declaration\") func %s():\n" % run_fn
+		+ _indent_eval_code(code)
+	)
+
+
+static func _indent_eval_code(code: String) -> String:
 	var lines: PackedStringArray = code.split("\n")
 	var out := ""
 	for line in lines:

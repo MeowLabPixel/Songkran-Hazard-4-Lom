@@ -172,7 +172,7 @@ func handle_hit(hit_data: Dictionary) -> void:
 					kd.skip_act3 = false
 					transition_to("StateKnockdown")
 					return
-	elif hit_type == "shotgun_takedown":
+	elif hit_type in ["shotgun_takedown", "shotgun_special_takedown"]:
 		if is_holding_player():
 			return
 		# If already knocked down, or anticipation active, do not let multi-pellets interfere
@@ -184,6 +184,16 @@ func handle_hit(hit_data: Dictionary) -> void:
 				return
 
 		if not current_state.name in ["StateKnockdown", "StateGetUp", "StateDefeated"]:
+			if hit_type == "shotgun_special_takedown":
+				if _states.has("StateKnockdown"):
+					var kd = _states["StateKnockdown"] as StateKnockdown
+					kd.knockdown_mode = "SPECIAL_SHOTGUN"
+					kd.stun_type = "head"
+					kd.skip_act3 = false
+					if hit_data.has("hit_direction"):
+						kd.push_direction = hit_data.get("hit_direction")
+					transition_to("StateKnockdown")
+					return
 			var zone = hit_data.get("hit_zone", "head")
 			var mapped_stun_type = "head"
 			if zone in ["left_foot", "left_leg"]:

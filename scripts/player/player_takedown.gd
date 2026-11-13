@@ -752,7 +752,7 @@ func _trigger_time_stop(duration: float, time_scale: float) -> void:
 		_is_hit_stopping = false
 		return
 		
-	var timer = tree.create_timer(duration, true, false, true)
+	var timer = tree.create_timer(duration, false, false, true)
 	timer.timeout.connect(func():
 		if not is_inside_tree():
 			Engine.time_scale = 1.0

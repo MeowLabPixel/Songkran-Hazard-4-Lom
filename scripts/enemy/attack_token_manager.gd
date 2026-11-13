@@ -28,6 +28,8 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 func _physics_process(_delta: float) -> void:
+	if get_tree() and get_tree().paused:
+		return
 	_update_token_assignments()
 
 ## Checks if an enemy currently has an attack token.

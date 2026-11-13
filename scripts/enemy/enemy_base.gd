@@ -410,7 +410,7 @@ func take_hit(hit_data: Dictionary) -> void:
 		])
 	
 	# Trigger procedural hit impact sway
-	var is_takedown = (hit_data.get("hit_type") in ["takedown", "takedown_splash", "shotgun_takedown"] or 
+	var is_takedown = (hit_data.get("hit_type") in ["takedown", "takedown_splash", "shotgun_takedown", "shotgun_special_takedown"] or 
 					   (state_machine and state_machine.current_state and state_machine.current_state.name == "StateTakedownable"))
 	trigger_impact_sway(is_takedown)
 
@@ -496,12 +496,12 @@ func take_hit(hit_data: Dictionary) -> void:
 		if not _kill_registered:
 			_kill_registered = true
 			var death_life = _life_id
-			var is_tk = hit_type in ["takedown", "takedown_splash", "shotgun_takedown"]
+			var is_tk = hit_type in ["takedown", "takedown_splash", "shotgun_takedown", "shotgun_special_takedown"]
 			var spawn_pos = _get_zone_bone_position(last_hit_zone)
 			call_deferred("_trigger_kill_ui", spawn_pos, is_tk, death_life)
 
 		var will_launch = false
-		if hit_type in ["takedown", "takedown_splash", "shotgun_takedown"]:
+		if hit_type in ["takedown", "takedown_splash", "shotgun_takedown", "shotgun_special_takedown"]:
 			will_launch = true
 		elif state_machine and state_machine.current_state:
 			var curr = state_machine.current_state
@@ -521,8 +521,8 @@ func take_hit(hit_data: Dictionary) -> void:
 				if curr_name != "StateKnockdown" and curr_name != "StateTakedownable":
 					var kd = state_machine._states.get("StateKnockdown") as StateKnockdown
 					if kd:
-						kd.knockdown_mode = "NORMAL"
-						kd.stun_type = hit_data.get("hit_zone", "head")
+						kd.knockdown_mode = "SPECIAL_SHOTGUN" if hit_type == "shotgun_special_takedown" else "NORMAL"
+						kd.stun_type = "head" if hit_type == "shotgun_special_takedown" else hit_data.get("hit_zone", "head")
 						kd.skip_act3 = false
 						state_machine.transition_to("StateKnockdown")
 		else:

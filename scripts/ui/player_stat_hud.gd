@@ -1199,17 +1199,24 @@ func _update_bars() -> void:
 		var qte_node: ReloadQteHud = reload_qte if (reload_qte and is_instance_valid(reload_qte)) else (get_tree().get_first_node_in_group("reload_qte_hud") as ReloadQteHud if get_tree() else null)
 		var is_superpump_holding: bool = qte_node != null and qte_node.visible and not qte_node.failed and qte_node.mode == "superpump"
 
-		if gun.is_super_active:
-			var max_dur: float = gun.super_shot_time if ("super_shot_time" in gun and gun.super_shot_time > 0.0) else 5.0
-			var duration_ratio: float = clampf(gun.super_timer / max_dur, 0.0, 1.0)
-			air_bar.fill_color = _default_air_color.lerp(air_super_active_color, duration_ratio)
-		elif is_superpump_holding:
-			var hold_ratio: float = qte_node.get_superpump_progress() if qte_node.has_method("get_superpump_progress") else clampf(qte_node.superpump_hold_time / maxf(0.0001, qte_node.superpump_required_hold), 0.0, 1.0)
-			air_bar.fill_color = _default_air_color.lerp(air_super_active_color, hold_ratio)
-		elif gun.is_super_ready:
-			air_bar.fill_color = air_super_ready_color
-		else:
+		if gun is ShotgunWaterGun and gun.is_super_active:
+			var cost: float = gun.super_shot_air_cost if "super_shot_air_cost" in gun else 0.0
 			air_bar.fill_color = _default_air_color
+			air_bar.pending_cost_value = clampf(cost, 0.0, air_val)
+			air_bar.pending_cost_color = air_super_active_color
+		else:
+			air_bar.pending_cost_value = 0.0
+			if gun.is_super_active:
+				var max_dur: float = gun.super_shot_time if ("super_shot_time" in gun and gun.super_shot_time > 0.0) else 5.0
+				var duration_ratio: float = clampf(gun.super_timer / max_dur, 0.0, 1.0)
+				air_bar.fill_color = _default_air_color.lerp(air_super_active_color, duration_ratio)
+			elif is_superpump_holding:
+				var hold_ratio: float = qte_node.get_superpump_progress() if qte_node.has_method("get_superpump_progress") else clampf(qte_node.superpump_hold_time / maxf(0.0001, qte_node.superpump_required_hold), 0.0, 1.0)
+				air_bar.fill_color = _default_air_color.lerp(air_super_active_color, hold_ratio)
+			elif gun.is_super_ready:
+				air_bar.fill_color = air_super_ready_color
+			else:
+				air_bar.fill_color = _default_air_color
 
 
 

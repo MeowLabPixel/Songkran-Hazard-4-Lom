@@ -39,6 +39,21 @@ extends Control
 		fill_color = v
 		queue_redraw()
 
+## Amount of current resource highlighted as pending consumption (e.g. Shotgun SuperPump cost).
+var pending_cost_value: float = 0.0:
+	set(v):
+		var clamped := maxf(0.0, v)
+		if not is_equal_approx(pending_cost_value, clamped):
+			pending_cost_value = clamped
+			queue_redraw()
+
+## Color used to highlight the pending consumption portion of the bar.
+var pending_cost_color: Color = Color(1.0, 0.2, 0.2):
+	set(v):
+		if pending_cost_color != v:
+			pending_cost_color = v
+			queue_redraw()
+
 ## Background fill color of the unfilled portion.
 @export var bg_color: Color = Color(0.06, 0.08, 0.12, 0.88):
 	set(v):
@@ -926,6 +941,38 @@ func _draw_clipped_polygon(clip_target: PackedVector2Array, slice_quad: PackedVe
 		draw_colored_polygon(poly, color)
 
 
+## Builds a quad covering normalized fill range [t_a, t_b] (0 = fill origin, 1 = full).
+func _make_fill_slice_quad(x_tl: float, x_tr: float, x_bl: float, x_br: float, h: float, t_a: float, t_b: float) -> PackedVector2Array:
+	var xl_top: float
+	var xr_top: float
+	var xl_bot: float
+	var xr_bot: float
+	if fill_from_right:
+		xl_top = lerpf(x_tr, x_tl, t_b)
+		xr_top = lerpf(x_tr, x_tl, t_a)
+		xl_bot = lerpf(x_br, x_bl, t_b)
+		xr_bot = lerpf(x_br, x_bl, t_a)
+	else:
+		xl_top = lerpf(x_tl, x_tr, t_a)
+		xr_top = lerpf(x_tl, x_tr, t_b)
+		xl_bot = lerpf(x_bl, x_br, t_a)
+		xr_bot = lerpf(x_bl, x_br, t_b)
+	return PackedVector2Array([
+		Vector2(xl_top, 0.0), Vector2(xr_top, 0.0),
+		Vector2(xr_bot, h),   Vector2(xl_bot, h),
+	])
+
+
+## Draws a normalized [t_a, t_b] fill range inside target_pts.
+func _draw_bar_range(target_pts: PackedVector2Array, x_tl: float, x_tr: float, x_bl: float, x_br: float, h: float, t_a: float, t_b: float, color: Color) -> void:
+	if t_b <= t_a + 0.001:
+		return
+	if t_a <= 0.001 and t_b >= 0.999:
+		draw_colored_polygon(target_pts, color)
+	else:
+		_draw_clipped_polygon(target_pts, _make_fill_slice_quad(x_tl, x_tr, x_bl, x_br, h, t_a, t_b), color)
+
+
 ## Draws the bar / gauge drop shadow before backgrounds, fills, and borders.
 func _draw_bar_shadow(bg_pts: PackedVector2Array, tl_x: float, bl_x: float, r_top_x: float, r_bot_x: float, h: float, eff_tl: float, eff_tr: float, eff_br: float, eff_bl: float) -> void:
 	var base_off := bar_shadow_offset if bar_shadow_offset != null else Vector2.ZERO
@@ -1020,6 +1067,9 @@ func _draw() -> void:
 	var chunk_ratio := clampf(_lost_chunk_value / maxf(max_value, 0.001), 0.0, 1.0) if max_value > 0.0 else 0.0
 
 	var show_gain_chunk := enable_gain_chunk and (target_val > val + 0.001)
+
+	var has_pending_cost := pending_cost_value > 0.001 and max_value > 0.0 and val > 0.001
+	var cost_start_ratio := clampf((val - pending_cost_value) / maxf(max_value, 0.001), 0.0, ratio) if has_pending_cost else ratio
 
 	var edge_kick := _juice_edge_kick if enable_juice else 0.0
 	var qte_ext := (reload_qte_bar_offset if reload_qte_bar_offset != null else 0.0) * _label_qte_blend
@@ -1191,29 +1241,13 @@ func _draw() -> void:
 
 			# 5. Fill calculation per slot
 			var f := clampf((ratio - s_min) / maxf(s_max - s_min, 0.0001), 0.0, 1.0)
-			if f >= 0.999:
-				draw_colored_polygon(slot_pts, fill_color)
-				if flash_active:
-					draw_colored_polygon(slot_pts, Color(flash_col.r, flash_col.g, flash_col.b, flash_col.a * _juice_flash_alpha))
-			elif f > 0.001:
-				var part_pts: PackedVector2Array
-				if fill_from_right:
-					var fill_tl := lerpf(slot_tr_x, slot_tl_x, f)
-					var fill_bl := lerpf(slot_br_x, slot_bl_x, f)
-					part_pts = PackedVector2Array([
-						Vector2(fill_tl, 0.0), Vector2(slot_tr_x, 0.0),
-						Vector2(slot_br_x, h),  Vector2(fill_bl, h),
-					])
-				else:
-					var fill_tr := lerpf(slot_tl_x, slot_tr_x, f)
-					var fill_br := lerpf(slot_bl_x, slot_br_x, f)
-					part_pts = PackedVector2Array([
-						Vector2(slot_tl_x, 0.0), Vector2(fill_tr, 0.0),
-						Vector2(fill_br, h),     Vector2(slot_bl_x, h),
-					])
-				_draw_clipped_polygon(slot_pts, part_pts, fill_color)
-				if flash_active:
-					_draw_clipped_polygon(slot_pts, part_pts, Color(flash_col.r, flash_col.g, flash_col.b, flash_col.a * _juice_flash_alpha))
+			var f_base := clampf((cost_start_ratio - s_min) / maxf(s_max - s_min, 0.0001), 0.0, 1.0) if has_pending_cost else f
+			if f_base > 0.001:
+				_draw_bar_range(slot_pts, slot_tl_x, slot_tr_x, slot_bl_x, slot_br_x, h, 0.0, f_base, fill_color)
+			if has_pending_cost and f > f_base + 0.001:
+				_draw_bar_range(slot_pts, slot_tl_x, slot_tr_x, slot_bl_x, slot_br_x, h, f_base, f, pending_cost_color)
+			if flash_active and f > 0.001:
+				_draw_bar_range(slot_pts, slot_tl_x, slot_tr_x, slot_bl_x, slot_br_x, h, 0.0, f, Color(flash_col.r, flash_col.g, flash_col.b, flash_col.a * _juice_flash_alpha))
 
 			# 6. Optional slot individual border
 			if slot_border_thickness > 0.0:
@@ -1269,36 +1303,18 @@ func _draw() -> void:
 			_draw_clipped_polygon(bg_pts, gain_pts, gain_chunk_color)
 
 		# Active fill layer
-		var fill_pts := PackedVector2Array()
 		if ratio > 0.001:
-			if ratio >= 0.999:
-				draw_colored_polygon(bg_pts, fill_color)
-			else:
-				if fill_from_right:
-					var t_start := 1.0 - ratio
-					fill_pts = PackedVector2Array([
-						Vector2(lerpf(tl_x, r_top_x, t_start), 0.0),
-						Vector2(r_top_x, 0.0),
-						Vector2(r_bot_x, h),
-						Vector2(lerpf(bl_x, r_bot_x, t_start), h),
-					])
-				else:
-					fill_pts = PackedVector2Array([
-						Vector2(tl_x, 0.0),
-						Vector2(lerpf(tl_x, r_top_x, ratio), 0.0),
-						Vector2(lerpf(bl_x, r_bot_x, ratio), h),
-						Vector2(bl_x, h),
-					])
-				_draw_clipped_polygon(bg_pts, fill_pts, fill_color)
+			var base_end := cost_start_ratio if has_pending_cost else ratio
+			if base_end > 0.001:
+				_draw_bar_range(bg_pts, tl_x, r_top_x, bl_x, r_bot_x, h, 0.0, base_end, fill_color)
+			if has_pending_cost and ratio > base_end + 0.001:
+				_draw_bar_range(bg_pts, tl_x, r_top_x, bl_x, r_bot_x, h, base_end, ratio, pending_cost_color)
 
 		# Flash highlight overlay
 		if _juice_flash_alpha > 0.001 and ratio > 0.001:
 			var flash_col := _juice_flash_color if _juice_flash_color != null else Color.WHITE
 			flash_col.a *= _juice_flash_alpha
-			if ratio >= 0.999:
-				draw_colored_polygon(bg_pts, flash_col)
-			elif fill_pts.size() > 0:
-				_draw_clipped_polygon(bg_pts, fill_pts, flash_col)
+			_draw_bar_range(bg_pts, tl_x, r_top_x, bl_x, r_bot_x, h, 0.0, ratio, flash_col)
 
 	# ── Border lines ──
 	if border_thickness > 0.0:

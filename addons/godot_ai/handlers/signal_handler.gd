@@ -1,5 +1,5 @@
 @tool
-extends RefCounted
+extends "res://addons/godot_ai/handlers/command_handler.gd"
 
 const ErrorCodes := preload("res://addons/godot_ai/utils/error_codes.gd")
 
@@ -219,6 +219,9 @@ func _resolve_signal_params(params: Dictionary) -> Dictionary:
 	if source_result.has("error"):
 		return source_result
 	var source: Node = source_result.node
+	var write_error := McpNodeValidator.writable_error(source, scene_root)
+	if not write_error.is_empty():
+		return write_error
 
 	var target_result := _resolve_node_or_autoload(params.target, scene_root, "Target")
 	if target_result.has("error"):

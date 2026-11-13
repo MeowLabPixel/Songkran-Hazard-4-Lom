@@ -1,5 +1,5 @@
 @tool
-extends RefCounted
+extends "res://addons/godot_ai/handlers/command_handler.gd"
 
 const ErrorCodes := preload("res://addons/godot_ai/utils/error_codes.gd")
 
@@ -63,6 +63,10 @@ func create_player(params: Dictionary) -> Dictionary:
 		if parent == null:
 			return ErrorCodes.make(ErrorCodes.NODE_NOT_FOUND, McpScenePath.format_parent_error(parent_path, scene_root))
 
+	var write_error := McpNodeValidator.writable_error(parent, scene_root)
+	if not write_error.is_empty():
+		return write_error
+
 	var node := _instantiate_player(type_str)
 	if node == null:
 		return ErrorCodes.make(ErrorCodes.INTERNAL_ERROR, "Failed to instantiate audio player")
@@ -105,7 +109,7 @@ func set_stream(params: Dictionary) -> Dictionary:
 	if stream_path_err != null:
 		return stream_path_err
 
-	var resolved := _resolve_player(player_path)
+	var resolved := _resolve_player(player_path, true)
 	if resolved.has("error"):
 		return resolved
 	var player: Node = resolved.player
@@ -148,7 +152,7 @@ func set_playback(params: Dictionary) -> Dictionary:
 	if player_path.is_empty():
 		return ErrorCodes.make(ErrorCodes.MISSING_REQUIRED_PARAM, "Missing required param: player_path")
 
-	var resolved := _resolve_player(player_path)
+	var resolved := _resolve_player(player_path, true)
 	if resolved.has("error"):
 		return resolved
 	var player: Node = resolved.player
@@ -328,8 +332,8 @@ static func _instantiate_player(type_str: String) -> Node:
 	return null
 
 
-func _resolve_player(player_path: String) -> Dictionary:
-	var resolved := McpNodeValidator.resolve_or_error(player_path, "player_path")
+func _resolve_player(player_path: String, for_write: bool = false) -> Dictionary:
+	var resolved := McpNodeValidator.resolve_or_error(player_path, "player_path", "", for_write)
 	if resolved.has("error"):
 		return resolved
 	var node: Node = resolved.node
@@ -344,14 +348,16 @@ func _resolve_player(player_path: String) -> Dictionary:
 	return {"player": node}
 
 
-## Coerce a playback param value to the expected type. int→float is allowed
-## so JSON integers pass through; everything else requires the exact type.
+## Coerce a playback param value to the expected type. int→float and
+## strictly-numeric strings are allowed so JSON integers and stringified
+## floats (#964) pass through; everything else requires the exact type.
 ## Returns the coerced value, or null on type mismatch.
 static func _coerce_playback_value(value: Variant, expected_type: int) -> Variant:
 	match expected_type:
 		TYPE_FLOAT:
-			if value is float or value is int:
-				return float(value)
+			var parsed: Variant = McpJsonValues.parse_float(value)
+			if parsed != null:
+				return parsed
 		TYPE_BOOL:
 			if value is bool:
 				return value

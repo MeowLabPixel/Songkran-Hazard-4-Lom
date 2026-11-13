@@ -333,13 +333,13 @@ material_override = SubResource("ShaderMaterial_wqooj")
 mesh = SubResource("CylinderMesh_gjy2s")
 
 [node name="BeamFlare2" type="MeshInstance3D" parent="DropletSplash/Node3D" unique_id=1016851004]
-transform = Transform3D(1.0000001, 8.742278e-08, -8.7422784e-08, 8.7422784e-08, -1.0000001, 8.7422784e-08, -8.742278e-08, -8.742279e-08, -1.0000001, -7.42807e-39, 0.5281683, 3.1273869e-15)
+transform = Transform3D(1.0000001, 8.742278e-08, -8.7422784e-08, 8.7422784e-08, -1.0000001, 8.7422784e-08, -8.742278e-08, -8.742279e-08, -1.0000001, 0, 0.5281683, 3.1273869e-15)
 sorting_offset = 2.0
 material_override = SubResource("ShaderMaterial_642oc")
 mesh = SubResource("CylinderMesh_joboj")
 
 [node name="BeamFlare3" type="MeshInstance3D" parent="DropletSplash/Node3D" unique_id=465589533]
-transform = Transform3D(1.2000008, 1.0490739e-07, -1.049074e-07, 1.049074e-07, -1.2000008, 1.0490735e-07, -1.0490739e-07, -1.0490736e-07, -1.2000008, 7.368406e-39, 0.13022427, 7.710828e-16)
+transform = Transform3D(1.2000008, 1.0490739e-07, -1.049074e-07, 1.049074e-07, -1.2000008, 1.0490735e-07, -1.0490739e-07, -1.0490736e-07, -1.2000008, 0, 0.13022427, 7.710828e-16)
 layers = 9
 sorting_offset = 1.0
 material_override = SubResource("ShaderMaterial_vnqf2")

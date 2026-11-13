@@ -482,6 +482,9 @@ func _ready() -> void:
 var current_aim_influence: float = 0.25
 
 func _process(delta: float) -> void:
+	# Cap delta to 50ms (20 FPS minimum) to prevent extreme OS hitch / window stall / debugger pause anomalies
+	delta = minf(delta, 0.05)
+
 	sync_gun_animation_state()
 	if is_in_shop:
 		is_aimming = false
@@ -564,8 +567,10 @@ func _process(delta: float) -> void:
 		target_head_inf = 0.0
 
 	# Asymmetrical blending: brisk entry (10.0), smooth and gentle exit (glance_exit_speed or 12.0 for quickturn)
+	# Uses exponential decay with clamping to prevent Euler overshoots during low FPS / pause hitches
 	var inf_blend_speed = 10.0 if target_head_inf > current_head_influence else (12.0 if is_quick_turn else glance_exit_speed)
-	current_head_influence = lerpf(current_head_influence, target_head_inf, delta * inf_blend_speed)
+	current_head_influence = lerpf(current_head_influence, target_head_inf, clampf(1.0 - exp(-inf_blend_speed * delta), 0.0, 1.0))
+	current_head_influence = clampf(current_head_influence, 0.0, 1.0)
 	
 	if aim_bone:
 		aim_bone.influence = clampf(current_aim_influence, 0.0, 1.0)
@@ -624,7 +629,7 @@ func _process(delta: float) -> void:
 
 			# Decelerate physical velocity smoothly during action states to eliminate residual movement jumps on exit
 			if is_in_action and Motion.input_dir == Vector2.ZERO:
-				velocity = velocity.lerp(Vector3.ZERO, delta * 12.0)
+				velocity = velocity.lerp(Vector3.ZERO, clampf(1.0 - exp(-12.0 * delta), 0.0, 1.0))
 
 			# Dynamic velocity-based animation timescale (scaled by directional target speed)
 			if anim and Motion.input_dir != Vector2.ZERO and not is_aimming:
@@ -749,7 +754,7 @@ func _update_aim_target(delta: float) -> void:
 			target_convergence_offset = target_convergence_offset.limit_length(0.18)
 
 			# Smoothly lerp the convergence delta across depth transitions (sweeps smoothly over aim_depth_blend_time, zero snapping!)
-			_current_convergence_offset = _current_convergence_offset.lerp(target_convergence_offset, delta * depth_lerp_rate)
+			_current_convergence_offset = _current_convergence_offset.lerp(target_convergence_offset, clampf(1.0 - exp(-depth_lerp_rate * delta), 0.0, 1.0))
 
 			effective_aim_dir = (aim_ray_dir + _current_convergence_offset).normalized()
 
@@ -768,7 +773,7 @@ func _update_aim_target(delta: float) -> void:
 			aim_target.global_position = target_pos
 		else:
 			# When exiting aim, safely lerp the convergence delta back to zero over aim_depth_blend_time
-			_current_convergence_offset = _current_convergence_offset.lerp(Vector3.ZERO, delta * depth_lerp_rate)
+			_current_convergence_offset = _current_convergence_offset.lerp(Vector3.ZERO, clampf(1.0 - exp(-depth_lerp_rate * delta), 0.0, 1.0))
 			effective_aim_dir = ((-cam_basis.z) + _current_convergence_offset).normalized()
 			true_aim_position = raw_target_pos
 			
@@ -776,7 +781,7 @@ func _update_aim_target(delta: float) -> void:
 			var rest_target = camera.targetref.global_position if (camera and is_instance_valid(camera.targetref)) else spine_pos + (-cam_basis.z) * visual_distance
 			if is_cam_looking_at_player:
 				rest_target = spine_pos + (-cam_basis.z) * visual_distance
-			aim_target.global_position = aim_target.global_position.lerp(rest_target, delta * depth_lerp_rate)
+			aim_target.global_position = aim_target.global_position.lerp(rest_target, clampf(1.0 - exp(-depth_lerp_rate * delta), 0.0, 1.0))
 
 		_was_aiming_last_frame = is_aimming
 			
@@ -792,7 +797,7 @@ func _update_aim_target(delta: float) -> void:
 				var target_local = skeleton.to_local(fixed_depth_global) if skeleton else to_local(fixed_depth_global)
 				if absf(target_local.x) < 0.001:
 					target_local.x = 0.001
-				aim_target_head.position = aim_target_head.position.lerp(target_local, delta * 15.0)
+				aim_target_head.position = aim_target_head.position.lerp(target_local, clampf(1.0 - exp(-15.0 * delta), 0.0, 1.0))
 			else:
 				# Calculate default forward target (centered shoulder offset with turning lead)
 				var default_forward_target: Vector3
@@ -816,12 +821,13 @@ func _update_aim_target(delta: float) -> void:
 					current_npc_glance_pos = default_forward_target
 				elif not is_aimming:
 					var current_target_turn_speed = head_turn_speed if raw_npc_pos != Vector3.ZERO else glance_exit_speed
-					current_npc_glance_pos = current_npc_glance_pos.lerp(destination_target_global, delta * current_target_turn_speed)
+					current_npc_glance_pos = current_npc_glance_pos.lerp(destination_target_global, clampf(1.0 - exp(-current_target_turn_speed * delta), 0.0, 1.0))
 				
 				# Smoothly blend focus weight when entering or exiting aim state
 				var target_focus_weight = 1.0 if is_aimming else 0.0
 				var focus_speed = 10.0 if is_aimming else 6.0
-				current_focus_pitch_weight = lerpf(current_focus_pitch_weight, target_focus_weight, delta * focus_speed)
+				current_focus_pitch_weight = lerpf(current_focus_pitch_weight, target_focus_weight, clampf(1.0 - exp(-focus_speed * delta), 0.0, 1.0))
+				current_focus_pitch_weight = clampf(current_focus_pitch_weight, 0.0, 1.0)
 				
 				# Compute head origin before target selection so we can lock glance Y height
 				var head_origin_global = skeleton.global_position + Vector3(0, 1.6, 0) if skeleton else global_position + Vector3(0, 1.6, 0)
@@ -851,9 +857,9 @@ func _update_aim_target(delta: float) -> void:
 					var dynamic_y_offset = (0.75 * current_focus_pitch_weight) + focus_pitch_offset
 					target_local.y -= dynamic_y_offset
 				
-				# Single consistent-speed head turn — smoothly handles all transitions
+				# Single consistent-speed head turn with exponential decay to completely prevent Euler overshoot oscillation on lag/hitches
 				var turn_speed = lerpf(head_turn_speed, 24.0, current_focus_pitch_weight)
-				aim_target_head.position = aim_target_head.position.lerp(target_local, delta * turn_speed)
+				aim_target_head.position = aim_target_head.position.lerp(target_local, clampf(1.0 - exp(-turn_speed * delta), 0.0, 1.0))
 
 		var laser_start: Vector3 = ray_origin
 		if gun_controller and gun_controller.current_gun and gun_controller.current_gun.spawn_point:
@@ -2183,26 +2189,28 @@ func _update_idle_turn_blend(delta: float) -> void:
 
 	# Smoothly update the blend amount in the AnimationTree for Idle
 	var idle_lerp_speed = 25.0 if (current_state_name != "Quick_turn" and _last_active_turn_state == "Quick_turn") else 8.0
+	var idle_lerp_weight = clampf(1.0 - exp(-idle_lerp_speed * delta), 0.0, 1.0)
 	var current_blend = anim.get("parameters/Main/Idle/Pis/Blend2/blend_amount")
 	var new_blend = 0.0
 	if current_blend != null:
-		new_blend = lerp(current_blend, target_blend, delta * idle_lerp_speed)
+		new_blend = clampf(lerp(current_blend, target_blend, idle_lerp_weight), 0.0, 1.0)
 		anim.set("parameters/Main/Idle/Pis/Blend2/blend_amount", new_blend)
 		anim.set("parameters/Main/Idle/Pis/TimeScale/scale", target_scale)
 		
 	var current_blend_shot = anim.get("parameters/Main/Idle/Shotgun/Blend2/blend_amount")
 	var new_blend_shot = 0.0
 	if current_blend_shot != null:
-		new_blend_shot = lerp(current_blend_shot, target_blend, delta * idle_lerp_speed)
+		new_blend_shot = clampf(lerp(current_blend_shot, target_blend, idle_lerp_weight), 0.0, 1.0)
 		anim.set("parameters/Main/Idle/Shotgun/Blend2/blend_amount", new_blend_shot)
 		anim.set("parameters/Main/Idle/Shotgun/TimeScale/scale", target_scale)
 
 	# Smoothly update the blend amount in the AnimationTree for QT
 	var qt_lerp_speed = 8.0 if current_state_name == "Quick_turn" else 25.0
+	var qt_lerp_weight = clampf(1.0 - exp(-qt_lerp_speed * delta), 0.0, 1.0)
 	var current_blend_qt = anim.get("parameters/Main/QT/Pis/Blend2/blend_amount")
 	var new_blend_qt = 0.0
 	if current_blend_qt != null:
-		new_blend_qt = lerp(current_blend_qt, target_blend, delta * qt_lerp_speed)
+		new_blend_qt = clampf(lerp(current_blend_qt, target_blend, qt_lerp_weight), 0.0, 1.0)
 		anim.set("parameters/Main/QT/Pis/Blend2/blend_amount", new_blend_qt)
 		var qt_pis_scale = 1.5 if current_state_name == "Quick_turn" else target_scale
 		anim.set("parameters/Main/QT/Pis/TimeScale/scale", qt_pis_scale)
@@ -2211,7 +2219,7 @@ func _update_idle_turn_blend(delta: float) -> void:
 	var current_blend_qt_shot = anim.get("parameters/Main/QT/Shot/Blend2/blend_amount")
 	var new_blend_qt_shot = 0.0
 	if current_blend_qt_shot != null:
-		new_blend_qt_shot = lerp(current_blend_qt_shot, target_blend, delta * qt_lerp_speed)
+		new_blend_qt_shot = clampf(lerp(current_blend_qt_shot, target_blend, qt_lerp_weight), 0.0, 1.0)
 		anim.set("parameters/Main/QT/Shot/Blend2/blend_amount", new_blend_qt_shot)
 		var qt_shot_scale = 1.5 if current_state_name == "Quick_turn" else target_scale
 		anim.set("parameters/Main/QT/Shot/TimeScale/scale", qt_shot_scale)

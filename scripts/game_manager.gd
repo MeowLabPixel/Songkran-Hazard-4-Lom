@@ -99,6 +99,7 @@ var _perf_canvas: CanvasLayer = null
 var _perf_label: Label = null
 var _perf_update_timer: float = 0.0
 const PERF_UPDATE_INTERVAL: float = 0.1 # Update 10 times/sec to prevent string allocation churn
+var pause_menu: PauseMenu = null
 
 signal perf_overlay_visibility_changed(is_visible: bool)
 
@@ -243,10 +244,18 @@ func _update_perf_overlay(delta: float) -> void:
 		var draw_calls = Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
 		_perf_label.text = "FPS: %d\nDraw Calls: %d" % [fps, draw_calls]
 
+func _setup_pause_menu() -> void:
+	if pause_menu and is_instance_valid(pause_menu):
+		return
+	pause_menu = PauseMenu.new()
+	pause_menu.name = "PauseMenu"
+	add_child(pause_menu)
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	load_settings()
 	_setup_perf_overlay()
+	_setup_pause_menu()
 	# Reset state when autoload loads
 	reset_game()
 
@@ -261,6 +270,10 @@ func start_game() -> void:
 	print("[GameManager] Game loop started. Survive 10 minutes or defeat %d villagers." % kill_limit)
 
 func reset_game() -> void:
+	if pause_menu and is_instance_valid(pause_menu):
+		pause_menu.force_close()
+	elif get_tree() and get_tree().paused:
+		get_tree().paused = false
 	Engine.time_scale = 1.0
 	survival_time_elapsed = 0.0
 	kill_count = 0
@@ -343,9 +356,9 @@ func _process(delta: float) -> void:
 	if not is_game_active or is_game_ended:
 		return
 		
-	# Only tick time if the timer has been activated and we are in the gameplay world scene
+	# Only tick time if the timer has been activated and we are in the gameplay world scene and not paused
 	var tree := get_tree()
-	if tree and tree.current_scene and is_timer_active and tree.current_scene.scene_file_path.to_lower().contains("world"):
+	if tree and not tree.paused and tree.current_scene and is_timer_active and tree.current_scene.scene_file_path.to_lower().contains("world"):
 		survival_time_elapsed += delta
 		if survival_time_elapsed >= SURVIVAL_LIMIT:
 			print("[GameManager] Time limit reached! Ending game.")
@@ -423,6 +436,8 @@ func notify_merchant_met() -> void:
 func end_game() -> void:
 	if is_game_ended:
 		return
+	if pause_menu and is_instance_valid(pause_menu):
+		pause_menu.force_close()
 	is_game_ended = true
 	is_game_active = false
 	game_outcome = Outcome.VICTORY

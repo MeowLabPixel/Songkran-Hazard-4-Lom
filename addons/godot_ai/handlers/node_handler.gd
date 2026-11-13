@@ -1,5 +1,5 @@
 @tool
-extends RefCounted
+extends "res://addons/godot_ai/handlers/command_handler.gd"
 
 const ErrorCodes := preload("res://addons/godot_ai/utils/error_codes.gd")
 const VariantSerializer := preload("res://addons/godot_ai/utils/variant_serializer.gd")
@@ -7,12 +7,79 @@ const VariantSerializer := preload("res://addons/godot_ai/utils/variant_serializ
 ## Handles node creation and manipulation with undo/redo support.
 
 const ResourceHandler := preload("res://addons/godot_ai/handlers/resource_handler.gd")
+const MAX_PACKED_BYTE_ARRAY_SIZE := 65536
 
 var _undo_redo: EditorUndoRedoManager
 
 
 func _init(undo_redo: EditorUndoRedoManager) -> void:
 	_undo_redo = undo_redo
+
+
+func set_editable_children(params: Dictionary) -> Dictionary:
+	if not params.has("editable"):
+		return ErrorCodes.make(ErrorCodes.MISSING_REQUIRED_PARAM, "Missing required param: editable")
+	if not params.editable is bool:
+		return ErrorCodes.make(ErrorCodes.WRONG_TYPE, "editable must be a boolean")
+	var resolved := McpNodeValidator.resolve_or_error(params.get("path", ""), "path", params.get("scene_file", ""), true)
+	if resolved.has("error"):
+		return resolved
+	var node: Node = resolved.node
+	var root: Node = resolved.scene_root
+	if node == root or node.scene_file_path.is_empty():
+		return ErrorCodes.make(ErrorCodes.INVALID_PARAMS, "Editable Children requires an instanced scene root beneath the active scene root: %s" % resolved.path)
+	var previous := root.is_editable_instance(node)
+	var editable: bool = params.editable
+	var changed := previous != editable
+	if changed and not editable:
+		var disable_error := _editable_children_disable_error(node, root)
+		if not disable_error.is_empty():
+			return disable_error
+	if changed:
+		_undo_redo.create_action("MCP: Set Editable Children on %s" % node.name)
+		_undo_redo.add_do_method(root, "set_editable_instance", node, editable)
+		_undo_redo.add_undo_method(root, "set_editable_instance", node, previous)
+		_undo_redo.commit_action()
+	return {"data": {"path": resolved.path, "editable": root.is_editable_instance(node), "previous_editable": previous, "changed": changed, "undoable": changed}}
+
+
+## Disabling makes PackedScene skip source-owned children and their subtrees.
+## Inspect the saved overrides without temporarily changing the live flag.
+static func _editable_children_disable_error(instance: Node, root: Node) -> Dictionary:
+	var packed := PackedScene.new()
+	var err := packed.pack(root)
+	if err != OK:
+		return ErrorCodes.make(ErrorCodes.INTERNAL_ERROR, "Cannot inspect scene overrides before disabling Editable Children: %s" % error_string(err))
+	var state := packed.get_state()
+	for i in state.get_node_count():
+		var node := root.get_node_or_null(state.get_node_path(i))
+		if _depends_on_editable_instance(node, instance):
+			return _editable_children_has_edits(node, root)
+	for i in state.get_connection_count():
+		var source := root.get_node_or_null(state.get_connection_source(i))
+		if _depends_on_editable_instance(source, instance):
+			return _editable_children_has_edits(source, root)
+	var pending: Array[Node] = [instance]
+	while not pending.is_empty():
+		var parent: Node = pending.pop_back()
+		for child in parent.get_children():
+			if root.is_editable_instance(child) and _depends_on_editable_instance(child, instance):
+				return _editable_children_has_edits(child, root)
+			pending.append(child)
+	return {}
+
+
+static func _depends_on_editable_instance(node: Node, instance: Node) -> bool:
+	var current := node
+	while current != null and current != instance:
+		if current.owner == instance:
+			return true
+		current = current.get_parent()
+	return false
+
+
+static func _editable_children_has_edits(node: Node, root: Node) -> Dictionary:
+	return ErrorCodes.make(ErrorCodes.INVALID_PARAMS, "Cannot disable Editable Children: %s has saved child overrides, attachments, signals, or nested Editable Children that would be lost. Revert those edits or disable nested instances first; this operation never discards them." % McpScenePath.from_node(node, root))
 
 
 func create_node(params: Dictionary) -> Dictionary:
@@ -31,6 +98,10 @@ func create_node(params: Dictionary) -> Dictionary:
 		parent = McpScenePath.resolve(parent_path, scene_root)
 		if parent == null:
 			return ErrorCodes.make(ErrorCodes.NODE_NOT_FOUND, McpScenePath.format_parent_error(parent_path, scene_root))
+
+	var write_error := McpNodeValidator.writable_error(parent, scene_root)
+	if not write_error.is_empty():
+		return write_error
 
 	var new_node: Node
 
@@ -86,12 +157,15 @@ func create_node(params: Dictionary) -> Dictionary:
 
 
 func delete_node(params: Dictionary) -> Dictionary:
-	var resolved := _resolve_node(params)
+	var resolved := _resolve_node(params, true)
 	if resolved.has("error"):
 		return resolved
 	var node: Node = resolved.node
 	var node_path: String = resolved.path
 	var scene_root: Node = resolved.scene_root
+	var structure_error := McpNodeValidator.structure_error(node, scene_root)
+	if not structure_error.is_empty():
+		return structure_error
 
 	var root_err := _reject_if_scene_root(node, scene_root, "delete")
 	if root_err != null:
@@ -117,12 +191,15 @@ func delete_node(params: Dictionary) -> Dictionary:
 
 
 func reparent_node(params: Dictionary) -> Dictionary:
-	var resolved := _resolve_node(params)
+	var resolved := _resolve_node(params, true)
 	if resolved.has("error"):
 		return resolved
 	var node: Node = resolved.node
 	var node_path: String = resolved.path
 	var scene_root: Node = resolved.scene_root
+	var structure_error := McpNodeValidator.structure_error(node, scene_root)
+	if not structure_error.is_empty():
+		return structure_error
 
 	var new_parent_path: String = params.get("new_parent", "")
 	if new_parent_path.is_empty():
@@ -136,6 +213,10 @@ func reparent_node(params: Dictionary) -> Dictionary:
 	if root_err != null:
 		return root_err
 
+	var write_error := McpNodeValidator.writable_error(new_parent, scene_root)
+	if not write_error.is_empty():
+		return write_error
+
 	# Prevent reparenting a node to itself or to one of its own descendants.
 	# Godot's `A.is_ancestor_of(B)` returns true iff B is a descendant of A, so
 	# the direction here matters: we want `node.is_ancestor_of(new_parent)` to
@@ -148,21 +229,41 @@ func reparent_node(params: Dictionary) -> Dictionary:
 
 	var old_parent := node.get_parent()
 	var old_idx := node.get_index()
+	## Ported from upstream PR #927 at
+	## 1a95bcca51d81d29de925c2f636814eaa037c1c2 (issue #904). Snapshot
+	## descendants before commit: remove_child clears owner on any child whose
+	## owner sits outside the pruned subtree, so both do and undo must restore
+	## those owners as part of the recorded action.
+	var descendants := _collect_descendants(node)
 
 	_undo_redo.create_action("MCP: Reparent %s" % node.name)
 	_undo_redo.add_do_method(old_parent, "remove_child", node)
 	_undo_redo.add_do_method(new_parent, "add_child", node, true)
 	_undo_redo.add_do_method(node, "set_owner", scene_root)
+	for child in descendants:
+		## Preserve intentional null owners and owners that live inside the
+		## moved subtree. `remove_child` clears owners outside the subtree, so
+		## only those need to be re-normalized to scene_root. The subtree is
+		## still intact here because the recorded do-methods have not run yet.
+		##
+		## Re-owning an instance's internal nodes with scene_root flattened the
+		## sub-scene on save and dropped its overrides (#1118).
+		var prior_owner: Node = child.owner
+		if prior_owner == null or prior_owner == node or node.is_ancestor_of(prior_owner):
+			continue
+		_undo_redo.add_do_method(child, "set_owner", scene_root)
 	_undo_redo.add_do_reference(node)
 	_undo_redo.add_undo_method(new_parent, "remove_child", node)
 	_undo_redo.add_undo_method(old_parent, "add_child", node, true)
 	_undo_redo.add_undo_method(old_parent, "move_child", node, old_idx)
 	_undo_redo.add_undo_method(node, "set_owner", scene_root)
+	for child in descendants:
+		## Keep a null owner as null. Substituting scene_root would make an
+		## intentionally unowned descendant scene-owned on undo (#904).
+		var prior_owner: Node = child.owner
+		_undo_redo.add_undo_method(child, "set_owner", prior_owner)
 	_undo_redo.add_undo_reference(node)
 	_undo_redo.commit_action()
-
-	# Re-set owner for all descendants (reparent can break ownership chain)
-	_set_owner_recursive(node, scene_root)
 
 	return {
 		"data": {
@@ -175,7 +276,7 @@ func reparent_node(params: Dictionary) -> Dictionary:
 
 
 func set_property(params: Dictionary) -> Dictionary:
-	var resolved := _resolve_node(params)
+	var resolved := _resolve_node(params, true)
 	if resolved.has("error"):
 		return resolved
 	var node: Node = resolved.node
@@ -185,6 +286,10 @@ func set_property(params: Dictionary) -> Dictionary:
 	var property: String = params.get("property", "")
 	if property.is_empty():
 		return ErrorCodes.make(ErrorCodes.MISSING_REQUIRED_PARAM, "Missing required param: property")
+	if property == "name":
+		var structure_error := McpNodeValidator.structure_error(node, scene_root)
+		if not structure_error.is_empty():
+			return structure_error
 
 	if not "value" in params:
 		return ErrorCodes.make(ErrorCodes.MISSING_REQUIRED_PARAM, "Missing required param: value")
@@ -193,10 +298,14 @@ func set_property(params: Dictionary) -> Dictionary:
 
 	var found := false
 	var prop_type: int = TYPE_NIL
+	var prop_hint: int = PROPERTY_HINT_NONE
+	var prop_hint_string: String = ""
 	for prop in node.get_property_list():
 		if prop.name == property:
 			found = true
 			prop_type = prop.get("type", TYPE_NIL)
+			prop_hint = prop.get("hint", PROPERTY_HINT_NONE)
+			prop_hint_string = prop.get("hint_string", "")
 			break
 	if not found:
 		return ErrorCodes.make(ErrorCodes.PROPERTY_NOT_ON_CLASS, McpPropertyErrors.build_message(node, property))
@@ -220,7 +329,31 @@ func set_property(params: Dictionary) -> Dictionary:
 
 	var nil_resource_string: bool = target_type == TYPE_NIL and (value == "" or (value is String and value.begins_with("res://")))
 	var resource_string_value: bool = value is String and (target_type == TYPE_OBJECT or nil_resource_string)
-	if resource_string_value:
+	## Node-typed exports (`@export var target: Control`) are TYPE_OBJECT with
+	## PROPERTY_HINT_NODE_TYPE, so a string here is a node path, not a
+	## resource path (#1144): a leading "/" is a clean scene path like `path`;
+	## anything else is relative to the node, which is how the Inspector
+	## stores the reference. "" still clears through the branch below.
+	var node_typed_path: bool = (
+		target_type == TYPE_OBJECT
+		and prop_hint == PROPERTY_HINT_NODE_TYPE
+		and value is String
+		and not (value as String).is_empty()
+	)
+	if node_typed_path:
+		var resolved_target: Variant = _resolve_node_reference(value, node, scene_root, node_path, "value")
+		if resolved_target is Dictionary:
+			return resolved_target
+		var target: Node = resolved_target
+		if not _node_matches_hint(target, prop_hint_string):
+			return ErrorCodes.make(
+				ErrorCodes.WRONG_TYPE,
+				"value: %s is a %s, which is not a %s" % [
+					value, _object_type_label(target.get_class(), target.get_script()), prop_hint_string,
+				],
+			)
+		value = target
+	elif resource_string_value:
 		if value == "":
 			value = null
 		else:
@@ -257,7 +390,7 @@ func set_property(params: Dictionary) -> Dictionary:
 		## wholesale and leaves the slot at its default — with success still
 		## reported. Route through the element-aware coercer instead; errors
 		## name the offending element index.
-		var typed_out: Variant = _coerce_typed_array(value, old_value)
+		var typed_out: Variant = _coerce_typed_array(value, old_value, "", node, scene_root, node_path)
 		if typed_out is Dictionary:
 			return typed_out
 		value = typed_out
@@ -295,20 +428,100 @@ func set_property(params: Dictionary) -> Dictionary:
 		"data": {
 			"path": node_path,
 			"property": property,
-			"value": _serialize_value(node.get(property)),
-			"old_value": _serialize_value(old_value),
+			"value": _serialize_slot(node.get(property), scene_root),
+			"old_value": _serialize_slot(old_value, scene_root),
 			"undoable": true,
 		}
 	}
 
 
+## Resolve the string value of a Node-typed property (#1144): a leading "/"
+## is a clean scene path with the same forms `path` accepts; anything else
+## is a NodePath relative to `node`.
+static func _resolve_node_value(value: String, node: Node, scene_root: Node) -> Node:
+	if value.begins_with("/"):
+		return McpScenePath.resolve(value, scene_root)
+	return node.get_node_or_null(NodePath(value))
+
+
+## Resolve a node path aimed at a Node-typed slot — a Node export (#1144) or
+## an element of a typed Array[Node] export (#1175) — and refuse targets the
+## edited scene does not own. Returns the Node, or a make(...)-shaped error
+## Dictionary whose message starts with `label` ("value", "element 1").
+static func _resolve_node_reference(
+	value: String, node: Node, scene_root: Node, node_path: String, label: String
+) -> Variant:
+	var target: Node = _resolve_node_value(value, node, scene_root)
+	if target == null:
+		return ErrorCodes.make(
+			ErrorCodes.NODE_NOT_FOUND,
+			"%s: no node at %s. Paths starting with \"/\" are scene paths (e.g. \"/%s/Player\"); others are relative to %s (e.g. \"../Player\")." % [
+				label, value, scene_root.name, node_path,
+			],
+		)
+	## An absolute editor-tree path ("/root", "/root/@EditorNode@/...") or
+	## a relative path climbing past the root resolves to a node outside
+	## the edited scene; it would commit but can never be saved with it.
+	if target != scene_root and not scene_root.is_ancestor_of(target):
+		return ErrorCodes.make(
+			ErrorCodes.INVALID_PARAMS,
+			"%s: %s resolves to a node outside the edited scene; the target must be \"/%s\" or one of its descendants" % [
+				label, value, scene_root.name,
+			],
+		)
+	return target
+
+
+## Does `target` satisfy a PROPERTY_HINT_NODE_TYPE hint string? The hint is
+## the exported type's name — a ClassDB class ("Control") or a script
+## class_name ("Player") — and may list several, comma-separated. An empty
+## hint (a plain `Node` export on some engine versions) accepts any node.
+static func _node_matches_hint(target: Node, hint_string: String) -> bool:
+	var any_named := false
+	for hint in hint_string.split(","):
+		var wanted := hint.strip_edges()
+		if wanted.is_empty():
+			continue
+		any_named = true
+		if ClassDB.class_exists(wanted):
+			if target.is_class(wanted):
+				return true
+			continue
+		var script: Variant = target.get_script()
+		while script is Script:
+			if String((script as Script).get_global_name()) == wanted:
+				return true
+			script = (script as Script).get_base_script()
+	return not any_named
+
+
+## set_property's response value: a Node lands as its clean scene path so the
+## agent sees "/Main/Player", not Godot's object repr (#1144), including the
+## elements of an Array[Node] slot (#1175); everything else serializes as
+## before.
+static func _serialize_slot(value: Variant, scene_root: Node) -> Variant:
+	if value is Node:
+		var clean := McpScenePath.from_node(value, scene_root)
+		if not clean.is_empty():
+			return clean
+	if value is Array:
+		var out: Array = []
+		for item in value:
+			out.append(_serialize_slot(item, scene_root))
+		return out
+	return _serialize_value(value)
+
+
 func rename_node(params: Dictionary) -> Dictionary:
-	var resolved := _resolve_node(params)
+	var resolved := _resolve_node(params, true)
 	if resolved.has("error"):
 		return resolved
 	var node: Node = resolved.node
 	var node_path: String = resolved.path
 	var scene_root: Node = resolved.scene_root
+	var structure_error := McpNodeValidator.structure_error(node, scene_root)
+	if not structure_error.is_empty():
+		return structure_error
 
 	var new_name: String = params.get("new_name", "")
 	if new_name.is_empty():
@@ -372,6 +585,10 @@ func duplicate_node(params: Dictionary) -> Dictionary:
 		return root_err
 
 	var parent := node.get_parent()
+	var write_error := McpNodeValidator.writable_error(parent, scene_root)
+	if not write_error.is_empty():
+		return write_error
+
 	var dup: Node = node.duplicate()
 	if dup == null:
 		return ErrorCodes.make(ErrorCodes.INTERNAL_ERROR, "Failed to duplicate node")
@@ -381,15 +598,20 @@ func duplicate_node(params: Dictionary) -> Dictionary:
 	if not new_name.is_empty():
 		dup.name = new_name
 
+	## Ported from upstream PR #927 (issue #904). Record descendant owners
+	## inside the action so redo restores them. Undo is just remove_child of
+	## the copy; descendants live on `dup` via add_do_reference and do not need
+	## their own undo set_owner.
+	var descendants := _collect_descendants(dup)
+
 	_undo_redo.create_action("MCP: Duplicate %s" % node.name)
 	_undo_redo.add_do_method(parent, "add_child", dup, true)
 	_undo_redo.add_do_method(dup, "set_owner", scene_root)
+	for child in descendants:
+		_undo_redo.add_do_method(child, "set_owner", scene_root)
 	_undo_redo.add_do_reference(dup)
 	_undo_redo.add_undo_method(parent, "remove_child", dup)
 	_undo_redo.commit_action()
-
-	# Set owner for all descendants of the duplicate
-	_set_owner_recursive(dup, scene_root)
 
 	return {
 		"data": {
@@ -403,12 +625,15 @@ func duplicate_node(params: Dictionary) -> Dictionary:
 
 
 func move_node(params: Dictionary) -> Dictionary:
-	var resolved := _resolve_node(params)
+	var resolved := _resolve_node(params, true)
 	if resolved.has("error"):
 		return resolved
 	var node: Node = resolved.node
 	var node_path: String = resolved.path
 	var scene_root: Node = resolved.scene_root
+	var structure_error := McpNodeValidator.structure_error(node, scene_root)
+	if not structure_error.is_empty():
+		return structure_error
 
 	var root_err := _reject_if_scene_root(node, scene_root, "reorder")
 	if root_err != null:
@@ -441,7 +666,7 @@ func move_node(params: Dictionary) -> Dictionary:
 
 
 func add_to_group(params: Dictionary) -> Dictionary:
-	var resolved := _resolve_node(params)
+	var resolved := _resolve_node(params, true)
 	if resolved.has("error"):
 		return resolved
 	var node: Node = resolved.node
@@ -473,7 +698,7 @@ func add_to_group(params: Dictionary) -> Dictionary:
 
 
 func remove_from_group(params: Dictionary) -> Dictionary:
-	var resolved := _resolve_node(params)
+	var resolved := _resolve_node(params, true)
 	if resolved.has("error"):
 		return resolved
 	var node: Node = resolved.node
@@ -536,10 +761,15 @@ func set_selection(params: Dictionary) -> Dictionary:
 	}
 
 
-func _set_owner_recursive(node: Node, owner: Node) -> void:
+## All descendants of `node` (not including `node` itself), depth-first.
+## Used to record per-child set_owner inside an undo action without targeting
+## the handler as an UndoRedo receiver (upstream PR #927 / issue #904).
+static func _collect_descendants(node: Node) -> Array[Node]:
+	var out: Array[Node] = []
 	for child in node.get_children():
-		child.set_owner(owner)
-		_set_owner_recursive(child, owner)
+		out.append(child)
+		out.append_array(_collect_descendants(child))
+	return out
 
 
 ## Canonical dict-key sets for dict→Variant coercion. Alpha on `COLOR_KEYS`
@@ -571,6 +801,11 @@ static func _check_coerced(value: Variant, target_type: int, prefix: String = ""
 			ok = value is Vector3
 		TYPE_COLOR:
 			ok = value is Color
+		TYPE_PACKED_BYTE_ARRAY:
+			var byte_err := _packed_byte_array_error(value)
+			if byte_err != null:
+				return ErrorCodes.prefix_message(byte_err, prefix)
+			ok = value is PackedByteArray
 		TYPE_PACKED_VECTOR2_ARRAY:
 			ok = value is PackedVector2Array
 		TYPE_PACKED_VECTOR3_ARRAY:
@@ -637,6 +872,8 @@ static func _check_coerced(value: Variant, target_type: int, prefix: String = ""
 ## targets short-circuit to a literal list-shaped hint.
 static func _shape_hint(target_type: int) -> String:
 	match target_type:
+		TYPE_PACKED_BYTE_ARRAY:
+			return "a list of whole numbers 0..255 (at most %d bytes)" % MAX_PACKED_BYTE_ARRAY_SIZE
 		TYPE_PACKED_VECTOR2_ARRAY:
 			return "[{\"x\":0,\"y\":0}, ...]"
 		TYPE_PACKED_VECTOR3_ARRAY:
@@ -720,6 +957,9 @@ static func _check_dict_coerce_failed(value: Variant, target_type: int) -> Varia
 ## `dict.get(key, 0)` defaults silently zero-filled missing axes.
 static func _coerce_value(value: Variant, target_type: int) -> Variant:
 	match target_type:
+		TYPE_PACKED_BYTE_ARRAY:
+			if value is Array and _packed_byte_array_error(value) == null:
+				return PackedByteArray(value)
 		## Vector2/Vector3/Color route through the canonical strict parser
 		## (#714): same dict/array/string shapes as every other handler, and
 		## non-numeric components fall through (returning the original
@@ -746,6 +986,14 @@ static func _coerce_value(value: Variant, target_type: int) -> Variant:
 		TYPE_FLOAT:
 			if value is int:
 				return float(value)
+			if value is String:
+				## #964: some MCP clients stringify float arguments ("4.0").
+				## Accept strictly-numeric strings; unparseable ones flow
+				## through unchanged so _check_coerced raises the typed
+				## WRONG_TYPE error instead of a silent zero/null write.
+				var parsed: Variant = McpJsonValues.parse_float(value)
+				if parsed != null:
+					return parsed
 		TYPE_STRING_NAME:
 			if value is String:
 				return StringName(value)
@@ -904,9 +1152,22 @@ static func _coerce_value(value: Variant, target_type: int) -> Variant:
 				var pw: Variant = _coerce_value(value["w"], TYPE_VECTOR4)
 				if px is Vector4 and py is Vector4 and pz is Vector4 and pw is Vector4:
 					return Projection(px, py, pz, pw)
-		# PackedByteArray intentionally unhandled — needs design decision
-		# (base64 string vs. raw int list); JSON has no native byte type.
 	return value
+
+
+static func _packed_byte_array_error(value: Variant) -> Variant:
+	if not (value is Array or value is PackedByteArray):
+		return ErrorCodes.make(ErrorCodes.WRONG_TYPE, "PackedByteArray requires %s; got %s" % [_shape_hint(TYPE_PACKED_BYTE_ARRAY), type_string(typeof(value))])
+	if value.size() > MAX_PACKED_BYTE_ARRAY_SIZE:
+		return ErrorCodes.make(ErrorCodes.VALUE_OUT_OF_RANGE, "PackedByteArray exceeds the %d-byte limit (got %d)" % [MAX_PACKED_BYTE_ARRAY_SIZE, value.size()])
+	if value is Array:
+		for i in value.size():
+			var item: Variant = value[i]
+			if not (item is int or item is float):
+				return ErrorCodes.make(ErrorCodes.WRONG_TYPE, "PackedByteArray element %d must be a whole number 0..255; got %s" % [i, type_string(typeof(item))])
+			if not is_finite(float(item)) or item < 0 or item > 255 or float(item) != floorf(float(item)):
+				return ErrorCodes.make(ErrorCodes.VALUE_OUT_OF_RANGE, "PackedByteArray element %d must be a whole number 0..255; got %s" % [i, str(item)])
+	return null
 
 
 ## Fill a typed `Array[T]` slot from a JSON list (#612 stage 1: value-element
@@ -926,7 +1187,20 @@ static func _coerce_value(value: Variant, target_type: int) -> Variant:
 ## instantiates, and each landed element is conformance-checked against the
 ## slot's element class/script so a wrong-class Resource errors naming the
 ## index instead of being rejected wholesale by `assign`.
-static func _coerce_typed_array(value: Variant, slot_value: Array, prefix: String = "") -> Variant:
+##
+## Node elements (Array[Node3D], Array[MyNodeClass], ...) take node paths
+## instead (#1175), resolved per element with the #1144 rules when the
+## caller passes the owning `node` (set_property does; resource writes
+## don't, since a Resource can't hold scene node references).
+static func _coerce_typed_array(
+	value: Variant,
+	slot_value: Array,
+	prefix: String = "",
+	node: Node = null,
+	scene_root: Node = null,
+	node_path: String = "",
+	depth: int = 0,
+) -> Variant:
 	var elem_label := _typed_array_element_label(slot_value)
 	if not (value is Array):
 		var err := ErrorCodes.make(
@@ -937,13 +1211,18 @@ static func _coerce_typed_array(value: Variant, slot_value: Array, prefix: Strin
 		)
 		return ErrorCodes.prefix_message(err, prefix)
 	var elem_type := slot_value.get_typed_builtin()
+	var node_elements := node != null and scene_root != null and _typed_array_holds_nodes(slot_value)
 	var staging: Array = []
 	var in_list: Array = value
 	for i in in_list.size():
 		var elem_prefix := ("element %d" % i) if prefix.is_empty() else "%s element %d" % [prefix, i]
 		var coerced: Variant
 		if elem_type == TYPE_OBJECT:
-			coerced = _coerce_object_element(in_list[i], elem_prefix)
+			var elem: Variant = in_list[i]
+			if node_elements and elem is String and not (elem as String).is_empty():
+				coerced = _resolve_node_reference(elem, node, scene_root, node_path, elem_prefix)
+			else:
+				coerced = _coerce_object_element(elem, elem_prefix, depth)
 			if coerced is Dictionary:
 				## Object elements are never legit Dictionaries (a dict input
 				## is either {"__class__"} — consumed above — or an error), so
@@ -999,6 +1278,19 @@ static func _typed_array_element_label(slot_value: Array) -> String:
 	return type_string(slot_value.get_typed_builtin())
 
 
+## True when an object-typed Array slot holds Nodes (Array[Node3D], or a
+## script class extending Node), so its string elements are node paths
+## (#1175) rather than resource paths.
+static func _typed_array_holds_nodes(slot_value: Array) -> bool:
+	if slot_value.get_typed_builtin() != TYPE_OBJECT:
+		return false
+	var cls := String(slot_value.get_typed_class_name())
+	var script: Variant = slot_value.get_typed_script()
+	if script is Script:
+		cls = String((script as Script).get_instance_base_type())
+	return not cls.is_empty() and ClassDB.is_parent_class(cls, "Node")
+
+
 ## Coerce one element of an object-typed Array (#612 stage 2). Mirrors the
 ## single-slot TYPE_OBJECT paths in set_property: a res:// path string loads
 ## the Resource; {"__class__": "X", ...} (including the #206 stringified
@@ -1006,7 +1298,7 @@ static func _typed_array_element_label(slot_value: Array) -> String:
 ## "" / null store a null entry (typed object arrays allow them). Returns
 ## the Object (or null), or a make(...)-shaped error Dictionary with
 ## `elem_prefix` already folded in.
-static func _coerce_object_element(elem: Variant, elem_prefix: String) -> Variant:
+static func _coerce_object_element(elem: Variant, elem_prefix: String, depth: int = 0) -> Variant:
 	if elem == null:
 		return null
 	if elem is Object:
@@ -1042,7 +1334,7 @@ static func _coerce_object_element(elem: Variant, elem_prefix: String) -> Varian
 		var remaining: Dictionary = (elem as Dictionary).duplicate()
 		remaining.erase("__class__")
 		if not remaining.is_empty():
-			var apply_err: Variant = ResourceHandler._apply_resource_properties(res, remaining)
+			var apply_err: Variant = ResourceHandler._apply_resource_properties(res, remaining, depth + 1)
 			if apply_err != null:
 				return ErrorCodes.prefix_message(apply_err, elem_prefix)
 		return res
@@ -1088,7 +1380,7 @@ static func _object_conforms(elem: Object, cls_name: StringName, script: Variant
 ## `is_typed()`, since a success result is always a duplicate of the typed
 ## slot and error envelopes are plain dicts.
 static func _coerce_typed_dictionary(
-	value: Variant, slot_value: Dictionary, prefix: String = ""
+	value: Variant, slot_value: Dictionary, prefix: String = "", depth: int = 0,
 ) -> Dictionary:
 	var label := _typed_dictionary_label(slot_value)
 	if not (value is Dictionary):
@@ -1122,7 +1414,7 @@ static func _coerce_typed_dictionary(
 			## Untyped value side (e.g. Dictionary[String, Variant]).
 			coerced = raw_value
 		elif value_type == TYPE_OBJECT:
-			coerced = _coerce_object_element(raw_value, key_prefix)
+			coerced = _coerce_object_element(raw_value, key_prefix, depth)
 			if coerced is Dictionary:
 				return coerced
 			if coerced != null and not _object_conforms(
@@ -1294,7 +1586,7 @@ func get_node_properties(params: Dictionary) -> Dictionary:
 		properties.append({
 			"name": prop.name,
 			"type": type_string(prop.type),
-			"value": _serialize_value(node.get(prop.name)),
+			"value": _serialize_slot(node.get(prop.name), scene_root),
 		})
 	# Requested names that matched no editor-visible property — distinguishes
 	# "you asked for something that doesn't exist" from "exists and is null".
@@ -1368,9 +1660,9 @@ func get_groups(params: Dictionary) -> Dictionary:
 ## Validate path param, resolve to node. Returns dict with node/path/scene_root
 ## on success, or an error dict (has "error" key) on failure. Thin wrapper
 ## around the shared `McpNodeValidator.resolve_or_error` helper (audit-v2 #20).
-func _resolve_node(params: Dictionary) -> Dictionary:
+func _resolve_node(params: Dictionary, for_write: bool = false) -> Dictionary:
 	return McpNodeValidator.resolve_or_error(
-		params.get("path", ""), "path", params.get("scene_file", ""),
+		params.get("path", ""), "path", params.get("scene_file", ""), for_write,
 	)
 
 

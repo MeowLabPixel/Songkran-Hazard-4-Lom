@@ -1,5 +1,15 @@
 [gd_resource type="StandardMaterial3D" format=3 uid="uid://bo5lk3skgvm8x"]
 
+[sub_resource type="Gradient" id="Gradient_w71do"]
+offsets = PackedFloat32Array(0, 0.3009804, 0.8, 0.9970588)
+colors = PackedColorArray(0.8052679, 1, 0.99114853, 0.087056726, 0.73675454, 1, 0.98761195, 0.39215687, 1, 1, 1, 0, 0.98403144, 0.7664072, 0.88418025, 0.19607843)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_eaj2a"]
+gradient = SubResource("Gradient_w71do")
+fill_from = Vector2(1, 1)
+fill_to = Vector2(0, 0)
+repeat = 2
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_syrjo"]
 render_priority = 1
 transparency = 1
@@ -18,11 +28,14 @@ transparency = 1
 diffuse_mode = 3
 specular_mode = 1
 albedo_color = Color(1, 1, 1, 0.3647059)
+albedo_texture = SubResource("GradientTexture2D_eaj2a")
 metallic_specular = 1.0
 roughness = 0.0
 rim_enabled = true
 rim_tint = 1.0
 clearcoat_roughness = 1.0
+uv1_triplanar = true
+uv1_world_triplanar = true
 disable_receive_shadows = true
 stencil_mode = 1
 stencil_flags = 2

@@ -10,6 +10,7 @@ enum Phase { NONE, ACT3, ACT4, ACT5, DONE }
 @export var special_l_push_speed: float = 2.0
 @export var special_r_push_speed: float = 2.0
 @export var swing_shot_push_speed: float = 2.0
+@export var shotgun_special_push_speed: float = 1.5
 @export var splash_push_radius: float = 1.0
 @export var splash_push_damage: int = 0
 
@@ -47,17 +48,27 @@ var _act3_failsafe_timer: float = 0.0
 var _travelled_to_getup_end: bool = false
 var _default_act3_timescales: Dictionary = {}
 
+const ACT3_ANIM_NODES: Array[String] = [
+	"Hit Leg act 3-take down for head",
+	"Hit Leg act 3 (Take_down)",
+	"Hit RightLeg act 3 (Take_down)",
+	"HIT head act 3-take down Special_L",
+	"HIT head act 3-take down Special for Attack Swing Leg Shot",
+	"HIT RightLeg act 3-take down Special_R",
+	"HIT head act 3-take down Special for Shotgun",
+]
+
+const SPECIAL_ACT3_NODES: Array[String] = [
+	"HIT head act 3-take down Special_L",
+	"HIT head act 3-take down Special for Attack Swing Leg Shot",
+	"HIT RightLeg act 3-take down Special_R",
+	"HIT head act 3-take down Special for Shotgun",
+]
+
 func _cache_default_act3_timescales() -> void:
 	if not enemy or not enemy.anim_tree:
 		return
-	for n in [
-		"Hit Leg act 3-take down for head",
-		"Hit Leg act 3 (Take_down)",
-		"Hit RightLeg act 3 (Take_down)",
-		"HIT head act 3-take down Special_L",
-		"HIT head act 3-take down Special for Attack Swing Leg Shot",
-		"HIT RightLeg act 3-take down Special_R"
-	]:
+	for n in ACT3_ANIM_NODES:
 		var path = "parameters/hit/hit_takedown/" + n + "/TimeScale/scale"
 		var val = enemy.anim_tree.get(path)
 		if val != null and typeof(val) in [TYPE_FLOAT, TYPE_INT] and float(val) > 0.0:
@@ -220,6 +231,16 @@ func enter() -> void:
 			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Special_L", false)
 			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Special_R", false)
 			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Swing_shot", true)
+	elif knockdown_mode == "SPECIAL_SHOTGUN":
+		knockdown_type = "head"
+		start_offset = 0.0
+		skip_act3 = false
+		if enemy and enemy.anim_tree:
+			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Special", false)
+			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Special_2", false)
+			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Special_L", false)
+			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Special_R", false)
+			enemy.anim_tree.set("parameters/hit/hit_takedown/conditions/Swing_shot", false)
 	else:
 		# Normal
 		skip_act3 = false
@@ -239,6 +260,8 @@ func enter() -> void:
 			
 	if knockdown_mode == "SWING_SHOT":
 		_force_anim_instant("HIT head act 3-take down Special for Attack Swing Leg Shot", "hit/hit_takedown")
+	elif knockdown_mode == "SPECIAL_SHOTGUN":
+		_force_anim_instant("HIT head act 3-take down Special for Shotgun", "hit/hit_takedown")
 	elif knockdown_mode == "SPECIAL_LEG_SHOT":
 		if special_side == "L":
 			_force_anim_instant("HIT head act 3-take down Special_L", "hit/hit_takedown")
@@ -347,14 +370,7 @@ func physics_update(delta: float) -> void:
 	match _phase:
 		Phase.ACT3:
 			_act3_failsafe_timer += delta
-			var is_flying_node = current_node in [
-				"Hit Leg act 3-take down for head",
-				"Hit Leg act 3 (Take_down)",
-				"Hit RightLeg act 3 (Take_down)",
-				"HIT head act 3-take down Special_L",
-				"HIT head act 3-take down Special for Attack Swing Leg Shot",
-				"HIT RightLeg act 3-take down Special_R"
-			]
+			var is_flying_node = current_node in ACT3_ANIM_NODES
 			if is_flying_node:
 				_act3_has_started_flying = true
 				_act3_timer += delta
@@ -372,6 +388,10 @@ func physics_update(delta: float) -> void:
 						base_speed = special_r_push_speed
 						if act3_push_speed > 0.0:
 							min_speed = special_r_push_speed * (act3_push_min_speed / act3_push_speed)
+					elif "Special for Shotgun" in current_node:
+						base_speed = shotgun_special_push_speed
+						if act3_push_speed > 0.0:
+							min_speed = shotgun_special_push_speed * (act3_push_min_speed / act3_push_speed)
 					elif "Attack Swing Leg Shot" in current_node:
 						base_speed = swing_shot_push_speed
 						if act3_push_speed > 0.0:
@@ -508,11 +528,27 @@ func handle_hit(hit_data: Dictionary) -> String:
 	return ""
 
 func _get_act3_anim_duration(node_name: String) -> float:
-	if not enemy or not enemy.anim_player:
+	if not enemy:
+		return 1.0
+	var timescale_path = "parameters/hit/hit_takedown/" + node_name + "/TimeScale/scale"
+	var ts = enemy.anim_tree.get(timescale_path) if enemy.anim_tree else null
+	var ts_scale: float = float(ts) if (typeof(ts) in [TYPE_FLOAT, TYPE_INT] and float(ts) > 0.0) else 1.0
+
+	if enemy.anim_tree and enemy.anim_tree.tree_root is AnimationNodeStateMachine:
+		var root_sm := enemy.anim_tree.tree_root as AnimationNodeStateMachine
+		var hit_sm = root_sm.get_node("hit") if root_sm.has_node("hit") else null
+		var td_sm = hit_sm.get_node("hit_takedown") if (hit_sm is AnimationNodeStateMachine and hit_sm.has_node("hit_takedown")) else null
+		var bt = td_sm.get_node(node_name) if (td_sm is AnimationNodeStateMachine and td_sm.has_node(node_name)) else null
+		if bt is AnimationNodeBlendTree and bt.has_node("Animation"):
+			var anim_node = bt.get_node("Animation")
+			if anim_node is AnimationNodeAnimation and anim_node.use_custom_timeline and anim_node.timeline_length > 0.0:
+				return anim_node.timeline_length / ts_scale
+
+	if not enemy.anim_player:
 		return 1.0
 	var anim_name = ""
 	match node_name:
-		"Hit Leg act 3-take down for head", "HIT head act 3-take down Special for Attack Swing Leg Shot":
+		"Hit Leg act 3-take down for head", "HIT head act 3-take down Special for Attack Swing Leg Shot", "HIT head act 3-take down Special for Shotgun":
 			anim_name = "HIT head act 3-take down"
 		"Hit Leg act 3 (Take_down)", "HIT head act 3-take down Special_L":
 			anim_name = "Hit Leg act 3 (Take_down)"
@@ -520,12 +556,7 @@ func _get_act3_anim_duration(node_name: String) -> float:
 			anim_name = "Hit RightLeg act 3 (Take_down)"
 			
 	if anim_name != "" and enemy.anim_player.has_animation(anim_name):
-		var base_len = enemy.anim_player.get_animation(anim_name).length
-		var timescale_path = "parameters/hit/hit_takedown/" + node_name + "/TimeScale/scale"
-		var ts = enemy.anim_tree.get(timescale_path) if enemy.anim_tree else null
-		if typeof(ts) in [TYPE_FLOAT, TYPE_INT] and float(ts) > 0.0:
-			return base_len / float(ts)
-		return base_len
+		return enemy.anim_player.get_animation(anim_name).length / ts_scale
 	return 1.0
 
 func _get_act3_state_node_name() -> String:
@@ -538,7 +569,7 @@ func is_playing_special_act3() -> bool:
 	if _phase != Phase.ACT3:
 		return false
 	
-	if knockdown_mode in ["SPECIAL_LEG_SHOT", "SWING_SHOT"]:
+	if knockdown_mode in ["SPECIAL_LEG_SHOT", "SWING_SHOT", "SPECIAL_SHOTGUN"]:
 		return true
 		
 	var current_node = ""
@@ -547,11 +578,7 @@ func is_playing_special_act3() -> bool:
 		if pb:
 			var node = pb.get_current_node()
 			if node != null: current_node = String(node)
-	return current_node in [
-		"HIT head act 3-take down Special_L",
-		"HIT head act 3-take down Special for Attack Swing Leg Shot",
-		"HIT RightLeg act 3-take down Special_R"
-	]
+	return current_node in SPECIAL_ACT3_NODES
 
 
 func _set_act3_anim_timescale(node_name: String, speed: float) -> void:
@@ -565,14 +592,7 @@ func _set_act3_anim_timescale(node_name: String, speed: float) -> void:
 func _reset_all_act3_anim_timescales() -> void:
 	if not enemy or not enemy.anim_tree:
 		return
-	for n in [
-		"Hit Leg act 3-take down for head",
-		"Hit Leg act 3 (Take_down)",
-		"Hit RightLeg act 3 (Take_down)",
-		"HIT head act 3-take down Special_L",
-		"HIT head act 3-take down Special for Attack Swing Leg Shot",
-		"HIT RightLeg act 3-take down Special_R"
-	]:
+	for n in ACT3_ANIM_NODES:
 		var path = "parameters/hit/hit_takedown/" + n + "/TimeScale/scale"
 		if enemy.anim_tree.get(path) != null:
 			var default_ts: float = _default_act3_timescales.get(n, 1.0)
