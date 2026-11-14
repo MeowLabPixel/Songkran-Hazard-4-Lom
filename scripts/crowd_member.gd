@@ -36,6 +36,7 @@ signal enemy_hit(hit_data: Dictionary)
 @export var reload_anim_name: String = "Range Zombie  ReloadLoop"
 @export var shot_anim_name: String = "Range Zombie  shot"
 @export var shot_fire_time: float = 3.44
+@export var balloon_idle_anim_name: String = "Balloone Zombie/Balloone Zombie Idle -loop"
 @export var balloon_throw_anim_name: String = "Balloone Zombie/Balloone Zombie equip and throw"
 @export var balloon_throw_release_time: float = 1.8
 @export var dance_anim_names: Array[String] = [
@@ -866,24 +867,26 @@ func throw_balloon_at(target_pos: Vector3, on_balloon_release: Callable) -> void
 					break
 
 	if anim_player and anim_player.has_animation(target_anim):
-		anim_player.speed_scale = 1.0
-		anim_player.play(target_anim, cross_fade_time)
-		var anim_len = anim_player.get_animation(target_anim).length
-		var release_time = clamp(balloon_throw_release_time, 0.05, anim_len)
+		var idle_anim: String = ""
+		if anim_player.has_animation(balloon_idle_anim_name):
+			idle_anim = balloon_idle_anim_name
+		elif anim_player.has_animation("Balloone Zombie Idle -loop"):
+			idle_anim = "Balloone Zombie Idle -loop"
 
-		get_tree().create_timer(release_time).timeout.connect(func():
-			if is_instance_valid(self):
-				_set_attached_balloon_visible(false)
-				var spawn_pos = attached_balloon.global_position if attached_balloon else (global_position + Vector3(0, 1.4, 0))
-				if on_balloon_release.is_valid():
-					on_balloon_release.call(self, spawn_pos, target_pos)
-		)
-
-		get_tree().create_timer(anim_len).timeout.connect(func():
-			if is_instance_valid(self):
-				is_performing_action = false
-				resume_base_loop()
-		)
+		if idle_anim != "" and anim_player.current_animation != idle_anim and anim_player.current_animation != target_anim:
+			# Blend through Balloone Zombie Idle -loop first so dance bones reset cleanly before equip/throw.
+			anim_player.speed_scale = 1.0
+			anim_player.play(idle_anim, cross_fade_time)
+			var pre_blend_time: float = max(cross_fade_time, 0.05)
+			get_tree().create_timer(pre_blend_time).timeout.connect(func():
+				if is_instance_valid(self) and is_row_active and is_performing_action:
+					_start_balloon_throw_anim(target_anim, target_pos, on_balloon_release)
+				elif is_instance_valid(self) and is_performing_action:
+					_set_attached_balloon_visible(false)
+					is_performing_action = false
+			)
+		else:
+			_start_balloon_throw_anim(target_anim, target_pos, on_balloon_release)
 	else:
 		var spawn_pos = attached_balloon.global_position if attached_balloon else (global_position + Vector3(0, 1.4, 0))
 		_set_attached_balloon_visible(false)
@@ -891,6 +894,35 @@ func throw_balloon_at(target_pos: Vector3, on_balloon_release: Callable) -> void
 			on_balloon_release.call(self, spawn_pos, target_pos)
 		is_performing_action = false
 		resume_base_loop()
+
+func _start_balloon_throw_anim(target_anim: String, target_pos: Vector3, on_balloon_release: Callable) -> void:
+	if not anim_player or not anim_player.has_animation(target_anim):
+		var spawn_pos = attached_balloon.global_position if attached_balloon else (global_position + Vector3(0, 1.4, 0))
+		_set_attached_balloon_visible(false)
+		if on_balloon_release.is_valid():
+			on_balloon_release.call(self, spawn_pos, target_pos)
+		is_performing_action = false
+		resume_base_loop()
+		return
+
+	anim_player.speed_scale = 1.0
+	anim_player.play(target_anim, cross_fade_time)
+	var anim_len = anim_player.get_animation(target_anim).length
+	var release_time = clamp(balloon_throw_release_time, 0.05, anim_len)
+
+	get_tree().create_timer(release_time).timeout.connect(func():
+		if is_instance_valid(self):
+			_set_attached_balloon_visible(false)
+			var spawn_pos = attached_balloon.global_position if attached_balloon else (global_position + Vector3(0, 1.4, 0))
+			if on_balloon_release.is_valid():
+				on_balloon_release.call(self, spawn_pos, target_pos)
+	)
+
+	get_tree().create_timer(anim_len).timeout.connect(func():
+		if is_instance_valid(self):
+			is_performing_action = false
+			resume_base_loop()
+	)
 
 func get_hit_animation_for_zone(zone: String) -> String:
 	match zone.to_lower():

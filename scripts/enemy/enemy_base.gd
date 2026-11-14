@@ -62,6 +62,7 @@ var has_ever_hunted: bool = false
 var _current_idle_variant: String = ""
 var _assigned_dance: String = ""
 var _has_idle_transition_cached: Variant = null
+var _idle_variant_request_id: int = 0
 
 var current_target: Node3D = null
 var target_update_timer: float = 0.0
@@ -664,10 +665,32 @@ func update_idle_variant(force_repick: bool = false) -> void:
 		target_variant = _get_or_pick_dance(force_repick)
 	
 	if target_variant != "" and (target_variant != _current_idle_variant or force_repick):
-		_current_idle_variant = target_variant
-		anim_tree.set(PARAM_IDLE_TRANSITION_REQ, target_variant)
-		if show_debug_label:
-			print("[%s] Transitioned idle to: %s" % [name, target_variant])
+		_idle_variant_request_id += 1
+		var req_id: int = _idle_variant_request_id
+		if target_variant in DANCE_VARIANTS and _current_idle_variant != COMBAT_IDLE:
+			# Queue Idle_combat first via transition_request so AnimationTree blends into the dance cleanly.
+			_current_idle_variant = COMBAT_IDLE
+			anim_tree.set(PARAM_IDLE_TRANSITION_REQ, COMBAT_IDLE)
+			if show_debug_label:
+				print("[%s] Queueing idle via %s before %s" % [name, COMBAT_IDLE, target_variant])
+			var tree := get_tree()
+			if tree:
+				var life_id_snapshot: int = _life_id
+				tree.process_frame.connect(func():
+					if not is_instance_valid(self) or not is_instance_valid(anim_tree):
+						return
+					if _life_id != life_id_snapshot or _idle_variant_request_id != req_id or is_defeated:
+						return
+					_current_idle_variant = target_variant
+					anim_tree.set(PARAM_IDLE_TRANSITION_REQ, target_variant)
+					if show_debug_label:
+						print("[%s] Transitioned idle to: %s" % [name, target_variant])
+				, CONNECT_ONE_SHOT)
+		else:
+			_current_idle_variant = target_variant
+			anim_tree.set(PARAM_IDLE_TRANSITION_REQ, target_variant)
+			if show_debug_label:
+				print("[%s] Transitioned idle to: %s" % [name, target_variant])
 
 func _get_or_pick_dance(force_new: bool = false) -> String:
 	if force_new or _assigned_dance == "":
@@ -1146,6 +1169,7 @@ func reset_for_spawn() -> void:
 	has_ever_hunted = false
 	_current_idle_variant = ""
 	_assigned_dance = ""
+	_idle_variant_request_id += 1
 	guaranteed_grab_next_attack = false
 	selected_attack_type = ""
 	last_normal_attack = ""
@@ -1214,6 +1238,9 @@ func reset_for_spawn() -> void:
 	if anim_tree:
 		anim_tree.set("parameters/conditions/defeated", false)
 		reset_getup_conditions()
+		if has_idle_transition_node():
+			_current_idle_variant = COMBAT_IDLE
+			anim_tree.set(PARAM_IDLE_TRANSITION_REQ, COMBAT_IDLE)
 
 	# Reset state machine to StateIdle
 	if state_machine:
