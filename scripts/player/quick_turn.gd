@@ -79,8 +79,6 @@ func _update(_delta:float) -> void:
 	# Force horizontal velocity to 0 every frame so WASD input physically cannot move the player
 	owner.velocity.x = 0.0
 	owner.velocity.z = 0.0
-	if not owner.is_on_floor():
-		owner.velocity.y -= 9.8 * _delta
 		
 	if owner.HP <= 0:
 		finished.emit("Die")

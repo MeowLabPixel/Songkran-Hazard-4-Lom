@@ -12,6 +12,9 @@ class_name ShotgunWaterGun
 @export var normal_knockdown_range: float = 2.0
 @export var special_knockdown_min_pellets: int = 4
 @export var special_knockdown_max_range: float = 0.0
+@export_range(0.0, 1.0, 0.05) var min_air_outer_pellet_ratio: float = 0.65
+@export_range(0.0, 1.0, 0.05) var min_air_knockdown_range_multiplier: float = 0.75
+@export_range(1.0, 2.5, 0.05) var low_air_max_spread_multiplier: float = 1.45
 @export var falloff_start_dist: float = 2.25
 @export var falloff_end_dist: float = 14.0
 @export var min_falloff_multiplier: float = 0.25
@@ -37,8 +40,12 @@ func _ready():
 	shoulder_kick_pitch = 0.20
 	crosshair_shot_kick = 81.0
 
+func get_air_scale(min_ratio: float) -> float:
+	var air_pct := clampf(get_effective_air_pct(), 0.0, 1.0)
+	return lerpf(min_ratio, 1.0, air_pct)
+
 func get_effective_takedown_range(_player: Node) -> float:
-	return normal_knockdown_range
+	return normal_knockdown_range * get_air_scale(min_air_knockdown_range_multiplier)
 
 func play_shoot_sound(shoot_pos: Vector3) -> void:
 	var pitch = randf_range(0.95, 1.05) if (SoundManager and SoundManager.enable_pitch_randomization) else 1.0
@@ -87,13 +94,14 @@ func fire_projectiles():
 		_fire_shotgun_blast(1.0)
 
 func _fire_shotgun_blast(damage_mult: float = 1.0) -> void:
+	var active_outer_count: int = maxi(0, roundi(outer_pellet_count * get_air_scale(min_air_outer_pellet_ratio)))
 	var casts: Array[Dictionary] = []
 	casts.append({
 		"data": _cast_pellet_ray(0.0),
 		"damage": center_pellet_damage * damage_mult,
 		"is_center": true
 	})
-	for i in range(outer_pellet_count):
+	for i in range(active_outer_count):
 		casts.append({
 			"data": _cast_pellet_ray(-1.0),
 			"damage": outer_pellet_damage * damage_mult,

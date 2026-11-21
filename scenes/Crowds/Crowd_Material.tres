@@ -2,7 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://decramw7fji2d" path="res://scenes/Crowds/Crowd_Texture_Blue.png" id="1_dw0v1"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_etqq7"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rw6gj"]
 render_priority = 1
 transparency = 1
 shading_mode = 0
@@ -15,13 +15,14 @@ stencil_compare = 5
 metadata/_stencil_owned = true
 
 [resource]
-next_pass = SubResource("StandardMaterial3D_etqq7")
+next_pass = SubResource("StandardMaterial3D_rw6gj")
 diffuse_mode = 3
 specular_mode = 2
 albedo_texture = ExtResource("1_dw0v1")
 roughness = 0.11
 rim_enabled = true
 rim_tint = 1.0
+uv1_scale = Vector3(1.3, 1.3, 1.3)
 texture_filter = 5
 stencil_mode = 1
 stencil_flags = 2

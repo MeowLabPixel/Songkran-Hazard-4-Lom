@@ -785,6 +785,8 @@ func resume_base_loop() -> void:
 				anim_player.speed_scale = dance_animation_speed
 				anim_player.play(target_anim, cross_fade_time)
 
+var _saved_global_yaw: float = 0.0
+
 func _rotate_smoothly_toward(target_pos: Vector3, duration: float = -1.0) -> void:
 	var dir = target_pos - global_position
 	dir.y = 0.0
@@ -792,9 +794,11 @@ func _rotate_smoothly_toward(target_pos: Vector3, duration: float = -1.0) -> voi
 		return
 
 	var target_basis = Basis.looking_at(dir.normalized(), Vector3.UP)
-	var target_yaw = target_basis.get_euler().y
-	var current_yaw = rotation.y
-	var diff = wrapf(target_yaw - current_yaw, -PI, PI)
+	_rotate_to_yaw(target_basis.get_euler().y, duration)
+
+func _rotate_to_yaw(target_global_yaw: float, duration: float = -1.0) -> void:
+	var current_yaw = global_rotation.y
+	var diff = wrapf(target_global_yaw - current_yaw, -PI, PI)
 	var t_duration = turn_duration if duration <= 0.0 else duration
 
 	if _turn_tween and _turn_tween.is_valid():
@@ -802,7 +806,7 @@ func _rotate_smoothly_toward(target_pos: Vector3, duration: float = -1.0) -> voi
 
 	_turn_tween = create_tween()
 	_turn_tween.tween_method(func(val: float):
-		rotation.y = val
+		global_rotation.y = val
 	, current_yaw, current_yaw + diff, t_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func shoot_at(target_pos: Vector3, on_projectile_release: Callable) -> void:
@@ -850,6 +854,7 @@ func throw_balloon_at(target_pos: Vector3, on_balloon_release: Callable) -> void
 	if not is_row_active or is_performing_action or is_armed:
 		return
 	is_performing_action = true
+	_saved_global_yaw = global_rotation.y
 
 	# Smoothly rotate toward target
 	_rotate_smoothly_toward(target_pos)
@@ -884,6 +889,7 @@ func throw_balloon_at(target_pos: Vector3, on_balloon_release: Callable) -> void
 				elif is_instance_valid(self) and is_performing_action:
 					_set_attached_balloon_visible(false)
 					is_performing_action = false
+					_rotate_to_yaw(_saved_global_yaw)
 			)
 		else:
 			_start_balloon_throw_anim(target_anim, target_pos, on_balloon_release)
@@ -894,6 +900,7 @@ func throw_balloon_at(target_pos: Vector3, on_balloon_release: Callable) -> void
 			on_balloon_release.call(self, spawn_pos, target_pos)
 		is_performing_action = false
 		resume_base_loop()
+		_rotate_to_yaw(_saved_global_yaw)
 
 func _start_balloon_throw_anim(target_anim: String, target_pos: Vector3, on_balloon_release: Callable) -> void:
 	if not anim_player or not anim_player.has_animation(target_anim):
@@ -922,6 +929,7 @@ func _start_balloon_throw_anim(target_anim: String, target_pos: Vector3, on_ball
 		if is_instance_valid(self):
 			is_performing_action = false
 			resume_base_loop()
+			_rotate_to_yaw(_saved_global_yaw)
 	)
 
 func get_hit_animation_for_zone(zone: String) -> String:

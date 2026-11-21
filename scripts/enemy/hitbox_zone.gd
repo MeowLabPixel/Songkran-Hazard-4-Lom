@@ -30,12 +30,38 @@ func get_target() -> Node:
 	if _target_entity: return _target_entity
 	return null
 
+func _is_standard_editor_entity() -> bool:
+	var node: Node = get_parent()
+	while node != null:
+		var scr := node.get_script() as Script
+		while scr != null:
+			if scr.get_global_name() in [&"EnemyBase", &"AnchaleeBase", &"Merchant"]:
+				return true
+			scr = scr.get_base_script()
+		node = node.get_parent()
+	return false
+
 func _ready() -> void:
-	if Engine.is_editor_hint():
+	var area := get_parent() as Area3D
+	if not area:
+		if not Engine.is_editor_hint():
+			push_error("[HitboxZone] Parent must be Area3D (zone '%s')" % zone_name)
 		set_physics_process(false)
 		set_process(false)
 		return
-	var parent_name = get_parent().name
+	_area = area
+
+	if Engine.is_editor_hint():
+		set_physics_process(false)
+		var is_standard_editor := _is_standard_editor_entity()
+		set_process(is_standard_editor)
+		if is_standard_editor:
+			_resolve_attachment_if_needed()
+			_sanitize_scale(area)
+		return
+
+	set_process(false)
+	var parent_name = area.name
 	if parent_name == "HitboxLeftThigh":
 		zone_name = "left_leg"
 	elif parent_name == "HitboxLeftShin" or parent_name == "HitboxLeftFoot":
@@ -72,12 +98,6 @@ func _ready() -> void:
 			_target_entity = node
 			break
 		node = node.get_parent()
-
-	var area := get_parent() as Area3D
-	if not area:
-		push_error("[HitboxZone] Parent must be Area3D (zone '%s')" % zone_name)
-		return
-	_area = area
 
 	_sanitize_scale(area)
 	
@@ -182,6 +202,13 @@ func _notification(what: int) -> void:
 		if what == Node3D.NOTIFICATION_LOCAL_TRANSFORM_CHANGED or what == Node3D.NOTIFICATION_TRANSFORM_CHANGED:
 			var area := _area if is_instance_valid(_area) else (get_parent() as Area3D)
 			_sanitize_scale(area)
+
+func _process(_delta: float) -> void:
+	if not Engine.is_editor_hint():
+		set_process(false)
+		return
+	var area := _area if is_instance_valid(_area) else (get_parent() as Area3D)
+	_sanitize_scale(area)
 
 func _physics_process(_delta: float) -> void:
 	if Engine.is_editor_hint():

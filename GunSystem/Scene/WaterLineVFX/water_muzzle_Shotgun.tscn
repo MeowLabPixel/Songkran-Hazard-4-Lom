@@ -288,8 +288,8 @@ width = 128
 curve = SubResource("Curve_v783t")
 
 [sub_resource type="Gradient" id="Gradient_00f0g"]
-offsets = PackedFloat32Array(0.47173145, 0.7932862)
-colors = PackedColorArray(0.1363459, 0.6120641, 0.64731395, 1, 1, 1, 1, 1)
+offsets = PackedFloat32Array(0.33904108, 0.510274, 0.5958904)
+colors = PackedColorArray(0.1363459, 0.6120641, 0.64731395, 1, 1, 1, 1, 1, 0.56576514, 0.56576514, 0.56576514, 1)
 
 [sub_resource type="GradientTexture1D" id="GradientTexture1D_067u3"]
 gradient = SubResource("Gradient_00f0g")

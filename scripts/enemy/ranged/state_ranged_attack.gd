@@ -168,7 +168,7 @@ func _throw_balloon(player: Node3D) -> void:
 
 	if balloon.has_method("launch"):
 		balloon.launch(player.global_position, attack_damage, balloon_splash_radius,
-			balloon_arc_height, balloon_travel_time)
+			balloon_arc_height, balloon_travel_time, enemy)
 	else:
 		push_warning("[StateRangedAttack] Balloon scene has no launch() method")
 

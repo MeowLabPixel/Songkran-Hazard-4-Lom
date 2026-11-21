@@ -1,0 +1,38 @@
+{
+	"clips": {
+		"dance_1": {
+			"anim_name": "Dance Animation Male/Dance 1",
+			"duration": 4.25,
+			"frame_count": 103,
+			"loop": true,
+			"start_frame": 0
+		},
+		"dance_2": {
+			"anim_name": "Dance Animation Male/Dance 2",
+			"duration": 4.25,
+			"frame_count": 103,
+			"loop": true,
+			"start_frame": 103
+		},
+		"dance_blue": {
+			"anim_name": "Dance Animation Male/Dance Blue",
+			"duration": 3.0,
+			"frame_count": 73,
+			"loop": true,
+			"start_frame": 206
+		},
+		"dance_orange": {
+			"anim_name": "Dance Animation Male/Dance orange",
+			"duration": 4.5,
+			"frame_count": 109,
+			"loop": true,
+			"start_frame": 279
+		}
+	},
+	"fps": 24.0,
+	"rows_per_frame": 1,
+	"tex_height": 388,
+	"tex_width": 1092,
+	"total_frames": 388,
+	"vertex_count": 1092
+}

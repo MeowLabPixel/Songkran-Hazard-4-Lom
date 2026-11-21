@@ -1,0 +1,45 @@
+{
+	"clips": {
+		"dance_1": {
+			"anim_name": "F Dance 1",
+			"duration": 4.25,
+			"frame_count": 103,
+			"loop": true,
+			"start_frame": 0
+		},
+		"dance_2": {
+			"anim_name": "F Dance 2",
+			"duration": 4.25,
+			"frame_count": 103,
+			"loop": true,
+			"start_frame": 103
+		},
+		"dance_3": {
+			"anim_name": "F Dance 3",
+			"duration": 4.5,
+			"frame_count": 109,
+			"loop": true,
+			"start_frame": 206
+		},
+		"dance_blue": {
+			"anim_name": "F Dance Blue",
+			"duration": 3.0,
+			"frame_count": 73,
+			"loop": true,
+			"start_frame": 315
+		},
+		"dance_orange": {
+			"anim_name": "F Dance orange",
+			"duration": 4.8333335,
+			"frame_count": 118,
+			"loop": true,
+			"start_frame": 388
+		}
+	},
+	"fps": 24.0,
+	"rows_per_frame": 1,
+	"tex_height": 506,
+	"tex_width": 1033,
+	"total_frames": 506,
+	"vertex_count": 1033
+}

@@ -1,0 +1,479 @@
+[gd_scene format=3 uid="uid://bqpyn6ijefplo"]
+
+[ext_resource type="Script" uid="uid://jsw2dk76wxin" path="res://scripts/vat/crowd_vat_spawner.gd" id="1_bewlr"]
+[ext_resource type="Shader" uid="uid://c627nrxkpxs5c" path="res://shaders/crowd_vat.gdshader" id="2_mtou3"]
+[ext_resource type="Shader" uid="uid://doto6h6ykm2pu" path="res://shaders/crowd_vat_outline.gdshader" id="2_oy6d4"]
+[ext_resource type="Texture2D" uid="uid://decramw7fji2d" path="res://scenes/Crowds/Crowd_Texture_Blue.png" id="3_oy6d4"]
+[ext_resource type="Texture2D" uid="uid://vfsih27wa1v7" path="res://scenes/Crowds/Crowd_Texture_Green.png" id="4_pk03t"]
+[ext_resource type="Texture2D" uid="uid://bfa45ipmjfu7u" path="res://scenes/Crowds/Crowd_Texture_Pink.png" id="5_3gyos"]
+[ext_resource type="Texture2D" uid="uid://ddv44vqnlucaw" path="res://scenes/Crowds/VAT/crowd_male_vat_nrm.res" id="6_bewlr"]
+[ext_resource type="Texture2D" uid="uid://duaop5nuibh4v" path="res://scenes/Crowds/VAT/crowd_male_vat_pos.res" id="7_mtou3"]
+[ext_resource type="Texture2D" uid="uid://cj0dld1eyb7af" path="res://scenes/Crowds/VAT/crowd_female_vat_nrm.res" id="10_brwe8"]
+[ext_resource type="Texture2D" uid="uid://dxnjfk8t8q40v" path="res://scenes/Crowds/VAT/crowd_female_vat_pos.res" id="11_ufhgm"]
+[ext_resource type="Texture2D" uid="uid://u0as0h2qb6u6" path="res://scenes/Crowds/VAT/crowd_female_nohat_vat_nrm.res" id="13_cbv3f"]
+[ext_resource type="Texture2D" uid="uid://j7vyhri26ujh" path="res://scenes/Crowds/VAT/crowd_female_nohat_vat_pos.res" id="14_w4syb"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_a2lwv"]
+render_priority = 0
+shader = ExtResource("2_oy6d4")
+shader_parameter/vat_pos_tex = ExtResource("7_mtou3")
+shader_parameter/vat_nrm_tex = ExtResource("6_bewlr")
+shader_parameter/vat_tex_width = 1092
+shader_parameter/vat_rows_per_frame = 1
+shader_parameter/vat_fps = 24.0
+shader_parameter/outline_color = Color(1, 1, 1, 0.6)
+shader_parameter/outline_thickness = 0.006
+shader_parameter/hit_bend_strength = 0.5
+shader_parameter/hit_zone_radius = 0.3
+shader_parameter/hit_oscillation_freq = 10.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ligby"]
+render_priority = 0
+next_pass = SubResource("ShaderMaterial_a2lwv")
+shader = ExtResource("2_mtou3")
+shader_parameter/vat_pos_tex = ExtResource("7_mtou3")
+shader_parameter/vat_nrm_tex = ExtResource("6_bewlr")
+shader_parameter/vat_tex_width = 1092
+shader_parameter/vat_rows_per_frame = 1
+shader_parameter/vat_fps = 24.0
+shader_parameter/albedo_blue = ExtResource("3_oy6d4")
+shader_parameter/albedo_green = ExtResource("4_pk03t")
+shader_parameter/albedo_pink = ExtResource("5_3gyos")
+shader_parameter/roughness_val = 0.11
+shader_parameter/rim_amount = 0.6
+shader_parameter/rim_tint_val = 1.0
+shader_parameter/hit_bend_strength = 0.5
+shader_parameter/hit_zone_radius = 0.3
+shader_parameter/hit_oscillation_freq = 10.0
+
+[sub_resource type="Shader" id="Shader_cbv3f"]
+code = "shader_type spatial;
+render_mode cull_front, unshaded;
+
+group_uniforms VAT;
+uniform sampler2D vat_pos_tex : filter_nearest, repeat_disable;
+uniform sampler2D vat_nrm_tex : filter_nearest, repeat_disable;
+uniform int vat_tex_width = 1024;
+uniform int vat_rows_per_frame = 1;
+uniform float vat_fps = 24.0;
+
+group_uniforms Outline;
+uniform vec4 outline_color : source_color = vec4(1.0, 1.0, 1.0, 0.6); // #ffffff99
+uniform float outline_thickness = 0.006;
+
+group_uniforms HitReactionMotion;
+uniform float hit_bend_strength = 0.42;
+uniform float hit_zone_radius = 0.25;
+uniform float hit_oscillation_freq = 10.0;
+
+vec3 fetch_vat(sampler2D tex, int col, int frame_idx, int row_offset) {
+	int y = frame_idx * vat_rows_per_frame + row_offset;
+	return texelFetch(tex, ivec2(col, y), 0).rgb;
+}
+
+void vertex() {
+	int v_idx = int(round(UV2.x));
+	int col = v_idx % vat_tex_width;
+	int row_offset = v_idx / vat_tex_width;
+
+	float start_frame = INSTANCE_CUSTOM.r;
+	float raw_frame_count = INSTANCE_CUSTOM.g;
+	float time_param = INSTANCE_CUSTOM.b;
+
+	float abs_frames = max(abs(raw_frame_count), 1.0);
+	float t_frames = (TIME + time_param) * vat_fps;
+	float local_frame = mod(t_frames, abs_frames);
+	int f0 = int(floor(local_frame));
+	int f1 = (f0 + 1) % int(abs_frames);
+	float frac = fract(local_frame);
+
+	int g_f0 = int(round(start_frame)) + f0;
+	int g_f1 = int(round(start_frame)) + f1;
+
+	vec3 pos0 = fetch_vat(vat_pos_tex, col, g_f0, row_offset);
+	vec3 pos1 = fetch_vat(vat_pos_tex, col, g_f1, row_offset);
+	vec3 nrm0 = fetch_vat(vat_nrm_tex, col, g_f0, row_offset);
+	vec3 nrm1 = fetch_vat(vat_nrm_tex, col, g_f1, row_offset);
+
+	vec3 pos = mix(pos0, pos1, frac);
+	vec3 nrm = normalize(mix(nrm0, nrm1, frac));
+
+	// Match position-based localized hit reaction from base VAT shader
+	float hit_decay = COLOR.r;
+	if (hit_decay > 0.001) {
+		float angle = COLOR.g * 6.2831853;
+		vec2 hit_dir_xz = vec2(cos(angle), sin(angle));
+		vec2 hit_center_xy = vec2((COLOR.a - 0.5) * 2.0, COLOR.b * 1.8);
+
+		float wave = sin(hit_decay * hit_oscillation_freq) * hit_decay;
+
+		vec2 d_xy = pos.xy - hit_center_xy;
+		float zone_weight = exp(-dot(d_xy, d_xy) / max(hit_zone_radius * hit_zone_radius, 0.01));
+		float floor_anchor = smoothstep(0.04, 0.22, pos.y);
+		float follow_through = 0.22 * smoothstep(0.25, 1.5, pos.y);
+
+		pos.xz += hit_dir_xz * (wave * hit_bend_strength * floor_anchor * (zone_weight + follow_through));
+	}
+
+	VERTEX = pos + nrm * outline_thickness;
+	NORMAL = nrm;
+}
+
+void fragment() {
+	ALBEDO = outline_color.rgb;
+	ALPHA = outline_color.a;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_w4syb"]
+render_priority = 0
+shader = SubResource("Shader_cbv3f")
+shader_parameter/vat_pos_tex = ExtResource("11_ufhgm")
+shader_parameter/vat_nrm_tex = ExtResource("10_brwe8")
+shader_parameter/vat_tex_width = 1033
+shader_parameter/vat_rows_per_frame = 1
+shader_parameter/vat_fps = 24.0
+shader_parameter/outline_color = Color(1, 1, 1, 0.6)
+shader_parameter/outline_thickness = 0.006
+shader_parameter/hit_bend_strength = 0.5
+shader_parameter/hit_zone_radius = 0.3
+shader_parameter/hit_oscillation_freq = 10.0
+
+[sub_resource type="Shader" id="Shader_xfm0r"]
+code = "shader_type spatial;
+render_mode cull_disabled, diffuse_toon, specular_toon;
+
+group_uniforms VAT;
+uniform sampler2D vat_pos_tex : filter_nearest, repeat_disable;
+uniform sampler2D vat_nrm_tex : filter_nearest, repeat_disable;
+uniform int vat_tex_width = 1024;
+uniform int vat_rows_per_frame = 1;
+uniform float vat_fps = 24.0;
+
+group_uniforms Appearance;
+uniform sampler2D albedo_blue : source_color, filter_linear_mipmap;
+uniform sampler2D albedo_green : source_color, filter_linear_mipmap;
+uniform sampler2D albedo_pink : source_color, filter_linear_mipmap;
+uniform float roughness_val : hint_range(0.0, 1.0) = 0.11;
+uniform float rim_amount : hint_range(0.0, 1.0) = 0.6;
+uniform float rim_tint_val : hint_range(0.0, 1.0) = 1.0;
+
+group_uniforms HitReactionMotion;
+uniform float hit_bend_strength = 0.42;
+uniform float hit_zone_radius = 0.25;
+uniform float hit_oscillation_freq = 10.0;
+
+varying flat int v_tex_variant;
+
+vec3 fetch_vat(sampler2D tex, int col, int frame_idx, int row_offset) {
+	int y = frame_idx * vat_rows_per_frame + row_offset;
+	return texelFetch(tex, ivec2(col, y), 0).rgb;
+}
+
+void vertex() {
+	int v_idx = int(round(UV2.x));
+	int col = v_idx % vat_tex_width;
+	int row_offset = v_idx / vat_tex_width;
+
+	float start_frame = INSTANCE_CUSTOM.r;
+	float raw_frame_count = INSTANCE_CUSTOM.g;
+	float time_param = INSTANCE_CUSTOM.b;
+	v_tex_variant = int(round(INSTANCE_CUSTOM.a));
+
+	float abs_frames = max(abs(raw_frame_count), 1.0);
+	float t_frames = (TIME + time_param) * vat_fps;
+	float local_frame = mod(t_frames, abs_frames);
+	int f0 = int(floor(local_frame));
+	int f1 = (f0 + 1) % int(abs_frames);
+	float frac = fract(local_frame);
+
+	int g_f0 = int(round(start_frame)) + f0;
+	int g_f1 = int(round(start_frame)) + f1;
+
+	vec3 pos0 = fetch_vat(vat_pos_tex, col, g_f0, row_offset);
+	vec3 pos1 = fetch_vat(vat_pos_tex, col, g_f1, row_offset);
+	vec3 nrm0 = fetch_vat(vat_nrm_tex, col, g_f0, row_offset);
+	vec3 nrm1 = fetch_vat(vat_nrm_tex, col, g_f1, row_offset);
+
+	vec3 pos = mix(pos0, pos1, frac);
+	vec3 nrm = normalize(mix(nrm0, nrm1, frac));
+
+	// Position-based localized hit reaction via COLOR channel (no color flash/tint)
+	// COLOR.r = decay, COLOR.g = hit angle, COLOR.b = local hit Y, COLOR.a = local hit X
+	float hit_decay = COLOR.r;
+	if (hit_decay > 0.001) {
+		float angle = COLOR.g * 6.2831853;
+		vec2 hit_dir_xz = vec2(cos(angle), sin(angle));
+		vec2 hit_center_xy = vec2((COLOR.a - 0.5) * 2.0, COLOR.b * 1.8);
+
+		float wave = sin(hit_decay * hit_oscillation_freq) * hit_decay;
+
+		vec2 d_xy = pos.xy - hit_center_xy;
+		float zone_weight = exp(-dot(d_xy, d_xy) / max(hit_zone_radius * hit_zone_radius, 0.01));
+		float floor_anchor = smoothstep(0.04, 0.22, pos.y);
+		float follow_through = 0.22 * smoothstep(0.25, 1.5, pos.y);
+
+		pos.xz += hit_dir_xz * (wave * hit_bend_strength * floor_anchor * (zone_weight + follow_through));
+	}
+
+	VERTEX = pos;
+	NORMAL = nrm;
+}
+
+void fragment() {
+	vec3 col_tex;
+	if (v_tex_variant == 1) {
+		col_tex = texture(albedo_green, UV).rgb;
+	} else if (v_tex_variant == 2) {
+		col_tex = texture(albedo_pink, UV).rgb;
+	} else {
+		col_tex = texture(albedo_blue, UV).rgb;
+	}
+
+	ALBEDO = col_tex;
+	ROUGHNESS = roughness_val;
+	RIM = rim_amount;
+	RIM_TINT = rim_tint_val;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5fyi5"]
+render_priority = 0
+next_pass = SubResource("ShaderMaterial_w4syb")
+shader = SubResource("Shader_xfm0r")
+shader_parameter/vat_pos_tex = ExtResource("11_ufhgm")
+shader_parameter/vat_nrm_tex = ExtResource("10_brwe8")
+shader_parameter/vat_tex_width = 1033
+shader_parameter/vat_rows_per_frame = 1
+shader_parameter/vat_fps = 24.0
+shader_parameter/albedo_blue = ExtResource("3_oy6d4")
+shader_parameter/albedo_green = ExtResource("4_pk03t")
+shader_parameter/albedo_pink = ExtResource("5_3gyos")
+shader_parameter/roughness_val = 0.11
+shader_parameter/rim_amount = 0.6
+shader_parameter/rim_tint_val = 1.0
+shader_parameter/hit_bend_strength = 0.5
+shader_parameter/hit_zone_radius = 0.3
+shader_parameter/hit_oscillation_freq = 10.0
+
+[sub_resource type="Shader" id="Shader_5fyi5"]
+code = "shader_type spatial;
+render_mode cull_front, unshaded;
+
+group_uniforms VAT;
+uniform sampler2D vat_pos_tex : filter_nearest, repeat_disable;
+uniform sampler2D vat_nrm_tex : filter_nearest, repeat_disable;
+uniform int vat_tex_width = 1024;
+uniform int vat_rows_per_frame = 1;
+uniform float vat_fps = 24.0;
+
+group_uniforms Outline;
+uniform vec4 outline_color : source_color = vec4(1.0, 1.0, 1.0, 0.6); // #ffffff99
+uniform float outline_thickness = 0.006;
+
+group_uniforms HitReactionMotion;
+uniform float hit_bend_strength = 0.42;
+uniform float hit_zone_radius = 0.25;
+uniform float hit_oscillation_freq = 10.0;
+
+vec3 fetch_vat(sampler2D tex, int col, int frame_idx, int row_offset) {
+	int y = frame_idx * vat_rows_per_frame + row_offset;
+	return texelFetch(tex, ivec2(col, y), 0).rgb;
+}
+
+void vertex() {
+	int v_idx = int(round(UV2.x));
+	int col = v_idx % vat_tex_width;
+	int row_offset = v_idx / vat_tex_width;
+
+	float start_frame = INSTANCE_CUSTOM.r;
+	float raw_frame_count = INSTANCE_CUSTOM.g;
+	float time_param = INSTANCE_CUSTOM.b;
+
+	float abs_frames = max(abs(raw_frame_count), 1.0);
+	float t_frames = (TIME + time_param) * vat_fps;
+	float local_frame = mod(t_frames, abs_frames);
+	int f0 = int(floor(local_frame));
+	int f1 = (f0 + 1) % int(abs_frames);
+	float frac = fract(local_frame);
+
+	int g_f0 = int(round(start_frame)) + f0;
+	int g_f1 = int(round(start_frame)) + f1;
+
+	vec3 pos0 = fetch_vat(vat_pos_tex, col, g_f0, row_offset);
+	vec3 pos1 = fetch_vat(vat_pos_tex, col, g_f1, row_offset);
+	vec3 nrm0 = fetch_vat(vat_nrm_tex, col, g_f0, row_offset);
+	vec3 nrm1 = fetch_vat(vat_nrm_tex, col, g_f1, row_offset);
+
+	vec3 pos = mix(pos0, pos1, frac);
+	vec3 nrm = normalize(mix(nrm0, nrm1, frac));
+
+	// Match position-based localized hit reaction from base VAT shader
+	float hit_decay = COLOR.r;
+	if (hit_decay > 0.001) {
+		float angle = COLOR.g * 6.2831853;
+		vec2 hit_dir_xz = vec2(cos(angle), sin(angle));
+		vec2 hit_center_xy = vec2((COLOR.a - 0.5) * 2.0, COLOR.b * 1.8);
+
+		float wave = sin(hit_decay * hit_oscillation_freq) * hit_decay;
+
+		vec2 d_xy = pos.xy - hit_center_xy;
+		float zone_weight = exp(-dot(d_xy, d_xy) / max(hit_zone_radius * hit_zone_radius, 0.01));
+		float floor_anchor = smoothstep(0.04, 0.22, pos.y);
+		float follow_through = 0.22 * smoothstep(0.25, 1.5, pos.y);
+
+		pos.xz += hit_dir_xz * (wave * hit_bend_strength * floor_anchor * (zone_weight + follow_through));
+	}
+
+	VERTEX = pos + nrm * outline_thickness;
+	NORMAL = nrm;
+}
+
+void fragment() {
+	ALBEDO = outline_color.rgb;
+	ALPHA = outline_color.a;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_j7mqw"]
+render_priority = 0
+shader = SubResource("Shader_5fyi5")
+shader_parameter/vat_pos_tex = ExtResource("14_w4syb")
+shader_parameter/vat_nrm_tex = ExtResource("13_cbv3f")
+shader_parameter/vat_tex_width = 931
+shader_parameter/vat_rows_per_frame = 1
+shader_parameter/vat_fps = 24.0
+shader_parameter/outline_color = Color(1, 1, 1, 0.6)
+shader_parameter/outline_thickness = 0.006
+shader_parameter/hit_bend_strength = 0.5
+shader_parameter/hit_zone_radius = 0.3
+shader_parameter/hit_oscillation_freq = 10.0
+
+[sub_resource type="Shader" id="Shader_rowds"]
+code = "shader_type spatial;
+render_mode cull_disabled, diffuse_toon, specular_toon;
+
+group_uniforms VAT;
+uniform sampler2D vat_pos_tex : filter_nearest, repeat_disable;
+uniform sampler2D vat_nrm_tex : filter_nearest, repeat_disable;
+uniform int vat_tex_width = 1024;
+uniform int vat_rows_per_frame = 1;
+uniform float vat_fps = 24.0;
+
+group_uniforms Appearance;
+uniform sampler2D albedo_blue : source_color, filter_linear_mipmap;
+uniform sampler2D albedo_green : source_color, filter_linear_mipmap;
+uniform sampler2D albedo_pink : source_color, filter_linear_mipmap;
+uniform float roughness_val : hint_range(0.0, 1.0) = 0.11;
+uniform float rim_amount : hint_range(0.0, 1.0) = 0.6;
+uniform float rim_tint_val : hint_range(0.0, 1.0) = 1.0;
+
+group_uniforms HitReactionMotion;
+uniform float hit_bend_strength = 0.42;
+uniform float hit_zone_radius = 0.25;
+uniform float hit_oscillation_freq = 10.0;
+
+varying flat int v_tex_variant;
+
+vec3 fetch_vat(sampler2D tex, int col, int frame_idx, int row_offset) {
+	int y = frame_idx * vat_rows_per_frame + row_offset;
+	return texelFetch(tex, ivec2(col, y), 0).rgb;
+}
+
+void vertex() {
+	int v_idx = int(round(UV2.x));
+	int col = v_idx % vat_tex_width;
+	int row_offset = v_idx / vat_tex_width;
+
+	float start_frame = INSTANCE_CUSTOM.r;
+	float raw_frame_count = INSTANCE_CUSTOM.g;
+	float time_param = INSTANCE_CUSTOM.b;
+	v_tex_variant = int(round(INSTANCE_CUSTOM.a));
+
+	float abs_frames = max(abs(raw_frame_count), 1.0);
+	float t_frames = (TIME + time_param) * vat_fps;
+	float local_frame = mod(t_frames, abs_frames);
+	int f0 = int(floor(local_frame));
+	int f1 = (f0 + 1) % int(abs_frames);
+	float frac = fract(local_frame);
+
+	int g_f0 = int(round(start_frame)) + f0;
+	int g_f1 = int(round(start_frame)) + f1;
+
+	vec3 pos0 = fetch_vat(vat_pos_tex, col, g_f0, row_offset);
+	vec3 pos1 = fetch_vat(vat_pos_tex, col, g_f1, row_offset);
+	vec3 nrm0 = fetch_vat(vat_nrm_tex, col, g_f0, row_offset);
+	vec3 nrm1 = fetch_vat(vat_nrm_tex, col, g_f1, row_offset);
+
+	vec3 pos = mix(pos0, pos1, frac);
+	vec3 nrm = normalize(mix(nrm0, nrm1, frac));
+
+	// Position-based localized hit reaction via COLOR channel (no color flash/tint)
+	// COLOR.r = decay, COLOR.g = hit angle, COLOR.b = local hit Y, COLOR.a = local hit X
+	float hit_decay = COLOR.r;
+	if (hit_decay > 0.001) {
+		float angle = COLOR.g * 6.2831853;
+		vec2 hit_dir_xz = vec2(cos(angle), sin(angle));
+		vec2 hit_center_xy = vec2((COLOR.a - 0.5) * 2.0, COLOR.b * 1.8);
+
+		float wave = sin(hit_decay * hit_oscillation_freq) * hit_decay;
+
+		vec2 d_xy = pos.xy - hit_center_xy;
+		float zone_weight = exp(-dot(d_xy, d_xy) / max(hit_zone_radius * hit_zone_radius, 0.01));
+		float floor_anchor = smoothstep(0.04, 0.22, pos.y);
+		float follow_through = 0.22 * smoothstep(0.25, 1.5, pos.y);
+
+		pos.xz += hit_dir_xz * (wave * hit_bend_strength * floor_anchor * (zone_weight + follow_through));
+	}
+
+	VERTEX = pos;
+	NORMAL = nrm;
+}
+
+void fragment() {
+	vec3 col_tex;
+	if (v_tex_variant == 1) {
+		col_tex = texture(albedo_green, UV).rgb;
+	} else if (v_tex_variant == 2) {
+		col_tex = texture(albedo_pink, UV).rgb;
+	} else {
+		col_tex = texture(albedo_blue, UV).rgb;
+	}
+
+	ALBEDO = col_tex;
+	ROUGHNESS = roughness_val;
+	RIM = rim_amount;
+	RIM_TINT = rim_tint_val;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_j7gxb"]
+render_priority = 0
+next_pass = SubResource("ShaderMaterial_j7mqw")
+shader = SubResource("Shader_rowds")
+shader_parameter/vat_pos_tex = ExtResource("14_w4syb")
+shader_parameter/vat_nrm_tex = ExtResource("13_cbv3f")
+shader_parameter/vat_tex_width = 931
+shader_parameter/vat_rows_per_frame = 1
+shader_parameter/vat_fps = 24.0
+shader_parameter/albedo_blue = ExtResource("3_oy6d4")
+shader_parameter/albedo_green = ExtResource("4_pk03t")
+shader_parameter/albedo_pink = ExtResource("5_3gyos")
+shader_parameter/roughness_val = 0.11
+shader_parameter/rim_amount = 0.6
+shader_parameter/rim_tint_val = 1.0
+shader_parameter/hit_bend_strength = 0.5
+shader_parameter/hit_zone_radius = 0.3
+shader_parameter/hit_oscillation_freq = 10.0
+
+[node name="CrowdVat" type="Node3D" unique_id=1427631218]
+script = ExtResource("1_bewlr")
+
+[node name="MultiMeshInstance3D" type="MultiMeshInstance3D" parent="." unique_id=737832537]
+material_override = SubResource("ShaderMaterial_ligby")
+
+[node name="MultiMeshInstance3D_Female" type="MultiMeshInstance3D" parent="." unique_id=435423725]
+material_override = SubResource("ShaderMaterial_5fyi5")
+
+[node name="MultiMeshInstance3D_Female_NoHat" type="MultiMeshInstance3D" parent="." unique_id=153732288]
+material_override = SubResource("ShaderMaterial_j7gxb")

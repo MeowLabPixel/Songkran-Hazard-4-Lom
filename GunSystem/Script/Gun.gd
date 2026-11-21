@@ -326,7 +326,7 @@ func _cast_pellet_ray(custom_spread: float = -1.0) -> Dictionary:
 			vertical_spread = deg_to_rad(randf_range(-custom_spread, custom_spread))
 	elif self is ShotgunWaterGun:
 		var sg = self as ShotgunWaterGun
-		var active_spread = maxf(effective_spread, min_spread)
+		var active_spread = maxf(effective_spread, min_spread) * sg.get_air_scale(sg.low_air_max_spread_multiplier)
 		if active_spread > 0.0:
 			var v_mult = sg.vertical_spread_multiplier if "vertical_spread_multiplier" in sg else 0.25
 			horizontal_spread = deg_to_rad(randf_range(-active_spread, active_spread))
@@ -597,7 +597,8 @@ func _resolve_shotgun_hit_type(player: Node, target: Node, hit_pos: Vector3, bla
 	if min_dist <= eff_range:
 		return "shotgun_takedown"
 	if blast_pellet_count >= sg.special_knockdown_min_pellets:
-		if sg.special_knockdown_max_range <= 0.0 or min_dist <= sg.special_knockdown_max_range:
+		var max_special_range = sg.special_knockdown_max_range * sg.get_air_scale(sg.min_air_knockdown_range_multiplier)
+		if sg.special_knockdown_max_range <= 0.0 or min_dist <= max_special_range:
 			return "shotgun_special_takedown"
 	return ""
 
