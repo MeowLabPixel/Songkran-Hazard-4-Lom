@@ -16,12 +16,12 @@ class_name WaterBalloon
 @export_range(0.0, 0.75) var bounce_squash_strength: float = 0.38
 @export var bounce_min_speed: float = 1.5
 @export var bounce_squash_recovery: float = 12.0
-@export_range(0, 20) var fuze_tick_count: int = 8
+@export_range(0, 20) var fuze_tick_count: int = 16
 @export_range(1.0, 4.0) var tick_accel_power: float = 2.2
 @export var tick_pop_peak_scale: float = 1.35
 @export var max_pre_swell_scale: float = 1.45
 @export var tick_pop_recovery: float = 16.0
-@export var final_pop_scale: float = 7.0
+@export var final_pop_scale: float = 10.0
 @export var final_swell_duration: float = 0.22
 @export var tick_shake_intensity: float = 0.045
 @export var tick_shake_decay: float = 14.0

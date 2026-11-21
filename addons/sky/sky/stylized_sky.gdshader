@@ -106,7 +106,9 @@ float cloud_density(vec3 p, float progress){
 }
 
 vec2 cloud_ray_march(vec3 direction, vec3 sun_direction){
-	
+	if (clouds_density <= 0.001) {
+		return vec2(0.0);
+	}
 	float density = 0.0;
 	float light = 0.0;
 	
@@ -121,13 +123,15 @@ vec2 cloud_ray_march(vec3 direction, vec3 sun_direction){
 		float point_density = cloud_density(sample_point, progress);
 		density += point_density;
 		
-		float point_light = 0.0;
-		for(int f = 0; f < shadow_sample; f++){
-			float shadow_progress = float(f) / float(shadow_sample);
-			vec3 shadow_offset = sun_direction * height * shadow_progress;
-			point_light += cloud_density(sample_point + shadow_offset, progress);
+		if (point_density > 0.005) {
+			float point_light = 0.0;
+			for(int f = 0; f < shadow_sample; f++){
+				float shadow_progress = float(f) / float(shadow_sample);
+				vec3 shadow_offset = sun_direction * height * shadow_progress;
+				point_light += cloud_density(sample_point + shadow_offset, progress);
+			}
+			light += point_light;
 		}
-		light += point_light;
 	}
 	return vec2(clamp(density, 0.0, 1.0), light / float(shadow_sample * clouds_samples));
 }
@@ -214,8 +218,11 @@ void sky() {
 	
 	// clouds
 	if (AT_HALF_RES_PASS) {
-		vec3 clouds_direction = vec3(EYEDIR.xz / clamp(EYEDIR.y, 0.0, 1.0), 1.0);
-		vec2 clouds = EYEDIR.y > 0.0 ? cloud_ray_march(clouds_direction, LIGHT0_DIRECTION) : vec2(0.0);
+		vec2 clouds = vec2(0.0);
+		if (EYEDIR.y > 0.02 && clouds_density > 0.001) {
+			vec3 clouds_direction = vec3(EYEDIR.xz / EYEDIR.y, 1.0);
+			clouds = cloud_ray_march(clouds_direction, LIGHT0_DIRECTION);
+		}
 		
 		COLOR = mix(bottom_color, clouds_light_color, exp(-clouds.y * clouds_shadow_intensity));
 		ALPHA = (1.0 - exp(-clouds.x * horizon_mask * bottom_mask * 10.0));

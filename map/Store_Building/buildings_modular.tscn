@@ -1,5 +1,6 @@
 [gd_scene format=4 uid="uid://bdsl2aho0ljic"]
 
+[ext_resource type="Shader" uid="uid://cs8cub3dh0dng" path="res://addons/sky/sky/stylized_sky.gdshader" id="1_0d1s4"]
 [ext_resource type="Material" uid="uid://havtbv60n4vj" path="res://map/Store_Building/Store_Building_Texture.tres" id="1_e23yt"]
 [ext_resource type="Material" uid="uid://bqxgdudp6dkbu" path="res://map/Store_Building/Store_Building_Window_Texture.tres" id="2_i5w2m"]
 [ext_resource type="PackedScene" uid="uid://dqqndhcvw68wn" path="res://map/Store_Building/4_storey_v_1_Big_balcony.tscn" id="3_6qgyl"]
@@ -29,6 +30,102 @@
 [ext_resource type="PackedScene" uid="uid://c0k0w528snfqb" path="res://map/Store_Building/3_storey_v_4.tscn" id="26_x4ux7"]
 [ext_resource type="Script" uid="uid://bbp0hlmv8bh6m" path="res://scripts/pcg/building_path_pcg.gd" id="28_n7bc7"]
 [ext_resource type="PackedScene" uid="uid://bqpyn6ijefplo" path="res://scenes/Crowds/crowd_vat_dance.tscn" id="29_n7bc7"]
+[ext_resource type="Texture2D" uid="uid://cjq27yqriopp7" path="res://map/GroundTexture/Concrete/Concrete_04/Concrete_04_basecolor.png" id="31_0d1s4"]
+[ext_resource type="Texture2D" uid="uid://bj52ws5fc4bl0" path="res://map/GroundTexture/Concrete/Concrete_04/Concrete_04_ambientocclusion.png" id="32_qkoys"]
+[ext_resource type="Texture2D" uid="uid://dkybp5773a82t" path="res://map/GroundTexture/Concrete/Concrete_04/Concrete_04_normal.png" id="33_ikgjp"]
+[ext_resource type="Texture2D" uid="uid://p72yfxbctjp8" path="res://map/GroundTexture/Concrete/Concrete_04/Concrete_04_roughness.png" id="34_cnotd"]
+
+[sub_resource type="Gradient" id="Gradient_qkoys"]
+offsets = PackedFloat32Array(0.48, 0.6)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_ikgjp"]
+gradient = SubResource("Gradient_qkoys")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+
+[sub_resource type="Curve" id="Curve_cnotd"]
+_data = [Vector2(0, 0), 0.0, 10.0, 0, 1, Vector2(0.1, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.8), -0.222222, 0.0, 1, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_wsg6d"]
+texture_mode = 1
+curve = SubResource("Curve_cnotd")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_dhyrc"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_gd4vu"]
+noise = SubResource("FastNoiseLite_dhyrc")
+seamless = true
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_c7n7m"]
+fractal_octaves = 10
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_6en5y"]
+generate_mipmaps = false
+noise = SubResource("FastNoiseLite_c7n7m")
+seamless = true
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_gm25v"]
+noise_type = 3
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_5wmgw"]
+noise = SubResource("FastNoiseLite_gm25v")
+seamless = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_h72jr"]
+shader = ExtResource("1_0d1s4")
+shader_parameter/cloud_shape_sampler = SubResource("NoiseTexture2D_6en5y")
+shader_parameter/cloud_noise_sampler = SubResource("NoiseTexture2D_gd4vu")
+shader_parameter/cloud_curves = SubResource("CurveTexture_wsg6d")
+shader_parameter/clouds_samples = 32
+shader_parameter/shadow_sample = 1
+shader_parameter/clouds_density = 0.5000000074506
+shader_parameter/clouds_scale = 1.0
+shader_parameter/clouds_smoothness = 0.029999999329440002
+shader_parameter/clouds_light_color = Color(1, 1, 1, 1)
+shader_parameter/clouds_shadow_intensity = 1.0
+shader_parameter/high_clouds_sampler = SubResource("NoiseTexture2D_5wmgw")
+shader_parameter/high_clouds_density = 0.0
+shader_parameter/top_color = Color(0, 0.36862755, 1, 1)
+shader_parameter/bottom_color = Color(0, 0.33928585, 1, 1)
+shader_parameter/sun_scatter = Color(0.21127033, 0.30993578, 0.32638, 1)
+shader_parameter/astro_tint = Color(0.905882, 0.788235, 0.627451, 1)
+shader_parameter/astro_sampler = SubResource("GradientTexture2D_ikgjp")
+shader_parameter/astro_scale = 9.0
+shader_parameter/astro_intensity = 3.0
+shader_parameter/stars_intensity = 0.0
+shader_parameter/shooting_stars_intensity = 0.0
+shader_parameter/shooting_star_tint = Color(0, 0, 0, 1)
+
+[sub_resource type="Sky" id="Sky_3r082"]
+sky_material = SubResource("ShaderMaterial_h72jr")
+process_mode = 2
+radiance_size = 2
+
+[sub_resource type="Environment" id="Environment_03gt6"]
+background_mode = 2
+sky = SubResource("Sky_3r082")
+ambient_light_source = 2
+ambient_light_color = Color(1, 0.8626536, 0.6683588, 1)
+ambient_light_energy = 0.5
+reflected_light_source = 2
+tonemap_mode = 2
+tonemap_exposure = 1.27
+ssr_enabled = true
+ssao_enabled = true
+ssao_radius = 2.0
+ssao_intensity = 0.8
+ssao_power = 1.97926
+glow_enabled = true
+glow_intensity = 0.15
+glow_strength = 0.5
+glow_bloom = 0.5
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.001
+volumetric_fog_albedo = Color(0, 0, 0, 1)
+volumetric_fog_emission = Color(1, 0.84934247, 0.5882354, 1)
+volumetric_fog_sky_affect = 0.0
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_f5brf"]
 _surfaces = [{
@@ -334,15 +431,6 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_n1w4q")
 
-[sub_resource type="Animation" id="Animation_hly2i"]
-resource_name = "Take 001"
-length = 0.8333333333333334
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_3qwi4"]
-_data = {
-&"Take 001": SubResource("Animation_hly2i")
-}
-
 [sub_resource type="Curve3D" id="Curve3D_n7bc7"]
 _data = {
 "points": PackedVector3Array(0, 0, 0, 0, 0, 0, -37, 0, 0, 0, 0, 0, 0, 0, 0, 49.84, 0, -0.5916176),
@@ -371,17 +459,39 @@ _data = {
 }
 point_count = 2
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ligby"]
-albedo_color = Color(0.61837727, 0.53527373, 0.3742569, 1)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lcxhd"]
+albedo_texture = ExtResource("31_0d1s4")
+metallic_specular = 0.1
+roughness_texture = ExtResource("34_cnotd")
+normal_texture = ExtResource("33_ikgjp")
+ao_light_affect = 1.0
+ao_texture = ExtResource("32_qkoys")
+heightmap_scale = -16.0
+uv1_scale = Vector3(0.1, 0.1, 0.1)
+uv1_triplanar = true
+uv1_world_triplanar = true
+texture_filter = 5
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_ntd1s"]
-material = SubResource("StandardMaterial3D_ligby")
+material = SubResource("StandardMaterial3D_lcxhd")
 size = Vector2(1000, 1000)
 
 [sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_n7bc7"]
 data = PackedVector3Array(500, 0, 500, -500, 0, 500, 500, 0, -500, -500, 0, 500, -500, 0, -500, 500, 0, -500)
 
 [node name="Buildings_Modular" type="Node3D" unique_id=1481632626]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1741701592]
+environment = SubResource("Environment_03gt6")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=608075586 groups=["sun_light"]]
+transform = Transform3D(0.67611545, -0.7365889, 0.017457843, -0.4697222, -0.4126614, 0.78043044, -0.5676522, -0.5358614, -0.62499887, 0, 18.711636, 30.8891)
+shadow_enabled = true
+shadow_blur = 1.5
+directional_shadow_split_1 = 0.05
+directional_shadow_split_2 = 0.15
+directional_shadow_split_3 = 0.45
+directional_shadow_max_distance = 150.0
 
 [node name="Buildings_Modular" type="Node3D" parent="." unique_id=1293351234]
 transform = Transform3D(50, 0, 0, 0, 50, 0, 0, 0, 50, 4.672274, -0.018563807, 0)
@@ -429,9 +539,6 @@ mesh = SubResource("ArrayMesh_c4edf")
 [node name="pPlane3" type="MeshInstance3D" parent="Buildings_Modular" unique_id=1875171995]
 transform = Transform3D(9.047876, 0, 0, 0, -3.2654637e-07, -4.8468003, 0, 7.4705105, -2.1186037e-07, -0.09932406, 0.02464963, 0.05347041)
 mesh = SubResource("ArrayMesh_e32w4")
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="Buildings_Modular" unique_id=479957924]
-libraries/ = SubResource("AnimationLibrary_3qwi4")
 
 [node name="PCG" type="Node3D" parent="." unique_id=1866732701]
 
@@ -578,7 +685,6 @@ metadata/_custom_type_script = "uid://bbp0hlmv8bh6m"
 
 [node name="CrowdVat" parent="." unique_id=1427631218 instance=ExtResource("29_n7bc7")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -2, 0, 19)
-preview_specialists_in_editor = null
 spawn_area_size = Vector3(32.36, 1, 20)
 total_crowd_count = 600
 outline_active_distance = 110.0

@@ -1,0 +1,54 @@
+{
+	"clips": {
+		"gun_reload": {
+			"anim_name": "Range Zombie  ReloadLoop",
+			"duration": 4.6,
+			"frame_count": 112,
+			"loop": true,
+			"ping_pong": true,
+			"start_frame": 0
+		},
+		"gun_shot": {
+			"anim_name": "Range Zombie  shot",
+			"duration": 4.04,
+			"frame_count": 98,
+			"loop": false,
+			"ping_pong": false,
+			"spawn_event": {
+				"basis_x": [
+					0.79552161693573,
+					0.515687048435211,
+					-0.3181391954422
+				],
+				"basis_y": [
+					-0.290658891201019,
+					-0.135919809341431,
+					-0.9471235871315
+				],
+				"basis_z": [
+					-0.531660676002502,
+					0.845927357673645,
+					0.0417618155479431
+				],
+				"forward": [
+					0.531660676002502,
+					-0.845927357673645,
+					-0.0417618155479431
+				],
+				"pos": [
+					0.213460311293602,
+					1.3207540512085,
+					-0.626250207424164
+				],
+				"time": 3.44
+			},
+			"start_frame": 112
+		}
+	},
+	"fps": 24.0,
+	"rows_per_frame": 1,
+	"tex_height": 210,
+	"tex_width": 1092,
+	"total_frames": 210,
+	"vertex_count": 1092
+}

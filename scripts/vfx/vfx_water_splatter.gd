@@ -2,6 +2,7 @@ class_name VFXWaterSplatter
 extends Node3D
 
 @export var auto_free_delay: float = 3.0
+@export var auto_free_on_play: bool = true
 @onready var bubble_small: GPUParticles3D = get_node_or_null("Bubble_Small")
 
 const SPLATTER_SCENE_PATH = "res://Jomp_Folder/VFX_Water/VFX2/vfx_water_splatter.tscn"
@@ -135,9 +136,10 @@ func play(is_player: bool = false, is_crit: bool = false, is_weakpoint: bool = f
 			elif ap.get_animation_list().size() > 0:
 				ap.play(ap.get_animation_list()[0])
 
-	var tree = get_tree()
-	if tree:
-		tree.create_timer(auto_free_delay).timeout.connect(func():
-			if is_instance_valid(self):
-				queue_free()
-		)
+	if auto_free_on_play:
+		var tree = get_tree()
+		if tree:
+			tree.create_timer(auto_free_delay).timeout.connect(func():
+				if is_instance_valid(self):
+					queue_free()
+			)

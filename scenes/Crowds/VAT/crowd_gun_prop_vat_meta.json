@@ -1,0 +1,26 @@
+{
+	"clips": {
+		"gun_reload": {
+			"anim_name": "Range Zombie  ReloadLoop",
+			"duration": 4.6,
+			"frame_count": 112,
+			"loop": true,
+			"ping_pong": true,
+			"start_frame": 0
+		},
+		"gun_shot": {
+			"anim_name": "Range Zombie  shot",
+			"duration": 4.04,
+			"frame_count": 98,
+			"loop": false,
+			"ping_pong": false,
+			"start_frame": 112
+		}
+	},
+	"fps": 24.0,
+	"rows_per_frame": 1,
+	"tex_height": 210,
+	"tex_width": 1822,
+	"total_frames": 210,
+	"vertex_count": 1822
+}

@@ -7,6 +7,7 @@ uniform sampler2D vat_nrm_tex : filter_nearest, repeat_disable;
 uniform int vat_tex_width = 1024;
 uniform int vat_rows_per_frame = 1;
 uniform float vat_fps = 24.0;
+uniform float vat_time_override = -1.0;
 
 group_uniforms Appearance;
 uniform sampler2D albedo_blue : source_color, filter_linear_mipmap;
@@ -28,33 +29,70 @@ vec3 fetch_vat(sampler2D tex, int col, int frame_idx, int row_offset) {
 	return texelFetch(tex, ivec2(col, y), 0).rgb;
 }
 
+void sample_vat_frame(int col, int row_offset, float frame_f, out vec3 out_pos, out vec3 out_nrm) {
+	int f0 = int(floor(frame_f));
+	int f1 = f0 + 1;
+	float frac = fract(frame_f);
+	vec3 p0 = fetch_vat(vat_pos_tex, col, f0, row_offset);
+	vec3 p1 = fetch_vat(vat_pos_tex, col, f1, row_offset);
+	vec3 n0 = fetch_vat(vat_nrm_tex, col, f0, row_offset);
+	vec3 n1 = fetch_vat(vat_nrm_tex, col, f1, row_offset);
+	out_pos = mix(p0, p1, frac);
+	out_nrm = normalize(mix(n0, n1, frac));
+}
+
 void vertex() {
 	int v_idx = int(round(UV2.x));
 	int col = v_idx % vat_tex_width;
 	int row_offset = v_idx / vat_tex_width;
 
-	float start_frame = INSTANCE_CUSTOM.r;
-	float raw_frame_count = INSTANCE_CUSTOM.g;
-	float time_param = INSTANCE_CUSTOM.b;
-	v_tex_variant = int(round(INSTANCE_CUSTOM.a));
+	float c_r = INSTANCE_CUSTOM.r;
+	float c_g = INSTANCE_CUSTOM.g;
+	float c_b = INSTANCE_CUSTOM.b;
+	v_tex_variant = int(round(INSTANCE_CUSTOM.a)) % 10;
 
-	float abs_frames = max(abs(raw_frame_count), 1.0);
-	float t_frames = (TIME + time_param) * vat_fps;
-	float local_frame = mod(t_frames, abs_frames);
-	int f0 = int(floor(local_frame));
-	int f1 = (f0 + 1) % int(abs_frames);
-	float frac = fract(local_frame);
+	vec3 pos;
+	vec3 nrm;
 
-	int g_f0 = int(round(start_frame)) + f0;
-	int g_f1 = int(round(start_frame)) + f1;
+	if (c_g >= 0.0) {
+		// Zero-CPU GPU looping mode: r = start_frame, g = frame_count, b = phase_offset_sec
+		float abs_frames = max(c_g, 1.0);
+		float cur_time = vat_time_override >= 0.0 ? vat_time_override : TIME;
+		float t_frames = (cur_time + c_b) * vat_fps;
+		float local_frame = mod(t_frames, abs_frames);
+		int f0 = int(floor(local_frame));
+		int f1 = (f0 + 1) % int(abs_frames);
+		float frac = fract(local_frame);
 
-	vec3 pos0 = fetch_vat(vat_pos_tex, col, g_f0, row_offset);
-	vec3 pos1 = fetch_vat(vat_pos_tex, col, g_f1, row_offset);
-	vec3 nrm0 = fetch_vat(vat_nrm_tex, col, g_f0, row_offset);
-	vec3 nrm1 = fetch_vat(vat_nrm_tex, col, g_f1, row_offset);
+		int g_f0 = int(round(c_r)) + f0;
+		int g_f1 = int(round(c_r)) + f1;
 
-	vec3 pos = mix(pos0, pos1, frac);
-	vec3 nrm = normalize(mix(nrm0, nrm1, frac));
+		vec3 pos0 = fetch_vat(vat_pos_tex, col, g_f0, row_offset);
+		vec3 pos1 = fetch_vat(vat_pos_tex, col, g_f1, row_offset);
+		vec3 nrm0 = fetch_vat(vat_nrm_tex, col, g_f0, row_offset);
+		vec3 nrm1 = fetch_vat(vat_nrm_tex, col, g_f1, row_offset);
+
+		pos = mix(pos0, pos1, frac);
+		nrm = normalize(mix(nrm0, nrm1, frac));
+	} else {
+		// Active Action / Crossblend mode: r = frameA, g = -(frameB + 1.0), b = blend_weight (0..1)
+		vec3 posA;
+		vec3 nrmA;
+		sample_vat_frame(col, row_offset, max(c_r, 0.0), posA, nrmA);
+
+		float blend_w = clamp(c_b, 0.0, 1.0);
+		if (blend_w < 0.999) {
+			float frameB = max(abs(c_g) - 1.0, 0.0);
+			vec3 posB;
+			vec3 nrmB;
+			sample_vat_frame(col, row_offset, frameB, posB, nrmB);
+			pos = mix(posB, posA, blend_w);
+			nrm = normalize(mix(nrmB, nrmA, blend_w));
+		} else {
+			pos = posA;
+			nrm = nrmA;
+		}
+	}
 
 	// Position-based localized hit reaction via COLOR channel (no color flash/tint)
 	// COLOR.r = decay, COLOR.g = hit angle, COLOR.b = local hit Y, COLOR.a = local hit X
