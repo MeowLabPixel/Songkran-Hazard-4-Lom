@@ -35,6 +35,13 @@ shader_parameter/outline_thickness = 0.006
 shader_parameter/hit_bend_strength = 0.5
 shader_parameter/hit_zone_radius = 0.3
 shader_parameter/hit_oscillation_freq = 10.0
+shader_parameter/use_lod_fade = false
+shader_parameter/keep_front_row_outline = true
+shader_parameter/lod_ref_pos = Vector3(0, 0, 0)
+shader_parameter/outline_fade_start = 25.0
+shader_parameter/outline_fade_end = 35.0
+shader_parameter/max_render_fade_start = 95.0
+shader_parameter/max_render_fade_end = 110.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ligby"]
 render_priority = 0
@@ -70,6 +77,13 @@ shader_parameter/outline_thickness = 0.006
 shader_parameter/hit_bend_strength = 0.5
 shader_parameter/hit_zone_radius = 0.3
 shader_parameter/hit_oscillation_freq = 10.0
+shader_parameter/use_lod_fade = false
+shader_parameter/keep_front_row_outline = true
+shader_parameter/lod_ref_pos = Vector3(0, 0, 0)
+shader_parameter/outline_fade_start = 25.0
+shader_parameter/outline_fade_end = 35.0
+shader_parameter/max_render_fade_start = 95.0
+shader_parameter/max_render_fade_end = 110.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_5fyi5"]
 render_priority = 0
@@ -105,6 +119,13 @@ shader_parameter/outline_thickness = 0.006
 shader_parameter/hit_bend_strength = 0.5
 shader_parameter/hit_zone_radius = 0.3
 shader_parameter/hit_oscillation_freq = 10.0
+shader_parameter/use_lod_fade = false
+shader_parameter/keep_front_row_outline = true
+shader_parameter/lod_ref_pos = Vector3(0, 0, 0)
+shader_parameter/outline_fade_start = 25.0
+shader_parameter/outline_fade_end = 35.0
+shader_parameter/max_render_fade_start = 95.0
+shader_parameter/max_render_fade_end = 110.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_j7gxb"]
 render_priority = 0
@@ -140,6 +161,13 @@ shader_parameter/outline_thickness = 0.006
 shader_parameter/hit_bend_strength = 0.5
 shader_parameter/hit_zone_radius = 0.3
 shader_parameter/hit_oscillation_freq = 10.0
+shader_parameter/use_lod_fade = false
+shader_parameter/keep_front_row_outline = true
+shader_parameter/lod_ref_pos = Vector3(0, 0, 0)
+shader_parameter/outline_fade_start = 25.0
+shader_parameter/outline_fade_end = 35.0
+shader_parameter/max_render_fade_start = 95.0
+shader_parameter/max_render_fade_end = 110.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_f4ydy"]
 render_priority = 0
@@ -175,6 +203,13 @@ shader_parameter/outline_thickness = 0.006
 shader_parameter/hit_bend_strength = 0.5
 shader_parameter/hit_zone_radius = 0.3
 shader_parameter/hit_oscillation_freq = 10.0
+shader_parameter/use_lod_fade = false
+shader_parameter/keep_front_row_outline = true
+shader_parameter/lod_ref_pos = Vector3(0, 0, 0)
+shader_parameter/outline_fade_start = 25.0
+shader_parameter/outline_fade_end = 35.0
+shader_parameter/max_render_fade_start = 95.0
+shader_parameter/max_render_fade_end = 110.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_73hss"]
 render_priority = 0
@@ -210,6 +245,13 @@ shader_parameter/outline_thickness = 0.006
 shader_parameter/hit_bend_strength = 0.5
 shader_parameter/hit_zone_radius = 0.3
 shader_parameter/hit_oscillation_freq = 10.0
+shader_parameter/use_lod_fade = false
+shader_parameter/keep_front_row_outline = true
+shader_parameter/lod_ref_pos = Vector3(0, 0, 0)
+shader_parameter/outline_fade_start = 25.0
+shader_parameter/outline_fade_end = 35.0
+shader_parameter/max_render_fade_start = 95.0
+shader_parameter/max_render_fade_end = 110.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_imxer"]
 render_priority = 0
@@ -231,9 +273,6 @@ shader_parameter/hit_oscillation_freq = 10.0
 
 [node name="CrowdVat" type="Node3D" unique_id=1427631218]
 script = ExtResource("1_bewlr")
-preview_specialists_in_editor = true
-monitor_physics_projectiles = null
-enable_vat_shadows = null
 
 [node name="MultiMeshInstance3D" type="MultiMeshInstance3D" parent="." unique_id=737832537]
 material_override = SubResource("ShaderMaterial_ligby")

@@ -14,7 +14,7 @@ uniform float hit_zone_radius = 0.25;
 uniform float hit_oscillation_freq = 10.0;
 
 group_uniforms DistanceLOD;
-uniform bool use_lod_fade = true;
+uniform bool use_lod_fade = false;
 uniform bool keep_front_row_shadow = true;
 uniform vec3 lod_ref_pos = vec3(0.0);
 uniform float shadow_fade_start = 20.0;
@@ -109,8 +109,9 @@ void fragment() {
 	}
 	if (v_shadow_fade < 0.999) {
 		// 4x4 Bayer ordered dither blurred by DirectionalLight PCF into a smooth shadow fade
-		ivec2 p = ivec2(FRAGCOORD.xy) & 3;
-		int idx = p.y * 4 + p.x;
+		int px = int(FRAGCOORD.x) % 4;
+		int py = int(FRAGCOORD.y) % 4;
+		int idx = py * 4 + px;
 		float bayer = 0.0;
 		if (idx == 0) bayer = 0.0625;
 		else if (idx == 1) bayer = 0.5625;

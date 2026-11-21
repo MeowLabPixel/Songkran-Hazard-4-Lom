@@ -645,5 +645,5 @@ func _process_modification() -> void:
 
 	# Sleep modifier if all reactions are settled to eliminate idle CPU cost
 	if _active_reactions.is_empty() and _active_juice_reactions.is_empty() and _slid_flipflop == "":
-		if enemy and (enemy is CrowdMember or enemy.has_meta("is_crowd_preview")):
+		if enemy and enemy.has_meta("is_crowd_preview"):
 			active = false

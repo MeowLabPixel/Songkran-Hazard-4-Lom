@@ -5,7 +5,6 @@
 [ext_resource type="Texture2D" uid="uid://brpxssblqesg6" path="res://Character Model For Programer/Zombie bg1/Zombie bg new/textures/Zombie bg1_bg zombie1.png" id="4_o52ux"]
 [ext_resource type="AnimationLibrary" uid="uid://cw3egvwp57rug" path="res://scenes/Crowds/Anims/Dance Animation Male.res" id="10_lh621"]
 [ext_resource type="AnimationLibrary" uid="uid://dblicx2crypip" path="res://scenes/enemy/Male_Zombie_Anims.res" id="14_mucfo"]
-[ext_resource type="Script" uid="uid://bsyserjqeygay" path="res://scripts/crowd_member.gd" id="16_crowd_member"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_q78dv"]
 radius = 0.24511719
@@ -718,7 +717,6 @@ bind/221/pose = Transform3D(0.9721888, 0.004707418, 0.23415177, 0.23415178, -0.0
 floor_stop_on_slope = false
 floor_max_angle = 1.3089969
 floor_snap_length = 0.5
-script = ExtResource("16_crowd_member")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2095365787]
 transform = Transform3D(1, 0, 1.4210855e-14, 0, 1, 0, -1.4210855e-14, 0, 1, 0, 0.8149309, 0)

@@ -1,19 +1,15 @@
 @tool
 class_name CrowdVATSpawner
 extends Node3D
-## Full VAT (or Hybrid) Crowd Spawner:
+## Full VAT Crowd Spawner:
 ## - Uses MultiMeshInstance3D (VAT) for Male, Female (Hat), and Female (No-Hat) dancers.
-## - When use_full_vat_specialists is true and Gun/Balloon VAT nodes are configured, also runs
-##   Gunners (Body VAT + Paired Gun Prop VAT) and Ballooners (Body VAT + Hand-Tracked Balloon)
+## - Runs Gunners (Body VAT + Paired Gun Prop VAT) and Ballooners (Body VAT + Hand-Tracked Balloon)
 ##   with 0 Skeleton3D nodes, smooth crossblends, target rotation, and exact projectile spawns.
-## - Gracefully falls back to rigged CrowdMember scenes if specialist VAT assets aren't present yet.
 
 signal projectile_spawn_requested(role: String, world_spawn_pos: Vector3, target_pos: Vector3, instance_idx: int)
 
 const VATHitboxAreaScript := preload("res://scripts/vat/vat_hitbox_area.gd")
 const VAT_SHADOW_SHADER := preload("res://shaders/crowd_vat_shadow.gdshader")
-const SPECIALIST_HIT_SHADER := preload("res://shaders/crowd_specialist_hit.gdshader")
-const SPECIALIST_HIT_OUTLINE_SHADER := preload("res://shaders/crowd_specialist_hit_outline.gdshader")
 
 @export_group("Editor Preview")
 @export_tool_button("Rebuild Crowd") var rebuild_crowd_button := _rebuild_crowd
@@ -27,22 +23,8 @@ const SPECIALIST_HIT_OUTLINE_SHADER := preload("res://shaders/crowd_specialist_h
 				_rebuild_crowd()
 			else:
 				_clear_preview()
-@export var preview_specialists_in_editor: bool = false: ## Off by default so Editor keeps 0 skeleton/node overhead (Gun/Balloon slots preview as VAT dancers in Editor)
-	set(val):
-		if preview_specialists_in_editor == val:
-			return
-		preview_specialists_in_editor = val
-		if Engine.is_editor_hint() and is_inside_tree() and is_node_ready() and preview_in_editor:
-			_rebuild_crowd()
 
 @export_group("VAT Assets")
-@export var use_full_vat_specialists: bool = true: ## Run Gun & Balloon specialists as Full VAT (0 Skeleton3Ds) when MultiMeshInstance3D_Gun / _GunProp / _Balloon are configured
-	set(val):
-		if use_full_vat_specialists == val:
-			return
-		use_full_vat_specialists = val
-		if is_inside_tree() and is_node_ready():
-			_rebuild_crowd()
 @export_file("*.json") var vat_meta_path: String = "res://scenes/Crowds/VAT/crowd_male_vat_meta.json":
 	set(val):
 		vat_meta_path = val
@@ -85,22 +67,6 @@ const SPECIALIST_HIT_OUTLINE_SHADER := preload("res://shaders/crowd_specialist_h
 			_rebuild_crowd()
 @export var balloon_multimesh_node_path: NodePath = NodePath("MultiMeshInstance3D_Balloon")
 @export_file("*.tres") var balloon_vat_mesh_path: String = "res://scenes/Crowds/VAT/crowd_balloon_vat_mesh.tres"
-
-@export_group("Non-VAT Specialist Scenes")
-@export var gun_member_scene: PackedScene = preload("res://scenes/Crowds/crowd_male_model_Gun.tscn"):
-	set(val):
-		gun_member_scene = val
-		if is_inside_tree() and is_node_ready():
-			_rebuild_crowd()
-@export var balloon_member_scene: PackedScene = preload("res://scenes/Crowds/crowd_male_model_Balloon.tscn"):
-	set(val):
-		balloon_member_scene = val
-		if is_inside_tree() and is_node_ready():
-			_rebuild_crowd()
-@export var base_crowd_material: Material = preload("res://scenes/Crowds/Crowd_Material.tres")
-@export var texture_blue: Texture2D = preload("res://scenes/Crowds/Crowd_Texture_Blue.png")
-@export var texture_green: Texture2D = preload("res://scenes/Crowds/Crowd_Texture_Green.png")
-@export var texture_pink: Texture2D = preload("res://scenes/Crowds/Crowd_Texture_Pink.png")
 
 @export_group("Crowd Layout")
 @export var spawn_area_size: Vector3 = Vector3(20.0, 1.0, 10.0):
@@ -224,12 +190,12 @@ const SPECIALIST_HIT_OUTLINE_SHADER := preload("res://shaders/crowd_specialist_h
 		enable_hitboxes = val
 		if is_inside_tree() and is_node_ready():
 			_rebuild_hitboxes()
-			_sync_specialist_hitboxes()
+			_sync_vat_hitboxes()
 @export var monitor_physics_projectiles: bool = false: ## Keep Area3D monitoring off unless physical bullet RigidBodies overlap crowd hitboxes (raycasts only need monitorable)
 	set(val):
 		monitor_physics_projectiles = val
 		if is_inside_tree() and is_node_ready():
-			_sync_specialist_hitboxes()
+			_sync_vat_hitboxes()
 
 @export_group("Performance & Distance LOD")
 @export var enable_vat_shadows: bool = true: ## Toggle shadow casting on VAT crowd bodies (GunProp always stays shadow-off)
@@ -237,9 +203,7 @@ const SPECIALIST_HIT_OUTLINE_SHADER := preload("res://shaders/crowd_specialist_h
 		enable_vat_shadows = val
 		if is_inside_tree() and is_node_ready():
 			call("_apply_vat_shadow_state")
-@export_range(5.0, 100.0, 1.0) var specialist_half_rate_distance: float = 15.0 ## Distance beyond which Gun/Balloon skeletons step at 1/2 rate (30 FPS)
-@export_range(5.0, 120.0, 1.0) var specialist_quarter_rate_distance: float = 25.0 ## Distance beyond which Gun/Balloon skeletons step at 1/4 rate (15 FPS)
-@export_range(5.0, 150.0, 1.0) var specialist_active_distance: float = 35.0 ## Distance beyond which Gun/Balloon skeletons pause completely
+@export_range(5.0, 150.0, 1.0) var specialist_active_distance: float = 35.0 ## Distance beyond which VAT Gunner/Ballooner turning & throwing actions pause
 @export_range(5.0, 150.0, 1.0) var hitbox_active_distance: float = 35.0 ## Distance beyond which crowd hitboxes disable monitoring
 @export_range(5.0, 150.0, 1.0) var shadow_active_distance: float = 30.0: ## Distance beyond which non-front-row crowd shadows finish fading out
 	set(val):
@@ -365,7 +329,6 @@ var _balloon_timer: float = 0.0
 var _next_balloon_time: float = 4.5
 var _lod_check_timer: float = 0.0
 var _specialists_active: bool = true
-var _specialist_step_interval: int = 1
 var _hitboxes_within_dist: bool = true
 var _shadows_active: bool = true
 var _outlines_active: bool = true
@@ -376,7 +339,6 @@ var _last_front_cam_pos: Vector3 = Vector3(1e9, 1e9, 1e9)
 var _last_lod_ref_pos: Vector3 = Vector3.ZERO
 var _crowd_local_center: Vector3 = Vector3.ZERO
 var _crowd_bound_radius: float = 0.0
-var _specialist_meshes: Array[MeshInstance3D] = []
 
 const _POP_HIDDEN: int = 0
 const _POP_IN: int = 1
@@ -401,15 +363,6 @@ var _balloon_idx: int = 0
 # VAT Dancer state & pools
 var _hitbox_container: Node3D = null
 var _vat_hitbox_pool: Array[Area3D] = []
-
-# Non-VAT Rigged Gun & Balloon CrowdMembers & pools
-var _specialists_container: Node3D = null
-var _gun_members: Array[CrowdMember] = []
-var _balloon_members: Array[CrowdMember] = []
-var _gun_member_pool: Array[CrowdMember] = []
-var _balloon_member_pool: Array[CrowdMember] = []
-var _variant_materials: Array[Material] = []
-var _active_specialist_hits: Dictionary = {} # MeshInstance3D -> {decay, angle, y_norm, x_norm}
 
 
 func _ready() -> void:
@@ -470,27 +423,19 @@ func _process(delta: float) -> void:
 	if not _within_render_dist:
 		return
 
-	var has_gunners := (not _gun_members.is_empty()) or _has_active_vat_gunners()
-	if enable_gun_shooting and has_gunners and (_specialists_active or allow_distant_projectiles):
+	if enable_gun_shooting and _has_active_vat_gunners() and (_specialists_active or allow_distant_projectiles):
 		_shot_timer += delta
 		if _shot_timer >= _next_shot_time:
 			_shot_timer = 0.0
 			_next_shot_time = _rng.randf_range(shot_interval_min, shot_interval_max)
-			if _has_active_vat_gunners():
-				_trigger_vat_gun_shot()
-			else:
-				_trigger_random_gun_shot()
+			_trigger_vat_gun_shot()
 
-	var has_ballooners := (not _balloon_members.is_empty()) or _has_active_vat_ballooners()
-	if enable_balloon_throwing and has_ballooners and (_specialists_active or allow_distant_projectiles):
+	if enable_balloon_throwing and _has_active_vat_ballooners() and (_specialists_active or allow_distant_projectiles):
 		_balloon_timer += delta
 		if _balloon_timer >= _next_balloon_time:
 			_balloon_timer = 0.0
 			_next_balloon_time = _rng.randf_range(balloon_interval_min, balloon_interval_max)
-			if _has_active_vat_ballooners():
-				_trigger_vat_balloon_throw()
-			else:
-				_trigger_random_balloon_throw()
+			_trigger_vat_balloon_throw()
 
 
 func _load_mesh_if_exists(path: String) -> Mesh:
@@ -577,8 +522,6 @@ func _rebuild_crowd() -> void:
 		return
 
 	_sync_shader_params()
-	_build_variant_materials()
-	_clear_specialists()
 
 	var layout_rng := RandomNumberGenerator.new()
 	layout_rng.seed = custom_seed
@@ -697,12 +640,12 @@ func _rebuild_crowd() -> void:
 		indices[i] = indices[j]
 		indices[j] = tmp
 
-	var use_vat_gun := use_full_vat_specialists and bool(_vat_variants[3]["active"])
-	var use_vat_balloon := use_full_vat_specialists and bool(_vat_variants[4]["active"])
+	var use_vat_gun := bool(_vat_variants[3]["active"])
+	var use_vat_balloon := bool(_vat_variants[4]["active"])
 
 	var used_slots := {}
-	var gun_indices := _pick_spaced_role_indices(indices, used_slots, gun_count, placed_positions, min_gunner_spacing) if (use_vat_gun or gun_member_scene != null) else []
-	var balloon_indices := _pick_spaced_role_indices(indices, used_slots, balloon_count, placed_positions, min_ballooner_spacing) if (use_vat_balloon or balloon_member_scene != null) else []
+	var gun_indices := _pick_spaced_role_indices(indices, used_slots, gun_count, placed_positions, min_gunner_spacing) if use_vat_gun else []
+	var balloon_indices := _pick_spaced_role_indices(indices, used_slots, balloon_count, placed_positions, min_ballooner_spacing) if use_vat_balloon else []
 
 	var placed_colors: Array[Dictionary] = []
 	var gun_slots: Array[Dictionary] = []
@@ -738,31 +681,15 @@ func _rebuild_crowd() -> void:
 		(_vat_variants[chosen_v]["transforms"] as Array[Transform3D]).append(placed_transforms[idx])
 		variant_colors[chosen_v].append(c_idx)
 
-	var spawn_rigged_specialists := (not Engine.is_editor_hint()) or preview_specialists_in_editor
-	var rigged_gun_slots: Array[Dictionary] = []
-	var rigged_balloon_slots: Array[Dictionary] = []
-
 	if use_vat_gun:
 		for s in gun_slots:
 			(_vat_variants[3]["transforms"] as Array[Transform3D]).append(s["xform"])
 			variant_colors[3].append(int(s["color"]))
-	elif spawn_rigged_specialists:
-		rigged_gun_slots = gun_slots
-	else:
-		for s in gun_slots:
-			(_vat_variants[0]["transforms"] as Array[Transform3D]).append(s["xform"])
-			variant_colors[0].append(int(s["color"]))
 
 	if use_vat_balloon:
 		for s in balloon_slots:
 			(_vat_variants[4]["transforms"] as Array[Transform3D]).append(s["xform"])
 			variant_colors[4].append(int(s["color"]))
-	elif spawn_rigged_specialists:
-		rigged_balloon_slots = balloon_slots
-	else:
-		for s in balloon_slots:
-			(_vat_variants[0]["transforms"] as Array[Transform3D]).append(s["xform"])
-			variant_colors[0].append(int(s["color"]))
 
 	# 3. Populate VAT MultiMeshes for dancers (0, 1, 2)
 	for v_idx in range(3):
@@ -793,26 +720,18 @@ func _rebuild_crowd() -> void:
 			(_vat_variants[4]["mm_inst"] as MultiMeshInstance3D).multimesh = null
 		_vat_variants[4]["mm"] = null
 
-	# 4. Spawn/reuse pooled rigged CrowdMembers only if falling back to rigged specialists
-	if not rigged_gun_slots.is_empty() or not rigged_balloon_slots.is_empty():
-		_spawn_specialists(rigged_gun_slots, rigged_balloon_slots)
-	elif is_instance_valid(_specialists_container):
-		if _specialists_container.get_parent() == self:
-			remove_child(_specialists_container)
-		_specialists_container.queue_free()
-		_specialists_container = null
-		_gun_member_pool.clear()
-		_balloon_member_pool.clear()
 	_rebuild_hitboxes()
 	_sync_invisible_wall()
 	_sync_shadow_proxies()
 	_apply_render_distance()
 	_apply_vat_shadow_state()
-	_sync_shader_params()
+	if not (_last_lod_ref_pos is Vector3):
+		_last_lod_ref_pos = Vector3.ZERO
 	_last_front_cam_pos = Vector3(1e9, 1e9, 1e9)
 	_last_pop_cam_pos = Vector3(1e9, 1e9, 1e9)
 	_pop_initialized = false
 	_active_pop_count = 0
+	_sync_shader_params()
 	if not Engine.is_editor_hint() and get_viewport():
 		_update_specialist_lod()
 
@@ -1051,7 +970,6 @@ func _populate_specialist_vat_multimesh(v_idx: int, slots: Array[Dictionary], co
 
 func _clear_preview() -> void:
 	_reset_active_vat_actions()
-	_clear_specialists()
 	_active_pop_count = 0
 	_pop_initialized = false
 	if is_instance_valid(_hitbox_container):
@@ -1089,179 +1007,34 @@ func _clear_preview() -> void:
 			prop_inst.multimesh.instance_count = 0
 
 
-func _clear_specialists() -> void:
-	_gun_members.clear()
-	_balloon_members.clear()
-	_specialist_meshes.clear()
-	for m in _gun_member_pool:
-		if is_instance_valid(m):
-			m.visible = false
-			m.set_row_active(false)
-			var hb := m.get_node_or_null("SpecialistHitbox") as Area3D
-			if hb:
-				hb.monitoring = false
-				hb.monitorable = false
-	for m in _balloon_member_pool:
-		if is_instance_valid(m):
-			m.visible = false
-			m.set_row_active(false)
-			var hb := m.get_node_or_null("SpecialistHitbox") as Area3D
-			if hb:
-				hb.monitoring = false
-				hb.monitorable = false
-
-
-func _spawn_specialists(gun_slots: Array[Dictionary], balloon_slots: Array[Dictionary]) -> void:
-	if gun_slots.is_empty() and balloon_slots.is_empty():
-		return
-
-	if not is_instance_valid(_specialists_container):
-		_specialists_container = Node3D.new()
-		_specialists_container.name = "RiggedSpecialists"
-		add_child(_specialists_container)
-		_specialists_container.owner = null
-
-	var member_idx := 0
-	for i in range(gun_slots.size()):
-		var slot: Dictionary = gun_slots[i]
-		var member := _acquire_pooled_specialist(_gun_member_pool, gun_member_scene, i)
-		if not member:
-			continue
-		member.transform = slot["xform"]
-		member.visible = true
-		member.member_index = member_idx
-		member.anim_step_interval = _specialist_step_interval
-		member_idx += 1
-		var mat := _variant_materials[int(slot["color"])] if not _variant_materials.is_empty() else null
-		member.setup_member(true, mat, {"enable_hitbox": enable_hitboxes}, false)
-		member.set_row_active(_specialists_active)
-		_attach_specialist_hitbox(member)
-		_cache_specialist_meshes(member)
-		_gun_members.append(member)
-
-	for i in range(balloon_slots.size()):
-		var slot: Dictionary = balloon_slots[i]
-		var member := _acquire_pooled_specialist(_balloon_member_pool, balloon_member_scene, i)
-		if not member:
-			continue
-		member.transform = slot["xform"]
-		member.visible = true
-		member.member_index = member_idx
-		member.anim_step_interval = _specialist_step_interval
-		member_idx += 1
-		var mat := _variant_materials[int(slot["color"])] if not _variant_materials.is_empty() else null
-		member.setup_member(false, mat, {"enable_hitbox": enable_hitboxes}, true)
-		member.set_row_active(_specialists_active)
-		_attach_specialist_hitbox(member)
-		_cache_specialist_meshes(member)
-		_balloon_members.append(member)
-
-
-func _cache_specialist_meshes(member: CrowdMember) -> void:
-	var shadow_mode := GeometryInstance3D.SHADOW_CASTING_SETTING_ON if _shadows_active else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	for child in member.find_children("*", "MeshInstance3D", true, false):
-		if child is MeshInstance3D:
-			var mi := child as MeshInstance3D
-			mi.cast_shadow = shadow_mode
-			_specialist_meshes.append(mi)
-
-
-func _acquire_pooled_specialist(pool: Array[CrowdMember], scene: PackedScene, pool_idx: int) -> CrowdMember:
-	if pool_idx < pool.size() and is_instance_valid(pool[pool_idx]):
-		return pool[pool_idx]
-	if not scene:
-		return null
-	var member := scene.instantiate() as CrowdMember
-	if not member:
-		return null
-	_specialists_container.add_child(member)
-	member.owner = null
-	if pool_idx < pool.size():
-		pool[pool_idx] = member
-	else:
-		pool.append(member)
-	return member
-
-
-func _build_variant_materials() -> void:
-	if not _variant_materials.is_empty():
-		return
-	var outline_mat := ShaderMaterial.new()
-	outline_mat.shader = SPECIALIST_HIT_OUTLINE_SHADER
-	outline_mat.set_shader_parameter("hit_bend_strength", hit_bend_strength)
-	outline_mat.set_shader_parameter("hit_zone_radius", hit_zone_radius)
-	outline_mat.set_shader_parameter("hit_oscillation_freq", hit_oscillation_freq)
-
-	var textures := [texture_blue, texture_green, texture_pink]
-	for tex in textures:
-		var mat := ShaderMaterial.new()
-		mat.shader = SPECIALIST_HIT_SHADER
-		mat.next_pass = outline_mat
-		if tex:
-			mat.set_shader_parameter("albedo_texture", tex)
-		mat.set_shader_parameter("hit_bend_strength", hit_bend_strength)
-		mat.set_shader_parameter("hit_zone_radius", hit_zone_radius)
-		mat.set_shader_parameter("hit_oscillation_freq", hit_oscillation_freq)
-		_variant_materials.append(mat)
-
-
-func _attach_specialist_hitbox(member: CrowdMember) -> void:
-	if Engine.is_editor_hint() or not is_instance_valid(member):
-		return
-	var active := enable_hitboxes and _hitboxes_within_dist
-	var existing := member.get_node_or_null("SpecialistHitbox") as Area3D
-	if existing:
-		existing.set_deferred("monitoring", active and monitor_physics_projectiles)
-		existing.set_deferred("monitorable", active)
-		return
-	var area: Area3D = VATHitboxAreaScript.new()
-	area.name = "SpecialistHitbox"
-	area.set("spawner", self)
-	area.set("target_member", member)
-	var col := CollisionShape3D.new()
-	var shape := CapsuleShape3D.new()
-	shape.radius = 0.42
-	shape.height = 1.9
-	col.shape = shape
-	col.position = Vector3(0.0, 0.92, 0.0)
-	area.add_child(col)
-	member.add_child(area)
-	area.owner = null
-	area.set_deferred("monitoring", active and monitor_physics_projectiles)
-	area.set_deferred("monitorable", active)
-
-
-func _sync_specialist_hitboxes() -> void:
+func _sync_vat_hitboxes() -> void:
 	var active := enable_hitboxes and _hitboxes_within_dist
 	var monitor_overlap := active and monitor_physics_projectiles
-	for m in _gun_members:
-		if is_instance_valid(m):
-			m.enable_hitbox = active
-			var hb := m.get_node_or_null("SpecialistHitbox") as Area3D
-			if hb:
-				hb.monitoring = monitor_overlap
-				hb.monitorable = active
-	for m in _balloon_members:
-		if is_instance_valid(m):
-			m.enable_hitbox = active
-			var hb := m.get_node_or_null("SpecialistHitbox") as Area3D
-			if hb:
-				hb.monitoring = monitor_overlap
-				hb.monitorable = active
 	for hb in _vat_hitbox_pool:
 		if is_instance_valid(hb):
 			hb.monitoring = monitor_overlap
 			hb.monitorable = active
 
 
+func _find_internal_child(parent: Node, child_name: String) -> Node:
+	if not is_instance_valid(parent):
+		return null
+	for c in parent.get_children(true):
+		if c.name == child_name:
+			return c
+	return null
+
+
 func _sync_shadow_proxies() -> void:
+	var internal_mode := Node.INTERNAL_MODE_BACK if Engine.is_editor_hint() else Node.INTERNAL_MODE_DISABLED
 	if not is_instance_valid(_shadow_proxy_container):
-		_shadow_proxy_container = get_node_or_null("_ShadowProxies") as Node3D
+		_shadow_proxy_container = _find_internal_child(self, "_ShadowProxies") as Node3D
 		if not is_instance_valid(_shadow_proxy_container):
 			_shadow_proxy_container = Node3D.new()
 			_shadow_proxy_container.name = "_ShadowProxies"
-			add_child(_shadow_proxy_container)
-			_shadow_proxy_container.owner = null
+			add_child(_shadow_proxy_container, false, internal_mode)
+			if not Engine.is_editor_hint():
+				_shadow_proxy_container.owner = null
 
 	var sum_origin := Vector3.ZERO
 	var total_count := 0
@@ -1292,15 +1065,16 @@ func _sync_shadow_proxies() -> void:
 		if v.is_empty():
 			continue
 		var proxy_name := "ShadowProxy_%d" % v_idx
-		var shadow_mm := _shadow_proxy_container.get_node_or_null(proxy_name) as MultiMeshInstance3D
+		var shadow_mm := _find_internal_child(_shadow_proxy_container, proxy_name) as MultiMeshInstance3D
 		var mm_inst := v.get("mm_inst") as MultiMeshInstance3D
 		var mm := v.get("mm") as MultiMesh
 		if bool(v.get("active", false)) and is_instance_valid(mm_inst) and mm != null and mm.instance_count > 0:
 			if not is_instance_valid(shadow_mm):
 				shadow_mm = MultiMeshInstance3D.new()
 				shadow_mm.name = proxy_name
-				_shadow_proxy_container.add_child(shadow_mm)
-				shadow_mm.owner = null
+				_shadow_proxy_container.add_child(shadow_mm, false, internal_mode)
+				if not Engine.is_editor_hint():
+					shadow_mm.owner = null
 			shadow_mm.transform = mm_inst.transform
 			shadow_mm.multimesh = mm
 			var shadow_mat := shadow_mm.material_override as ShaderMaterial
@@ -1337,7 +1111,7 @@ func _apply_render_distance() -> void:
 
 
 func _apply_vat_shadow_state() -> void:
-	var shadow_on := enable_vat_shadows and _shadows_active
+	var shadow_on := bool(enable_vat_shadows) and bool(_shadows_active)
 	for v in _vat_variants:
 		if v.is_empty():
 			continue
@@ -1353,14 +1127,11 @@ func _apply_vat_shadow_state() -> void:
 	# Keep GunProp shadow-off (matches original NPC_Gun.tscn) to save 4 shadow cascade passes
 	if not _gun_prop_variant.is_empty() and _gun_prop_variant.get("mm_inst") is MultiMeshInstance3D:
 		(_gun_prop_variant["mm_inst"] as MultiMeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var rigged_mode := GeometryInstance3D.SHADOW_CASTING_SETTING_ON if shadow_on else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	for mi in _specialist_meshes:
-		if is_instance_valid(mi):
-			mi.cast_shadow = rigged_mode
 
 
 func _sync_lod_uniforms_only() -> void:
-	_sync_lod_shader_uniforms(_last_lod_ref_pos)
+	var ref_pos: Vector3 = _last_lod_ref_pos if (_last_lod_ref_pos is Vector3) else Vector3.ZERO
+	_sync_lod_shader_uniforms(ref_pos)
 
 
 func _sync_lod_shader_uniforms(lod_ref_world: Vector3) -> void:
@@ -1689,73 +1460,18 @@ func _update_specialist_lod() -> void:
 	var crowd_world_center := global_transform * _crowd_local_center
 	var dist := crowd_world_center.distance_to(cam_world)
 	var dist_to_edge := maxf(dist - _crowd_bound_radius, 0.0)
-	var was_pop_initialized := _pop_initialized
 
-	if not _pop_initialized or cam_world.distance_squared_to(_last_pop_cam_pos) > 0.25:
+	if not _pop_initialized or not (_last_pop_cam_pos is Vector3) or cam_world.distance_squared_to(_last_pop_cam_pos) > 0.25:
 		_update_balloon_pop_triggers(cam_world)
 
 	var render_exit_cutoff := max_render_distance + (maxf(balloon_pop_hysteresis, 0.0) if enable_balloon_pop_out else 0.0)
-	var in_render := (dist_to_edge <= max_render_distance) if not _within_render_dist else (dist_to_edge <= render_exit_cutoff)
-	if in_render != _within_render_dist:
-		_within_render_dist = in_render
-		if is_instance_valid(_specialists_container):
-			var rigged: Array[CrowdMember] = []
-			rigged.append_array(_gun_members)
-			rigged.append_array(_balloon_members)
-			if rigged.is_empty():
-				_specialists_container.visible = in_render
-			elif in_render:
-				_specialists_container.visible = true
-				for idx in range(rigged.size()):
-					var m := rigged[idx]
-					if is_instance_valid(m):
-						if was_pop_initialized and enable_balloon_pop_in and m.has_method("play_balloon_pop_in"):
-							m.play_balloon_pop_in(minf(float(idx) * balloon_pop_stagger, 0.55), balloon_pop_duration)
-						else:
-							m.visible = true
-							m.scale = Vector3.ONE
-			else:
-				if was_pop_initialized and enable_balloon_pop_out:
-					var last_valid := -1
-					for idx in range(rigged.size()):
-						if is_instance_valid(rigged[idx]) and rigged[idx].has_method("play_balloon_pop_out"):
-							last_valid = idx
-					if last_valid >= 0:
-						for idx in range(rigged.size()):
-							var m := rigged[idx]
-							if is_instance_valid(m) and m.has_method("play_balloon_pop_out"):
-								var cb := func():
-									if not _within_render_dist and is_instance_valid(_specialists_container):
-										_specialists_container.visible = false
-								m.play_balloon_pop_out(minf(float(idx) * balloon_pop_stagger, 0.55), balloon_pop_out_duration, cb if idx == last_valid else Callable())
-					else:
-						_specialists_container.visible = false
-				else:
-					_specialists_container.visible = false
-
-	var should_be_active := dist_to_edge <= specialist_active_distance
-	var new_step := 1
-	if dist_to_edge > specialist_quarter_rate_distance:
-		new_step = 4
-	elif dist_to_edge > specialist_half_rate_distance:
-		new_step = 2
-
-	if should_be_active != _specialists_active or new_step != _specialist_step_interval:
-		_specialists_active = should_be_active
-		_specialist_step_interval = new_step
-		for m in _gun_members:
-			if is_instance_valid(m):
-				m.anim_step_interval = new_step
-				m.set_row_active(should_be_active)
-		for m in _balloon_members:
-			if is_instance_valid(m):
-				m.anim_step_interval = new_step
-				m.set_row_active(should_be_active)
+	_within_render_dist = (dist_to_edge <= max_render_distance) if not _within_render_dist else (dist_to_edge <= render_exit_cutoff)
+	_specialists_active = dist_to_edge <= specialist_active_distance
 
 	var new_hitboxes := dist_to_edge <= hitbox_active_distance
 	if new_hitboxes != _hitboxes_within_dist:
 		_hitboxes_within_dist = new_hitboxes
-		_sync_specialist_hitboxes()
+		_sync_vat_hitboxes()
 
 	var shadow_cutoff := max_render_distance if keep_front_row_shadow else shadow_active_distance
 	var new_shadows := dist_to_edge <= (shadow_cutoff + 2.0)
@@ -1776,10 +1492,10 @@ func _update_specialist_lod() -> void:
 					_cached_next_passes[mat] = mat.next_pass
 					mat.next_pass = null
 
-	if cam_world.distance_squared_to(_last_lod_ref_pos) > 0.0025:
+	if not (_last_lod_ref_pos is Vector3) or cam_world.distance_squared_to(_last_lod_ref_pos) > 0.0025:
 		_sync_lod_shader_uniforms(cam_world)
 
-	if (keep_front_row_outline or keep_front_row_shadow) and cam_world.distance_squared_to(_last_front_cam_pos) > 0.25:
+	if (keep_front_row_outline or keep_front_row_shadow) and (not (_last_front_cam_pos is Vector3) or cam_world.distance_squared_to(_last_front_cam_pos) > 0.25):
 		_update_front_row_mask(cam_world)
 
 
@@ -1862,18 +1578,14 @@ func _trigger_vat_gun_shot() -> void:
 	var world_pos := (global_transform * transforms[inst_idx]).origin
 	var target_pos := _pick_random_crowd_target(world_pos, 3, inst_idx)
 
-	if not _specialists_active:
-		var muzzle_pos := world_pos + Vector3(0.0, 1.25, 0.0)
-		projectile_spawn_requested.emit("gun", muzzle_pos, target_pos, inst_idx)
-		_spawn_water_gun_vfx(null, muzzle_pos, target_pos)
-		return
-
 	var clips: Dictionary = v["clips"]
 	var shot_clip: Dictionary = clips.get("gun_shot", {})
-	if shot_clip.is_empty():
+	if not _specialists_active or shot_clip.is_empty():
 		var muzzle_pos := world_pos + Vector3(0.0, 1.25, 0.0)
 		projectile_spawn_requested.emit("gun", muzzle_pos, target_pos, inst_idx)
-		_spawn_water_gun_vfx(null, muzzle_pos, target_pos)
+		var aim_dir := target_pos - muzzle_pos
+		var muzzle_xf := Transform3D(Basis.looking_at(aim_dir.normalized(), Vector3.UP) if aim_dir.length_squared() > 0.001 else Basis.IDENTITY, muzzle_pos)
+		_spawn_water_gun_vfx_world(muzzle_xf, muzzle_pos, target_pos)
 		return
 
 	var prop_clips: Dictionary = _gun_prop_variant.get("clips", {})
@@ -2251,52 +1963,6 @@ func _update_vat_actions(delta: float) -> void:
 		i -= 1
 
 
-func _trigger_random_gun_shot() -> void:
-	var candidates: Array[CrowdMember] = []
-	for m in _gun_members:
-		if is_instance_valid(m) and (not _specialists_active or not m.is_performing_action):
-			candidates.append(m)
-	if candidates.is_empty():
-		return
-
-	var shooter := candidates[_rng.randi_range(0, candidates.size() - 1)]
-	var target_pos := _pick_random_crowd_target(shooter.global_position)
-
-	if not _specialists_active:
-		var muzzle_pos := shooter.global_position + Vector3(0.0, 1.25, 0.0)
-		projectile_spawn_requested.emit("gun", muzzle_pos, target_pos, shooter.get_index())
-		_spawn_water_gun_vfx(shooter, muzzle_pos, target_pos)
-		return
-
-	shooter.shoot_at(target_pos, func(member: Node3D, muzzle_pos: Vector3, aim_pos: Vector3):
-		projectile_spawn_requested.emit("gun", muzzle_pos, aim_pos, member.get_index())
-		_spawn_water_gun_vfx(member, muzzle_pos, aim_pos)
-	)
-
-
-func _trigger_random_balloon_throw() -> void:
-	var candidates: Array[CrowdMember] = []
-	for m in _balloon_members:
-		if is_instance_valid(m) and (not _specialists_active or not m.is_performing_action):
-			candidates.append(m)
-	if candidates.is_empty():
-		return
-
-	var thrower := candidates[_rng.randi_range(0, candidates.size() - 1)]
-	var target_pos := _pick_random_crowd_target(thrower.global_position)
-
-	if not _specialists_active:
-		var throw_pos := thrower.global_position + Vector3(0.0, 1.35, 0.0)
-		projectile_spawn_requested.emit("balloon", throw_pos, target_pos, thrower.get_index())
-		_spawn_balloon_projectile(throw_pos, target_pos)
-		return
-
-	thrower.throw_balloon_at(target_pos, func(member: Node3D, throw_pos: Vector3, aim_pos: Vector3):
-		projectile_spawn_requested.emit("balloon", throw_pos, aim_pos, member.get_index())
-		_spawn_balloon_projectile(throw_pos, aim_pos)
-	)
-
-
 func _spawn_water_gun_vfx_world(muzzle_world_xform: Transform3D, muzzle_pos: Vector3, target_pos: Vector3) -> void:
 	var cur_muzzle_scale := Vector3(0.2, 0.2, 0.2)
 	var cur_impact_scale := Vector3(0.4, 0.4, 0.4)
@@ -2318,56 +1984,6 @@ func _spawn_water_gun_vfx_world(muzzle_world_xform: Transform3D, muzzle_pos: Vec
 	if hit_vfx:
 		_place_hit_vfx(hit_vfx, muzzle_pos, target_pos, cur_impact_scale)
 		_trigger_vfx_node(hit_vfx, "Muzzle")
-		_hide_after_delay(hit_vfx, 1.2)
-
-	_apply_splash_hits_to_dancers(target_pos, 1.2)
-
-
-func _spawn_water_gun_vfx(shooter: Node3D, muzzle_pos: Vector3, target_pos: Vector3) -> void:
-	var cur_muzzle_scale := Vector3(0.2, 0.2, 0.2)
-	var cur_muzzle_offset := Vector3.ZERO
-	var cur_impact_scale := Vector3(0.4, 0.4, 0.4)
-	var cur_muzzle_anim := "Muzzle"
-	var cur_impact_anim := "Muzzle"
-
-	var cm := shooter as CrowdMember
-	var spawn_node: Node3D = cm.gun_spawn_point if (cm and is_instance_valid(cm.gun_spawn_point)) else null
-	if cm and is_instance_valid(cm.npc_gun):
-		var gun := cm.npc_gun
-		if "muzzle_scale" in gun:
-			cur_muzzle_scale = gun.muzzle_scale
-		if "muzzle_offset" in gun:
-			cur_muzzle_offset = gun.muzzle_offset
-		if "impact_scale" in gun:
-			cur_impact_scale = gun.impact_scale
-		if "muzzle_animation_name" in gun:
-			cur_muzzle_anim = gun.muzzle_animation_name
-		if "impact_animation_name" in gun:
-			cur_impact_anim = gun.impact_animation_name
-
-	var muzzle_vfx := _get_pooled_node(_muzzle_vfx_pool, "_muzzle_vfx_idx")
-	if muzzle_vfx:
-		if spawn_node and _specialists_active:
-			muzzle_vfx.global_transform = spawn_node.global_transform
-			muzzle_vfx.position += spawn_node.global_transform.basis * cur_muzzle_offset
-		else:
-			muzzle_vfx.global_position = muzzle_pos
-			if target_pos.distance_squared_to(muzzle_pos) > 0.001:
-				muzzle_vfx.look_at(target_pos, Vector3.UP)
-		muzzle_vfx.scale = cur_muzzle_scale
-		muzzle_vfx.visible = true
-		_trigger_vfx_node(muzzle_vfx, cur_muzzle_anim)
-		_hide_after_delay(muzzle_vfx, 1.2)
-
-	var line := _get_pooled_node(_water_line_pool, "_water_line_idx")
-	if line and line.has_method("set_line"):
-		line.visible = true
-		line.set_line(muzzle_pos, target_pos)
-
-	var hit_vfx := _get_pooled_node(_hit_vfx_pool, "_hit_vfx_idx")
-	if hit_vfx:
-		_place_hit_vfx(hit_vfx, muzzle_pos, target_pos, cur_impact_scale)
-		_trigger_vfx_node(hit_vfx, cur_impact_anim)
 		_hide_after_delay(hit_vfx, 1.2)
 
 	_apply_splash_hits_to_dancers(target_pos, 1.2)
@@ -2619,43 +2235,6 @@ func trigger_hit(instance_idx: int, world_hit_dir: Vector3, local_hit_pos: Vecto
 			prop_mm.set_instance_color(instance_idx, hit_col)
 
 
-func trigger_specialist_hit(member: CrowdMember, world_hit_dir: Vector3, world_hit_pos: Vector3) -> void:
-	if not is_instance_valid(member):
-		return
-	var body_mesh := member.find_child("Body_001", true, false) as MeshInstance3D
-	if not body_mesh:
-		return
-
-	var mesh_inv := body_mesh.global_transform.affine_inverse()
-	var local_dir := mesh_inv.basis * world_hit_dir
-	var xz := Vector2(local_dir.x, local_dir.z)
-	if xz.length_squared() > 0.0001:
-		xz = xz.normalized()
-	else:
-		xz = Vector2(0.0, 1.0)
-
-	var local_pos := mesh_inv * world_hit_pos
-	var angle_norm := wrapf(atan2(xz.y, xz.x), 0.0, TAU) / TAU
-	var y_norm := clampf(local_pos.y / 1.8, 0.0, 1.0)
-	var x_norm := clampf(local_pos.x * 0.5 + 0.5, 0.0, 1.0)
-	var new_decay := 1.0
-
-	if _active_specialist_hits.has(body_mesh):
-		var prev: Dictionary = _active_specialist_hits[body_mesh]
-		if float(prev["decay"]) > 0.05:
-			new_decay = minf(float(prev["decay"]) + 0.35, 2.5)
-			y_norm = lerpf(float(prev["y_norm"]), y_norm, 0.35)
-			x_norm = lerpf(float(prev["x_norm"]), x_norm, 0.35)
-
-	_active_specialist_hits[body_mesh] = {
-		"decay": new_decay,
-		"angle": angle_norm,
-		"y_norm": y_norm,
-		"x_norm": x_norm,
-	}
-	body_mesh.set_instance_shader_parameter("hit_data", Vector4(new_decay, angle_norm, y_norm, x_norm))
-
-
 func _step_vat_hit_dict(hits_dict: Dictionary, mm: MultiMesh, step: float, mirror_mm: MultiMesh = null) -> void:
 	if hits_dict.is_empty() or not mm:
 		return
@@ -2680,20 +2259,6 @@ func _update_hit_reactions(delta: float) -> void:
 		var v: Dictionary = _vat_variants[v_idx]
 		if not v.is_empty():
 			_step_vat_hit_dict(v["hits"], v["mm"], step, prop_mm if v_idx == 3 else null)
-
-	if not _active_specialist_hits.is_empty():
-		var finished_meshes: Array = []
-		for mesh_inst in _active_specialist_hits.keys():
-			if not is_instance_valid(mesh_inst):
-				finished_meshes.append(mesh_inst)
-				continue
-			var h: Dictionary = _active_specialist_hits[mesh_inst]
-			h["decay"] = maxf(0.0, h["decay"] - step)
-			mesh_inst.set_instance_shader_parameter("hit_data", Vector4(h["decay"], h["angle"], h["y_norm"], h["x_norm"]))
-			if h["decay"] <= 0.0:
-				finished_meshes.append(mesh_inst)
-		for mesh_inst in finished_meshes:
-			_active_specialist_hits.erase(mesh_inst)
 
 
 func _rebuild_hitboxes() -> void:
@@ -2757,10 +2322,11 @@ func _acquire_vat_hitbox(pool_idx: int, instance_idx: int, xform: Transform3D, s
 
 
 func _sync_invisible_wall() -> void:
-	var wall := get_node_or_null("InvisibleWall") as StaticBody3D
+	var internal_mode := Node.INTERNAL_MODE_BACK if Engine.is_editor_hint() else Node.INTERNAL_MODE_DISABLED
+	var wall := _find_internal_child(self, "InvisibleWall") as StaticBody3D
 	if not enable_invisible_wall:
 		if is_instance_valid(wall):
-			var existing_col := wall.get_node_or_null("CollisionShape3D") as CollisionShape3D
+			var existing_col := _find_internal_child(wall, "CollisionShape3D") as CollisionShape3D
 			if existing_col:
 				existing_col.disabled = true
 		return
@@ -2768,21 +2334,23 @@ func _sync_invisible_wall() -> void:
 	if not is_instance_valid(wall):
 		wall = StaticBody3D.new()
 		wall.name = "InvisibleWall"
-		add_child(wall)
-		wall.owner = null
+		add_child(wall, false, internal_mode)
+		if not Engine.is_editor_hint():
+			wall.owner = null
 
 	wall.collision_layer = invisible_wall_layer
 	wall.collision_mask = 0
 	wall.position = Vector3(0.0, invisible_wall_height * 0.5, 0.0)
 
-	var col := wall.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	var col := _find_internal_child(wall, "CollisionShape3D") as CollisionShape3D
 	if not is_instance_valid(col):
-		col = wall.get_node_or_null("InvisibleWall") as CollisionShape3D
+		col = _find_internal_child(wall, "InvisibleWall") as CollisionShape3D
 	if not is_instance_valid(col):
 		col = CollisionShape3D.new()
 		col.name = "CollisionShape3D"
-		wall.add_child(col)
-		col.owner = null
+		wall.add_child(col, false, internal_mode)
+		if not Engine.is_editor_hint():
+			col.owner = null
 
 	var box := col.shape as BoxShape3D
 	if not box:
@@ -2873,13 +2441,3 @@ func _sync_hit_reaction_params() -> void:
 				shadow_mat.set_shader_parameter("hit_bend_strength", hit_bend_strength)
 				shadow_mat.set_shader_parameter("hit_zone_radius", hit_zone_radius)
 				shadow_mat.set_shader_parameter("hit_oscillation_freq", hit_oscillation_freq)
-	for v_mat in _variant_materials:
-		if v_mat is ShaderMaterial:
-			v_mat.set_shader_parameter("hit_bend_strength", hit_bend_strength)
-			v_mat.set_shader_parameter("hit_zone_radius", hit_zone_radius)
-			v_mat.set_shader_parameter("hit_oscillation_freq", hit_oscillation_freq)
-			var v_next := v_mat.next_pass as ShaderMaterial
-			if v_next:
-				v_next.set_shader_parameter("hit_bend_strength", hit_bend_strength)
-				v_next.set_shader_parameter("hit_zone_radius", hit_zone_radius)
-				v_next.set_shader_parameter("hit_oscillation_freq", hit_oscillation_freq)

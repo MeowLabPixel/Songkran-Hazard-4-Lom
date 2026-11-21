@@ -1,6 +1,5 @@
 [gd_scene format=4 uid="uid://bs5drlxy21lvk"]
 
-[ext_resource type="Script" uid="uid://bsyserjqeygay" path="res://scripts/crowd_member.gd" id="1_4d2p1"]
 [ext_resource type="AnimationLibrary" uid="uid://dblicx2crypip" path="res://scenes/enemy/Male_Zombie_Anims.res" id="2_fdbb2"]
 [ext_resource type="AnimationLibrary" uid="uid://dirmtin7w5rrq" path="res://AnimationsExport/Zombies/Balloone Zombie throw.res" id="3_hupil"]
 [ext_resource type="AnimationLibrary" uid="uid://cw3egvwp57rug" path="res://scenes/Crowds/Anims/Dance Animation Male.res" id="4_qt5ng"]
@@ -765,7 +764,6 @@ height = 0.115
 floor_stop_on_slope = false
 floor_max_angle = 1.3089969
 floor_snap_length = 0.5
-script = ExtResource("1_4d2p1")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2095365787]
 transform = Transform3D(1, 0, 1.4210855e-14, 0, 1, 0, -1.4210855e-14, 0, 1, 0, 0.8149309, 0)
@@ -2366,7 +2364,7 @@ bone_name = "DEF-hand.R"
 bone_idx = 174
 
 [node name="WaterBalloon" type="Node3D" parent="BgZombieWithRig/rig/GeneralSkeleton/HitboxAttachRightHand" unique_id=872169980]
-transform = Transform3D(-0.4771587, -0.570746, -0.66825795, 0, 0.76040584, -0.6494482, 0.8788171, -0.30988976, -0.36283442, 0.06317961, 0.060317278, 0.10121859)
+transform = Transform3D(-0.4771587, -0.57074594, -0.66825795, 0, 0.76040584, -0.6494482, 0.8788171, -0.30988973, -0.36283442, 0.06317961, 0.060317278, 0.10121859)
 
 [node name="Balloon" type="MeshInstance3D" parent="BgZombieWithRig/rig/GeneralSkeleton/HitboxAttachRightHand/WaterBalloon" unique_id=108221586]
 cast_shadow = 0

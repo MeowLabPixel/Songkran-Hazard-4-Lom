@@ -1,6 +1,5 @@
 [gd_scene format=4 uid="uid://c5jylh1q2nwyd"]
 
-[ext_resource type="Script" uid="uid://bsyserjqeygay" path="res://scripts/crowd_member.gd" id="1_rg0eg"]
 [ext_resource type="AnimationLibrary" uid="uid://dblicx2crypip" path="res://scenes/enemy/Male_Zombie_Anims.res" id="2_6rdlg"]
 [ext_resource type="AnimationLibrary" uid="uid://dirmtin7w5rrq" path="res://AnimationsExport/Zombies/Balloone Zombie throw.res" id="3_lysr8"]
 [ext_resource type="AnimationLibrary" uid="uid://cw3egvwp57rug" path="res://scenes/Crowds/Anims/Dance Animation Male.res" id="4_ci2mw"]
@@ -719,7 +718,6 @@ bind/221/pose = Transform3D(0.9721888, 0.004707418, 0.23415177, 0.23415178, -0.0
 floor_stop_on_slope = false
 floor_max_angle = 1.3089969
 floor_snap_length = 0.5
-script = ExtResource("1_rg0eg")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2095365787]
 transform = Transform3D(1, 0, 1.4210855e-14, 0, 1, 0, -1.4210855e-14, 0, 1, 0, 0.8149309, 0)
