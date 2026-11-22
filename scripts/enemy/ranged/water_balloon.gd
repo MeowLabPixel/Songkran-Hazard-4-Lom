@@ -74,6 +74,13 @@ var _collision_cached: bool = false
 var is_pooled: bool = false
 var on_splash_callback: Callable = Callable()
 
+func _exit_tree() -> void:
+	on_splash_callback = Callable()
+	_balloon_visual_meshes.clear()
+	_flash_overlay_mat = null
+	_balloon_mesh = null
+
+
 func _ready() -> void:
 	_cache_collision_settings()
 	_resolve_vfx_nodes()
@@ -264,7 +271,9 @@ func _splash() -> void:
 	var splash_lifetime := _trigger_splash_particles()
 
 	if on_splash_callback.is_valid():
-		on_splash_callback.call(global_position)
+		var cb := on_splash_callback
+		on_splash_callback = Callable()
+		cb.call(global_position)
 
 	var tree := get_tree()
 	if not tree:

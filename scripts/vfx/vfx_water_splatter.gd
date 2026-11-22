@@ -4,6 +4,7 @@ extends Node3D
 @export var auto_free_delay: float = 3.0
 @export var auto_free_on_play: bool = true
 @onready var bubble_small: GPUParticles3D = get_node_or_null("Bubble_Small")
+var _owns_bubble_mat: bool = false
 
 const SPLATTER_SCENE_PATH = "res://Jomp_Folder/VFX_Water/VFX2/vfx_water_splatter.tscn"
 static var _cached_scene: PackedScene = null
@@ -46,7 +47,14 @@ func adjust_for_surface(custom_normal: Vector3 = Vector3.ZERO) -> void:
 	# Detect ground / floor hits (surface normal pointing largely upwards)
 	var is_ground: bool = normal.y > 0.6
 
-	var mat = bubble_small.process_material.duplicate() as ParticleProcessMaterial
+	var mat: ParticleProcessMaterial
+	if _owns_bubble_mat and bubble_small.process_material is ParticleProcessMaterial:
+		mat = bubble_small.process_material as ParticleProcessMaterial
+	else:
+		mat = bubble_small.process_material.duplicate() as ParticleProcessMaterial
+		if mat:
+			_owns_bubble_mat = true
+			bubble_small.process_material = mat
 	if not mat:
 		return
 

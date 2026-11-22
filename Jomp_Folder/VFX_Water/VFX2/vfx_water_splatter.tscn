@@ -188,6 +188,8 @@ sub_emitter_amount_at_collision = 1
 material = ExtResource("2_yg2ox")
 radius = 0.011
 height = 0.07
+radial_segments = 8
+rings = 8
 
 [sub_resource type="Shader" id="Shader_067u3"]
 code = "shader_type spatial;
@@ -412,6 +414,8 @@ scale_curve = SubResource("CurveTexture_ce7vx")
 [sub_resource type="SphereMesh" id="SphereMesh_4n8j2"]
 radius = 0.029
 height = 0.044
+radial_segments = 8
+rings = 8
 
 [sub_resource type="Curve" id="Curve_l7k2x"]
 _data = [Vector2(0.10130719, 0.02614379), 0.0, 0.0, 0, 0, Vector2(0.2973856, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -3.0, 0.0, 0, 0]
@@ -573,6 +577,8 @@ sub_emitter_amount_at_collision = 1
 [sub_resource type="SphereMesh" id="SphereMesh_w5n0h"]
 radius = 0.005
 height = 0.035
+radial_segments = 8
+rings = 8
 
 [sub_resource type="Curve" id="Curve_splash_scale"]
 _data = [Vector2(0, 0.001), 0.0, 12.0, 0, 0, Vector2(0.08, 1), 0.0, 0.0, 0, 0, Vector2(0.67, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -3.0, 0.0, 0, 0]
@@ -901,7 +907,6 @@ transparency = 0.6
 cast_shadow = 0
 emitting = false
 sub_emitter = NodePath("../DropletSplash_SubEmitter")
-one_shot = true
 explosiveness = 1.0
 fixed_fps = 60
 collision_base_size = 0.1

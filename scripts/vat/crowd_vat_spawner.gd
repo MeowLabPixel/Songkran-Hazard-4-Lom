@@ -359,10 +359,12 @@ var _water_line_idx: int = 0
 var _muzzle_vfx_idx: int = 0
 var _hit_vfx_idx: int = 0
 var _balloon_idx: int = 0
+var _pending_hides: Array[Dictionary] = [] # {node: Node3D, remaining: float}
 
 # VAT Dancer state & pools
 var _hitbox_container: Node3D = null
 var _vat_hitbox_pool: Array[Area3D] = []
+var _hitbox_shape: CapsuleShape3D = null
 
 
 func _ready() -> void:
@@ -372,6 +374,36 @@ func _ready() -> void:
 			child_entered_tree.connect(_on_editor_child_entered)
 	else:
 		_init_pools()
+
+
+func _exit_tree() -> void:
+	_restore_cached_next_passes()
+	_active_vat_actions.clear()
+	_pending_hides.clear()
+	for v in _vat_variants:
+		if not v.is_empty() and v.has("hits"):
+			(v["hits"] as Dictionary).clear()
+	for pool in [_muzzle_vfx_pool, _hit_vfx_pool]:
+		for n in pool:
+			if is_instance_valid(n):
+				n.remove_meta("_vfx_particles")
+				n.remove_meta("_vfx_anim_players")
+	_water_line_pool.clear()
+	_muzzle_vfx_pool.clear()
+	_hit_vfx_pool.clear()
+	_balloon_pool.clear()
+	_hand_balloon_pool.clear()
+	_vat_hitbox_pool.clear()
+	_hitbox_shape = null
+
+
+func _restore_cached_next_passes() -> void:
+	for k in _cached_next_passes.keys():
+		if is_instance_valid(k) and k is ShaderMaterial:
+			var mat := k as ShaderMaterial
+			if mat.next_pass == null:
+				mat.next_pass = _cached_next_passes[k]
+	_cached_next_passes.clear()
 
 
 func _notification(what: int) -> void:
@@ -414,6 +446,7 @@ func _process(delta: float) -> void:
 	_update_hit_reactions(delta)
 	_update_vat_actions(delta)
 	_update_balloon_pops(delta)
+	_update_pending_hides(delta)
 
 	_lod_check_timer += delta
 	if _lod_check_timer >= 0.15:
@@ -521,6 +554,7 @@ func _rebuild_crowd() -> void:
 	if not _vat_variants[0]["active"]:
 		return
 
+	_restore_cached_next_passes()
 	_sync_shader_params()
 
 	var layout_rng := RandomNumberGenerator.new()
@@ -975,6 +1009,7 @@ func _clear_preview() -> void:
 	if is_instance_valid(_hitbox_container):
 		_hitbox_container.queue_free()
 		_hitbox_container = null
+	_vat_hitbox_pool.clear()
 	for v in _vat_variants:
 		if v.is_empty():
 			continue
@@ -1897,7 +1932,8 @@ func _update_vat_actions(delta: float) -> void:
 							act["exploded"] = true
 						)
 					elif is_instance_valid(hb):
-						if elapsed < crossfade * 0.5:
+						var pop_sc := _get_member_pop_scale(v, inst_idx)
+						if elapsed < crossfade * 0.5 or pop_sc.y <= 0.01:
 							hb.visible = false
 						else:
 							var hp: PackedVector3Array = act["hand_positions"]
@@ -1913,7 +1949,7 @@ func _update_vat_actions(delta: float) -> void:
 								local_hand = hp[f0].lerp(hp[f1], frac)
 								if f1 < hr.size():
 									local_rot = hr[f0].slerp(hr[f1], frac)
-							hb.global_transform = (global_transform * new_xform) * Transform3D(Basis(local_rot).scaled(h_scale), local_hand)
+							hb.global_transform = (global_transform * new_xform.scaled_local(pop_sc)) * Transform3D(Basis(local_rot).scaled(h_scale), local_hand)
 							hb.visible = true
 
 				if elapsed >= duration:
@@ -2160,35 +2196,63 @@ func _trigger_vfx_node(vfx_node: Node, anim_name: String = "") -> void:
 
 
 func _hide_after_delay(node: Node3D, delay: float) -> void:
-	var tree := get_tree()
-	if not tree or not is_instance_valid(node):
+	if not is_instance_valid(node):
 		return
-	var serial := int(node.get_meta("_hide_serial", 0)) + 1
-	node.set_meta("_hide_serial", serial)
-	tree.create_timer(delay).timeout.connect(func():
-		if is_instance_valid(node) and int(node.get_meta("_hide_serial", 0)) == serial:
-			node.visible = false
-	)
+	for entry in _pending_hides:
+		if entry["node"] == node:
+			entry["remaining"] = delay
+			return
+	_pending_hides.append({"node": node, "remaining": delay})
+
+
+func _update_pending_hides(delta: float) -> void:
+	if _pending_hides.is_empty():
+		return
+	var i := _pending_hides.size() - 1
+	while i >= 0:
+		var entry: Dictionary = _pending_hides[i]
+		var rem: float = float(entry["remaining"]) - delta
+		if rem <= 0.0:
+			var n: Node3D = entry["node"] as Node3D
+			if is_instance_valid(n):
+				n.visible = false
+			_pending_hides.remove_at(i)
+		else:
+			entry["remaining"] = rem
+		i -= 1
 
 
 func _pick_random_crowd_target(from_pos: Vector3, exclude_variant: int = -1, exclude_inst: int = -1) -> Vector3:
-	var candidates: Array[Vector3] = []
-	for v_idx in range(_vat_variants.size()):
-		var v: Dictionary = _vat_variants[v_idx]
-		if v.is_empty() or not v.get("active", false):
-			continue
-		var transforms: Array[Transform3D] = v["transforms"]
-		for i in range(transforms.size()):
-			if v_idx == exclude_variant and i == exclude_inst:
+	var total := 0
+	for v in _vat_variants:
+		if not v.is_empty() and bool(v.get("active", false)):
+			total += (v["transforms"] as Array[Transform3D]).size()
+	if total <= 0:
+		return from_pos + Vector3(0.0, 1.0, -5.0)
+
+	for _attempt in range(16):
+		var pick := _rng.randi_range(0, total - 1)
+		for v_idx in range(_vat_variants.size()):
+			var v: Dictionary = _vat_variants[v_idx]
+			if v.is_empty() or not bool(v.get("active", false)):
 				continue
-			var world_pos := (global_transform * transforms[i]).origin
+			var transforms: Array[Transform3D] = v["transforms"]
+			var count := transforms.size()
+			if pick >= count:
+				pick -= count
+				continue
+			if v_idx == exclude_variant and pick == exclude_inst:
+				break
+			var pop_states: PackedByteArray = v.get("pop_states", PackedByteArray())
+			if pick < pop_states.size() and pop_states[pick] == _POP_HIDDEN:
+				break
+			var world_pos := (global_transform * transforms[pick]).origin
 			var dx := world_pos.x - from_pos.x
 			var dz := world_pos.z - from_pos.z
 			if dx * dx + dz * dz < 0.25:
-				continue
-			candidates.append(world_pos + Vector3(0.0, 1.0, 0.0))
-	if not candidates.is_empty():
-		return candidates[_rng.randi_range(0, candidates.size() - 1)]
+				break
+			return world_pos + Vector3(0.0, 1.0, 0.0)
+
 	return from_pos + Vector3(0.0, 1.0, -5.0)
 
 
@@ -2262,7 +2326,7 @@ func _update_hit_reactions(delta: float) -> void:
 
 
 func _rebuild_hitboxes() -> void:
-	if not enable_hitboxes or not _hitboxes_within_dist or Engine.is_editor_hint():
+	if not enable_hitboxes or Engine.is_editor_hint():
 		for hb in _vat_hitbox_pool:
 			if is_instance_valid(hb):
 				hb.monitoring = false
@@ -2275,9 +2339,11 @@ func _rebuild_hitboxes() -> void:
 		add_child(_hitbox_container)
 		_hitbox_container.owner = null
 
-	var shape := CapsuleShape3D.new()
-	shape.radius = 0.42
-	shape.height = 1.9
+	if not _hitbox_shape:
+		_hitbox_shape = CapsuleShape3D.new()
+		_hitbox_shape.radius = 0.42
+		_hitbox_shape.height = 1.9
+	var shape := _hitbox_shape
 
 	var used_count := 0
 	for v_idx in range(_vat_variants.size()):
@@ -2317,8 +2383,8 @@ func _acquire_vat_hitbox(pool_idx: int, instance_idx: int, xform: Transform3D, s
 	area.set("instance_idx", instance_idx)
 	area.set("variant_id", variant_id)
 	area.transform = xform
-	area.monitoring = monitor_physics_projectiles
-	area.monitorable = true
+	area.monitoring = _hitboxes_within_dist and monitor_physics_projectiles
+	area.monitorable = _hitboxes_within_dist
 
 
 func _sync_invisible_wall() -> void:
